@@ -67,7 +67,8 @@ OBJS+=Table.o WcActCB.o WcInvoke.o WcName.o WcSetValue.o Xp.o
 OBJS+=TableLoc.o WcConvert.o WcLateBind.o WcReg.o WcTemplate.o
 OBJS+=register_wb.o
 OBJS+=font.o
-OBJS+=Board.o Common.o Frame.o HBox.o VBox.o Wbutton.o Wedit.o Wheel.o Whslider.o
+OBJS+=Board.o Common.o Frame.o HBox.o VBox.o Wbutton.o Wedit.o Wheel.o 
+# OBJS+=Whslider.o
 OBJS+=Wlabel.o Wlist4.o WpixBtn.o Wradio.o Wtext.o WviewVar.o
 
 ALL_LO=${OBJS:%.o=%.lo}
