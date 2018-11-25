@@ -1,4 +1,0 @@
-#define background_width 1
-#define background_height 1
-static char background_bits[] = {
-   0x00};
