@@ -1,0 +1,96 @@
+# x toolkit intrinsics core widget set (XTCW)
+#
+# ..x..x.t..../\        /
+# ...xx.tttt./ 	\      /
+# ...x.x..t..\ 	 \ /\ /
+# ..x...x tt..\_  /  \
+#
+#
+#
+#
+#
+#
+prefix      ?= ../
+exec_prefix ?= $(prefix)
+bindir      ?= $(exec_prefix)/bin
+libdir      ?= $(exec_prefix)/lib
+incdir      ?= $(prefix)/include
+srcdir      ?= $(prefix)/source
+docdir      ?= $(prefix)/doc
+libexecdir  ?= $(exec_prefix)/libexec
+PKGDATADIR  ?= $(prefix)/etc/xtcw
+
+CC=gcc
+YFLAGS  = -d
+YACC    = bison
+LEX     = flex
+MV      = mv
+CP      = cp
+MKDIR   = mkdir
+
+STATIC_LIB=libxtcw.a
+SL_BASE_NAME=xtcw
+SL_MAJOR=1
+SL_MINOR=0
+SL_REV=0
+
+SL_VERSION=$(SL_MAJOR).$(SL_MINOR).$(SL_REV)
+SL_NAME=lib$(SL_BASE_NAME).so.$(SL_VERSION)
+SL=lib$(SL_BASE_NAME).so
+
+VPATH=../utils:$(srcdir)
+INC=${incdir}/xtcw
+
+XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm
+LOADLIBES += $(XORGLIB)
+CPPFLAGS  += -I/usr/include/freetype2 -I/usr/local/include/freetype2
+CPPFLAGS  += -I. -I$(incdir)/xtcw -I$(incdir)
+
+%.tab.c %.tab.h: %.y
+	$(YACC) $(YFLAGS) $<
+
+%.lex.c %.lex.h: %.l
+	$(LEX) -o$*.lex.c --header-file=$*.lex.h $<
+
+%.lo: %.c
+	$(CC) -c -fPIC $(CFLAGS) $(CPPFLAGS) $< -o $@
+
+
+OBJS=focus-group.o Gridbox.o converters-xft.o xutil.o mls.o
+OBJS+=ini_parse.tab.o ini_lex.lex.o ini_read2.o
+OBJS+=converters.o util.o xlayout.o wcreg2.o xprint2.o
+OBJS+=micro_vars.o parser_util.o communication.o
+OBJS+=XCC.o long.o icon.o choosecol.o strarray.o StrToPmap.o
+OBJS+=Pen.o str2color.o
+OBJS+=MapAg.o TableVec.o WcCreate.o WcLoadRes.o WcRegXt.o WcWarn.o
+OBJS+=Table.o WcActCB.o WcInvoke.o WcName.o WcSetValue.o Xp.o
+OBJS+=TableLoc.o WcConvert.o WcLateBind.o WcReg.o WcTemplate.o
+OBJS+=register_wb.o
+OBJS+=font.o
+OBJS+=Board.o Common.o Frame.o HBox.o VBox.o Wbutton.o Wedit.o Wheel.o Whslider.o
+OBJS+=Wlabel.o Wlist4.o WpixBtn.o Wradio.o Wtext.o WviewVar.o
+
+ALL_LO=${OBJS:%.o=%.lo}
+
+ALL: $(SL_NAME) $(STATIC_LIB)
+
+ini_lex.lex.o: ini_parse.tab.h
+
+ini_read2.o: ini_lex.lex.o
+
+$(SL_NAME): ${ALL_LO}
+	$(LINK.c) $^ $(LOADLIBES) -shared -Wl,-soname,$@ -o $@
+
+$(STATIC_LIB): ${OBJS}
+	ar rcs $@ $^
+
+clean:
+	-${RM} *.o *.lo *.so* *.a *.lex.h *.tab.h
+
+install: $(SL_NAME)
+	cp *.h $(INC)
+	cp *.so* $(libdir)
+	cp *.a   $(libdir)
+	ln -sf $(SL_NAME) $(libdir)/$(SL).$(SL_MAJOR).$(SL_MINOR)
+	ln -sf $(SL_NAME) $(libdir)/$(SL).$(SL_MAJOR)
+	ln -sf $(SL_NAME) $(libdir)/$(SL)

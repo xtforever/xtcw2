@@ -1,0 +1,134 @@
+\input wbuildmac.tex
+\Class{WviewVar}\Publicvars
+\Table{WviewVar}
+XtNvarname&XtCVarname&String &""\cr
+\endTable
+\Section
+\Publicvar{XtNvarname}
+String  varname = {\langle}String{\rangle}""
+
+\End\Table{Wlabel}
+XtNlabel&XtCLabel&String &NULL \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&Int &0 \cr
+XtNdraw{\underline}override&XtCDraw{\underline}override&XTCallbackProc &NULL \cr
+XtNheightIncreasePercent&XtCHeightIncreasePercent&Int &0 \cr
+XtNleftOffsetPercent&XtCLeftOffsetPercent&Int &5 \cr
+XtNupdate&XtCUpdate&Int &0 \cr
+\endTable
+\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&Int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&Int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "micro{\underline}vars.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+XrmQuark  qvar\endCode
+
+
+\Section
+\Code
+int  drawn\endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+        {\dollar}qvar = XrmStringToQuark( {\dollar}varname );
+        {\dollar}draw{\underline}override = show{\underline}data;
+        mv{\underline}onwrite( {\dollar}qvar, do{\underline}update, {\dollar}, 0 );
+        {\dollar}height = ({\dollar}xftFont-{\rangle}height) * 2.5;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Bool  cache{\underline}hit({\dollar})
+{\lbrace}
+        int val = *mv{\underline}var( {\dollar}qvar );
+        Bool hit = ({\dollar}drawn == val);
+        hit = hit {\ampersand}{\ampersand} {\hashmark}cache{\underline}hit({\dollar});
+        return hit;
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+do{\underline}update({\dollar})
+{\lbrace}
+        XtVaSetValues( {\dollar}, "update", {\dollar}update+1, NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+show{\underline}data({\dollar}, void * a, void * b)
+{\lbrace}
+
+        int wh,val,h,x,y;
+        char *s, str[30];
+        val = *mv{\underline}var( {\dollar}qvar );
+        sprintf(str,"{\percent}d", val );
+        h = {\dollar}xftFont-{\rangle}height;
+        wh = {\dollar}height / 2;
+        x = 0;
+        y = (wh-h) / 2 + {\dollar}xftFont-{\rangle}ascent;
+        s = {\dollar}label;
+        XftDrawStringUtf8({\dollar}draw,{\dollar}xft{\underline}col + {\dollar}state, {\dollar}xftFont,
+                                         x,y,(FcChar8*)s, strlen(s) );
+
+
+        y += wh;
+        s = str;
+        x = {\dollar}width - 2 - xft{\underline}textwidth(XtDisplay({\dollar}),{\dollar}xftFont, s );
+        XftDrawStringUtf8({\dollar}draw,{\dollar}xft{\underline}col + {\dollar}state, {\dollar}xftFont,
+                                         x,y,(FcChar8*)s, strlen(s) );
+        {\dollar}drawn = val;
+
+{\rbrace}\endCode
+
+
+\End\bye

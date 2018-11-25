@@ -1,0 +1,1023 @@
+\input wbuildmac.tex
+\Class{Frame}The Frame widget is a composite widget that accepts just one child.
+Its only purpose is to draw a frame around widgets that do not have a
+frame of their own. It always uses the size of its child, with a
+little extra for the frame. There are several types of frames
+available, selectable with a resource.
+
+Widget writers can also use the Frame class as a superclass for new
+widgets.  The frame is drawn by the {\tt expose} method (which must
+therefore be called by subclasses). Its width is given by
+{\tt XtNframeWidth}, the appearance by {\tt XtNframeType}. The possible types
+are:
+
+\item{{\tt XfwfRaised}} Gives a beveled look. The top and left borders will
+be lighter, the bottom and right sides darker.
+
+\item{{\tt XfwfSunken}} Just the opposite.
+
+\item{{\tt XfwfChiseled}} The border will look as if it was made with a
+chisel.
+
+\item{{\tt XfwfLedged}} The border will be a ledge that juts out of the
+background.
+
+
+
+
+
+\Publicvars
+\Table{Frame}
+XtNcursor&XtCCursor&Cursor &None \cr
+XtNframeType&XtCFrameType&FrameType &XfwfRaised \cr
+XtNframeWidth&XtCFrameWidth&Dimension &0 \cr
+XtNouterOffset&XtCOuterOffset&Dimension &0 \cr
+XtNinnerOffset&XtCInnerOffset&Dimension &0 \cr
+XtNshadowScheme&XtCShadowScheme&ShadowScheme &XfwfAuto \cr
+XtNtopShadowColor&XtCTopShadowColor&Color &compute{\underline}topcolor \cr
+XtNbottomShadowColor&XtCBottomShadowColor&Color &compute{\underline}bottomcolor \cr
+XtNtopShadowStipple&XtCTopShadowStipple&Bitmap &NULL \cr
+XtNbottomShadowStipple&XtCBottomShadowStipple&Bitmap &NULL \cr
+\endTable
+\Section
+\Publicvar{XtNcursor}
+The cursor (when not {\tt None}) is the mouse cursor that is displayed
+when the mouse is over the Board widget. The default value {\tt None}
+causes the parent's cursor to be used.
+
+	
+
+Cursor  cursor = None 
+
+\Section
+\Publicvar{XtNframeType}
+The {\tt XtNframeType} determines how the border looks.
+
+	
+
+FrameType  frameType = XfwfRaised 
+
+\Section
+\Publicvar{XtNframeWidth}
+{\tt XtNframeWidth} gives the width of the border. The default value
+of 0 shows no border at all. The border is drawn {\it inside\/} the
+widget. (See also {\tt XtNouterOffset}.)
+
+	
+
+Dimension  frameWidth = 0 
+
+\Section
+\Publicvar{XtNouterOffset}
+Normally, the border is draw along the outer edge of the widget, but
+it can be moved inward. {\tt XtNouterOffset} is the number of pixels
+between the edge and the frame.
+
+	
+
+Dimension  outerOffset = 0 
+
+\Section
+\Publicvar{XtNinnerOffset}
+Between the frame and whatever is inside the widget, there is also
+margin. By default, however, it is 0.
+
+	
+
+Dimension  innerOffset = 0 
+
+\Section
+\Publicvar{XtNshadowScheme}
+The colors of the top and bottom shadows can be set with the
+resources {\tt topShadowColor} and {\tt bottomShadowColor}, but it is also
+possible to use a stiple of foreground and background colors. This may
+be preferable on workstations with limited or no color capabilities.
+However, the easiest way (which is also the default) is to let the
+widget determine its own shadow colors or stipples, based on the
+widget's background color and the color capabilities of the screen.
+
+The resource {\tt shadowScheme} can be set to {\tt XfwfColor}, {\tt XfwfStipple}
+or {\tt XfwfAuto}. The converter for the shadow pixmap accepts the strings
+{\tt "stipple0"} through {\tt "stipple8"}, which create pixmaps of the current
+background and foreground colors, with {\tt "stipple0"} entirely
+background and {\tt "stipple8"} entirely foreground. Setting pixmaps or
+colors is only useful when {\tt shadowScheme} is set to {\tt XfwfStipple} or
+{\tt XfwfColor} respectively.
+
+The values of {\tt topShadowColor} and {\tt bottomShadowColor} are ignored by
+the Frame widget as long as {\tt shadowScheme} is not {\tt XfwfColor}, but the
+default values are computed nevertheless, since they are useful, e.g.,
+when an icon uses `topShadowColor' and `bottomShadowColor' as dynamic
+colors.
+
+	
+
+ShadowScheme  shadowScheme = XfwfAuto 
+
+\Section
+\Publicvar{XtNtopShadowColor}
+Color  topShadowColor = {\langle}CallProc{\rangle}compute{\underline}topcolor 
+
+\Section
+\Publicvar{XtNbottomShadowColor}
+Color  bottomShadowColor = {\langle}CallProc{\rangle}compute{\underline}bottomcolor 
+
+\Section
+\Publicvar{XtNtopShadowStipple}
+Bitmap  topShadowStipple = NULL 
+
+\Section
+\Publicvar{XtNbottomShadowStipple}
+Bitmap  bottomShadowStipple = NULL 
+
+\Section
+\Publicvar{XtNborder{\underline}width}
+The inherited resource {\tt borderWidth} is given a default value of 0,
+instead of 1.
+
+	
+
+ border{\underline}width = 0 
+
+\End\Table{Common}
+XtNuseXCC&XtCUseXCC&Boolean &FALSE \cr
+XtNusePrivateColormap&XtCUsePrivateColormap&Boolean &FALSE \cr
+XtNuseStandardColormaps&XtCUseStandardColormaps&Boolean &TRUE \cr
+XtNstandardColormap&XtCStandardColormap&Atom &0 \cr
+XtNxcc&XtCXCc&XCC &create{\underline}xcc \cr
+XtNtraversalOn&XtCTraversalOn&Boolean &True \cr
+XtNhighlightThickness&XtCHighlightThickness&Dimension &2 \cr
+XtNhighlightColor&XtCHighlightColor&Color &XtDefaultForeground \cr
+XtNbackground&XtCBackground&Color &XtDefaultBackground \cr
+XtNhighlightPixmap&XtCHighlightPixmap&Pixmap &None \cr
+XtNnextTop&XtCNextTop&Callback&NULL \cr
+XtNuserData&XtCUserData&Pointer&NULL \cr
+\endTable
+\Table{Composite}
+XtNchildren&XtCChildren&WidgetList &NULL \cr
+insertPosition&XtCInsertPosition&XTOrderProc &NULL \cr
+numChildren&XtCNumChildren&Cardinal &0 \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Exports
+\Section
+A number of new types is introduced by the Common class.  The
+possible types of borders are enumerated in {\tt Frame3dType} (see the
+introduction).
+
+	
+
+\Code
+{\type} FrameType = enum {\lbrace}
+            XfwfRaised, XfwfSunken, XfwfChiseled, XfwfLedged {\rbrace}\endCode
+
+
+\Section
+The shadow scheme can be used to choose colors, pixmaps or automatic
+shadows.
+
+	
+
+\Code
+{\type} ShadowScheme = enum {\lbrace}XfwfAuto, XfwfColor, XfwfStipple{\rbrace}\endCode
+
+
+\Section
+The type {\tt Bitmap} is an alias for {\tt Pixmap}, but it is meant to
+contain only bitmaps, i.e., pixmaps of depth one.
+
+	
+
+\Code
+{\type} Bitmap = Pixmap \endCode
+
+
+\Section
+The routine that draws the border is generally useful, so it is
+exported. {\tt t} is the thickness of the frame. The frame is drawn inside
+the rectangle {\tt (x, y, x+w-1, y+h-1)}.
+
+
+
+\Code
+XfwfDrawFrame( {\dollar}, int  x, int  y, int  w, int  h, FrameType  tp, int  t, GC  lightgc, GC  darkgc)\endCode
+{\lbrace}
+    XPoint tlPoints[7], brPoints[7];
+
+    if (t == 0) return;
+    switch (tp) {\lbrace}
+    case XfwfRaised:
+    case XfwfSunken:
+        tlPoints[0].x = x;              tlPoints[0].y = y;
+        tlPoints[1].x = x + w;          tlPoints[1].y = y;
+        tlPoints[2].x = x + w - t;      tlPoints[2].y = y + t;
+        tlPoints[3].x = x + t;          tlPoints[3].y = y + t;
+        tlPoints[4].x = x + t;          tlPoints[4].y = y + h - t;
+        tlPoints[5].x = x;              tlPoints[5].y = y + h;
+        tlPoints[6].x = x;              tlPoints[6].y = y;
+        brPoints[0].x = x + w;          brPoints[0].y = y + h;
+        brPoints[1].x = x;              brPoints[1].y = y + h;
+        brPoints[2].x = x + t;          brPoints[2].y = y + h - t;
+        brPoints[3].x = x + w - t;      brPoints[3].y = y + h - t;
+        brPoints[4].x = x + w - t;      brPoints[4].y = y + t;
+        brPoints[5].x = x + w;          brPoints[5].y = y;
+        brPoints[6].x = x + w;          brPoints[6].y = y + h;
+        if (tp == XfwfSunken) {\lbrace}
+            XFillPolygon(XtDisplay({\dollar}), XtWindow({\dollar}),
+                         darkgc, tlPoints, 7, Nonconvex, CoordModeOrigin);
+            XFillPolygon(XtDisplay({\dollar}), XtWindow({\dollar}),
+                         lightgc, brPoints, 7, Nonconvex, CoordModeOrigin);
+        {\rbrace} else {\lbrace}
+            XFillPolygon(XtDisplay({\dollar}), XtWindow({\dollar}),
+                         lightgc, tlPoints, 7, Nonconvex, CoordModeOrigin);
+            XFillPolygon(XtDisplay({\dollar}), XtWindow({\dollar}),
+                         darkgc, brPoints, 7, Nonconvex, CoordModeOrigin);
+        {\rbrace}
+        break;
+    case XfwfLedged:
+        XfwfDrawFrame({\dollar}, x, y, w, h, XfwfRaised, t/2, lightgc, darkgc);
+        XfwfDrawFrame({\dollar}, x+t/2, y+t/2, w-2*(int)(t/2), h-2*(int)(t/2),
+                  XfwfSunken, t/2, lightgc, darkgc);
+        break;
+    case XfwfChiseled:
+        XfwfDrawFrame({\dollar}, x, y, w, h, XfwfSunken, t/2, lightgc, darkgc);
+        XfwfDrawFrame({\dollar}, x+t/2, y+t/2, w-2*(int)(t/2), h-2*(int)(t/2),
+                  XfwfRaised, t/2, lightgc, darkgc);
+        break;
+    {\rbrace}
+
+{\rbrace}
+
+\Section
+{\tt cvtStringToFrameType} converts the strings `raised', `sunken',
+`chiseled' and `ledged'. Case doesn't matter.
+
+
+
+\Code
+Boolean  cvtStringToFrameType(Display * display, XrmValuePtr  args, Cardinal * num{\underline}args, XrmValuePtr  from, XrmValuePtr  to, XtPointer * converter{\underline}data)\endCode
+{\lbrace}
+    String s = (String) from-{\rangle}addr;
+
+    if (*num{\underline}args != 0)
+        XtAppErrorMsg(XtDisplayToApplicationContext(display),
+                      "cvtStringToFrameType", "wrongParameters",
+                      "XtToolkitError",
+                      "String to frame type conversion needs no arguments",
+                      (String*) NULL, (Cardinal*) NULL);
+
+    if (XmuCompareISOLatin1(s, "raised") == 0) done(FrameType, XfwfRaised);
+    if (XmuCompareISOLatin1(s, "sunken") == 0) done(FrameType, XfwfSunken);
+    if (XmuCompareISOLatin1(s, "chiseled") == 0) done(FrameType, XfwfChiseled);
+    if (XmuCompareISOLatin1(s, "ledged") == 0) done(FrameType, XfwfLedged);
+    XtDisplayStringConversionWarning(display, s, XtRFrameType);
+    done(FrameType, XfwfRaised);
+{\rbrace}
+
+\Section
+\Code
+Boolean  cvtFrameTypeToString(Display * display, XrmValuePtr  args, Cardinal * num{\underline}args, XrmValuePtr  from, XrmValuePtr  to, XtPointer * converter{\underline}data)\endCode
+{\lbrace}
+    if (*num{\underline}args != 0)
+        XtAppErrorMsg(XtDisplayToApplicationContext(display),
+                      "cvtFrameTypeToString", "wrongParameters",
+                      "XtToolkitError",
+                      "Fframe type to String conversion needs no arguments",
+                      (String*) NULL, (Cardinal*) NULL);
+    switch (*(FrameType*)from-{\rangle}addr) {\lbrace}
+    case XfwfRaised: done(String, "raised");
+    case XfwfSunken: done(String, "sunken");
+    case XfwfChiseled: done(String, "chiseled");
+    case XfwfLedged: done(String, "ledged");
+    default: XtError("Illegal FrameType");
+    {\rbrace}
+    return True;
+{\rbrace}
+
+\Section
+The converter {\tt cvtStringToShadowScheme} converts strings `color',
+`auto' and `stipple' to {\tt XfwfColor}, {\tt XfwfAuto} and {\tt XfwfStipple}.
+
+
+
+\Code
+Boolean  cvtStringToShadowScheme(Display * display, XrmValuePtr  args, Cardinal * num{\underline}args, XrmValuePtr  from, XrmValuePtr  to, XtPointer * converter{\underline}data)\endCode
+{\lbrace}
+    String s = (String) from-{\rangle}addr;
+
+    if (*num{\underline}args != 0)
+        XtAppErrorMsg(XtDisplayToApplicationContext(display),
+                      "cvtStringToShadowScheme", "wrongParameters",
+                      "XtToolkitError",
+                      "String to shadow scheme conversion needs no arguments",
+                      (String*) NULL, (Cardinal*) NULL);
+
+    if (XmuCompareISOLatin1(s, "auto")==0) done(ShadowScheme, XfwfAuto);
+    if (XmuCompareISOLatin1(s, "color")==0) done(ShadowScheme, XfwfColor);
+    if (XmuCompareISOLatin1(s, "stipple")==0) done(ShadowScheme, XfwfStipple);
+    XtDisplayStringConversionWarning(display, s, XtRShadowScheme);
+    done(ShadowScheme, XfwfAuto);
+{\rbrace}
+
+\Section
+\Code
+Boolean  cvtShadowSchemeToString(Display * display, XrmValuePtr  args, Cardinal * num{\underline}args, XrmValuePtr  from, XrmValuePtr  to, XtPointer * converter{\underline}data)\endCode
+{\lbrace}
+    if (*num{\underline}args != 0)
+        XtAppErrorMsg(XtDisplayToApplicationContext(display),
+                      "cvtShadowSchemeToString", "wrongParameters",
+                      "XtToolkitError",
+                      "Shadow scheme to String conversion needs no arguments",
+                      (String*) NULL, (Cardinal*) NULL);
+
+    switch (*(ShadowScheme*)from-{\rangle}addr) {\lbrace}
+    case XfwfAuto: done(String, "auto");
+    case XfwfColor: done(String, "color");
+    case XfwfStipple: done(String, "stipple");
+    default: XtError("Illegal ShadowScheme");
+    {\rbrace}
+    return True;
+{\rbrace}
+
+\End\Actions
+\Section
+\Action{set{\underline}shadow}Although the Frame widget has no translations, one action is
+defined, that may be of use to subclasses. The action function
+{\tt set{\underline}shadow} can be used to change the shadow frame. It has zero or
+one argument. Without an argument, it resets the shadow to its
+original type; with an argument, it sets the shadow to the type given
+in the argument.
+
+Warning: the function uses the {\tt XfwfDrawFrame} routine to draw the
+frames directly, instead of calling the {\tt expose} or even {\tt set{\underline}values}
+methods.  Any subclass that defines behaviour that depends on knowing
+the frame type, will have to redefine the {\tt set{\underline}shadow} action.
+
+
+
+\Code
+void set{\underline}shadow({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    Position x, y;
+    Dimension w, h;
+    FrameType f = XfwfSunken;
+
+    if (*num{\underline}params == 0) f = {\dollar}old{\underline}frame{\underline}type;  /* Reset to old style */
+    else if (strcmp("raised", params[0]) == 0) f = XfwfRaised;
+    else if (strcmp("sunken", params[0]) == 0) f = XfwfSunken;
+    else if (strcmp("chiseled", params[0]) == 0) f = XfwfChiseled;
+    else if (strcmp("ledged", params[0]) == 0) f = XfwfLedged;
+    else XtWarning("Unknown frame type in set{\underline}shadow action");
+
+    if ({\dollar}frameType != f) {\lbrace}
+        {\dollar}frameType = f;
+        {\hashmark}compute{\underline}inside({\dollar}, {\ampersand}x, {\ampersand}y, {\ampersand}w, {\ampersand}h);
+        XfwfDrawFrame({\dollar}, x + {\dollar}outerOffset, y + {\dollar}outerOffset,
+                      w - 2*{\dollar}outerOffset, h - 2*{\dollar}outerOffset,
+                      {\dollar}frameType, {\dollar}frameWidth, {\dollar}lightgc, {\dollar}darkgc);
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\End\Imports
+\Section
+\Code
+{\incl} {\langle}string.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}stdio.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Converters.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/CharSet.h{\rangle}\endCode
+
+
+\Section
+The stipple for the shadows is loaded from a bitmap file.
+
+
+
+\Code
+{\incl} "lightstipple.bm"\endCode
+
+
+\Section
+\Code
+{\incl} "darkstipple.bm"\endCode
+
+
+\End\Privatevars
+\Section
+The GC for drawing the light parts of the frame:
+
+	
+
+\Code
+GC  lightgc\endCode
+
+
+\Section
+The GC for drawing the dark parts of the frame:
+
+	
+
+\Code
+GC  darkgc\endCode
+
+
+\Section
+The {\tt lightstipple} and {\tt darkstipple} bitmaps are used on screens
+with insufficient colors to simulate light and dark shadows. They will
+be created by the {\tt initialize} method, whether or not they are
+needed. Since they are small bitmaps, this can't hurt much.
+
+	
+
+\Code
+Pixmap  lightstipple\endCode
+
+
+\Section
+\Code
+Pixmap  darkstipple\endCode
+
+
+\Section
+The {\tt old{\underline}frame{\underline}type} variable is used by the {\tt set{\underline}shadow} action
+function to store the original frame type, when it is temporarily
+changed.
+
+	
+
+\Code
+FrameType  old{\underline}frame{\underline}type\endCode
+
+
+\End\Methods
+\Section
+{\tt class{\underline}initialize} installs the type converters. The type converters
+back to String are installed as a convenience, so resources can be
+retrieved in readable form with {\tt XtVaGetValues}.
+
+
+
+\Code
+class{\underline}initialize()
+{\lbrace}
+    static XtConvertArgRec screenArg[] = {\lbrace}
+    {\lbrace}XtBaseOffset, (XtPointer)XtOffset(Widget, core.screen), sizeof(Screen*){\rbrace}{\rbrace};
+
+    XtSetTypeConverter(XtRString, XtRFrameType, cvtStringToFrameType,
+                       NULL, 0, XtCacheNone, NULL);
+    XtSetTypeConverter(XtRFrameType, XtRString, cvtFrameTypeToString,
+                       NULL, 0, XtCacheNone, NULL);
+
+    XtAddConverter(XtRString, XtRBitmap, XmuCvtStringToBitmap,
+                       screenArg, XtNumber(screenArg));
+
+    XtSetTypeConverter(XtRString, XtRShadowScheme, cvtStringToShadowScheme,
+                       NULL, 0, XtCacheNone, NULL);
+    XtSetTypeConverter(XtRShadowScheme, XtRString, cvtShadowSchemeToString,
+                       NULL, 0, XtCacheNone, NULL);
+{\rbrace}\endCode
+
+
+\Section
+Much of the initialization that one would expect in the {\tt initialize}
+method is actually delegated to the {\tt realize} method, since a window
+ID is needed for most of the initializations.
+
+
+
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    Dimension frame;
+    Position x, y;
+
+    {\dollar}lightgc = NULL;
+    {\dollar}darkgc = NULL;
+    {\dollar}old{\underline}frame{\underline}type = {\dollar}frameType;
+    /* Make sure the width and height are at least as large as the frame */
+    frame = {\dollar}total{\underline}frame{\underline}width({\dollar});
+    if ({\dollar}width {\langle} 2 * frame) {\dollar}width = 2 * frame;
+    if ({\dollar}height {\langle} 2 * frame) {\dollar}height = 2 * frame;
+{\rbrace}\endCode
+
+
+\Section
+The {\tt realize} method uses the inherited method, but adds the cursor
+attribute.
+
+This is also the place to create the stipple bitmaps, that are used
+for stippled shadows. They could not be created in {\tt initialize}, since
+creating a bitmap requires a window ID.
+
+The GC's must be created after the stipple bitmaps, since they might
+have to use them as a stipple.
+
+
+
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+    *mask {\bar}= CWCursor;
+    attributes-{\rangle}cursor = {\dollar}cursor;
+    {\hashmark}realize({\dollar}, mask, attributes);
+
+    {\dollar}lightstipple = XCreateBitmapFromData(XtDisplay({\dollar}), XtWindow({\dollar}),
+        lightstipple{\underline}bits, lightstipple{\underline}width, lightstipple{\underline}height);
+    {\dollar}darkstipple = XCreateBitmapFromData(XtDisplay({\dollar}), XtWindow({\dollar}),
+        darkstipple{\underline}bits, darkstipple{\underline}width, darkstipple{\underline}height);
+
+    if (! {\dollar}topShadowStipple) {\dollar}topShadowStipple = {\dollar}lightstipple;
+    if (! {\dollar}bottomShadowStipple) {\dollar}bottomShadowStipple = {\dollar}darkstipple;
+
+    create{\underline}lightgc({\dollar});
+    create{\underline}darkgc({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+The {\tt set{\underline}values} method has to create new GC's if the resources
+change. It also makes sure that {\tt frameWidth} is even if the frame type
+is chiseled or ledged.
+
+If the frame width was and is zero, nothing needs to be drawn,
+regardless of the changes in other resources. Therefore, at the end
+{\tt need{\underline}redisplay} is set to False.
+
+When the cursor changes, the {\tt set{\underline}values} method uses the
+{\tt XDefineCursor} routine to set the attribute on the widget's window,
+provided the widget is realized.
+
+
+
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    Boolean need{\underline}redisplay = False;
+
+    if ({\dollar}cursor != {\dollar}old{\dollar}cursor {\ampersand}{\ampersand} XtIsRealized({\dollar}))
+        XDefineCursor(XtDisplay({\dollar}), XtWindow({\dollar}), {\dollar}cursor);
+
+    if ({\dollar}frameType == XfwfChiseled {\bar}{\bar} {\dollar}frameType == XfwfLedged)
+        {\dollar}frameWidth = 2 * ((int) ({\dollar}frameWidth / 2));
+
+    if ({\dollar}shadowScheme != {\dollar}old{\dollar}shadowScheme) {\lbrace}
+        create{\underline}darkgc({\dollar});
+        create{\underline}lightgc({\dollar});
+        need{\underline}redisplay = True;
+    {\rbrace} else if ({\dollar}shadowScheme == XfwfColor) {\lbrace}
+        if ({\dollar}topShadowColor != {\dollar}old{\dollar}topShadowColor) {\lbrace}
+            create{\underline}lightgc({\dollar});
+            need{\underline}redisplay = True;
+        {\rbrace}
+        if ({\dollar}bottomShadowColor != {\dollar}old{\dollar}bottomShadowColor) {\lbrace}
+            create{\underline}darkgc({\dollar});
+            need{\underline}redisplay = True;
+        {\rbrace}
+    {\rbrace} else if ({\dollar}shadowScheme == XfwfStipple) {\lbrace}
+        if ({\dollar}topShadowStipple != {\dollar}old{\dollar}topShadowStipple) {\lbrace}
+            create{\underline}lightgc({\dollar});
+            need{\underline}redisplay = True;
+        {\rbrace}
+        if ({\dollar}bottomShadowStipple != {\dollar}old{\dollar}bottomShadowStipple) {\lbrace}
+            create{\underline}darkgc({\dollar});
+            need{\underline}redisplay = True;
+        {\rbrace}
+    {\rbrace}
+
+    if ({\dollar}outerOffset != {\dollar}old{\dollar}outerOffset)
+        need{\underline}redisplay = True;
+
+    if ({\dollar}innerOffset != {\dollar}old{\dollar}innerOffset)
+        need{\underline}redisplay = True;
+
+    if ({\dollar}frameType != {\dollar}old{\dollar}frameType) {\lbrace}
+        {\dollar}old{\underline}frame{\underline}type = {\dollar}frameType;
+        need{\underline}redisplay = True;
+    {\rbrace}
+
+    if ({\dollar}frameWidth != {\dollar}old{\dollar}frameWidth)
+        need{\underline}redisplay = True;
+    else if ({\dollar}frameWidth == 0)
+        need{\underline}redisplay = False;
+
+    return need{\underline}redisplay;
+{\rbrace}\endCode
+
+
+\Section
+The {\tt expose} method draws the frame, for which it uses the
+{\tt XfwfDrawFrame} routine. Before it calls the routine, it sets the clip
+region. Afterwards, the clip region is reset, because we don't know
+which other widgets share the same GC's. As explained in {\em X
+Toolkit Intrinsics Programming Manual} (Nye \& O'Reilly, Motif
+Edition, 1990, p~223), the test for {\tt XtIsRealized} is there for the
+unlikely case when an expose event arrives after the widget has been
+destroyed or unrealized.
+
+
+
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+    Position x, y;
+    Dimension w, h;
+
+    if (! XtIsRealized({\dollar})) return;
+    if (region != NULL) {\lbrace}
+        XSetRegion(XtDisplay({\dollar}), {\dollar}lightgc, region);
+        XSetRegion(XtDisplay({\dollar}), {\dollar}darkgc, region);
+    {\rbrace}
+    {\hashmark}compute{\underline}inside({\dollar}, {\ampersand}x, {\ampersand}y, {\ampersand}w, {\ampersand}h);
+    XfwfDrawFrame({\dollar}, x + {\dollar}outerOffset, y + {\dollar}outerOffset, w - 2*{\dollar}outerOffset,
+         h - 2*{\dollar}outerOffset, {\dollar}frameType, {\dollar}frameWidth, {\dollar}lightgc, {\dollar}darkgc);
+    if (region != NULL) {\lbrace}
+        XSetClipMask(XtDisplay({\dollar}), {\dollar}lightgc, None);
+        XSetClipMask(XtDisplay({\dollar}), {\dollar}darkgc, None);
+    {\rbrace}
+    {\hashmark}expose({\dollar}, event, region);
+{\rbrace}\endCode
+
+
+\Section
+The method {\tt compute{\underline}inside} is re-defined. The method now returns
+the area inside the frame. It calls the superclass's method and then
+decreases the area by the width of the frame.
+
+
+
+\Code
+compute{\underline}inside({\dollar}, Position * x, Position * y, Dimension * w, Dimension * h)
+{\lbrace}
+    {\hashmark}compute{\underline}inside({\dollar}, x, y, w, h);
+    *x += {\dollar}outerOffset + {\dollar}frameWidth + {\dollar}innerOffset;
+    *y += {\dollar}outerOffset + {\dollar}frameWidth + {\dollar}innerOffset;
+    *w -= 2 * ({\dollar}outerOffset + {\dollar}frameWidth + {\dollar}innerOffset);
+    *h -= 2 * ({\dollar}outerOffset + {\dollar}frameWidth + {\dollar}innerOffset);
+{\rbrace}\endCode
+
+
+\Section
+The method {\tt total{\underline}frame{\underline}width} is overridden, because the Frame
+widget draws an additional frame. The frame that the Common widget
+draws is added to the shadow frame of the Frame widget.
+
+
+
+\Code
+Dimension  total{\underline}frame{\underline}width({\dollar})
+{\lbrace}
+    return {\hashmark}total{\underline}frame{\underline}width({\dollar}) + {\dollar}outerOffset + {\dollar}frameWidth + {\dollar}innerOffset ;
+{\rbrace}\endCode
+
+
+\Section
+A Frame widget passes its parent's inquiry on to its (presumably)
+single child. If there is no child, the proposal is accepted.
+The border and position proposals are always accepted, the stacking
+order and size are left to the child to decide.
+
+
+
+\Code
+XtGeometryResult  query{\underline}geometry({\dollar}, XtWidgetGeometry * request, XtWidgetGeometry * reply)
+{\lbrace}
+    XtWidgetGeometry request2, reply2;
+    XtGeometryResult result;
+    Dimension h;
+
+    if ({\dollar}num{\underline}children == 0) return XtGeometryYes;
+
+    /* We're only interested in size and stacking order */
+    reply-{\rangle}request{\underline}mode =
+        (CWWidth {\bar} CWHeight {\bar} CWStackMode) {\ampersand} request-{\rangle}request{\underline}mode;
+
+    /* If nothing of interest is left, we can return immediately */
+    if (reply-{\rangle}request{\underline}mode == 0)
+        return XtGeometryYes;
+
+    /* Prepare a request to the child */
+    h = 2 * ({\dollar}outerOffset + {\dollar}frameWidth + {\dollar}innerOffset);
+    request2.request{\underline}mode = reply-{\rangle}request{\underline}mode;
+    request2.width = request-{\rangle}width - h;
+    request2.height = request-{\rangle}height - h;
+    request2.sibling = request-{\rangle}sibling;
+    request2.stack{\underline}mode = request-{\rangle}stack{\underline}mode;
+
+    result = XtQueryGeometry({\dollar}children[0], {\ampersand}request2, {\ampersand}reply2);
+
+    /* If the child accepted its proposal, we accept ours */
+    if (result == XtGeometryYes) return XtGeometryYes;
+
+    /* If the child doesn't want any change, we don't want any, either */
+    if (result == XtGeometryNo) return XtGeometryNo;
+
+    /* Otherwise, ignore everything but size and stacking order */
+    reply-{\rangle}request{\underline}mode {\ampersand}= reply2.request{\underline}mode;
+    if (reply-{\rangle}request{\underline}mode == 0) return XtGeometryYes;
+
+    reply-{\rangle}width = reply2.width + h;
+    reply-{\rangle}height = reply2.height + h;
+    reply-{\rangle}sibling = reply2.sibling;
+    reply-{\rangle}stack{\underline}mode = reply2.stack{\underline}mode;
+    return XtGeometryAlmost;
+{\rbrace}\endCode
+
+
+\Section
+Requests by the child to be resized are passed on to the parent. If
+the parent replies with {\tt XtGeometryYes}, the change is accepted and
+(if not {\tt XtCWQueryOnly}) already done. In that case the Frame widget
+accepts its child's request. If the parent replies with
+{\tt XtGeometryNo}, the change is denied and the denial is passed on. If
+the parent replies with a different geometry, the geometry is passed
+on, after compensating for the frame width.
+
+Requests for anything other than width or height are always granted.
+
+
+
+\Code
+XtGeometryResult  geometry{\underline}manager(Widget  child, XtWidgetGeometry * request, XtWidgetGeometry * reply)
+{\lbrace}
+    XtWidgetGeometry request2, reply2;
+    XtGeometryResult result;
+    Position x, y;
+    Dimension w, h, extraw, extrah;
+
+    {\dollar}compute{\underline}inside({\dollar}, {\ampersand}x, {\ampersand}y, {\ampersand}w, {\ampersand}h);
+    if (! (request-{\rangle}request{\underline}mode {\ampersand} (CWWidth{\bar}CWHeight))) return XtGeometryYes;
+    extraw = {\dollar}width - w;
+    extrah = {\dollar}height - h;
+    request2.request{\underline}mode = request-{\rangle}request{\underline}mode {\ampersand} (CWWidth{\bar}CWHeight);
+    request2.width = request-{\rangle}width + extraw;
+    request2.height = request-{\rangle}height + extrah;
+    result = XtMakeGeometryRequest({\dollar}, {\ampersand}request2, {\ampersand}reply2);
+    if (result == XtGeometryNo) return XtGeometryNo;
+    if (result == XtGeometryYes) return XtGeometryYes;
+    reply-{\rangle}request{\underline}mode = reply2.request{\underline}mode {\ampersand} (CWWidth{\bar}CWHeight);
+    reply-{\rangle}width = reply2.width - extraw;
+    reply-{\rangle}height = reply2.height - extrah;
+    return XtGeometryAlmost;
+{\rbrace}\endCode
+
+
+\Section
+The {\tt resize} method doesn't have to recompute any private variables,
+but it passes on the resize message to its child, after decreasing the
+area by the amount needed for the frame.
+
+
+
+\Code
+resize({\dollar})
+{\lbrace}
+    Position x, y;
+    Dimension w, h;
+    Widget child;
+
+    if ({\dollar}num{\underline}children == 0) return;
+    {\dollar}compute{\underline}inside({\dollar}, {\ampersand}x, {\ampersand}y, {\ampersand}w, {\ampersand}h);
+    child = {\dollar}children[0];
+    w -= 2 * {\dollar}child{\dollar}border{\underline}width;
+    h -= 2 * {\dollar}child{\dollar}border{\underline}width;
+    XtConfigureWidget(child, x, y, w, h, {\dollar}child{\dollar}border{\underline}width);
+{\rbrace}\endCode
+
+
+\Section
+The {\tt change{\underline}managed} method is called when a child becomes managed
+or unmanaged. The task of the routine is enforcing the layout policy,
+which in this case consists of trying to take on the size of the child
+or otherwise resize the child to fit inside the frame.
+If the parent of the Frame widget doesn't allow the Frame widget to be
+resized, the child of the Frame widget will be resized instead.
+
+
+
+\Code
+change{\underline}managed({\dollar})
+{\lbrace}
+    XtWidgetGeometry request2, reply2;
+    XtGeometryResult result;
+    Widget child;
+    Position x, y;
+    Dimension w, h;
+
+    if ({\dollar}num{\underline}children == 0) return;
+    {\dollar}compute{\underline}inside({\dollar}, {\ampersand}x, {\ampersand}y, {\ampersand}w, {\ampersand}h);
+    child = {\dollar}children[0];
+    request2.request{\underline}mode = CWWidth {\bar} CWHeight;
+    request2.width = {\dollar}child{\dollar}width + {\dollar}width - w;
+    request2.height = {\dollar}child{\dollar}height + {\dollar}height - h;
+    result = XtMakeGeometryRequest({\dollar}, {\ampersand}request2, {\ampersand}reply2);
+    {\dollar}compute{\underline}inside({\dollar}, {\ampersand}x, {\ampersand}y, {\ampersand}w, {\ampersand}h);
+    w -= 2 * {\dollar}child{\dollar}border{\underline}width;
+    h -= 2 * {\dollar}child{\dollar}border{\underline}width;
+    XtConfigureWidget(child, x, y, w, h, {\dollar}child{\dollar}border{\underline}width);
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+The converters use the following macro.
+
+
+
+\Macro
+done(type, value) =
+do {\lbrace}
+      if (to-{\rangle}addr != NULL) {\lbrace}
+          if (to-{\rangle}size {\langle} sizeof(type)) {\lbrace}
+              to-{\rangle}size = sizeof(type);
+              return False;
+          {\rbrace}
+          *(type*)(to-{\rangle}addr) = (value);
+      {\rbrace} else {\lbrace}
+          static type static{\underline}val;
+          static{\underline}val = (value);
+          to-{\rangle}addr = (XtPointer){\ampersand}static{\underline}val;
+      {\rbrace}
+      to-{\rangle}size = sizeof(type);
+      return True;
+  {\rbrace}while (0 )\endMacro
+
+
+\Section
+The variable {\tt rcsid} isn't used for anything, except tracking of
+versions. The version number is that of the specification file (this
+file) from which the widget's source is build.
+
+
+
+
+
+
+
+\Section
+The {\tt create{\underline}darkgc} function creates the GC for the dark parts of
+the frame. The contents of the GC depend on the resources
+{\tt shadowScheme} and possibly {\tt background}, {\tt bottomShadowColor},
+{\tt topShadowColor}, {\tt bottomShadowStipple} and {\tt topShadowStipple}.
+
+
+
+\Code
+create{\underline}darkgc({\dollar})
+{\lbrace}
+    XtGCMask mask;
+    XGCValues values;
+
+    if ({\dollar}darkgc != NULL) XtReleaseGC({\dollar}, {\dollar}darkgc);
+    switch ({\dollar}shadowScheme) {\lbrace}
+    case XfwfColor:
+        mask = GCForeground;
+        values.foreground = {\dollar}bottomShadowColor;
+        break;
+    case XfwfStipple:
+        if (DefaultDepthOfScreen(XtScreen({\dollar})) {\rangle} 4) {\lbrace}
+            mask = GCForeground {\bar} GCFillStyle {\bar} GCStipple;
+            values.foreground = BlackPixelOfScreen(XtScreen({\dollar}));
+            values.fill{\underline}style = FillStippled;
+            values.stipple = {\dollar}topShadowStipple;
+        {\rbrace} else {\lbrace}
+            mask = GCFillStyle {\bar} GCStipple {\bar} GCForeground {\bar} GCBackground;
+            values.fill{\underline}style = FillOpaqueStippled;
+            values.stipple = {\dollar}bottomShadowStipple;
+            values.foreground = BlackPixelOfScreen(XtScreen({\dollar}));
+            values.background = WhitePixelOfScreen(XtScreen({\dollar}));
+        {\rbrace}
+        break;
+    case XfwfAuto:
+        if (DefaultDepthOfScreen(XtScreen({\dollar})) {\rangle} 4
+            {\ampersand}{\ampersand} {\dollar}darker{\underline}color({\dollar}, {\dollar}background, {\ampersand}values.foreground)) {\lbrace}
+            mask = GCForeground;
+        {\rbrace} else {\lbrace}
+            mask = GCFillStyle {\bar} GCBackground {\bar} GCForeground {\bar} GCStipple;
+            values.fill{\underline}style = FillOpaqueStippled;
+            values.background = WhitePixelOfScreen(XtScreen({\dollar}));
+            values.foreground = BlackPixelOfScreen(XtScreen({\dollar}));
+            values.stipple = {\dollar}darkstipple;
+        {\rbrace}
+        break;
+    {\rbrace}
+    {\dollar}darkgc = XtGetGC({\dollar}, mask, {\ampersand}values);
+{\rbrace}\endCode
+
+
+\Section
+{\tt create{\underline}lightgc} does the same for the light parts of the frame.
+When the {\tt shadowScheme} resource is {\tt XfwfAuto}, the depth of the screen
+and the availability of colors determines whether colors or stipples
+will be used for the frame.
+
+
+
+\Code
+create{\underline}lightgc({\dollar})
+{\lbrace}
+    XtGCMask mask;
+    XGCValues values;
+
+    if ({\dollar}lightgc != NULL) XtReleaseGC({\dollar}, {\dollar}lightgc);
+    switch ({\dollar}shadowScheme) {\lbrace}
+    case XfwfColor:
+        mask = GCForeground;
+        values.foreground = {\dollar}topShadowColor;
+        break;
+    case XfwfStipple:
+        if (DefaultDepthOfScreen(XtScreen({\dollar})) {\rangle} 4) {\lbrace}
+            mask = GCForeground {\bar} GCFillStyle {\bar} GCStipple;
+            values.foreground = WhitePixelOfScreen(XtScreen({\dollar}));
+            values.fill{\underline}style = FillStippled;
+            values.stipple = {\dollar}topShadowStipple;
+        {\rbrace} else {\lbrace}
+            mask = GCFillStyle {\bar} GCStipple {\bar} GCForeground {\bar} GCBackground;
+            values.fill{\underline}style = FillOpaqueStippled;
+            values.stipple = {\dollar}topShadowStipple;
+            values.foreground = BlackPixelOfScreen(XtScreen({\dollar}));
+            values.background = WhitePixelOfScreen(XtScreen({\dollar}));
+        {\rbrace}
+        break;
+    case XfwfAuto:
+        if (DefaultDepthOfScreen(XtScreen({\dollar})) {\rangle} 4
+            {\ampersand}{\ampersand} {\dollar}lighter{\underline}color({\dollar}, {\dollar}background, {\ampersand}values.foreground)) {\lbrace}
+            mask = GCForeground;
+        {\rbrace} else {\lbrace}
+            mask = GCFillStyle {\bar} GCBackground {\bar} GCForeground {\bar} GCStipple;
+            values.fill{\underline}style = FillOpaqueStippled;
+            values.background = WhitePixelOfScreen(XtScreen({\dollar}));
+            values.foreground = BlackPixelOfScreen(XtScreen({\dollar}));
+            values.stipple = {\dollar}lightstipple;
+        {\rbrace}
+        break;
+    {\rbrace}
+    {\dollar}lightgc = XtGetGC({\dollar}, mask, {\ampersand}values);
+{\rbrace}\endCode
+
+
+\Section
+The function {\tt compute{\underline}topcolor} is a resource default proc. It is
+used to compute the value of the {\tt topShadowColor} relative to the
+{\tt background} color.
+
+
+
+\Code
+compute{\underline}topcolor({\dollar}, int  offset, XrmValue * value)
+{\lbrace}
+    static Pixel color;
+{\hashmark}if 1
+    {\dollar}lighter{\underline}color({\dollar}, {\dollar}background, {\ampersand}color);
+{\hashmark}else
+    (void) choose{\underline}color({\dollar}, 1.35, {\dollar}background, {\ampersand}color);
+{\hashmark}endif
+    value-{\rangle}addr = (XtPointer) {\ampersand}color;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+compute{\underline}bottomcolor({\dollar}, int  offset, XrmValue * value)
+{\lbrace}
+    static Pixel color;
+{\hashmark}if 1
+    {\dollar}darker{\underline}color({\dollar}, {\dollar}background, {\ampersand}color);
+{\hashmark}else
+    (void) choose{\underline}color({\dollar}, 0.6, {\dollar}background, {\ampersand}color);
+{\hashmark}endif
+    value-{\rangle}addr = (XtPointer) {\ampersand}color;
+{\rbrace}\endCode
+
+
+\End\bye

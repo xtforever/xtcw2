@@ -1,0 +1,493 @@
+'\" t
+.TH "" 3 "" "Version Unknown To Mankind" "Free Widget Foundation"
+.SH NAME
+Common
+.SH DESCRIPTION
+The Common class is not meant to be instantiated. It only serves as
+the common superclass for a family of widgets, to ensure that these
+widgets have some common methods and resources.  The Common class
+defines common types, symbolic constants, and type converters and it
+also provides the basis for keyboard traversal.  The code for keyboard
+traversal is roughly based on that in the Xw widget set (created by
+Hewlett Packard), but it uses the \fIaccept_focus\fP method.
+
+When the resource \fItraversalOn\fP is set to \fITrue\fP (either at creation
+time, or via a \fIXtSetValues\fP later), a set of translations is added to
+the widget. If the widget's parent is also a subclass of Common, these
+translations will then implement keyboard traversal, using the cursor
+keys (up, down, prev, etc.) Of course, when the widget already uses
+these keys for other purposes, the keyboard traversal will not work.
+
+The Common widget makes use of John Cwickla's X Color Context (XCC)
+library, a system that makes it easier to select colors, since it
+automatically uses standard colormaps where available and also rounds
+requested colors to the nearest available one. For best results, an
+application should create an XCC and pass it as a resource to Common
+and its descendants, but Common will also create an XCC itself if none
+is provided.
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Common
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	FALSE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNuseXCC"
+By default, Common and all its subclasses use XCC's to control their
+color allocations. But the use of XCC can be turned off. Some goodies,
+like approximate colors instead of failures and use of standard
+colormaps where available, will not be used, but the application may
+start faster.
+
+	
+
+
+
+
+.TP
+.I "XtNusePrivateColormap"
+If \fIusePrivateColormap\fP is \fITRUE\fP when the widget is created, it
+will try to install a private colormap, from which all colors are
+allocated. Changing this resource after the widget has been created
+has no effect. (No effect if \fIuseXCC\fP is false.)
+
+	
+
+
+
+
+.TP
+.I "XtNuseStandardColormaps"
+\fIuseStandardColormaps\fP directs the widget to try to find an already
+installed standard colormap. When the widget is created, it will look
+for a list of standard colormap, both color and greyscale. It won't
+create a new standard colormap itself. (No effect if \fIuseXCC\fP is
+false.)
+
+	 
+
+
+
+
+.TP
+.I "XtNstandardColormap"
+Normally, when \fIuseStandardColormaps\fP is \fITRUE\fP, the widget will try
+to find the best standard colormap from those that are installed on
+the X server. You can force it to use a specific standard colormap by
+setting \fIstandardColormap\fP to the Atom of that map. (No effect if
+\fIuseXCC\fP is false.)
+
+	
+
+
+
+
+.TP
+.I "XtNxcc"
+\fIxcc\fP holds the XCC descriptor, which is used when allocating colors
+through \fIXCCGetPixel\fP. Normally, the widget creates its own. (No
+effect if \fIuseXCC\fP is false.)
+
+	
+
+
+
+
+.TP
+.I "XtNtraversalOn"
+The resource \fItraversalOn\fP determines whether keyboard traversal is
+used. If it is \fITrue\fP initially, or if it is set to \fITrue\fP later, a
+set of translations will be added to the widget.
+
+	
+
+
+
+
+.TP
+.I "XtNhighlightThickness"
+Keyboard focus is indicated by border highlighting. When keyboard
+traversal is on and the widget receives the focus, the highlight border
+is filled with the highlight color or tile. If the widget does not
+have the focus, the area is left in the default background.
+
+	
+
+
+
+
+.TP
+.I "XtNhighlightColor"
+The highlight border can have a color or it can be tiled with a
+pixmap. Whichever of the resources \fIhighlightColor\fP or
+\fIhighlightPixmap\fP is set latest, is used. When both are set, the
+pixmap is used.
+
+	
+
+
+
+
+.TP
+.I "XtNbackground"
+In order to use the String to Color resource converter for the
+background color as well, a new background resource is created,
+conveniently called \fIbackground\fP. The Core field \fIbackground_pixel\fP
+should not be used anymore.
+
+	
+
+
+
+
+.TP
+.I "XtNhighlightPixmap"
+The \fIhighlightPixmap\fP can be set to a pixmap with which the
+highlight border will be tiled. Only one of \fIhighlightPixmap\fP and
+\fIhighlightColor\fP can be set, see above.
+
+	
+
+
+
+
+.TP
+.I "XtNnextTop"
+When an application has several top level windows, it should have a
+way of setting the focus between windows. The Enter key in any widget
+with keyboard traversal on normally invokes the \fItraverseNextTop\fP
+action, that will call the callbacks of the topmost Common (or
+subclass) widget in the hierarchy. The callback may set the focus to
+another top level widget, with \fIXtCallAcceptFocus\fP.
+
+	
+
+
+
+
+.TP
+.I "XtNuserData"
+The resource \fIuserData\fP is provided for applications that want to
+attach their own data to a widget. It is not used by the widget itself
+in any way.
+
+	
+
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The type \fIAlignment\fP is actually an integer, but it is given a
+different name to allow a type converter to be installed for it.
+
+	
+
+
+.nf
+
+.B type
+ Alignment = int 
+.fi
+
+
+The symbolic constants can be added together to form an alignment.
+Various widgets use this to position labels, other widgets, etcetera.
+
+	
+
+\fBdef\fP XfwfCenter = 0 
+
+\fBdef\fP XfwfLeft = 1 
+
+\fBdef\fP XfwfRight = 2 
+
+\fBdef\fP XfwfTop = 4 
+
+\fBdef\fP XfwfBottom = 8 
+
+For convenience, the eight possible combinations also have symbolic
+names.
+
+	
+
+\fBdef\fP XfwfTopLeft = (XfwfTop +XfwfLeft )
+
+\fBdef\fP XfwfTopRight = (XfwfTop +XfwfRight )
+
+\fBdef\fP XfwfBottomLeft = (XfwfBottom +XfwfLeft )
+
+\fBdef\fP XfwfBottomRight = (XfwfBottom +XfwfRight )
+
+The directions of traversal are used as arguments to the \fItraverse\fP
+method. They are probably only useful to subclasses.
+
+	
+
+
+.nf
+
+.B type
+ TraversalDirection = enum {
+            TraverseLeft, TraverseRight, TraverseUp, TraverseDown,
+            TraverseNext, TraversePrev, TraverseHome, TraverseNextTop }
+.fi
+
+
+The \fIColor\fP type is an alias for \fIPixel\fP, so that a new resource
+converter can be installed.
+
+	
+
+
+.nf
+
+.B type
+ Color = Pixel 
+.fi
+
+
+To know the inside area of a Common widget might be useful to other
+widgets than subclasses alone. Calling \fIXfwfCallComputeInside\fP will
+call the \fIcompute_inside\fP method, if available.
+
+
+
+
+.nf
+XfwfCallComputeInside( $, Position * x, Position * y, Dimension * w, Dimension * h)
+.fi
+
+
+Another convenience function is \fIXfwfCallFrameWidth\fP, which uses the
+method \fItotal_frame_width\fP to compute the thickness of the frame that
+the widget will draw.
+
+
+
+
+.nf
+Dimension  XfwfCallFrameWidth( $)
+.fi
+
+
+All subclasses need to know the \fIXCC\fP type.
+
+
+
+.nf
+
+.B incl
+ "XCC.h"
+.fi
+
+
+.SS "Actions"
+
+When the widget receives or looses the focus, the border highlight
+is drawn or removed. This action function draws the highlight border
+and in case the widget has set \fItraversalOn\fP, it also sets the
+keyboard focus to the widget itself, or one of its children.
+
+However, FocusIn events may also be so-called virtual events, meaning
+that not the receiving widget, but one of its descendants gets the
+real focus. When \fIfocusIn\fP receives one of those, it removes the
+highlight border.
+
+
+
+
+
+
+.TP
+.I "focusIn
+
+
+
+
+.TP
+.I "focusOut
+
+This action removes the highlight border.
+
+
+
+
+
+
+.TP
+.I "traverseDown
+
+This and the following actions all call the \fItraverse\fP method of the
+widget's parent, with the appropiate direction arguments.
+\fItraverseDown\fP tries to set the focus to a widget that is located
+roughly below the current one.
+
+
+
+
+
+
+.TP
+.I "traverseUp
+
+The action tries to set the focus to a widget that is above the this
+one.
+
+
+
+
+
+
+.TP
+.I "traverseLeft
+
+\fItraverseLeft\fP looks for a widget to the left of the current one and
+sets the keyboard focus to that.
+
+
+
+
+
+
+.TP
+.I "traverseRight
+
+The action looks for a widget that will aceept the focus to the
+right of the current one.
+
+
+
+
+
+
+.TP
+.I "traverseNext
+
+The next sibling gets the focus. The precise order is determined by
+the parent, but usually is will be the order in which the widgets were
+created. If there is no suitable sibling, the request is passed to the
+grandparent, so that an `aunt widget' or other relation can get the
+focus.
+
+
+
+
+
+
+.TP
+.I "traversePrev
+
+The previous widget gets the focus. See also the description of
+\fItraverseNext\fP above.
+
+
+
+
+
+
+.TP
+.I "traverseNextTop
+
+\fItraverseNextTop\fP finds the topmost ancestor that is a subclass of
+Common and lets it call the \fInextTop\fP callbacks that have been
+registered there. These callbacks can be used by an application that
+has multiple top level windows to set the focus to another window.
+
+
+
+
+
+
+.TP
+.I "traverseHome
+
+The action sets the focus to the sibling widget that is closest to
+the upper left corner of the parent.
+
+
+
+
+
+
+.TP
+.I "traverseCurrent
+
+The \fItraverseCurrent\fP action can be used by widgets to set the focus
+to themselves. It is not used in the set of translations that is added
+when \fItraversalOn\fP is set to \fITrue\fP.
+
+
+
+
+

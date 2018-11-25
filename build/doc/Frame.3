@@ -1,0 +1,349 @@
+'\" t
+.TH "" 3 "" "Version Unknown To Mankind" "Free Widget Foundation"
+.SH NAME
+Frame
+.SH DESCRIPTION
+The Frame widget is a composite widget that accepts just one child.
+Its only purpose is to draw a frame around widgets that do not have a
+frame of their own. It always uses the size of its child, with a
+little extra for the frame. There are several types of frames
+available, selectable with a resource.
+
+Widget writers can also use the Frame class as a superclass for new
+widgets.  The frame is drawn by the \fIexpose\fP method (which must
+therefore be called by subclasses). Its width is given by
+\fIXtNframeWidth\fP, the appearance by \fIXtNframeType\fP. The possible types
+are:
+
+\item{\fIXfwfRaised\fP} Gives a beveled look. The top and left borders will
+be lighter, the bottom and right sides darker.
+
+\item{\fIXfwfSunken\fP} Just the opposite.
+
+\item{\fIXfwfChiseled\fP} The border will look as if it was made with a
+chisel.
+
+\item{\fIXfwfLedged\fP} The border will be a ledge that juts out of the
+background.
+
+
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Frame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNcursor"
+The cursor (when not \fINone\fP) is the mouse cursor that is displayed
+when the mouse is over the Board widget. The default value \fINone\fP
+causes the parent's cursor to be used.
+
+	
+
+
+
+
+.TP
+.I "XtNframeType"
+The \fIXtNframeType\fP determines how the border looks.
+
+	
+
+
+
+
+.TP
+.I "XtNframeWidth"
+\fIXtNframeWidth\fP gives the width of the border. The default value
+of 0 shows no border at all. The border is drawn {\it inside\/} the
+widget. (See also \fIXtNouterOffset\fP.)
+
+	
+
+
+
+
+.TP
+.I "XtNouterOffset"
+Normally, the border is draw along the outer edge of the widget, but
+it can be moved inward. \fIXtNouterOffset\fP is the number of pixels
+between the edge and the frame.
+
+	
+
+
+
+
+.TP
+.I "XtNinnerOffset"
+Between the frame and whatever is inside the widget, there is also
+margin. By default, however, it is 0.
+
+	
+
+
+
+
+.TP
+.I "XtNshadowScheme"
+The colors of the top and bottom shadows can be set with the
+resources \fItopShadowColor\fP and \fIbottomShadowColor\fP, but it is also
+possible to use a stiple of foreground and background colors. This may
+be preferable on workstations with limited or no color capabilities.
+However, the easiest way (which is also the default) is to let the
+widget determine its own shadow colors or stipples, based on the
+widget's background color and the color capabilities of the screen.
+
+The resource \fIshadowScheme\fP can be set to \fIXfwfColor\fP, \fIXfwfStipple\fP
+or \fIXfwfAuto\fP. The converter for the shadow pixmap accepts the strings
+\fI"stipple0"\fP through \fI"stipple8"\fP, which create pixmaps of the current
+background and foreground colors, with \fI"stipple0"\fP entirely
+background and \fI"stipple8"\fP entirely foreground. Setting pixmaps or
+colors is only useful when \fIshadowScheme\fP is set to \fIXfwfStipple\fP or
+\fIXfwfColor\fP respectively.
+
+The values of \fItopShadowColor\fP and \fIbottomShadowColor\fP are ignored by
+the Frame widget as long as \fIshadowScheme\fP is not \fIXfwfColor\fP, but the
+default values are computed nevertheless, since they are useful, e.g.,
+when an icon uses `topShadowColor' and `bottomShadowColor' as dynamic
+colors.
+
+	
+
+
+
+
+.TP
+.I "XtNtopShadowColor"
+
+
+
+.TP
+.I "XtNbottomShadowColor"
+
+
+
+.TP
+.I "XtNtopShadowStipple"
+
+
+
+.TP
+.I "XtNbottomShadowStipple"
+
+
+
+.TP
+.I "XtNborder_width"
+The inherited resource \fIborderWidth\fP is given a default value of 0,
+instead of 1.
+
+	
+
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Common
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	FALSE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+A number of new types is introduced by the Common class.  The
+possible types of borders are enumerated in \fIFrame3dType\fP (see the
+introduction).
+
+	
+
+
+.nf
+
+.B type
+ FrameType = enum {
+            XfwfRaised, XfwfSunken, XfwfChiseled, XfwfLedged }
+.fi
+
+
+The shadow scheme can be used to choose colors, pixmaps or automatic
+shadows.
+
+	
+
+
+.nf
+
+.B type
+ ShadowScheme = enum {XfwfAuto, XfwfColor, XfwfStipple}
+.fi
+
+
+The type \fIBitmap\fP is an alias for \fIPixmap\fP, but it is meant to
+contain only bitmaps, i.e., pixmaps of depth one.
+
+	
+
+
+.nf
+
+.B type
+ Bitmap = Pixmap 
+.fi
+
+
+The routine that draws the border is generally useful, so it is
+exported. \fIt\fP is the thickness of the frame. The frame is drawn inside
+the rectangle \fI(x, y, x+w-1, y+h-1)\fP.
+
+
+
+
+.nf
+XfwfDrawFrame( $, int  x, int  y, int  w, int  h, FrameType  tp, int  t, GC  lightgc, GC  darkgc)
+.fi
+
+
+\fIcvtStringToFrameType\fP converts the strings `raised', `sunken',
+`chiseled' and `ledged'. Case doesn't matter.
+
+
+
+
+.nf
+Boolean  cvtStringToFrameType(Display * display, XrmValuePtr  args, Cardinal * num_args, XrmValuePtr  from, XrmValuePtr  to, XtPointer * converter_data)
+.fi
+
+
+
+.nf
+Boolean  cvtFrameTypeToString(Display * display, XrmValuePtr  args, Cardinal * num_args, XrmValuePtr  from, XrmValuePtr  to, XtPointer * converter_data)
+.fi
+
+
+The converter \fIcvtStringToShadowScheme\fP converts strings `color',
+`auto' and `stipple' to \fIXfwfColor\fP, \fIXfwfAuto\fP and \fIXfwfStipple\fP.
+
+
+
+
+.nf
+Boolean  cvtStringToShadowScheme(Display * display, XrmValuePtr  args, Cardinal * num_args, XrmValuePtr  from, XrmValuePtr  to, XtPointer * converter_data)
+.fi
+
+
+
+.nf
+Boolean  cvtShadowSchemeToString(Display * display, XrmValuePtr  args, Cardinal * num_args, XrmValuePtr  from, XrmValuePtr  to, XtPointer * converter_data)
+.fi
+
+
+.SS "Actions"
+
+
+.TP
+.I "set_shadow
+
+Although the Frame widget has no translations, one action is
+defined, that may be of use to subclasses. The action function
+\fIset_shadow\fP can be used to change the shadow frame. It has zero or
+one argument. Without an argument, it resets the shadow to its
+original type; with an argument, it sets the shadow to the type given
+in the argument.
+
+Warning: the function uses the \fIXfwfDrawFrame\fP routine to draw the
+frames directly, instead of calling the \fIexpose\fP or even \fIset_values\fP
+methods.  Any subclass that defines behaviour that depends on knowing
+the frame type, will have to redefine the \fIset_shadow\fP action.
+
+
+
+
+

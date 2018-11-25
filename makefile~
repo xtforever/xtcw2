@@ -1,0 +1,48 @@
+# x toolkit intrinsics core widget set (XTCW)
+#
+# ..x..x.t..../\        /
+# ...xx.tttt./ 	\      /
+# ...x.x..t..\ 	 \ /\ /
+# ..x...x tt..\_  /  \
+#
+#
+#
+#
+#
+#
+prefix      ?= $(CURDIR)/build
+exec_prefix ?= $(prefix)
+bindir      ?= $(exec_prefix)/bin
+libdir      ?= $(exec_prefix)/lib
+incdir      ?= $(prefix)/include
+srcdir      ?= $(prefix)/source
+docdir      ?= $(prefix)/doc
+libexecdir  ?= $(exec_prefix)/libexec
+PKGDATADIR  ?= $(prefix)/etc/xtcw
+MKDIR ?= mkdir
+RSYNC ?= rsync
+CP    ?= cp
+
+ALL: build_lib
+
+make_dirs:
+	$(MKDIR) -p $(bindir)  $(docdir)  $(PKGDATADIR)  $(incdir) $(libdir) $(srcdir)
+
+copy_files: make_dirs 
+	$(RSYNC) -a XPM $(incdir)/xtcw/
+	$(RSYNC) -a utils/ $(srcdir)/
+	$(RSYNC) -a wcl/*.c $(srcdir)/
+	$(RSYNC) -a wcl/*.h $(incdir)/
+	$(RSYNC) -a plainc_widgets/ $(srcdir)/
+	$(CP) makefile_library $(srcdir)/makefile
+
+build_tools:
+	make -C wbuild PKGDATADIR=$(PKGDATADIR) bindir=$(bindir)
+	make -C wbuild PKGDATADIR=$(PKGDATADIR) bindir=$(bindir) install
+
+wbuild_widgets: build_tools
+	make -C wbuild_widgets prefix=$(prefix)
+
+build_lib: copy_files wbuild_widgets
+	make -C $(srcdir) prefix=$(prefix)
+	make -C $(srcdir) prefix=$(prefix) install

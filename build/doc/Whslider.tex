@@ -1,0 +1,531 @@
+\input wbuildmac.tex
+\Class{Whslider}Demo widget: draw a line  and a filled circle and use a callback function
+  could be used for a slider
+
+
+
+
+\Publicvars
+\Table{Whslider}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNforeground&XtCForeground&Pixel &XtDefaultForeground \cr
+XtNlineWidth&XtCLineWidth&int &1 \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&int &20 \cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNlabel&XtCLabel&String &NULL \cr
+XtNhandlePos&XtCHandlePos&int &5000 \cr
+XtNhandleSize&XtCHandleSize&Distance &20 \cr
+\endTable
+\Section
+\Publicvar{XtNxftFont}
+{\langle}XftFont{\rangle} XftFont * xftFont = {\langle}String{\rangle}"Sans-22"
+
+\Section
+\Publicvar{XtNforeground}
+Pixel  foreground = XtDefaultForeground 
+
+\Section
+\Publicvar{XtNlineWidth}
+int  lineWidth = 1 
+
+\Section
+\Publicvar{XtNcornerRoundPercent}
+int  cornerRoundPercent = 20 
+
+\Section
+\Publicvar{XtNcallback}
+{\langle}Callback{\rangle} XtCallbackList  callback = NULL 
+
+\Section
+\Publicvar{XtNlabel}
+String  label = NULL 
+
+\Section
+\Publicvar{XtNhandlePos}
+Position of Handle, instead using float this widget uses integer
+  with a range of 0 to 10000
+
+
+int  handlePos = 5000 
+
+\Section
+\Publicvar{XtNhandleSize}
+Distance  handleSize = 20 
+
+\End\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Translations
+\Section
+\Code
+{\langle}Btn1Down{\rangle}: drag{\underline}start() \endCode
+
+
+\Section
+\Code
+{\langle}Btn1Motion{\rangle}: drag{\underline}start() \endCode
+
+
+\Section
+\Code
+{\langle}Btn1Up{\rangle}: drag{\underline}stop() \endCode
+
+
+\End\Actions
+\Section
+\Action{drag{\underline}stop}\Code
+void drag{\underline}stop({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    {\dollar}drag{\underline}time = 0;
+    TRACE(2,"handlePos: {\percent}d", {\dollar}handlePos );
+    XtCallCallbackList( {\dollar}, {\dollar}callback, (XtPointer){\dollar}handlePos );
+{\rbrace}\endCode
+
+
+\Section
+\Action{drag{\underline}start}\Code
+void drag{\underline}start({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+        ulong t = (ulong ) event-{\rangle}xbutton.time;
+        {\dollar}drag{\underline}time = t;
+        {\dollar}handlePos = pix{\underline}to{\underline}pos({\dollar}, event-{\rangle}xbutton.x );
+        if(update{\underline}pixmaps({\dollar}) ) paint({\dollar});
+         TRACE(2,"handlePos: {\percent}d", {\dollar}handlePos );
+{\rbrace}\endCode
+
+
+\End\Imports
+\Section
+\Code
+{\incl} {\langle}assert.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Intrinsic.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Converters.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}math.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}cairo/cairo.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}cairo/cairo-xlib-xrender.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}cairo/cairo-xlib.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "xt{\underline}cairo.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+xtcairo{\underline}t * pix\endCode
+
+
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+GC  gc[2]\endCode
+
+
+\Section
+\Code
+XftColor  xcol[2]\endCode
+
+
+\Section
+\Code
+int  drawn{\underline}handle\endCode
+
+
+\Section
+\Code
+ulong  drag{\underline}time\endCode
+
+
+\Section
+\Code
+ BG\endCode
+
+
+\Section
+\Code
+ FG\endCode
+
+
+\Section
+\Code
+ PIX{\underline}BUF\endCode
+
+
+\Section
+\Code
+ PIX{\underline}EMPTY\endCode
+
+
+\Section
+\Code
+ PIX{\underline}HANDLE\endCode
+
+
+\End\Classvars
+\Section
+\Code
+XtEnum  compress{\underline}exposure = TRUE \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  int w,h;
+  alloc{\underline}colors({\dollar});
+  if(! {\dollar}label ) {\dollar}label = {\dollar}name;
+  calculate{\underline}prefered{\underline}size({\dollar},{\ampersand}w,{\ampersand}h);
+  {\dollar}width = w; {\dollar}height = h;
+  {\dollar}pix=0;
+  {\dollar}draw=0;
+  {\dollar}drawn{\underline}handle = -1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    TRACE(1,"");
+    int call{\underline}expose = 0;
+
+    if( ({\dollar}handleSize != {\dollar}old{\dollar}handleSize) )
+    {\lbrace}
+        {\dollar}drawn{\underline}handle = -1;
+        call{\underline}expose = 1;
+    {\rbrace}
+
+    if( ({\dollar}handlePos  != {\dollar}old{\dollar}handlePos ) )
+    {\lbrace}
+        if( ! {\dollar}drag{\underline}time )
+            call{\underline}expose = update{\underline}pixmaps({\dollar});
+        else
+            {\dollar}handlePos = {\dollar}old{\dollar}handlePos; /* reject */
+     {\rbrace}
+
+     if( ({\dollar}foreground          != {\dollar}old{\dollar}foreground ) {\bar}{\bar}
+        ({\dollar}background{\underline}pixel    != {\dollar}old{\dollar}background{\underline}pixel ) {\bar}{\bar}
+        ({\dollar}width               != {\dollar}old{\dollar}width  ) {\bar}{\bar}
+        ({\dollar}height              != {\dollar}old{\dollar}height ) )
+      {\lbrace}
+        call{\underline}expose = 1;
+        reinit({\dollar});
+      {\rbrace}
+     return call{\underline}expose; /* call expose() to update widget */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+        free{\underline}colors({\dollar});
+        if( {\dollar}draw ) XftDrawDestroy( {\dollar}draw );
+        if( {\dollar}pix ) xtcairo{\underline}destroy{\underline}pixmap({\dollar}pix);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+    TRACE(1,"");
+    Display *dpy = XtDisplay({\dollar});
+    if( ! {\dollar}draw ) {\lbrace}
+        {\dollar}draw = XftDrawCreate(dpy, XtWindow({\dollar}),
+                              DefaultVisual(dpy, DefaultScreen(dpy)), None);
+        assert( {\dollar}draw );
+    {\rbrace}
+
+    paint({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+        XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+                          (Visual *) CopyFromParent, *mask, attributes);
+        reshape{\underline}widget({\dollar});
+        alloc{\underline}pixmaps({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+resize({\dollar})
+{\lbrace}
+    if (XtIsRealized({\dollar})) {\lbrace}
+        {\dollar}drawn{\underline}handle = -1;
+        reshape{\underline}widget({\dollar});
+        alloc{\underline}pixmaps({\dollar});
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+reshape{\underline}widget({\dollar})
+{\lbrace}
+        int w;
+        if( {\dollar}cornerRoundPercent {\rangle}0 {\ampersand}{\ampersand} {\dollar}cornerRoundPercent {\langle} 100 ) {\lbrace}
+            w = Min({\dollar}height,{\dollar}width);
+            w = w * {\dollar}cornerRoundPercent / 100;
+            XmuReshapeWidget( {\dollar}, XmuShapeRoundedRectangle, w, w );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+paint({\dollar})
+{\lbrace}
+    TRACE(1,"{\percent}dx{\percent}d", {\dollar}width, {\dollar}height );
+    update{\underline}pixmaps({\dollar});
+    XCopyArea(XtDisplay({\dollar}), {\dollar}pix-{\rangle}p, XtWindow({\dollar}), {\dollar}gc[BG],
+              0,0, {\dollar}width, {\dollar}height,
+              0,0 );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+calculate{\underline}prefered{\underline}size({\dollar}, int * w, int * h)
+{\lbrace}
+  calculate{\underline}size({\dollar},w,h);
+  (*w) += 20;
+  (*h) += 20;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+calculate{\underline}size({\dollar}, int * w, int * h)
+{\lbrace}
+    *w = {\dollar}handleSize * 4;
+    *h = {\dollar}handleSize + 4;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+reinit({\dollar})
+{\lbrace}
+        TRACE(1,"");
+        free{\underline}colors({\dollar});
+        alloc{\underline}colors({\dollar});
+        int w,h;
+        calculate{\underline}prefered{\underline}size({\dollar},{\ampersand}w,{\ampersand}h);
+        make{\underline}resize{\underline}request({\dollar},w,h);
+        {\dollar}drawn{\underline}handle = -1;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+make{\underline}resize{\underline}request({\dollar}, int  w, int  h)
+{\lbrace}
+        Dimension w{\underline}out, h{\underline}out;
+        if( XtMakeResizeRequest({\dollar},w,h, {\ampersand}w{\underline}out, {\ampersand}h{\underline}out ) ==
+            XtGeometryAlmost ) XtMakeResizeRequest({\dollar},w{\underline}out,h{\underline}out,NULL,NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+alloc{\underline}colors({\dollar})
+{\lbrace}
+  XGCValues     values = {\lbrace}
+                foreground: {\dollar}background{\underline}pixel,
+                graphics{\underline}exposures: False,
+                line{\underline}width: {\dollar}lineWidth {\rbrace};
+  uint          mask = GCForeground {\bar} GCGraphicsExposures {\bar}  GCLineWidth;
+  {\dollar}gc[BG] = XtGetGC({\dollar}, mask, {\ampersand}values);
+  values.foreground = {\dollar}foreground;
+  {\dollar}gc[FG] = XtGetGC({\dollar},mask,{\ampersand}values);
+  xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}background{\underline}pixel, {\dollar}xcol+BG );
+  xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}foreground,       {\dollar}xcol+FG );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+free{\underline}colors({\dollar})
+{\lbrace}
+        int i;
+        Display *dpy = XtDisplay({\dollar});
+        for(i=0;i{\langle}2;i++) {\lbrace}
+                XtReleaseGC({\dollar},{\dollar}gc[i]);
+                XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),
+                 None, {\dollar}xcol+i);
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}handle({\dollar}, uint  x, uint  y, uint  radius)
+{\lbrace}
+    TRACE(1,"POS: {\percent}d (rel:{\percent}d)", x, {\dollar}handlePos );
+
+    XFillRectangle( XtDisplay({\dollar}), {\dollar}pix-{\rangle}p, {\dollar}gc[BG],
+                    0, 0, {\dollar}width, {\dollar}height );
+
+    cairo{\underline}t *c;
+    c=cairo{\underline}create({\dollar}pix-{\rangle}cs);
+    cairo{\underline}set{\underline}line{\underline}width (c, {\dollar}lineWidth);
+    cairo{\underline}set{\underline}source{\underline}rgb{\underline}from{\underline}pixel{\underline}dpy({\dollar}pix-{\rangle}dpy,c,{\dollar}pix-{\rangle}fg);
+    cairo{\underline}move{\underline}to(c, 0, {\dollar}height/2);
+    cairo{\underline}line{\underline}to(c, {\dollar}width, {\dollar}height/2);
+    cairo{\underline}close{\underline}path(c);
+    cairo{\underline}stroke (c);
+
+    cairo{\underline}arc (c, x, y, radius, 0.0  * (M{\underline}PI/180.0), 360.0  * (M{\underline}PI/180.0) );
+    cairo{\underline}fill(c);
+
+    cairo{\underline}show{\underline}page(c);
+    cairo{\underline}destroy(c);
+{\rbrace}\endCode
+
+
+\Section
+draw the pixmap with new handle position
+  returns 1 if the pixmap has changed
+
+
+\Code
+int  update{\underline}pixmaps({\dollar})
+{\lbrace}
+    /* handlePos: 0..10000 */
+    /* backup: drawn{\underline}handle */
+
+    int x = pos{\underline}to{\underline}pix({\dollar}, {\dollar}handlePos );
+
+    /* cache */
+    if( {\dollar}drawn{\underline}handle == x ) return 0;
+    {\dollar}drawn{\underline}handle = x;
+
+    /* calc */
+    int y,radius;
+    radius = {\dollar}handleSize / 2;
+    y = {\dollar}height / 2;
+    draw{\underline}handle({\dollar},x,y,radius);
+    return 1;
+{\rbrace}\endCode
+
+
+\Section
+create a new pixmap the size of the widget if the pixmap is not already existent
+
+
+\Code
+alloc{\underline}pixmaps({\dollar})
+{\lbrace}
+    TRACE(1,"{\percent}dx{\percent}d", {\dollar}width, {\dollar}height );
+    if( {\dollar}pix ) {\lbrace}
+        if( {\dollar}pix-{\rangle}w == {\dollar}width {\ampersand}{\ampersand} {\dollar}pix-{\rangle}h == {\dollar}height ) return;
+        xtcairo{\underline}destroy{\underline}pixmap({\dollar}pix);
+    {\rbrace}
+    {\dollar}pix = xtcairo{\underline}create{\underline}pixmap({\dollar},{\dollar}width,{\dollar}height);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  pos{\underline}to{\underline}pix({\dollar}, int  pos)
+{\lbrace}
+    /* calc */
+    int off = {\dollar}handleSize+4; /* 2pix border */
+    int w = {\dollar}width - off;
+    int x = w * pos / 10000;
+    x += off / 2;
+    return x;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  pix{\underline}to{\underline}pos({\dollar}, int  pix)
+{\lbrace}
+    int xb = pix;
+    int offset = {\dollar}handleSize/2 + 2;
+    if( xb {\langle} offset ) {\lbrace} return 0; {\rbrace}
+    if( xb {\rangle} {\dollar}width - offset ) {\lbrace} return 10000; {\rbrace}
+    xb -=  offset;
+    xb *= 10000;
+    xb /= ({\dollar}width - 2 * offset);
+    return xb;
+{\rbrace}\endCode
+
+
+\End\bye
