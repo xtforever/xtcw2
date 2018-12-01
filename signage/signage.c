@@ -32,10 +32,21 @@
 #include "wcreg2.h"
 #include <xtcw/register_wb.h>
 
+#include "socket_log.h"
+#include "communication.h"
+
+#include "Wlabel.h"
+#include "Gridbox.h"
+
 
 Widget TopLevel;
 int trace_main;
+
 #define TRACE_MAIN 2
+#define TRACE_SLOG TRACE_MAIN
+
+static void incomming_msg(int fd, char *buf, int size);
+
 
 char *fallback_resources[] = {
     APP_NAME ".allowShellResize: False",
@@ -55,6 +66,7 @@ static XrmOptionDescRec options[] = {
 typedef struct SIGNAGE_CONFIG {
     int traceLevel;
     int socket;
+    Widget widget_grid;
 } SIGNAGE_CONFIG;
 
 #define FLD(n)  XtOffsetOf(SIGNAGE_CONFIG,n)
@@ -66,8 +78,12 @@ static XtResource SIGNAGE_CONFIG_RES [] = {
 
   { "socket", "Socket", XtRInt, sizeof(int),
    FLD(socket), XtRImmediate, 0
-  }
-
+  },
+  
+  { NULL, NULL, XtRWidget, sizeof(Widget),
+    FLD(widget_grid), XtRString, "*gb"
+  },
+  
 };
 #undef FLD
 
@@ -118,9 +134,43 @@ static void RegisterApplication ( Widget top )
     All widgets are created, but not visible.
     functions can now communicate with widgets
 */
+
+
+Widget LABELS[100];
+int MAX_LABELS = 0;
+
 static void InitializeApplication( Widget top )
 {
     trace_level = SIGNAGE.traceLevel;
+
+    char *port; asprintf(&port,"%d", SIGNAGE.socket );
+    slog_init( top, port );
+    free(port);
+    slog_cb = incomming_msg;
+
+    if( SIGNAGE.widget_grid == 0 ) ERR("gridwidget not defined in signage.ad");
+
+
+    int max = sizeof(LABELS)/sizeof(LABELS[0]);
+    Widget mgr = SIGNAGE.widget_grid;
+    char *label;
+
+    Widget w;
+    Arg wargs[10];
+    int n;
+
+    for(int y=0;y<10;y++) {
+	for(int x=0;x<10;x++) {
+	    asprintf(&label,"%dx%d", x,y ); 
+	    n=0;
+	    XtSetArg(wargs[n], XtNgridx, x); n++;
+	    XtSetArg(wargs[n], XtNgridy, y); n++;
+	    XtSetArg(wargs[n], XtNlabel, label); n++;
+	    w = XtCreateManagedWidget(label,wlabelWidgetClass, mgr, wargs, n );
+	    w = XtCreateManagedWidget(label,wtextWidgetClass, mgr, wargs, n );
+	    if( MAX_LABELS < max ) LABELS[MAX_LABELS++] = w;
+	}
+    }
 }
 
 /******************************************************************************
@@ -144,8 +194,26 @@ static void socket_connect_cb(void)
 {
 }
 
-static void parse_message(void)
+static void incomming_msg(int fd, char *buf, int size)
 {
+  buf[size-1]=0;
+  TRACE(2,"msg: %s",buf);
+
+  int num = 0;
+  int state=0;
+  int i=0;
+  while( buf[i++] != 32 ) if( i>=size) return;
+  sscanf(buf, "%u:%u", &num,&state );
+  if( num > MAX_LABELS ) return;
+
+  char *label = buf+i;
+  if( state <0 || state >2 ) state=0;
+  
+  XtVaSetValues( LABELS[num], "text", label,
+		 XtNstate, state, NULL ); 
+
+  slog_close(fd);
+    
 }
 
 static void update_widget(void)
@@ -153,7 +221,7 @@ static void update_widget(void)
 }
 
 
-
+extern int trace_slog;
 
 
 /******************************************************************************
@@ -162,7 +230,8 @@ static void update_widget(void)
 int main ( int argc, char **argv )
 {
     trace_main = TRACE_MAIN;
-
+    trace_slog = TRACE_SLOG;
+    
     XtAppContext app;
     m_init();
     XtSetLanguageProc (NULL, NULL, NULL);

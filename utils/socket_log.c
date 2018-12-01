@@ -1,4 +1,4 @@
-#include "config.h"
+/* #include "config.h" */
 
 #include "socket_log.h"
 #include "communication.h"
@@ -8,11 +8,14 @@
 #include <sys/socket.h>
 #include <fcntl.h>
 
+int trace_slog;
+void (*slog_cb) (int fd, char *buf, int size) = 0;
+
 #define MAX_CLIENT_SOCKETS 100
 
 struct socket_log_state {
     XtAppContext app;
-    int client_socket[MAX_CLIENT_SOCKETS*2];
+    unsigned long client_socket[MAX_CLIENT_SOCKETS*2];
     int buffer;
     int n_connections;
 } SLOG;
@@ -29,10 +32,12 @@ static void append_client_socket(int sfd)
         if( SLOG.client_socket[i] == 0 ) {
             TRACE(trace_slog,"append client %d", i );
             SLOG.client_socket[i] = sfd;
-            SLOG.client_socket[i+MAX_CLIENT_SOCKETS] =
-                XtAppAddInput( SLOG.app, sfd,
+            XtInputId id = XtAppAddInput( SLOG.app, sfd,
                                (XtPointer) XtInputReadMask,
                                slog_client,(XtPointer) i );
+
+            SLOG.client_socket[i+MAX_CLIENT_SOCKETS] = id;
+
             SLOG.n_connections++;
             return;
         }
@@ -58,6 +63,8 @@ static void remove_client(int sfd)
     }
 }
 
+
+
 /** vom Xt Main Loop aufgerufen, da sich am socket was getan hat */
 static void slog_client( XtPointer p, int *sfd, XtInputId *id )
 {
@@ -72,6 +79,7 @@ static void slog_client( XtPointer p, int *sfd, XtInputId *id )
     buffer[n] = 0;
     TRACE(trace_slog,"logger client: %s", buffer );
     /* dispatch commmand |buffer| here! */
+    if( slog_cb ) slog_cb(*sfd, buffer, n);
 }
 
 
@@ -90,15 +98,19 @@ static void slog_ready( XtPointer p, int *n, XtInputId *id )
 }
 
 /** called by main init */
-void slog_init(Widget top)
+void slog_init(Widget top, char *port)
 {
-    char *port;
+
     int sfd;
     memset(&SLOG,0,sizeof SLOG);
-    port = rc_key_str( "logger", "port" );
+
     if( is_empty(port) ) port="10000";
     sfd = sock_listen_on_port(port);
-    if( sfd < 0 ) return;
+    if( sfd < 0 ) {
+        WARN( "could not open server port %s", port );
+        return;
+    }
+
 
     SLOG.client_socket[0] = sfd;
     SLOG.buffer = m_create( 1000,1 );
@@ -123,7 +135,7 @@ static void sendto_all(int msg)
     for(i=1;i<MAX_CLIENT_SOCKETS;i++) {
         sd = SLOG.client_socket[i];
         if( sd > 0 ) {
-            if( send(sd , m_buf(msg), m_len(msg), MSG_NOSIGNAL ) < 0 )
+            if( send(sd , m_buf(msg), p, MSG_NOSIGNAL ) < 0 )
                 remove_client(sd);
         }
     }
@@ -155,4 +167,9 @@ void slog_write(const char *format, ...)
   va_start(ap,format);
   slog_write_va( format, ap );
   va_end(ap);
+}
+
+void slog_close(int sfd)
+{
+    remove_client(sfd);
 }
