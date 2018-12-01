@@ -34,7 +34,8 @@ RMDIR	    ?= rm -rf
 
 ifeq ($(debug_enable),1)
 TAG="\"DEBUG_$(shell date)\""
-CFLAGS+= -g -DMLS_DEBUG -O0 -DTAG=$(TAG)
+CFLAGS+= -g -DMLS_DEBUG -O0 
+# -DTAG=$(TAG)
 else
 TAG="\"PROD_$(shell date)\"" 
 CFLAGS+= -O3 -DTAG=$(TAG)
@@ -54,8 +55,10 @@ copy_files: make_dirs
 	$(CP) makefile_library $(srcdir)/makefile
 
 build_tools:
-	$(MAKE) -C wbuild PKGDATADIR=$(PKGDATADIR) bindir=$(bindir)
-	$(MAKE) -C wbuild PKGDATADIR=$(PKGDATADIR) bindir=$(bindir) install
+	$(MAKE) -C wbuild 
+	$(MAKE) -C wbuild install
+	$(MAKE) -C wbuild clean
+
 
 wbuild_widgets: build_tools
 	$(MAKE) -C wbuild_widgets prefix=$(prefix)
@@ -66,3 +69,5 @@ build_lib: copy_files wbuild_widgets
 
 clean:
 	${RMDIR} build
+
+	
