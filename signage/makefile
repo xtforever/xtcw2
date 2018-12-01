@@ -23,15 +23,14 @@ LOADLIBES +=  $(XORGLIB)
 
 
 ifeq ($(debug_enable),1)
-TAG="\"DEBUG_$(shell date)\""
-CFLAGS+= -g -Wall -DMLS_DEBUG -O0 -DTAG=$(TAG)
+COMPTAG="\"DEBUG_$(shell date)\""
+CFLAGS+= -g -Wall -DMLS_DEBUG -O0 -DCOMPTAG=$(COMPTAG)
 else
-TAG="\"PROD_$(shell date)\"" 
-CFLAGS+= -O3 -DTAG=$(TAG)
+COMPTAG="\"PROD_$(shell date)\"" 
+CFLAGS+= -O3 -DTAG=$(COMPTAG)
 endif
 
-VPATH=../utils
-DEPS=socket_log.o communication.o
+DEPS=
 LOADLIBES=$(libdir)/libxtcw.a $(XORGLIB)
 ALL: $(TARGET) 
 

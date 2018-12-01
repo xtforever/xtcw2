@@ -98,7 +98,7 @@ static void slog_ready( XtPointer p, int *n, XtInputId *id )
 }
 
 /** called by main init */
-void slog_init(Widget top, char *port)
+void slog_init_service(Widget top, char *port)
 {
 
     int sfd;
@@ -124,6 +124,14 @@ void slog_init(Widget top, char *port)
                                            (XtPointer) XtInputReadMask,
                                            slog_ready, 0 );
 }
+
+void slog_init(Widget top, int port)
+{
+        char *service; asprintf(&service,"%d", port );
+	slog_init(top, service);
+	free(service);    
+}
+
 
 /** nachricht an alle verbundenen sockets senden */
 static void sendto_all(int msg)

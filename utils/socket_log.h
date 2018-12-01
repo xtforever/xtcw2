@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-void slog_init(Widget top, char *port);
+void slog_init(Widget top, int port);
+void slog_init_service(Widget top, char *port);
 
 void slog_mputs( int buf );
 void slog_write( const char *s, ... );

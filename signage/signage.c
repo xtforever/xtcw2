@@ -142,14 +142,10 @@ int MAX_LABELS = 0;
 static void InitializeApplication( Widget top )
 {
     trace_level = SIGNAGE.traceLevel;
-
-    char *port; asprintf(&port,"%d", SIGNAGE.socket );
-    slog_init( top, port );
-    free(port);
+    slog_init( top, SIGNAGE.socket );
     slog_cb = incomming_msg;
 
     if( SIGNAGE.widget_grid == 0 ) ERR("gridwidget not defined in signage.ad");
-
 
     int max = sizeof(LABELS)/sizeof(LABELS[0]);
     Widget mgr = SIGNAGE.widget_grid;
@@ -166,7 +162,7 @@ static void InitializeApplication( Widget top )
 	    XtSetArg(wargs[n], XtNgridx, x); n++;
 	    XtSetArg(wargs[n], XtNgridy, y); n++;
 	    XtSetArg(wargs[n], XtNlabel, label); n++;
-	    w = XtCreateManagedWidget(label,wlabelWidgetClass, mgr, wargs, n );
+	    # w = XtCreateManagedWidget(label,wlabelWidgetClass, mgr, wargs, n );
 	    w = XtCreateManagedWidget(label,wtextWidgetClass, mgr, wargs, n );
 	    if( MAX_LABELS < max ) LABELS[MAX_LABELS++] = w;
 	}
