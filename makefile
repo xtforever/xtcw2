@@ -26,20 +26,22 @@ libexecdir  ?= $(exec_prefix)/libexec
 PKGDATADIR  ?= $(prefix)/etc/xtcw
 
 MKDIR       ?= mkdir
-RSYNC       ?= rsync -r 
+RSYNC       ?= rsync -ruv 
 CP          ?= cp
 CC          ?= gcc
+LN	    ?= gcc
 CPPFLAGS    ?= -Wall -D_GNU_SOURCE
 RMDIR	    ?= rm -rf
 
 ifeq ($(debug_enable),1)
-TAG="\"DEBUG_$(shell date)\""
+COMPTAG="\"DEBUG_$(shell date)\""
 CFLAGS+= -g -DMLS_DEBUG -O0 
-# -DTAG=$(TAG)
 else
-TAG="\"PROD_$(shell date)\"" 
-CFLAGS+= -O3 -DTAG=$(TAG)
+COMPTAG="\"PROD_$(shell date)\"" 
+CFLAGS+= -O3 
 endif
+CFLAGS+= -DCOMPTAG=$(COMPTAG)
+
 
 ALL: build_lib
 
@@ -57,7 +59,7 @@ copy_files: make_dirs
 build_tools:
 	$(MAKE) -C wbuild 
 	$(MAKE) -C wbuild install
-	$(MAKE) -C wbuild clean
+
 
 
 wbuild_widgets: build_tools
@@ -69,5 +71,4 @@ build_lib: copy_files wbuild_widgets
 
 clean:
 	${RMDIR} build
-
-	
+	$(MAKE) -C wbuild clean

@@ -162,7 +162,7 @@ static void InitializeApplication( Widget top )
 	    XtSetArg(wargs[n], XtNgridx, x); n++;
 	    XtSetArg(wargs[n], XtNgridy, y); n++;
 	    XtSetArg(wargs[n], XtNlabel, label); n++;
-	    # w = XtCreateManagedWidget(label,wlabelWidgetClass, mgr, wargs, n );
+	    // w = XtCreateManagedWidget(label,wlabelWidgetClass, mgr, wargs, n );
 	    w = XtCreateManagedWidget(label,wtextWidgetClass, mgr, wargs, n );
 	    if( MAX_LABELS < max ) LABELS[MAX_LABELS++] = w;
 	}

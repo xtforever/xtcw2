@@ -128,7 +128,7 @@ void slog_init_service(Widget top, char *port)
 void slog_init(Widget top, int port)
 {
         char *service; asprintf(&service,"%d", port );
-	slog_init(top, service);
+	slog_init_service(top, service);
 	free(service);    
 }
 
