@@ -215,7 +215,7 @@ _CvtStringToArrayChar(dpy, args, num_args, fromVal, toVal, data)
     char *endptr;
 
     if( str == 0 || strlen(str) == 0 ) {
-    error:
+	// error:
 	XtStringConversionWarning(fromVal->addr, XtRDistance);
 	return False ;
     }

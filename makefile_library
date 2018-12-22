@@ -66,14 +66,17 @@ OBJS+=MapAg.o TableVec.o WcCreate.o WcLoadRes.o WcRegXt.o WcWarn.o
 OBJS+=Table.o WcActCB.o WcInvoke.o WcName.o WcSetValue.o Xp.o
 OBJS+=TableLoc.o WcConvert.o WcLateBind.o WcReg.o WcTemplate.o
 OBJS+=register_wb.o
-OBJS+=font.o
+OBJS+=font.o ctx.o table256-crc16.o
+OBJS+=cp2.o slop4.o slopnet.o command-parser.o mrb.o
 OBJS+=Board.o Common.o Frame.o HBox.o VBox.o Wbutton.o Wedit.o Wheel.o 
 # OBJS+=Whslider.o
 OBJS+=Wlabel.o Wlist4.o WpixBtn.o Wradio.o Wtext.o WviewVar.o
 
 ALL_LO=${OBJS:%.o=%.lo}
 
-ALL: $(SL_NAME) $(STATIC_LIB)
+ALL: $(STATIC_LIB)
+
+SHARED_LIB: $(SL_NAME) 
 
 ini_lex.lex.o: ini_parse.tab.h
 

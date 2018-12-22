@@ -244,7 +244,6 @@ static void usage()
 		    "    --force\t\tForce regeneration of all files, ignoring timestamps\n"
 		    "    --no-init-file\tDo not read initialization file\n"
 		    "\n"
-		    "Report bugs to free-widgets-bugs@let.rug.nl\n"
 		    ));
   exit (0);
 }

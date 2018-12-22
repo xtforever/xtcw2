@@ -175,7 +175,8 @@
 @ redraws everything on pixmap cache
 @proc update_cache($)
 {
-    if( $pixmap == 0 ) alloc_pixmap($);
+    TRACE(1,"call functions to redraw text");
+	if( $pixmap == 0 ) alloc_pixmap($);
     char *s = $label;
     if( $label_cache ) free($label_cache);
     $label_cache = strdup($label);

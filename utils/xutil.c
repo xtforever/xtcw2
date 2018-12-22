@@ -130,7 +130,7 @@ static int xft_font_angle( const char *name,int *n )
 int load_pixmap_from_file(Widget w, char *name, Pixmap *pixmap, Pixmap *mask )
 {
     XpmAttributes attr;
-    load_pixmap_from_file_attr(w,name,pixmap,mask,&attr);
+    return load_pixmap_from_file_attr(w,name,pixmap,mask,&attr);
 }
 
 int load_pixmap_from_file_attr(Widget w, char *name, Pixmap *pixmap, Pixmap *mask, XpmAttributes *attr)
@@ -207,17 +207,21 @@ void pixel_to_xftcolor( Widget w, Pixel px, XftColor *result )
 {
     Display *dpy = XtDisplay(w);
     Visual *visual = DefaultVisual(dpy,DefaultScreen(dpy));
-    int         red_shift, red_len;
+
+    /*
+    int         red_shift, 
     int         green_shift, green_len;
     int         blue_shift, blue_len;
-
     red_shift = maskbase (visual->red_mask);
-    red_len = masklen (visual->red_mask);
     green_shift = maskbase (visual->green_mask);
-    green_len = masklen (visual->green_mask);
     blue_shift = maskbase (visual->blue_mask);
-    blue_len = masklen (visual->blue_mask);
+    */
 
+    int green_len,blue_len,red_len;
+    red_len = masklen (visual->red_mask);
+    green_len = masklen (visual->green_mask);
+    blue_len = masklen (visual->blue_mask);
+    
     int r,g,b,a;
     r = get_component( px, visual->red_mask );
     g = get_component( px, visual->green_mask );
@@ -294,12 +298,12 @@ Bool rect_is_inside( XRectangle *r, int x, int y )
 
 
 /* quit xt main loop callback function */
-static void wm_quit ( Widget w, XEvent *event, String *params,
-		   Cardinal *num_params )
-{
-    TRACE(1,"WM_QUIT");
-    XtAppSetExitFlag( XtWidgetToApplicationContext(w) );
-}
+/* static void wm_quit ( Widget w, XEvent *event, String *params, */
+/* 		   Cardinal *num_params ) */
+/* { */
+/*     TRACE(1,"WM_QUIT"); */
+/*     XtAppSetExitFlag( XtWidgetToApplicationContext(w) ); */
+/* } */
 
 /* if the window manager closes the window, tell the
    window manager to send a message to xt. xt will
@@ -309,7 +313,7 @@ void grab_window_quit(Widget top)
 {
     XtAppContext app = XtWidgetToApplicationContext(top);
     /* if the user closes the window
-       the Window Manager will call our wm_quit() function
+       the Window Manager will call our WcQuit() *defined in wcl* function
     */
     XtOverrideTranslations
 	(top, XtParseTranslationTable ("<Message>WM_PROTOCOLS: WcQuit()"));

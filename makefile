@@ -54,6 +54,7 @@ copy_files: make_dirs
 	$(RSYNC)  wcl/*.c $(srcdir)/
 	$(RSYNC)  wcl/*.h $(incdir)/
 	$(RSYNC)  plainc_widgets/ $(srcdir)/
+	$(RSYNC)  wbuild_widgets/ $(srcdir)/
 	$(CP) makefile_library $(srcdir)/makefile
 
 build_tools:
