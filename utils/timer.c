@@ -17,7 +17,7 @@ int timer_get_ms(void)
 int timer_diff_ms(int timer_ms)
 {
     unsigned int t1,t2;
-    t1 = time;
-    // t2 = get_time();
+    t2 = timer_ms;
+    t1 = timer_get_ms();
     return t1-t2;
 }

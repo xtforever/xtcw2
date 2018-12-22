@@ -574,18 +574,26 @@
 
 @proc prog_child_read($, int *source, XtInputId *id)
 {
+	static int t_start;
 	static int count = 0;
-	
 	TRACE(1,"");
 
-	if( count > 50 ) {
-	    XtAppContext app = XtWidgetToApplicationContext($);    
-	    XtRemoveInput($cid); $cid = 0;
-	    XtAppAddTimeOut(app , 100,(XtTimerCallbackProc) act_input, $ );	
-	    WARN("input suspended");
+	if( count == 0 ) {
+	    t_start = timer_get_ms();	
+	}
+
+	if( ++count > 5 ) {
+	    
+	    int  e = timer_diff_ms(t_start);
+	    TRACE(1,"timer %d %d %d",e,t_start, timer_get_ms());
+	    if( e  < 40 ) {
+	    	XtAppContext app = XtWidgetToApplicationContext($);    
+	    	XtRemoveInput($cid); $cid = 0;
+	    	XtAppAddTimeOut(app , 100,(XtTimerCallbackProc) act_input, $ );	
+	    	WARN("timer ovf. input suspended");
+	    }
 	    count=0;
 	}
-	count++;
 	
 	if( sln_input_cb($sln) ) {
 	    TRACE(1,"server died" );
@@ -1218,7 +1226,7 @@
 	       $width, $height,
 	       $gWidth, $gHeight
 	       );
-} 
+}
 
 @ get event (keyboard or mouse)
   todo: falls das event zu alt ist
@@ -1472,3 +1480,4 @@
 @incl "slopnet.h"
 @incl "mrb.h"
 @incl "parser_util.h"
+@incl "timer.h"
