@@ -1,5 +1,4 @@
 #!/bin/bash
-## set +x
 
 
 wb_search=${wb_search:-./}
@@ -7,7 +6,7 @@ wb_search=${wb_search:-./}
 get-superclass()
 {
 file=$1
-super=$(cat $1 | grep "@class" | sed "s/.*(\([^)]*\)).*/\1/g")
+super=$(cat $1 | grep -Ei "@class[ ]+" | sed "s/.*(\([^)]*\)).*/\1/g")
 echo $super
 }
 
@@ -19,16 +18,16 @@ src=${1%%.widget}
 while true
 do
   p=$(get-superclass $file)
-  if [ -z $p ]
+  if [ -z "$p" ]
   then
       break;
   fi
 
   file=$p.widget
-  if ! [ -e $file ]
+  if ! [ -e "$file" ]
   then
       file=$wb_search/$p.widget
-      if ! [ -e $file ]
+      if ! [ -e "$file" ]
       then
           break
       fi

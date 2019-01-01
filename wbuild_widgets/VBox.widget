@@ -1,3 +1,4 @@
+
 @class VBox(Composite)
 @ This widget puts the child widgets from left to right in a box.
   each widget is assigned the same size.

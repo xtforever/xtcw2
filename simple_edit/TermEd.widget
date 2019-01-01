@@ -1333,7 +1333,7 @@
 	    mro_dequeue($termevent_q);
 	    ev = mro_alloc($termevent_q);
 	    if( ev == 0 )
-	    ERR("queue corrupted");
+	    	ERR("queue corrupted");
 	}
 	ev->type = type;
 	ev->x = x;

@@ -35,7 +35,8 @@ static const char *Version="Version:$Id: mls.c,v 1.1.1.1 2010-02-12 08:04:52 jen
 // 2014-07-09 m_utf8getchar - benutzt jetzt neue UTF8CHAR
 // 2014-07-09 void m_qsort( int list, int(*compar)(const void *, const void *))
 // 2016-11-27 mstr_to_long
-//
+// 2018-12-28 m_write, lst_write
+//            lst_write bug: if m_len(m) and count=0 -> error
 // -----------------------------------------------------------------------------------------------------
 
 struct lst_owner_st {
@@ -305,6 +306,7 @@ int lst_write( lst_t *lp, int p, const void *data, int n)
   void *mem;
   lst_t l = *lp;
   if( p<0 || n<0 ) return -1;
+  if( n == 0 ) return 0;
   if( p+n > l->max )
     {
       l->max = p+n;
@@ -599,6 +601,7 @@ int m_write(  int m, int p,
 		  const void *data, int n  )
 {
   lst_t *lp;
+  if( n <=0 ) return m;
   lp=_get_list(m);
   lst_write( lp, p, data, n);
   return m;
