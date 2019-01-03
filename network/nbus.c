@@ -61,6 +61,7 @@ static int i_new_client(struct nbus_ctx *nbus)
     return ctx_init(&nbus->clients,10,sizeof(struct nbus_client));
 }
 
+
 static int i_add_new_client(struct nbus_ctx *nbus, int fd)
 {
     int id = i_new_client(nbus);
@@ -72,6 +73,35 @@ static int i_add_new_client(struct nbus_ctx *nbus, int fd)
     nc->state = NBUS_OPEN;
     return id;
 }
+
+
+static void client_open_connection(struct nbus_client *nc, int fd)
+{
+    nc->fd = fd;
+    nc->state = NBUS_OPEN;
+}
+
+static void client_close_connection(struct nbus_client *nc)
+{
+    if( nc->state == NBUS_OPEN ) {
+	close(nc->fd);
+	nc->fd=-1;
+	nc->state = NBUS_CLOSED;
+    }
+}
+
+
+
+static void remove_client(struct nbus_ctx *nbus, int client_id)
+{
+    struct nbus_client *nc = i_get_client(nbus,client_id);
+
+    client_close_connection(nc);
+    free(nc->q);
+    m_free(nc->msg);
+    nc->used=0;
+}
+
 
 
 static struct nbus_ctx *i_get_nbus(int bus)
@@ -143,11 +173,9 @@ static int msg_from_client(struct nbus_ctx *nbus, int fd)
     struct nbus_client *nc = i_get_client(nbus,client_id);		
     int e = mrb_sock_read(nc->q, nc->fd);
     if( e ) {
-	nc->error=1;
-	nc->state = NBUS_CLOSED;
-	close(nc->fd);
-	nc->error_msg = "comm error or broken link";
 	WARN("comm error at fd:%d", nc->fd );
+	remove_client(nbus,client_id);
+	nc->error_msg = "comm error or broken link";
 	return -1;
     }
 
@@ -212,8 +240,7 @@ static int i_server_select(struct nbus_ctx *nbus, int timeout_ms)
     int p; struct nbus_client *d;
     if( nbus->clients ) {
 	m_foreach(nbus->clients, p, d) {
-	    if( d->used == 0 || d->state != NBUS_OPEN ) continue;
-	    
+	    if( d->used == 0 || d->state != NBUS_OPEN ) continue;	    
 	    if( fdmax <= d->fd ) fdmax = d->fd+1;
 	    FD_SET(d->fd, &master);
 	}
@@ -236,13 +263,11 @@ static int i_server_select(struct nbus_ctx *nbus, int timeout_ms)
 	    if( ! FD_ISSET(fd, &tmp_rd_fds) ) continue;
 
 	    /* message from client fd */
-	    if( fd != listener ) {		
-
-		int e = msg_from_client(nbus,fd);
-		if( e == 0 ) continue;
-		
+	    if( fd != listener ) {
 		nbus->msg_from_id = i_client_find(nbus,fd);
+		int e = msg_from_client(nbus,fd);
 		if( e == 1 ) return nbus->status_code = CLIENT_REQ;
+		if( e == 0 ) continue;		
 		if( e < 0 ) {
 		    TRACE(1,"socket %d hung up\n", fd);
 		    FD_CLR(fd, &master);	
@@ -379,27 +404,19 @@ char* nbus_error_msg(int bus)
 }
 
 
-static void close_client(struct nbus_client *nc)
-{
-    if( nc->state == NBUS_OPEN) {
-	close(nc->fd);
-	nc->state = NBUS_CLOSED;
-    }
-}
-
 int nbus_puts_dest(int bus, int id, char *s )
 {
     struct nbus_ctx *nbus = i_get_nbus(bus);
     struct nbus_client *nc = i_get_client(nbus,id);
-    int fd = nc->fd;    
+    int fd = nc->fd;
+    
     if( nc->state != NBUS_OPEN ) {
 	WARN("try to send over not connected socket");
 	return 1;
     }
-    
-    ASSERT(fd>0);
+    ASSERT(fd>=0);
     if( send(fd , s, strlen(s), MSG_NOSIGNAL ) < 0 ) {
-	close_client(nc);
+	client_close_connection(nc);
 	return 1;
     }
 
