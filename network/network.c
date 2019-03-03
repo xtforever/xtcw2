@@ -90,9 +90,6 @@ int main(int argc, char **argv)
     }
 
     /* server */
-      
-
-    
     int bus = nbus_create("TEMP");
     int fd = nbus_get_socket(bus); /* for your own select loop */
     int id;
@@ -114,9 +111,9 @@ int main(int argc, char **argv)
 	break;
     case CLIENT_REQ:		/* client starts talking */
 	s = nbus_msg(bus); /* what is he saying? */
-	id  = nbus_msg_from_id(bus);
+	id  = nbus_msg_from_id(bus); /* get return address */
 	TRACE(1,"msg to client: %s", s );
-	nbus_printf_dest(bus, id, "echo %s\n", s ); /* send his message back */
+	nbus_printf_dest(bus, id, "you said: %s\n", s ); /* send his message back */
 	break;
     default:
 	puts("unknow event");

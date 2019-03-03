@@ -25,7 +25,7 @@ CFLAGS+= -O3 -DTAG=$(COMPTAG)
 endif
 
 
-ALL: cwnet
+ALL: doc cwnet
 
 
 # where to find wbuild and wb.sh
@@ -33,14 +33,18 @@ wb_install=$(PKGDATADIR)
 WBUILD=$(bindir)/wbuild
 WBWRAP=$(bindir)/wb.sh
 WBPREFIX=xtcw
-WFLAGS= -d . -c . -i ./$(WBPREFIX) --include-prefix=$(WBPREFIX) $(PKGDATADIR)/tex.w $(PKGDATADIR)/nroff.w
+WFLAGS= -d doc -c . -i ./$(WBPREFIX) --include-prefix=$(WBPREFIX) $(PKGDATADIR)/tex.w $(PKGDATADIR)/nroff.w
 
 xtcw/%.h %.c: %.widget
 	wb_search=$(srcdir) $(WBWRAP) $^ $(WBUILD) $(WFLAGS)
 
-cwnet: TermEd.o $(libdir)/libxtcw.a
-
-
+doc:
+	-mkdir doc
+ 
+cwnet: TermEd.o KaroEd.o $(libdir)/libxtcw.a
 
 clean:
-	rm -rf *.o xtcw/ cwnet *.3 *.tex
+	rm -rf *.o xtcw/ cwnet *.3 *.tex doc/
+
+.PHONY: doc
+

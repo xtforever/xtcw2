@@ -1373,7 +1373,7 @@
 
 @proc kill_child
 {
-	$INTERACTIVE=1;
+    $INTERACTIVE=1;
     undraw_selection($);
     te_pos1($);
     te_writeln($, "kill");
@@ -1396,7 +1396,6 @@
     selection_draw($);
 }
 
-
 @proc key_return
 {
     undraw_selection($);
@@ -1405,7 +1404,6 @@
     te_down($);
     selection_draw($);
 }
-
 
 @proc insert_char
 {

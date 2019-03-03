@@ -28,3 +28,6 @@ CFLAGS+= -O3 -DTAG=$(COMPTAG)
 endif
 
 network: nbus.o ../build/lib/libxtcw.a
+
+clean: 
+	-${RM} *.o network
