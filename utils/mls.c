@@ -37,6 +37,7 @@ static const char *Version="Version:$Id: mls.c,v 1.1.1.1 2010-02-12 08:04:52 jen
 // 2016-11-27 mstr_to_long
 // 2018-12-28 m_write, lst_write
 //            lst_write bug: if m_len(m) and count=0 -> error
+// 2019-03-13 buffer overflow in deb_xxx better use vsnprintf :-)
 // -----------------------------------------------------------------------------------------------------
 
 struct lst_owner_st {
@@ -72,7 +73,7 @@ void deb_err( int line, const char* file, const char *function, const char *form
     va_list argptr;
     int err = errno;
     va_start(argptr, format);
-    vsprintf(buf, format, argptr);
+    vsnprintf(buf, sizeof(buf), format, argptr);
     va_end(argptr);
 
     fprintf(stderr, "ERROR: %s Line: %d Function: %s\n%s\n", file, line, function, buf );
@@ -89,7 +90,7 @@ void deb_warn( int line, const char* file, const char *function, const char *for
 
 
    va_start(argptr, format);
-   vsprintf(buf, format, argptr);
+   vsnprintf(buf,sizeof(buf), format, argptr);
    va_end(argptr);
 
    fprintf(stderr, "WARNING: %s Line: %d Function: %s\n%s\n", file, line, function, buf );
@@ -103,7 +104,7 @@ void deb_trace( int l, int line, const char* file, const char *function, const c
    (void) file;
 
    va_start(argptr, format);
-   vsprintf(buf, format, argptr);
+   vsnprintf(buf,sizeof(buf), format, argptr);
    va_end(argptr);
 
    fprintf(stderr, "[%d]%s: %s\n", l, function, buf );

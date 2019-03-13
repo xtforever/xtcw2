@@ -44,4 +44,4 @@ ALL: $(TARGET)
 $(TARGET): ClipView.o $(libdir)/libxtcw.a
 
 clean:
-	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex ClipView.c 
+	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex ClipView.c Wheel.c 

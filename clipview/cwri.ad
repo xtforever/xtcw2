@@ -6,6 +6,7 @@
 *Wedit.cursorColor: #FFFF00
 *fg_norm: #A0A0E0
 *bg_norm: #0000C0
+*xftFont: "Source-Code-8"
 %% *borderWidth: 0
 %%
 %% -------------------
@@ -17,14 +18,13 @@ cwri.WcChildren: vb
 %% cwri.traceLevel: 0
 
 *vb.WcClass: GridBox
-*vb.WcChildren: l1 ed bt
+*vb.WcChildren: ed bt
 
 *l1.WcClass: Wbutton
 *l1.label: Hello
 *l1.callback: WcSetValue( *ed.text: test )
 
 *ed.WcClass: ClipView 
-*ed.text: test test test test
 *ed.gridx: 1
 
 *bt.wcClass: Wbutton

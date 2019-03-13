@@ -203,7 +203,7 @@ letting Xt figure out what really needs to be changed.
 	
 	$prefered_width = w+4;
 
-	$prefered_height = (h+2) * 10;
+	$prefered_height = (h+2) * 2;
 	
 }
 
@@ -250,12 +250,17 @@ letting Xt figure out what really needs to be changed.
 {
     int row = (intptr_t) client;
     int len = *length;
+    char *s = value;
 
     TRACE(2,"got row: %d", row );
-    if( ! is_empty(value) ) TRACE(2,"value %s", value );
-    if( row < 0 || row >= 2 ) return;    
-    
-    v_kset( $mk_display, value, row );
+    if( is_empty(s) || 
+        (row < 0) || 
+        (row >= 2) )                return;    
+
+    /* no more than 100 bytes */
+    if( *length > 100 ) s[100]=0;
+    TRACE(2,"value %s",s );    
+    v_kset( $mk_display, s, row );
 }
 
 @proc get_selection($)
@@ -277,20 +282,24 @@ letting Xt figure out what really needs to be changed.
 @proc stop_timer($)
 {
    if( $tmr ) {
-     XtRemoveTimeout($tmr);
+     XtRemoveTimeOut($tmr);
      $tmr=0;
    }
 }
 
 @proc start_timer($)
 {
-    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, timer_cb, $);
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, 
+         (XtTimerCallbackProc)timer_cb, $);
 }
 
 @proc timer_cb($, XtIntervalId *id)
 {
     get_selection($);
-    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, timer_cb, $);
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, 
+          (XtTimerCallbackProc)timer_cb, $);
+    redraw($);
+
 }
 
 
