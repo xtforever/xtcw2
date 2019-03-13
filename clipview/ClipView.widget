@@ -8,14 +8,16 @@
 @PUBLIC
 @var String text = <String> "Hello World How are you?"
 @var int cornerRoundPercent = "20"
-
+@var int timer = <String> "2000"
+    
 @PRIVATE
 @var XftDraw *draw
 @var Pixmap pixmap
 @var GC gc_copy
 @var int prefered_width
 @var int prefered_height
-@var int LINES
+@var int mk_display
+@var XtIntervalId tmr
 
 
 @METHODS
@@ -23,21 +25,17 @@
 @proc initialize
 {
     TRACE(1, "ClipView");
-  $pixmap = 0;
-  $draw = 0;
-  $gc_copy =  XtGetGC($, 0,0 );
-  if( $width == 0 ) $width = 10;
-  if( $height == 0 ) $height = 10;	
-  calculate_size($);
-  if(! $XA_UTF8_STRING )
-      $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+    $pixmap = 0;
+    $draw = 0;
+    $gc_copy =  XtGetGC($, 0,0 );
+    if( $width == 0 ) $width = 10;
+    if( $height == 0 ) $height = 10;	
+    calculate_size($);
+    if(! $XA_UTF8_STRING )
+	$XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
 
-  int max_line=10;
-  $LINES = m_create(10,sizeof(int));
-  for(int i=0; i<max_line;i++) {
-      int buf = m_create(100,1);
-      m_put($LINES,&buf);
-   }
+    $mk_display = m_create(10,sizeof(char*));
+    $tmr=0;
 }
 
 @proc realize
@@ -65,24 +63,18 @@
 @proc destroy
 {
     TRACE(1, "ClipView");
-  if( $draw) XftDrawDestroy( $draw );
-
-  XtReleaseGC($,$gc_copy);
-  XFreePixmap(XtDisplay($),$pixmap);
-  if($LINES) {
-	for(int i=0;i<m_len($LINES); i++)
-  		m_free( INT($LINES,i));
-	m_free($LINES);
-  }
+    if( $draw) XftDrawDestroy( $draw );
+    XtReleaseGC($,$gc_copy);
+    XFreePixmap(XtDisplay($),$pixmap);
+    if($mk_display) m_free_strings($mk_display,0);
+    stop_timer($);
 }
-
 
 @proc set_values
 {
-      get_selection($);
+    /* get_selection($); */
       return True;
 }
-
 
 @proc expose
 {
@@ -162,7 +154,14 @@ letting Xt figure out what really needs to be changed.
     }
 }
 
-
+@ outputs a simple string on the window cache pixmap
+@proc str_print($, int x, int y, char *s )
+{
+   if( is_empty(s) ) return;
+   XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
+    			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+}
+					       
 @ redraws everything on pixmap cache
 @proc update_cache($)
 {
@@ -173,20 +172,15 @@ letting Xt figure out what really needs to be changed.
     XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height );
 
     char *s ="test widget";
-    int x=15, y=0;
+    int i, x=15, y=0;
+    
     TRACE(1,"ClipView:%s size:%dx%d", $name, $width, $height );
     TRACE(1,"%s draw string: %s (%dx%d)",$name, s,x,y );
 
-    x=0; y=0;
-    for(int i=0; i < m_len($LINES); i++ ) {
-      y = $xftFont->height * i;
-      int buf = INT($LINES,i);
-      int len = m_len(buf);
-      if( len > 0 ) {
-    	XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
-    			     x,y+$xftFont->ascent, (FcChar8*)m_buf(buf), len );
-      }
-   }
+    for(int i=0;i<2; i++) {
+	y = $xftFont->height * i;
+	str_print( $, x,y, v_kget($mk_display,i) );
+    }
 }
 
 
@@ -194,6 +188,7 @@ letting Xt figure out what really needs to be changed.
 {
     TRACE(1, "ClipView");
     if( !XtIsRealized($)) return;
+    if( ! $tmr ) start_timer($);
     update_cache($);
     XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
               0,0, $width, $height, /* source pixmap */
@@ -254,38 +249,50 @@ letting Xt figure out what really needs to be changed.
                        XtPointer value, unsigned long *length, int *format)
 {
     int row = (intptr_t) client;
-    char *s = value;
     int len = *length;
 
     TRACE(2,"got row: %d", row );
-    if( ! is_empty(s) ) TRACE(2,"value %s", s );
-    if( row < 0 || row >= m_len($LINES) ) return;    
-    if( len > 100 ) len=100;
-    int buf = INT($LINES,row);
-    m_clear( buf );
-    m_write( buf, 0, s, len );
-    TRACE(2, "got  selection %d", *selection);    
+    if( ! is_empty(value) ) TRACE(2,"value %s", value );
+    if( row < 0 || row >= 2 ) return;    
+    
+    v_kset( $mk_display, value, row );
 }
 
 @proc get_selection($)
 {
-    static char init = 0;
-    Atom BUF_TYPE[] = {
-    	 XA_PRIMARY, XA_SECONDARY, 0,0 };
-    if( ! init  ) {
-    	init  = 1;
-	BUF_TYPE[2] = XInternAtom(XtDisplay($), "CLIPBOARD", False);
-    }
-    TRACE(2,"ClipView:%s", XtName($));
-    int i=0;
-    while( BUF_TYPE[i] ) {
-        TRACE(2,"Request %d", BUF_TYPE[i] );
-        XtGetSelectionValue($, BUF_TYPE[i], $XA_UTF8_STRING,
-   		               RequestSelection,
-               		       (void*)(intptr_t)i, 0);
-        i++;
+
+    int row;
+
+    row = 0;
+    XtGetSelectionValue($, XA_PRIMARY, $XA_UTF8_STRING,
+			RequestSelection,
+			(void*)(intptr_t)row, 0);
+
+    row = 1;
+    XtGetSelectionValue($, XA_SECONDARY, $XA_UTF8_STRING,
+			RequestSelection,
+			(void*)(intptr_t)row, 0);
+}
+
+@proc stop_timer($)
+{
+   if( $tmr ) {
+     XtRemoveTimeout($tmr);
+     $tmr=0;
    }
 }
+
+@proc start_timer($)
+{
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, timer_cb, $);
+}
+
+@proc timer_cb($, XtIntervalId *id)
+{
+    get_selection($);
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, timer_cb, $);
+}
+
 
 
 
