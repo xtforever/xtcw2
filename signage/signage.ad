@@ -9,14 +9,22 @@
 %% -------------------
 
 
-signage.WcChildren: gb
+signage.WcChildren: gb1
 signage.traceLevel: 1
 signage.width: 1920
 
+*gb1.WcClass: gridbox
+*gb1.WcChildren: b1 gb
+
+*b1.WcClass: wbutton
+*b1.label: Exit
+*b1.callback: wcquit()
+*b1.gridy: 1
 
 *gb.WcClass: gridbox
+*gb.gridy: 0
 
-%% *gb.WcChildren: l1
+
 *xftFont: DejaVu Sans Condensed-16
 *family:  DejaVu Sans Condensed
 *weightx: 1
@@ -36,18 +44,4 @@ signage.width: 1920
 *fg_hi: Yellow
 
 *borderWidth: 0
-
-*vb.WcClass: Vbox
-*vb.WcChildren: l1 ed bt
-
-*l1.WcClass: Wlabel
-*l1.label: Hello
-
-*ed.WcClass: Wedit
-*ed.label: test test test test
-*ed.callback: test_cb
-
-*bt.wcClass: Wbutton
-*bt.label: Exit
-*bt.callback: quit_cb
 
