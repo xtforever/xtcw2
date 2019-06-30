@@ -1,0 +1,32 @@
+
+
+struct nbus_ctx :     keeps track of connected clients
+struct nbus_client:   client status
+
+
+server
+
+  int h = nbus_create( "socket" )
+  - open tcp listen socket, create struct nbus_ctx and return handle
+    to this struct
+    
+
+  nbus_poll_event(h)
+  - call i_server_select( h, timeout) to poll events from server socket
+  - wait max 300ms for event then return 0
+  - if data arrived put data in client incomming queue (nbus_client.q)
+  - use extract_mgs to copy bytes from incomming queue to
+    message buffer (nbus_client.msg) (but only if buffer is incomplete)
+  - if newline is received return CLIENT_REQ
+    client id is stored in struct nbus_ctx.msg_from_id
+    message is stored in struct nbus_client.msg
+    
+  - if the connection broke return CLIENT_EXIT
+  
+  
+  
+  nbus_msg(h)
+  - get message from last client connection
+  - use poll_msg(struct nbus_client*) to extract and free message from client
+  
+  
