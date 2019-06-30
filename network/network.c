@@ -98,8 +98,8 @@ int main(int argc, char **argv)
     
  loop:
     TRACE(1,"ping");
-    while( (ev=nbus_poll_event(bus)) == 0 ) putchar('.');
-    putchar(10);
+    while( (ev=nbus_poll_event(bus)) == 0 ) fprintf( stderr, "." );
+    fprintf( stderr, "\n" );
     switch(ev & 0xff) {		/* limit number of events to 255, if you need more you are in trouble */
     case NEW_CLIENT:		/* a new client wants to talk to us */
 	id  = nbus_msg_from_id(bus); 
