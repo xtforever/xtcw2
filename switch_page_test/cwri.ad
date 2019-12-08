@@ -1,0 +1,112 @@
+%%
+%% set default colors
+%%
+*foreground: #A0A0E0
+*background: #0000C0
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #A0A0E0
+*bg_norm: #0000C0
+*xftFont: "Source-Code-22"
+*wl*xftFont: Source Code Pro-22
+%% *borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+
+cwri.WcChildren: gb
+%% cwri.traceLevel: 0
+
+*gb.wcClass:		Gridbox
+*gb.translations: #override <Key>Left: focus_keyboard(Dec) \n <Key>Right: focus_keyboard(Inc) \n <Key>space: focus_keyboard(Fire)
+
+! Main Frame Widgets
+!   Add New Layouts here
+*gb.wcChildren:		top_bar, page_menu, page_qq
+
+
+*page_menu.gridy: 1
+*page_menu.wcManaged: True
+
+*page_qq.gridy: 1
+*page_qq.wcManaged: False
+
+
+
+
+
+*top_bar.wcClass: Gridbox
+*top_bar.fill: width
+*top_bar.weightx: 1
+*top_bar.weighty: 0
+*top_bar.wcChildren: topbarLabel
+
+
+*topbarLabel.wcClass: Wlabel
+*topbarLabel.label: Hello
+*topbarLabel.fill: width
+*topbarLabel.weightx: 1
+
+
+
+
+*page_menu.wcClass: Gridbox
+*page_menu.wcChildren: wl bt nxt
+*page_menu.fill: Both
+*page_menu.weightx: 1
+*page_menu.weighty: 1
+
+*wl.WcClass: Wlist4 
+*wl.gridx: 0
+*wl.fill: Both 
+*wl.weightx: 1
+*wl.weighty: 1
+
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 1
+*bt.gridx: 0
+*bt.weighty: 0
+*bt.fill: width
+*bt.gravity: Center
+
+
+*nxt.wcClass: Wbutton
+*nxt.label:   next page
+*nxt.callback: quit_cb
+*nxt.gridy: 2
+*nxt.gridx: 0
+*nxt.weighty: 0
+*nxt.gravity: Center
+*nxt.fill: width
+
+*nxt.callback: WcUnmanage( *page_menu ) WcManage( *page_qq ) 
+
+
+%% ---
+%% page question (qq)
+%%
+%% ---
+
+*page_qq.wcClass:        Gridbox
+*page_qq.wcChildren:     qtext, qinp, qexit
+*page_qq.fill: Both
+*page_qq.weightx: 1
+*page_qq.weighty: 1
+
+
+*page_qq.qtext.wcClass:  Wbutton
+*page_qq.qtext.label:    text input
+*page_qq.qtext.gridy:    1
+
+*page_qq.qinp.wcClass:   Wbutton
+*page_qq.qinp.label:     text input
+*page_qq.qinp.gridy:     2
+
+*page_qq.qexit.wcClass:  Wbutton
+*page_qq.qexit.label:    back
+*page_qq.qexit.gridy:    3
+*page_qq.qexit.callback: WcUnmanage( *page_qq ) WcManage( *page_menu ) 
