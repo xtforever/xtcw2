@@ -20,6 +20,7 @@ typedef enum nbus_type
 struct nbus_ctx {
     int used;
     char *name;
+    
     nbus_type state;
     int msg;
     int msg_from_id;

@@ -259,6 +259,7 @@ letting Xt figure out what really needs to be changed.
 
     /* no more than 100 bytes */
     if( *length > 100 ) s[100]=0;
+    
     TRACE(2,"value %s",s );    
     v_kset( $mk_display, s, row );
 }
