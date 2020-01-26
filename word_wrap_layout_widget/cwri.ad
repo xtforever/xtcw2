@@ -7,7 +7,7 @@
 *Wedit.cursorColor: #FFFF00
 *fg_norm: #A0A0E0
 *bg_norm: #0000C0
-*xftFont: "Source-Code-22"
+*xftFont: "Source Code-32"
 %% *borderWidth: 0
 %%
 %% -------------------
@@ -19,7 +19,7 @@ cwri.WcChildren: vb
 %% cwri.traceLevel: 0
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed bt
+*vb.WcChildren: ed 
 
 *l1.WcClass: Wbutton
 *l1.label: Hello

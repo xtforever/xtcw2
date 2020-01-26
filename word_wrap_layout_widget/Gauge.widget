@@ -18,6 +18,7 @@
 @var int prefered_height
 @var XtIntervalId tmr
 @var int xl2
+@var int do_init
 
 @METHODS
 
@@ -35,53 +36,59 @@
     if(! $XA_UTF8_STRING )
 	$XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
     $tmr=0;
+    $do_init=1;
 }
 
 @proc realize
- {
+{
         TRACE(1, "Gauge");
         XtCreateWindow($, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent, *mask, attributes);
   	reshape_widget($);
-
 }
 
 @proc resize
 {
-        TRACE(1, "Gauge resize");	
-    if (XtIsRealized($)) {
-       if( $width > 4096 || $height > 4096 ) return;
-       
-       reshape_widget($);
-
-
-
-       alloc_pixmap($);
-    }
+    TRACE(1, "Gauge resize");	
+    $do_init=1; /* wait for next expose event */
 }
 
 
 @proc destroy
 {
-
-        TRACE(1, "Gauge");
+    TRACE(1, "Gauge destroy");
     if( $draw) XftDrawDestroy( $draw );
+    $draw = 0;
     XtReleaseGC($,$gc_copy);
-    XFreePixmap(XtDisplay($),$pixmap);
+    if( $pixmap ) XFreePixmap(XtDisplay($),$pixmap);
+    $pixmap = 0;	
     stop_timer($);
 }
 
 @proc set_values
 {
-    /* get_selection($); */
-       return True;
+	return True;
 }
 
 @proc expose
 {
-	TRACE(1, "Gauge");	
-    	redraw($);
+	TRACE(1, "Gauge");
+
+	/* filter bad events */
+	if( !XtIsRealized($)) return;
+    	if( $width > 4095  || $height > 4095 ||
+    	    $width < 10 || $height < 10 ) return;
+	
+	/* init if necc. */
+	if( $do_init ) {
+	    re_initialize($);
+	    $do_init = 0;
+	}
+
+	/* finally draw this widget */
+	redraw($);
 }
+
 
 @ parameter list ($, int cmd, int val)
 @proc int exec_command
@@ -133,7 +140,9 @@ letting Xt figure out what really needs to be changed.
 	}
 }
 
-@ called by update cache if pixmap==0
+
+@ alloc a pixmap with size of this window
+  called by update cache if pixmap==0
 @proc alloc_pixmap($)
 {
     TRACE(1, "Gauge");
@@ -167,16 +176,16 @@ letting Xt figure out what really needs to be changed.
 }
 					       
 @ redraws everything on pixmap cache
-@proc update_cache($)
+@proc re_initialize($)
 {
     TRACE(1, "Gauge");
-    if( $pixmap == 0 ) alloc_pixmap($);
+
+    alloc_pixmap($);
 
     /* clear background */
     XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height );
     
     TRACE(1,"Gauge:%s size:%dx%d", $name, $width, $height );
-
 
     int w,h;
     xft_calc_string_size( $, $xftFont, $label, &w, &h );	
@@ -198,14 +207,12 @@ letting Xt figure out what really needs to be changed.
 
 @proc redraw($)
 {
-    TRACE(1, "Gauge");
-    if( !XtIsRealized($)) return;
+   TRACE(1, "Gauge");
     if( ! $tmr ) start_timer($);
-    update_cache($);
+
     XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
               0,0, $width, $height, /* source pixmap */
               0,0 ); /* target window x,y */
-
 }
 
 @proc calculate_size($)
