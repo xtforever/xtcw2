@@ -48,6 +48,8 @@
      10000px == Root Screen Width
      100px   == 1% Root Screen Width
 
+   
+
    example:
      172Pt ==   (DPI*172)/72
      -172Pt == -(DPI*172)/72
@@ -106,7 +108,7 @@ _CvtStringToDistance(dpy, args, num_args, fromVal, toVal, data)
 	return False ;
     }
 
-    printf( "DistanceConvert: FROM: %s\n", str );
+    // printf( "DistanceConvert: FROM: %s\n", str );
 
     /* decide which unit to convert from */
     if( len > 2 ) {

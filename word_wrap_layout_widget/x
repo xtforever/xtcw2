@@ -1,0 +1,349 @@
+[2]main: test
+[1]initialize: Gauge
+[1]_m_create: NEW LIST 2 allocated by ctx_init:12 in ctx.c
+[1]_m_create: NEW LIST 3 allocated by xl2_init:95 in xl2.c
+[1]_m_create: NEW LIST 4 allocated by m_split:984 in mls.c
+[1]_m_free: Free List 4
+[1]word_measure: Hello 82 38 10
+[1]word_measure: World 94 38 10
+[1]word_measure: How 70 38 10
+[1]word_measure: are 53 38 10
+[1]word_measure: you? 76 38 10
+[2]initialize: Wbutton:bt focus group: 
+[1]_m_create: NEW LIST 4 allocated by xl2_init:95 in xl2.c
+[1]_m_create: NEW LIST 5 allocated by m_split:984 in mls.c
+[1]_m_free: Free List 5
+[1]word_measure: Hello 82 38 10
+[1]word_measure: World 94 38 10
+[1]word_measure: How 70 38 10
+[1]word_measure: are 53 38 10
+[1]word_measure: you? 76 38 10
+[1]query_geometry: Gauge:ed: parent request is: 0x0
+[1]query_geometry: Gauge:ed: our prefered size is 300x700
+[3]computeWidHgtInfo: x:1,y:0,w:1,h:1
+
+[3]computeWidHgtInfo: x:0,y:1,w:2,h:1
+
+[3]computeWidHgtInfo: Cols:2,Rows:2
+[3]resize: bt: resize: 309x37
+[1]realize: Gauge
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: Gauge:ed size:300x700
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011722
+[2]alloc_pixmap: XDRAWCREATE
+[1]update_cache: Gauge:ed size:300x700
+[1]update_cache: ed draw string: Hello World How are you? (0x331)
+[1]expose: bt
+[1]redraw: bt dirty=0
+[1]redraw: bt force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: bt
+[1]update_cache: draw string
+[1]update_cache: bt draw string: Exit (124x0)
+[1]redraw: bt draw pixmap: cache=Exit
+[1]expose: bt
+[1]redraw: bt dirty=0
+[1]redraw: bt force update
+[1]update_cache: call functions to redraw text
+[1]update_cache: draw string
+[1]update_cache: bt draw string: Exit (124x0)
+[1]redraw: bt draw pixmap: cache=Exit
+[1]expose: bt
+[1]redraw: bt dirty=0
+[1]redraw: bt force update
+[1]update_cache: call functions to redraw text
+[1]update_cache: draw string
+[1]update_cache: bt draw string: Exit (124x0)
+[1]redraw: bt draw pixmap: cache=Exit
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:303x691
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011730
+[3]resize: bt: resize: 312x28
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:303x691
+[1]update_cache: ed draw string: Hello World How are you? (0x326)
+[1]expose: bt
+[1]redraw: bt dirty=0
+[1]redraw: bt force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: bt
+[1]update_cache: draw string
+[1]update_cache: bt draw string: Exit (125x0)
+[1]redraw: bt draw pixmap: cache=Exit
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:303x691
+[1]update_cache: ed draw string: Hello World How are you? (0x326)
+[1]expose: bt
+[1]redraw: bt dirty=0
+[1]redraw: bt force update
+[1]redraw: bt draw pixmap: cache=Exit
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:325x631
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011734
+[3]resize: bt: resize: 350x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:325x631
+[1]update_cache: ed draw string: Hello World How are you? (0x296)
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:325x631
+[1]update_cache: ed draw string: Hello World How are you? (0x296)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:365x515
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011736
+[3]resize: bt: resize: 430x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:365x515
+[1]update_cache: ed draw string: Hello World How are you? (0x238)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:359x496
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011738
+[3]resize: bt: resize: 418x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:359x496
+[1]update_cache: ed draw string: Hello World How are you? (0x229)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:310x493
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011740
+[3]resize: bt: resize: 320x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:310x493
+[1]update_cache: ed draw string: Hello World How are you? (0x227)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:275x537
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011742
+[3]resize: bt: resize: 284x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:275x537
+[1]update_cache: ed draw string: Hello World How are you? (0x249)
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:275x537
+[1]update_cache: ed draw string: Hello World How are you? (0x249)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:406x597
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011744
+[3]resize: bt: resize: 512x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:406x597
+[1]update_cache: ed draw string: Hello World How are you? (0x279)
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:406x597
+[1]update_cache: ed draw string: Hello World How are you? (0x279)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:508x584
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011746
+[3]resize: bt: resize: 716x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:508x584
+[1]update_cache: ed draw string: Hello World How are you? (46x273)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:548x515
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011748
+[3]resize: bt: resize: 796x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:548x515
+[1]update_cache: ed draw string: Hello World How are you? (66x238)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:536x488
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011750
+[3]resize: bt: resize: 772x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:536x488
+[1]update_cache: ed draw string: Hello World How are you? (60x225)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:478x467
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011752
+[3]resize: bt: resize: 656x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:478x467
+[1]update_cache: ed draw string: Hello World How are you? (31x214)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:403x479
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011754
+[3]resize: bt: resize: 506x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:403x479
+[1]update_cache: ed draw string: Hello World How are you? (0x220)
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:403x479
+[1]update_cache: ed draw string: Hello World How are you? (0x220)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:469x553
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011756
+[3]resize: bt: resize: 638x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:469x553
+[1]update_cache: ed draw string: Hello World How are you? (27x257)
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:469x553
+[1]update_cache: ed draw string: Hello World How are you? (27x257)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:477x544
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011758
+[3]resize: bt: resize: 654x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:477x544
+[1]update_cache: ed draw string: Hello World How are you? (31x253)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:455x513
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011760
+[3]resize: bt: resize: 610x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:455x513
+[1]update_cache: ed draw string: Hello World How are you? (20x237)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:388x499
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011762
+[3]resize: bt: resize: 476x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:388x499
+[1]update_cache: ed draw string: Hello World How are you? (0x230)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:380x505
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011764
+[3]resize: bt: resize: 460x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:380x505
+[1]update_cache: ed draw string: Hello World How are you? (0x233)
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:380x505
+[1]update_cache: ed draw string: Hello World How are you? (0x233)
+[1]resize: Gauge resize
+[1]alloc_pixmap: Gauge
+[2]alloc_pixmap: XFREE: 1
+[2]alloc_pixmap: Gauge:ed size:370x592
+[2]alloc_pixmap: XCREATE
+[2]alloc_pixmap: XCREATE:65011766
+[3]resize: bt: resize: 440x65535
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:370x592
+[1]update_cache: ed draw string: Hello World How are you? (0x277)
+[1]expose: bt
+[1]redraw: bt dirty=0
+[1]redraw: bt force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: bt
+[1]update_cache: draw string
+[1]update_cache: bt draw string: Exit (189x32748)
+[1]redraw: bt draw pixmap: cache=Exit
+[1]expose: Gauge
+[1]redraw: Gauge
+[1]update_cache: Gauge
+[1]update_cache: Gauge:ed size:370x592
+[1]update_cache: ed draw string: Hello World How are you? (0x277)
+X Error of failed request:  BadAlloc (insufficient resources for operation)
+  Major opcode of failed request:  53 (X_CreatePixmap)
+  Serial number of failed request:  304
+  Current serial number in output stream:  312
+ERROR in funtion: '_m_next'. Called by 'word_list_measure:80' in 'xl2.c'
+Checking Handle 4
+Array was created by xl2_init in xl2.c:95
+Base Address Structure: 0x562635850420
+Base Address Data (d):0x56263585042c
+Elem.Width (w):56
+Buffer size(max):100
+Used Size(l):5
