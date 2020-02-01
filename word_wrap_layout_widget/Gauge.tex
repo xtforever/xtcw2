@@ -340,30 +340,12 @@ redraws everything on pixmap cache
 \Code
 re{\underline}initialize({\dollar})
 {\lbrace}
-    TRACE(1, "Gauge");
-
+    TRACE(1,"Gauge:{\percent}s size:{\percent}dx{\percent}d", {\dollar}name, {\dollar}width, {\dollar}height );
     alloc{\underline}pixmap({\dollar});
-
     /* clear background */
     XFillRectangle(XtDisplay({\dollar}),{\dollar}pixmap, {\dollar}gc[{\dollar}state], 0,0,{\dollar}width,{\dollar}height );
-    
-    TRACE(1,"Gauge:{\percent}s size:{\percent}dx{\percent}d", {\dollar}name, {\dollar}width, {\dollar}height );
-
-    int w,h;
-    xft{\underline}calc{\underline}string{\underline}size( {\dollar}, {\dollar}xftFont, {\dollar}label, {\ampersand}w, {\ampersand}h );        
-
-    int px,py;
-    /* horizontal centered */
-    px = ({\dollar}width - w) / 2;
-    if( px {\langle} 0 ) px = 0;
-    /* vertical centered */
-    py = ({\dollar}height - h) / 2;
-
-    TRACE(1,"{\percent}s draw string: {\percent}s ({\percent}dx{\percent}d)",{\dollar}name, {\dollar}label, px,py );
-    str{\underline}print({\dollar},px,py,{\dollar}label);
-
-    XRectangle r; r.x=0; r.y=0; r.width={\dollar}width; r.height={\dollar}height;
-    /* xl2{\underline}draw{\underline}centered({\dollar}xl2, {\dollar}draw, {\ampersand}r); */
+    XRectangle r = {\lbrace} 0,0, {\dollar}width, {\dollar}height {\rbrace};
+    xl2{\underline}draw{\underline}centered({\dollar}xl2, {\dollar}draw, {\ampersand}r);
 {\rbrace}\endCode
 
 

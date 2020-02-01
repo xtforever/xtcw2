@@ -164,6 +164,8 @@ XmuCvtStringToXftFont(Display *dpy,
     screen = *((Screen **) args[0].addr);
     name = (char *) fromVal->addr;
 
+    printf("xft converter %s\n", name );
+    
     font = XftFontOpenName(
                            dpy,
                            XScreenNumberOfScreen (screen),

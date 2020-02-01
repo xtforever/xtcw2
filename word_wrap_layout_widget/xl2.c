@@ -1,13 +1,15 @@
 #include "xl2.h"
 #include "ctx.h"
 #include "xutil.h"
-
+static XftFont *fnt_big;
 struct xl2_ctx {
     int init;
     Widget widget;
+    
     XftFont *fnt;
     XftColor *fg;
     XftColor *bg;
+
     char *label;
     int wl;
 
@@ -15,6 +17,7 @@ struct xl2_ctx {
 };
 
 struct xl2_word {
+    int init;
     XftFont *fnt;
     XftColor *fg;
     XftColor *bg;
@@ -25,16 +28,27 @@ struct xl2_word {
 };
 
 static int xl2_ctx = 0;
-static int xl2_pre_init(void)
-{
-    return ctx_init(&xl2_ctx,100,sizeof(struct xl2_ctx));
-}
 
 static struct xl2_ctx* xl2_ctx_get(int num)
 {
     return mls(xl2_ctx,num);
 }
 
+static struct xl2_ctx* xl2_pre_init(void)
+{
+    int ctx_num = ctx_init(&xl2_ctx,100,sizeof(struct xl2_ctx));
+    return xl2_ctx_get(ctx_num);
+}
+
+
+
+static void free_word(int wl, int index)
+{
+    struct xl2_word *w = mls(wl,index);
+    if( w  )
+	free( w->label );
+    else ERR("word should be allocated here");
+}
 
 static void add_word(int wl, XftFont *fnt, XftColor *fg, XftColor *bg, char *label )
 {
@@ -42,7 +56,14 @@ static void add_word(int wl, XftFont *fnt, XftColor *fg, XftColor *bg, char *lab
     w.fnt=fnt;
     w.fg = fg;
     w.bg = bg;
+
+    if( strcmp(label,"World")==0 ) {
+	TRACE(1,"font change");
+	w.fnt = fnt_big;
+    }
+    
     w.label = strdup(label);
+    
     m_put(wl, &w );
 }
 
@@ -83,12 +104,25 @@ static void word_list_measure(Widget wid, int wl)
 }
 
 
+static void free_word_list(int wl)
+{
+    int i;
+    for(i=0;i<m_len(wl);i++) {
+	free_word(wl,i);
+    }    
+}
+
+
 int xl2_init( Widget w, XftFont *fnt, XftColor *fg, XftColor *bg, char *label )
 {
-    int ctx = xl2_pre_init();
-    struct xl2_ctx* xl2 = xl2_ctx_get(ctx);
+    
+    struct xl2_ctx* xl2 = xl2_pre_init();
+
     xl2->widget = w;
     xl2->fnt = fnt;
+    
+    Display *dpy = XtDisplay(w);
+    fnt_big = XftFontOpenName( dpy,DefaultScreen(dpy), "Sans-50" ); 
     xl2->bg = bg;
     xl2->fg = fg;
     xl2->label = strdup(label);
@@ -99,15 +133,17 @@ int xl2_init( Widget w, XftFont *fnt, XftColor *fg, XftColor *bg, char *label )
 
 static void set_ascent(int xl, int asc, int from, int to)
 {
-    for(int i=from; i<to; i++) {
+    if( to >= m_len(xl) ) to=m_len(xl)-1;
+    
+    for(int i=from; i<=to; i++) {
 	struct xl2_word *wd = mls(xl,i);
-	wd->y += asc; 
+	wd->y += asc;
+	TRACE(1,"%d %d", i, wd->y ); 
     }
 }
 
 static void layout_hvcenter(struct xl2_ctx* xl2, XRectangle *rect)
 {
-
     int bol=1;
     int cur_x = rect->x;
     int cur_y = rect->y;
@@ -120,33 +156,38 @@ static void layout_hvcenter(struct xl2_ctx* xl2, XRectangle *rect)
 
     /* layout word lines
      */
-    int max_ascent=0,i,line_start = 0;
+    int max_ascent=0,i,line_start = 0,
+	last_word = m_len(xl2->wl)-1;
+
     m_foreach(xl2->wl, p, word ) {
 	word->bol = bol; bol=0;
 	word->x = cur_x;
 	word->y = cur_y;
+
 	if( max_ascent < word->fnt->ascent )
 	    max_ascent = word->fnt->ascent;
 	if( word->height > line_max_height )
 	    line_max_height = word->height;
-	
-	next_x = word->width + cur_x + word->space_dx;
 
-	if( p < m_len(xl2->wl)-1 ) {
-	    word = mls(xl2->wl, p+1 );
-	    if( next_x + word->width < max_x ) {
-		cur_x = next_x;
-		TRACE(1,"%s %d %d %d",
-		      word->label, cur_x, word->width, max_x );
-	    } else {
-		set_ascent(xl2->wl, max_ascent, line_start, p);
-		line_start = p;
-		bol = 1;
-		cur_x = rect->x;
-		cur_y += line_max_height;
-	    }
+	if( p >= last_word ) continue;
+
+	/* does the next word fit ? */
+	next_x = word->width + cur_x + word->space_dx;
+	word = mls(xl2->wl, p+1 );
+	if( next_x + word->width < max_x ) {
+	    cur_x = next_x;
+	    continue; /* ok, word fits in this line */	    
 	}
+
+	/* the next word does not fit, make a line break */
+	set_ascent(xl2->wl, max_ascent, line_start, p);
+	line_start = p;
+	bol = 1;
+	cur_x = rect->x;
+	cur_y += line_max_height;
+	max_ascent = 0; line_max_height = 0;
     }
+    TRACE(1,"%d %d", line_start, p);
     set_ascent(xl2->wl, max_ascent, line_start, p);
 }
 

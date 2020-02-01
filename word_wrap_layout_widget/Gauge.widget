@@ -178,30 +178,12 @@ letting Xt figure out what really needs to be changed.
 @ redraws everything on pixmap cache
 @proc re_initialize($)
 {
-    TRACE(1, "Gauge");
-
+    TRACE(1,"Gauge:%s size:%dx%d", $name, $width, $height );
     alloc_pixmap($);
-
     /* clear background */
     XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height );
-    
-    TRACE(1,"Gauge:%s size:%dx%d", $name, $width, $height );
-
-    int w,h;
-    xft_calc_string_size( $, $xftFont, $label, &w, &h );	
-
-    int px,py;
-    /* horizontal centered */
-    px = ($width - w) / 2;
-    if( px < 0 ) px = 0;
-    /* vertical centered */
-    py = ($height - h) / 2;
-
-    TRACE(1,"%s draw string: %s (%dx%d)",$name, $label, px,py );
-    str_print($,px,py,$label);
-
-    XRectangle r; r.x=0; r.y=0; r.width=$width; r.height=$height;
-    /* xl2_draw_centered($xl2, $draw, &r); */
+    XRectangle r = { 0,0, $width, $height };
+    xl2_draw_centered($xl2, $draw, &r);
 }
 
 
