@@ -165,6 +165,12 @@ letting Xt figure out what really needs to be changed.
         $draw = XftDrawCreate(dpy, $pixmap,
                        DefaultVisual(dpy, DefaultScreen(dpy)), None);
     }
+
+    if( !$xftFont ) 
+        $xftFont = XftFontOpenName( dpy,DefaultScreen(dpy), "Sans-8" ); 
+
+
+
 }
 
 @ outputs a simple string on the window cache pixmap

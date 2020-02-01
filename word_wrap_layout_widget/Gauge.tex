@@ -317,6 +317,12 @@ alloc{\underline}pixmap({\dollar})
         {\dollar}draw = XftDrawCreate(dpy, {\dollar}pixmap,
                        DefaultVisual(dpy, DefaultScreen(dpy)), None);
     {\rbrace}
+
+    if( !{\dollar}xftFont ) 
+        {\dollar}xftFont = XftFontOpenName( dpy,DefaultScreen(dpy), "Sans-8" ); 
+
+
+
 {\rbrace}\endCode
 
 

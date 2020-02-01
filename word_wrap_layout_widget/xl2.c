@@ -122,7 +122,7 @@ int xl2_init( Widget w, XftFont *fnt, XftColor *fg, XftColor *bg, char *label )
     xl2->fnt = fnt;
     
     Display *dpy = XtDisplay(w);
-    fnt_big = XftFontOpenName( dpy,DefaultScreen(dpy), "Sans-50" ); 
+    fnt_big = XftFontOpenName( dpy,DefaultScreen(dpy), "Gentium Book Basic-50" ); 
     xl2->bg = bg;
     xl2->fg = fg;
     xl2->label = strdup(label);
@@ -133,14 +133,22 @@ int xl2_init( Widget w, XftFont *fnt, XftColor *fg, XftColor *bg, char *label )
 
 static void set_ascent(int xl, int asc, int from, int to)
 {
-    if( to >= m_len(xl) ) to=m_len(xl)-1;
+    if( to > m_len(xl) ) to=m_len(xl);
     
-    for(int i=from; i<=to; i++) {
+    for(int i=from; i < to; i++) {
 	struct xl2_word *wd = mls(xl,i);
 	wd->y += asc;
 	TRACE(1,"%d %d", i, wd->y ); 
     }
 }
+
+
+
+/*
+ */
+
+
+
 
 static void layout_hvcenter(struct xl2_ctx* xl2, XRectangle *rect)
 {
@@ -159,27 +167,30 @@ static void layout_hvcenter(struct xl2_ctx* xl2, XRectangle *rect)
     int max_ascent=0,i,line_start = 0,
 	last_word = m_len(xl2->wl)-1;
 
-    m_foreach(xl2->wl, p, word ) {
-	word->bol = bol; bol=0;
-	word->x = cur_x;
-	word->y = cur_y;
+
+    bol=1;
+    p=0;
+    while( p < m_len(xl2->wl) ) {
+
+	word = mls(xl2->wl,p);
 
 	if( max_ascent < word->fnt->ascent )
 	    max_ascent = word->fnt->ascent;
 	if( word->height > line_max_height )
 	    line_max_height = word->height;
-
-	if( p >= last_word ) continue;
-
-	/* does the next word fit ? */
-	next_x = word->width + cur_x + word->space_dx;
-	word = mls(xl2->wl, p+1 );
-	if( next_x + word->width < max_x ) {
-	    cur_x = next_x;
-	    continue; /* ok, word fits in this line */	    
+	
+	/* does this word fit ? */
+	next_x = cur_x + word->width; // cur_x + word->space_dx;
+	if( next_x <= max_x || bol ) {
+	    word->x = cur_x;
+	    word->y = cur_y;
+	    cur_x = next_x + word->space_dx;
+	    bol=0;
+	    p++;
+	    continue; /* ok, word placed on this line */	    
 	}
-
-	/* the next word does not fit, make a line break */
+	
+	/* this word does not fit, advance to next line */
 	set_ascent(xl2->wl, max_ascent, line_start, p);
 	line_start = p;
 	bol = 1;
@@ -187,6 +198,7 @@ static void layout_hvcenter(struct xl2_ctx* xl2, XRectangle *rect)
 	cur_y += line_max_height;
 	max_ascent = 0; line_max_height = 0;
     }
+
     TRACE(1,"%d %d", line_start, p);
     set_ascent(xl2->wl, max_ascent, line_start, p);
 }
