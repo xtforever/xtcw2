@@ -134,22 +134,28 @@ int xl2_init( Widget w, XftFont *fnt, XftColor *fg, XftColor *bg, char *label )
 static void set_ascent(int xl, int asc, int from, int to)
 {
     if( to > m_len(xl) ) to=m_len(xl);
-    
     for(int i=from; i < to; i++) {
 	struct xl2_word *wd = mls(xl,i);
 	wd->y += asc;
-	TRACE(1,"%d %d", i, wd->y ); 
+    }
+}
+
+static void set_line_center(int xl, int x0, int x1, int from, int to)
+{
+    if( to > m_len(xl) ) to=m_len(xl);
+    struct xl2_word *wd = mls(xl,to-1);
+    int ln_x1 = wd->x + wd->width;
+    int word_shift = (x1 - ln_x1) / 2;
+    if( word_shift < 0 ) return;
+    for(int i=from; i < to; i++) {
+	wd = mls(xl,i);
+        wd->x += word_shift;
     }
 }
 
 
-
 /*
  */
-
-
-
-
 static void layout_hvcenter(struct xl2_ctx* xl2, XRectangle *rect)
 {
     int bol=1;
@@ -192,6 +198,7 @@ static void layout_hvcenter(struct xl2_ctx* xl2, XRectangle *rect)
 	
 	/* this word does not fit, advance to next line */
 	set_ascent(xl2->wl, max_ascent, line_start, p);
+	set_line_center(xl2->wl, rect->x, max_x, line_start, p ); 
 	line_start = p;
 	bol = 1;
 	cur_x = rect->x;
@@ -201,6 +208,7 @@ static void layout_hvcenter(struct xl2_ctx* xl2, XRectangle *rect)
 
     TRACE(1,"%d %d", line_start, p);
     set_ascent(xl2->wl, max_ascent, line_start, p);
+    set_line_center(xl2->wl, rect->x, max_x, line_start, p ); 
 }
 
 
