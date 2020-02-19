@@ -1,4 +1,4 @@
-@class Gauge(  Wheel  )
+@class Wtext2(  Wheel  )
 
 
 @CLASSVARS
@@ -24,7 +24,7 @@
 
 @proc initialize
 {
-    TRACE(1, "Gauge");
+    TRACE(1, "Wtext2");
     $pixmap = 0;
     $draw = 0;
     $gc_copy =  XtGetGC($, 0,0 );
@@ -41,7 +41,7 @@
 
 @proc realize
 {
-        TRACE(1, "Gauge");
+        TRACE(1, "Wtext2");
         XtCreateWindow($, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent, *mask, attributes);
   	reshape_widget($);
@@ -49,14 +49,14 @@
 
 @proc resize
 {
-    TRACE(1, "Gauge resize");	
+    TRACE(1, "Wtext2 resize");	
     $do_init=1; /* wait for next expose event */
 }
 
 
 @proc destroy
 {
-    TRACE(1, "Gauge destroy");
+    TRACE(1, "Wtext2 destroy");
     if( $draw) XftDrawDestroy( $draw );
     $draw = 0;
     XtReleaseGC($,$gc_copy);
@@ -72,7 +72,7 @@
 
 @proc expose
 {
-	TRACE(1, "Gauge");
+	TRACE(1, "Wtext2");
 
 	/* filter bad events */
 	if( !XtIsRealized($)) return;
@@ -116,11 +116,11 @@ letting Xt figure out what really needs to be changed.
     reply->width =  $prefered_width;
     reply->height = $prefered_height;
 
-    TRACE(1, "Gauge:%s: parent request is: %dx%d", XtName($),
+    TRACE(1, "Wtext2:%s: parent request is: %dx%d", XtName($),
              request->width,
              request->width );
 
-    TRACE(1, "Gauge:%s: our prefered size is %dx%d", XtName($),
+    TRACE(1, "Wtext2:%s: our prefered size is %dx%d", XtName($),
                   $prefered_width,
                   $prefered_height );
 
@@ -145,13 +145,13 @@ letting Xt figure out what really needs to be changed.
   called by update cache if pixmap==0
 @proc alloc_pixmap($)
 {
-    TRACE(1, "Gauge");
+    TRACE(1, "Wtext2");
     Display *dpy = XtDisplay($);
     if( $pixmap ) {
     	int err = XFreePixmap(XtDisplay($),$pixmap);
 	TRACE(2,"XFREE: %d", err);
     }
-    TRACE(2,"Gauge:%s size:%dx%d", XtName($),  $width, $height );
+    TRACE(2,"Wtext2:%s size:%dx%d", XtName($),  $width, $height );
     TRACE(2, "XCREATE");
     $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
                             DefaultDepth(dpy, DefaultScreen(dpy)));
@@ -184,7 +184,7 @@ letting Xt figure out what really needs to be changed.
 @ redraws everything on pixmap cache
 @proc re_initialize($)
 {
-    TRACE(1,"Gauge:%s size:%dx%d", $name, $width, $height );
+    TRACE(1,"Wtext2:%s size:%dx%d", $name, $width, $height );
     alloc_pixmap($);
     /* clear background */
     XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height );
@@ -195,7 +195,7 @@ letting Xt figure out what really needs to be changed.
 
 @proc redraw($)
 {
-   TRACE(1, "Gauge");
+   TRACE(1, "Wtext2");
     if( ! $tmr ) start_timer($);
 
     XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,

@@ -42,9 +42,9 @@ xtcw/%.h %.c: %.widget
 VPATH=../utils
 ALL: $(TARGET)
 
-Gauge.o: xl2.h xl2.c
+Wtext2.o: xl2.h xl2.c
 
-$(TARGET): Gauge.o xl2.o $(libdir)/libxtcw.a
+$(TARGET): Wtext2.o xl2.o $(libdir)/libxtcw.a
 
 clean:
-	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex Gauge.c Wheel.c 
+	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex Wtext2.c Wheel.c 

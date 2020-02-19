@@ -25,7 +25,7 @@ cwri.WcChildren: vb
 *l1.label: Hello
 *l1.callback: WcSetValue( *ed.text: test )
 
-*ed.WcClass: Gauge 
+*ed.WcClass: Wtext2
 *ed.gridx: 1
 *ed.height: 700
 *ed.width: 300
