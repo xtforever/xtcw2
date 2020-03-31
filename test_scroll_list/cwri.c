@@ -118,9 +118,13 @@ static void RegisterApplication ( Widget top )
 static void InitializeApplication( Widget top )
 {
     trace_level = CWRI.traceLevel;
-
-    char *ex_list = "Hello World What Are You Doin'";
-    int list = m_split(0,ex_list,' ',1);
+    FILE *fp=fopen("cwri.c","r");
+    if( !fp ) ERR("fopen");
+    int buf = m_create(1000,1);
+    int ch; while( (ch=fgetc(fp)) != EOF  ) m_putc(buf,ch);
+    fclose(fp);  m_putc(buf,0);
+    int list = m_split(0, m_buf(buf),'\n',1);
+    m_free(buf);
     XtVaSetValues( CWRI.scroll_list, "tableStrs", list, NULL );
     wlist4_clear_selection(CWRI.scroll_list);
 }
