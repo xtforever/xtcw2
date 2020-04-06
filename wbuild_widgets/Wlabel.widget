@@ -75,7 +75,7 @@
   XtFree($label);
   XtFree($label_cache);
   XtReleaseGC($,$gc_copy);
-  XFreePixmap(XtDisplay($),$pixmap);
+  if( $pixmap ) XFreePixmap(XtDisplay($),$pixmap);
 }
 
 
@@ -147,6 +147,9 @@
 {
   TRACE(1,"%s", $name );
     Display *dpy = XtDisplay($);
+    if( $pixmap ) XFreePixmap(dpy, $pixmap);
+    $width = Min($width,4096);
+    $height = Min($height,4096);	
     $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
                             DefaultDepth(dpy, DefaultScreen(dpy)));
     if( $draw ) {
