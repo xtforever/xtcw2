@@ -1,0 +1,44 @@
+%%
+%% set default colors
+%%
+*foreground: #A0A0E0
+*background: #0000C0
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #A0A0E0
+*bg_norm: #0000C0
+*xftFont: "Source-Code-8"
+*fontName: "Source-Code-8"
+%% *borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+
+cwri.WcChildren: vb
+%% cwri.traceLevel: 0
+
+*vb.WcClass: GridBox
+*vb.WcChildren:  ed todo bt
+
+*ed.wcClass: Wedit
+*ed.label: todo
+*ed.callback: edit_cb
+*ed.weighty: 0
+*ed.fill: Width
+
+*todo.WcClass: Wlist5
+*todo.fill: Both
+*todo.gridy: 1
+*todo.notify: todo_cb
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 2
+*bt.gridx: 0
+*bt.gravity: East
+*bt.fill: None
+*bt.weighty: 0
+*bt.weightx: 0
+
