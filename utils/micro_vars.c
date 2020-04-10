@@ -19,6 +19,12 @@ void mv_init(void)
 void mv_destroy(void)
 {
     MapAg_Free( MV.map );
+
+    struct mv_data *d;
+    int p;
+    m_foreach( MV.data, p, d ) {
+	if( d->signal ) m_free(d->signal);
+    }
     m_free(MV.data);
     first_time=1;
 }

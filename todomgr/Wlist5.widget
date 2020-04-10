@@ -58,13 +58,19 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
 @public
 @ mstringlist
+@var int symbolSize = 20
 @var int tableStrs = 0
 @var <XftColor> XftColor fg = <String> "White"
 @var <Callback> XtCallbackList notify   = NULL
 @var <Callback> XtCallbackList getEntry = NULL
 @var <Int> int line_distance = 2
+@var <Int> int want_visible_y = 8
+@var <Int> int want_visible_x = 60
+
+
 @var int top_x = 0
 @var int top_y = 0
+
 
 @ Die Anzahl Texzeilen pro Feld
         @var int multiline = 1
@@ -98,6 +104,8 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @trans <Btn1Up>: motion_end()
 @trans <EnterWindow>: highlight()
 @trans <LeaveWindow>: reset()
+@trans <Btn4Up>: scroll_line_up()
+@trans <Btn5Up>: scroll_line_down()
 
 @private
 @def AUTO_SCROLL_TIME_MS = 200
@@ -110,6 +118,12 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @var GC gc_copy
 @var Pixmap pixmap
 @var rect32_t buf
+@var XftFont *symbols
+@var uint glyph_minus
+@var uint glyph_check
+@var uint glyph_up
+@var uint glyph_down
+@var int symbols_width
 @var XftDraw *draw
 @var XftDraw *draw_title
 @var Display *dpy
@@ -124,6 +138,10 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @var int autoscroll_cnt
 @var int tab_pos
 @var GC titleBarGC
+@var int mark
+@var int cursor
+
+
 @actions
 
 @proc highlight
@@ -140,6 +158,19 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
     $state = STATE_NORMAL;
     update_widget_state($);
   }
+}
+
+@proc scroll_line_up
+{
+    int top = $top_y + 1 + ($line_height / 2);
+    gotoxy( $, -1, top );	
+}
+
+@proc scroll_line_down
+{
+    int top = $top_y - 1 - ($line_height/2);
+    if( top<0 ) top=0;
+    gotoxy( $, -1, top );	
 }
 
 
@@ -193,7 +224,7 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
       /* kein drag nur ein click */
       click:
-      XtCallCallbackList($, $notify, lineno );
+         set_cursor($,lineno);
       // toggle_line_state( $, lineno );
       goto reset_drag;
 
@@ -209,10 +240,16 @@ er muss anhand der Koordinaten das Listen-Element finden auf Highlight setzen
 ist schon ein anderes element ausgewählt wird dies wieder abgewählt
 zusätzlich wird der |notify| Handler aufgerufen.
 
+@proc click_line
+{
+	/* XtCallCallbackList($,$notify,(void*)lineno);	 */
+}
+
+
 @proc select_line
 {
-	intptr_t lineno = translate_ypos_to_lineno($, event->xbutton.y);	
-	XtCallCallbackList($,$notify,(void*)lineno);
+	intptr_t lineno = translate_ypos_to_lineno($, event->xbutton.y);
+	/* XtCallCallbackList($,$notify,(void*)lineno); */
 }
 
 
@@ -317,11 +354,34 @@ zusätzlich wird der |notify| Handler aufgerufen.
         /* TODO: dpy initialisierung in andere wlist widgets uebertragen */
         $dpy = XtDisplay($);
 
+  $mark = -1;
+  $cursor = -1;
+
   if( $multiline == 0 ) $multiline = 1;
   $gc_copy =  XtGetGC($, 0,0 );
   $draw = NULL;
-  /* trennlinie ist 2 pixel hoch */
-  $line_height = $xftFont->height * $multiline + $line_distance + 2;
+  
+
+  XGlyphInfo extents;	
+  int font = s_printf(0,0,"FontAwesome-%d", $symbolSize );
+  $symbols = XftFontOpenName($dpy,DefaultScreen($dpy), m_buf(font));
+  $glyph_check = XftCharIndex ($dpy, $symbols, 0xf00c);
+  $glyph_minus = XftCharIndex ($dpy, $symbols, 0xf146);
+  $glyph_up    = XftCharIndex ($dpy, $symbols, 0xf151);
+  $glyph_down  = XftCharIndex ($dpy, $symbols, 0xf150);	  
+  m_free(font);      
+  XftGlyphExtents( $dpy, $symbols, & $glyph_check, 1, &extents );
+  $symbols_width = (extents.width - extents.x + 1) * 4;
+
+  int h = $symbols->height +2;
+  TRACE(1,"Ex %d",h);
+  h = Max( h, $xftFont->height );
+
+  /* trennlinie ist 2 pixel hoch
+     multiline nur so hoch wie die schriftart
+     erste zeile mindestens so groß wie der symbolschriftsatz  
+  */
+  $line_height = h + ($xftFont->height * ($multiline-1)) + $line_distance + 2;
   $line_state = m_create(100,1);
 
   update_tabs($);
@@ -337,7 +397,6 @@ zusätzlich wird der |notify| Handler aufgerufen.
   if( $width == 0 ) $width = $titleBarWidth;
   $line_width = $width;
 
-
   $key_cursor_drawn = -1;
   $key_cursor = -1;
 
@@ -347,7 +406,22 @@ zusätzlich wird der |notify| Handler aufgerufen.
   values.foreground = $titleBarCol;
   $titleBarGC = XtGetGC($,mask,&values);
 
+  if( $want_visible_y > 0 ) 
+      $height = $line_height * $want_visible_y;
+
+  if( $want_visible_x > 0 ) {
+      int m = xft_textwidth( $dpy, $xftFont, "m" );	
+      int w = m * $want_visible_x; 
+      $width = Max(w, $titleBarWidth);
+   }
+   
   if( $height == 0 ) $height = 20;
+
+  $height = Min($height,4096);
+  $width  = Min($width,4096);
+
+  TRACE(1,"%d", $line_height );
+
 }
 
 @proc destroy
@@ -525,13 +599,13 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   if( line < 0 || line >= $line_max )
     return;
 
-
   s = get_line_str($,line);
-  if( line >= m_len($line_state) ) col=0;
+
+  if( line >= m_len($line_state) )
+    col=0;
   else
     col = UCHAR( $line_state, line);
-
-  if( col > 2 ) col=0;
+   if( col > 2 ) col=0;
 
   TRACE(2,"line %d color %d\n",line, col);
 
@@ -547,8 +621,22 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   /*  XFillRectangle($dpy, $pixmap, $gc_copy, x,y,w,h ); */
   XFillRectangle($dpy, $pixmap, $gc[col], x,y,w,h );
 
+  /* render symbols at start of line */
+  FT_UInt glyph[3] = { $glyph_check, $glyph_up, $glyph_down };
+  if( *s == '-' ) glyph[0] = $glyph_minus;
+  int cx = x;
+  int hs = $symbols->ascent;
+  int cy = ($line_height - hs) /2 + y + hs;
+  if( *s ) s++;
+  for(int i=0;i<3;i++) {
+  	  XftDrawGlyphs($draw, $xft_col+1, $symbols, cx, cy, glyph+i, 1 );
+	  cx += ($symbols_width / 3);
+  }
+  /* render text */
+  cx = x + $symbols_width;
+  cy = y+$line_distance/2;
   render_multiline($, $tab_pos, $draw, $xft_col+col, $xftFont,
-                      x, y + $line_distance/2, s);
+                      cx,cy, s);
 
   XDrawLine($dpy, $pixmap, $gc[1], x,y + h -2, w, y+h-2 );
   TRACE(2, "Update Line: %d\n", line );
@@ -742,6 +830,21 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   col = !col;
   set_line_state( $, lineno, col );
 }
+
+@proc set_cursor( $, int lineno )
+{
+  if( lineno < 0 || lineno >= m_len($line_state) ) return;
+  if( $cursor >= 0 ) {
+      set_line_state( $, $cursor, 0 );  
+      if( lineno == $cursor ) { /* unselect */
+      	  $cursor = -1;
+	  return;
+      }
+  }
+  $cursor=lineno; /* select */
+  set_line_state( $, lineno, 1 );
+}
+
 
 @ aus der Liste |tabs| und der eingestellten |unit|
   die Offsets der Tab-Stops berechnen und in

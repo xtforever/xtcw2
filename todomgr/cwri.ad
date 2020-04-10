@@ -1,6 +1,12 @@
 %%
 %% set default colors
 %%
+%% Arrows: Font Symbola
+%% 2b71 to-top
+%% 2b73 to-bot
+%% 2b61 up
+%% 2b63 down
+%%
 *foreground: #A0A0E0
 *background: #0000C0
 *Wedit.cursorColor: #FFFF00
@@ -8,6 +14,8 @@
 *bg_norm: #0000C0
 *xftFont: "Source-Code-8"
 *fontName: "Source-Code-8"
+*todo.symbolSize: 20
+
 %% *borderWidth: 0
 %%
 %% -------------------
@@ -15,11 +23,35 @@
 *weighty: 1
 
 
-cwri.WcChildren: vb
+cwri.WcChildren: main
 %% cwri.traceLevel: 0
 
+*main.WcClass: GridBox
+*main.WcChildren:  vb ctrl
+*vb.gridx: 1
+*ctrl.gridx: 0
+*ctrl.WcClass: vbox
+*ctrl.*.xftFont: Symbola-20:style=bold
+*ctrl.WcChildren: btop bup bdn bbo
+*ctrl.weightx: 0
+*ctrl.weighty: 1
+*ctrl.fill: both
+*btop.WcClass: Wbutton
+*btop.label: ⭱
+*btop.callback: move_line_top
+*bbo.WcClass: Wbutton
+*bbo.label: ⭳
+*bbo.callback: move_line_bottom
+*bup.WcClass: Wbutton
+*bup.label: ⭡
+*bup.callback: move_line_up
+*bdn.WcClass: Wbutton
+*bdn.label: ⭣
+*bdn.callback: move_line_down
+
+
 *vb.WcClass: GridBox
-*vb.WcChildren:  ed todo bt
+*vb.WcChildren:  ed todo bt 
 
 *ed.wcClass: Wedit
 *ed.label: todo
@@ -42,3 +74,5 @@ cwri.WcChildren: vb
 *bt.weighty: 0
 *bt.weightx: 0
 
+
+*ctrl.

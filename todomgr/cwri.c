@@ -79,15 +79,28 @@ static XtResource CWRI_CONFIG_RES [] = {
 
 struct CWRI_CONFIG CWRI;
 static int TODO_LIST = 0;
+
+static void normalize_line(int buf)
+{
+    int ch = CHAR(buf,0);
+    if(!( ch=='.' || ch=='+' || ch=='-' )) {
+	m_ins(buf,0,1);
+	CHAR(buf,0)='+';
+    }
+}
+
 void load_todo(void)
 {
     m_free_strings(TODO_LIST,1);
     FILE *fp=fopen("todo.txt","r");
     if( !fp ) return;
-    int buf = m_create(1000,1);
-    int ch; while( (ch=fgetc(fp)) != EOF  ) m_putc(buf,ch);
-    fclose(fp);  m_putc(buf,0);
-    m_split(TODO_LIST, m_buf(buf),'\n',1);
+    int buf = m_create(1000,1);    
+    while( m_fscan(buf,'\n',fp) == '\n' ) {
+	normalize_line(buf);
+	char *s = strdup(m_buf(buf));
+	m_clear(buf);
+	m_put(TODO_LIST,&s);
+    }
     m_free(buf);
     wlist5_clear_selection(CWRI.todo);
 }
