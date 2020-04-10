@@ -38,7 +38,7 @@ cwri.WcChildren: main
 *ctrl.fill: both
 *btop.WcClass: Wbutton
 *btop.label: ⭱
-*btop.callback: move_line_top
+*btop.callback: ActionCall(*todo scroll_line_up)
 *bbo.WcClass: Wbutton
 *bbo.label: ⭳
 *bbo.callback: move_line_bottom

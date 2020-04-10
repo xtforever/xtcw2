@@ -135,6 +135,38 @@ void todo_cb( Widget w, void *u, void *c )
     wlist5_update_all(CWRI.todo);
 }
 
+void ActionCall(Widget w, void *u, void *c )
+{
+    char *args = strdup(u);
+    char *buf = args;
+    printf("ActionCall %s\n", args );
+    char *split = strchr(args, ' ');
+    if( !split ) {
+	WARN("widget name undefined: %s", args );
+	return;
+    }
+    *split++ = 0;
+    char *widget_name = args;
+    Widget target = WcFullNameToWidget( w, widget_name );
+    if( !target ) {
+	WARN("could not find widget: %s", widget_name );
+	return;
+    }
+
+    char *action;
+    char *action_args;
+    args=split;
+    split = strchr(args, ' ');
+    if( !split ) {
+	action_args = "";
+	WARN("action without args" );
+    } else {
+	*split++ = 0; action_args=split;
+    }
+    action = args;
+    WcInvokeNamedAction( action, target, action_args );    
+    free(buf);
+}
 
 void test_cb( Widget w, void *u, void *c )
 {
@@ -180,6 +212,7 @@ static void RegisterApplication ( Widget top )
     RCB( top, test_cb );
     RCB( top, edit_cb );
     RCB( top, todo_cb );
+    RCB( top, ActionCall );
 }
 
 /*  init application functions and structures and widgets
