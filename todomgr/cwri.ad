@@ -12,10 +12,11 @@
 *Wedit.cursorColor: #FFFF00
 *fg_norm: #A0A0E0
 *bg_norm: #0000C0
-*xftFont: "Source-Code-8"
-*fontName: "Source-Code-8"
-*todo.symbolSize: 20
-
+*todo.xftFont: Droid Serif-12
+*todo.symbolSize: 12
+*xftFont:  Droid Sans-10
+% Only Wedit widget
+*fontName: Droid Sans-10
 %% *borderWidth: 0
 %%
 %% -------------------
@@ -26,32 +27,20 @@
 cwri.WcChildren: main
 %% cwri.traceLevel: 0
 
+
+% Layout:
+%
+%        Editor
+%	 { vbox | list }
+%        Exit-Button
+%
+%
 *main.WcClass: GridBox
-*main.WcChildren:  vb ctrl
-*vb.gridx: 1
-*ctrl.gridx: 0
-*ctrl.WcClass: vbox
-*ctrl.*.xftFont: Symbola-20:style=bold
-*ctrl.WcChildren: btop bup bdn bbo
-*ctrl.weightx: 0
-*ctrl.weighty: 1
-*ctrl.fill: both
-*btop.WcClass: Wbutton
-*btop.label: ⭱
-*btop.callback: ActionCall(*todo scroll_line_up)
-*bbo.WcClass: Wbutton
-*bbo.label: ⭳
-*bbo.callback: move_line_bottom
-*bup.WcClass: Wbutton
-*bup.label: ⭡
-*bup.callback: move_line_up
-*bdn.WcClass: Wbutton
-*bdn.label: ⭣
-*bdn.callback: move_line_down
+*main.WcChildren:  ed center bt
 
-
-*vb.WcClass: GridBox
-*vb.WcChildren:  ed todo bt 
+*center.WcClass: GridBox
+*center.WcChildren:  ctrl todo 
+*center.gridy: 1
 
 *ed.wcClass: Wedit
 *ed.label: todo
@@ -59,20 +48,45 @@ cwri.WcChildren: main
 *ed.weighty: 0
 *ed.fill: Width
 
-*todo.WcClass: Wlist5
-*todo.fill: Both
-*todo.gridy: 1
-*todo.notify: todo_cb
-
 *bt.wcClass: Wbutton
 *bt.label: Exit
 *bt.callback: quit_cb
 *bt.gridy: 2
-*bt.gridx: 0
 *bt.gravity: East
 *bt.fill: None
 *bt.weighty: 0
 *bt.weightx: 0
 
 
-*ctrl.
+
+*ctrl.gridx: 0
+*ctrl.WcClass: vbox
+*ctrl.*.xftFont: Symbola-24:style=bold
+*ctrl.WcChildren: btop bup bdn bbo
+*ctrl.weightx: 0
+*ctrl.weighty: 1
+*ctrl.fill: both
+*btop.WcClass: Wbutton
+*btop.label: ⭱
+*btop.callback: ActionCall(*todo move_line_top)
+*bbo.WcClass: Wbutton
+*bbo.label: ⭳
+*bbo.callback: ActionCall(*todo move_line_bottom)
+*bup.WcClass: Wbutton
+*bup.label: ⭡
+*bup.callback: ActionCall(*todo move_line_up)
+*bdn.WcClass: Wbutton
+*bdn.label: ⭣
+*bdn.callback: ActionCall(*todo move_line_down)
+
+
+
+*todo.WcClass: Wlist5
+*todo.fill: Both
+*todo.gridx: 1
+*todo.notify: todo_cb
+
+
+
+
+

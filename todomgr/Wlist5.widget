@@ -104,8 +104,10 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @trans <Btn1Up>: motion_end()
 @trans <EnterWindow>: highlight()
 @trans <LeaveWindow>: reset()
-@trans <Btn4Up>: scroll_line_up()
-@trans <Btn5Up>: scroll_line_down()
+@trans <Btn5Up>: scroll_line_up()
+@trans <Btn4Up>: scroll_line_down()
+@trans <Btn2Down>: select_line()
+
 
 @private
 @def AUTO_SCROLL_TIME_MS = 200
@@ -171,6 +173,41 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
     int top = $top_y - 1 - ($line_height/2);
     if( top<0 ) top=0;
     gotoxy( $, -1, top );	
+}
+
+@proc move_line_up {
+      if($cursor < 1 || $cursor >= $line_max || $tableStrs < 1 ) { return; }
+      char *s = STR($tableStrs,$cursor);
+      m_del($tableStrs,$cursor);
+      m_ins($tableStrs,$cursor -1,1);
+      STR($tableStrs,$cursor-1) = s;
+      set_cursor($,$cursor-1);
+}
+
+@proc move_line_down {
+      if($cursor <0 || $cursor >= $line_max || $tableStrs < 1) { return; }
+      char *s = STR($tableStrs,$cursor); 
+      m_del($tableStrs,$cursor);
+      m_ins($tableStrs,$cursor +1,1);
+      STR($tableStrs,$cursor+1) = s;
+      set_cursor($,$cursor+1);
+}
+
+@proc move_line_top {
+      if($cursor <1 || $cursor >= $line_max || $tableStrs < 1) { return; }
+      char *s = STR($tableStrs,$cursor);
+      m_del($tableStrs,$cursor);
+      m_ins($tableStrs,0,1);
+      STR($tableStrs,0) = s;
+      set_cursor($,0);
+}
+
+@proc move_line_bottom {
+      if($cursor <0 || $cursor >= $line_max || $tableStrs < 1) { return; }
+      char *s = STR($tableStrs,$cursor); 
+      m_del($tableStrs,$cursor);
+      m_put($tableStrs,&s);
+      set_cursor($,m_len($tableStrs)-1);
 }
 
 
@@ -249,7 +286,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
 @proc select_line
 {
 	intptr_t lineno = translate_ypos_to_lineno($, event->xbutton.y);
-	/* XtCallCallbackList($,$notify,(void*)lineno); */
+	XtCallCallbackList($,$notify,(void*)lineno); 
 }
 
 
@@ -628,7 +665,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   int hs = $symbols->ascent;
   int cy = ($line_height - hs) /2 + y + hs;
   if( *s ) s++;
-  for(int i=0;i<3;i++) {
+  for(int i=0;i<1;i++) {
   	  XftDrawGlyphs($draw, $xft_col+1, $symbols, cx, cy, glyph+i, 1 );
 	  cx += ($symbols_width / 3);
   }
