@@ -54,31 +54,42 @@ static XrmOptionDescRec options[] = {
   WCL_XRM_OPTIONS
 };
 
+
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++***/
+/* define resource struct */
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++***/
+#define FLD(n)  XtOffsetOf(CWRI_CONFIG,n)
+#define WID(n) { NULL, NULL, XtRWidget, sizeof(Widget),FLD(n), XtRString, "*" #n }
+
 typedef struct CWRI_CONFIG {
     int traceLevel;
-    Widget ed,todo;
-    
+    Widget ed,todo,status;    
 } CWRI_CONFIG;
+struct CWRI_CONFIG CWRI;
 
-#define FLD(n)  XtOffsetOf(CWRI_CONFIG,n)
 static XtResource CWRI_CONFIG_RES [] = {
 
   { "traceLevel", "TraceLevel", XtRInt, sizeof(int),
-   FLD(traceLevel), XtRImmediate, 0
-  },
-
-  { NULL, NULL, XtRWidget, sizeof(Widget),
-    FLD(todo), XtRString, "*todo"
-  },
-
-  { NULL, NULL, XtRWidget, sizeof(Widget),
-    FLD(ed), XtRString, "*ed"
-  }
+    FLD(traceLevel), XtRImmediate, 0 },
+  WID(todo),
+  WID(ed),
+  WID(status)
 };
 #undef FLD
+#undef WID
 
-struct CWRI_CONFIG CWRI;
+
+
+/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++***/
+
+
 static int TODO_LIST = 0;
+
+void status(char *s)
+{
+    puts(s);
+    XtVaSetValues(CWRI.status, "label", s, NULL );
+}
 
 static void normalize_line(int buf)
 {
@@ -93,7 +104,10 @@ void load_todo(void)
 {
     m_free_strings(TODO_LIST,1);
     FILE *fp=fopen("todo.txt","r");
-    if( !fp ) return;
+    if( !fp ) {
+	status("error open file todo.txt"); 
+	return;
+    }
     int buf = m_create(1000,1);    
     while( m_fscan(buf,'\n',fp) == '\n' ) {
 	normalize_line(buf);
@@ -103,7 +117,29 @@ void load_todo(void)
     }
     m_free(buf);
     wlist5_clear_selection(CWRI.todo);
+    status("succ. loading todo.txt"); 
 }
+
+
+
+
+void save_todo(void)
+{
+    FILE *fp=fopen("todo.txt.1","w");
+    if( !fp ) {
+	status("could not open file todo.txt.1 for writing");
+	return;
+    }
+    char **d; int p;
+    m_foreach( TODO_LIST, p, d )
+	fprintf(fp,"%s\n", *d);
+    if( fclose(fp) ) {
+	status("error writing to file todo.txt.1");
+    } else {
+	status("succesful saved todo.txt.1");
+    }
+}
+
 
 void append_todo(char *s)
 {
@@ -112,6 +148,13 @@ void append_todo(char *s)
     m_write(TODO_LIST,0, &str,1 );
     wlist5_update_all(CWRI.todo);
 }
+
+
+void save_cb( Widget w, void *u, void *c )
+{
+    save_todo();
+}
+
 
 void edit_cb( Widget w, void *u, void *c )
 {
@@ -212,6 +255,7 @@ static void RegisterApplication ( Widget top )
     RCB( top, test_cb );
     RCB( top, edit_cb );
     RCB( top, todo_cb );
+    RCB( top, save_cb );
     RCB( top, ActionCall );
 }
 

@@ -126,6 +126,7 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @var uint glyph_up
 @var uint glyph_down
 @var int symbols_width
+@var int glyph_width
 @var XftDraw *draw
 @var XftDraw *draw_title
 @var Display *dpy
@@ -261,8 +262,8 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
       /* kein drag nur ein click */
       click:
-         set_cursor($,lineno);
-      // toggle_line_state( $, lineno );
+         click_line($,event, NULL, 0 );
+
       goto reset_drag;
 
       reset_drag:
@@ -279,14 +280,30 @@ zusätzlich wird der |notify| Handler aufgerufen.
 
 @proc click_line
 {
-	/* XtCallCallbackList($,$notify,(void*)lineno);	 */
-}
+	int y = event->xbutton.y;
+	int x = event->xbutton.x;
 
+	intptr_t lineno =
+		 translate_ypos_to_lineno($,y);
+
+	if( x < $symbols_width ) {
+	    todo_status_toggle($,lineno);
+	    set_cursor2($,lineno);
+	    return;
+	}
+
+	set_cursor($, lineno );
+}
 
 @proc select_line
 {
 	intptr_t lineno = translate_ypos_to_lineno($, event->xbutton.y);
 	XtCallCallbackList($,$notify,(void*)lineno); 
+}
+
+@proc cursor_toggle
+{
+	toggle_line_state( $, $cursor );	
 }
 
 
@@ -408,7 +425,8 @@ zusätzlich wird der |notify| Handler aufgerufen.
   $glyph_down  = XftCharIndex ($dpy, $symbols, 0xf150);	  
   m_free(font);      
   XftGlyphExtents( $dpy, $symbols, & $glyph_check, 1, &extents );
-  $symbols_width = (extents.width - extents.x + 1) * 4;
+  $glyph_width = (extents.width - extents.x + 1);
+  $symbols_width = $glyph_width * 2;
 
   int h = $symbols->height +2;
   TRACE(1,"Ex %d",h);
@@ -868,6 +886,10 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   set_line_state( $, lineno, col );
 }
 
+@ deselect current cursor, set cursror to lineno 
+@ the line "lineno" will be redrawn:
+@ can be used to force redraw of a line
+
 @proc set_cursor( $, int lineno )
 {
   if( lineno < 0 || lineno >= m_len($line_state) ) return;
@@ -879,6 +901,21 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
       }
   }
   $cursor=lineno; /* select */
+  set_line_state( $, lineno, 1 );
+}
+
+
+@proc set_cursor2( $, int lineno )
+{
+  if( lineno < 0 || lineno >= m_len($line_state) ) return;
+
+  /* unselect old */
+  if( $cursor >= 0 && $cursor != lineno ) {
+      set_line_state( $, $cursor, 0 );  
+  }
+  
+  /* select  and redraw (possible status change) */
+  $cursor=lineno; 
   set_line_state( $, lineno, 1 );
 }
 
@@ -1060,6 +1097,15 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   XCopyArea($dpy,$pixmap,XtWindow($), $gc_copy,
             $top_x, $top_y - $buf.y, $width -2*bx, $height-by,
 	    bx, by );
+}
+
+@proc todo_status_toggle($, int lineno)
+{
+	char *s = STR($tableStrs, lineno);
+	if( *s == '-' )
+	    *s = '+';
+	else if( *s == '+' )
+	    *s = '-';
 }
 
 

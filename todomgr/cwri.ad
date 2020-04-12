@@ -12,8 +12,12 @@
 *Wedit.cursorColor: #FFFF00
 *fg_norm: #A0A0E0
 *bg_norm: #0000C0
-*todo.xftFont: Droid Serif-12
-*todo.symbolSize: 12
+
+*todo.xftFont: Droid Serif-8
+*todo.symbolSize: 8
+*todo.want_visible_x: 30
+*todo.want_visible_y: 8
+
 *xftFont:  Droid Sans-10
 % Only Wedit widget
 *fontName: Droid Sans-10
@@ -32,11 +36,11 @@ cwri.WcChildren: main
 %
 %        Editor
 %	 { vbox | list }
-%        Exit-Button
+%        MenuButtons
 %
 %
 *main.WcClass: GridBox
-*main.WcChildren:  ed center bt
+*main.WcChildren:  ed center MenuButtons status
 
 *center.WcClass: GridBox
 *center.WcChildren:  ctrl todo 
@@ -48,14 +52,37 @@ cwri.WcChildren: main
 *ed.weighty: 0
 *ed.fill: Width
 
-*bt.wcClass: Wbutton
-*bt.label: Exit
-*bt.callback: quit_cb
-*bt.gridy: 2
-*bt.gravity: East
-*bt.fill: None
-*bt.weighty: 0
-*bt.weightx: 0
+*MenuButtons.gridy: 2
+*MenuButtons.wcClass: Gridbox
+*MenuButtons.WcChildren: save exit
+
+
+*status.gridy: 3
+*status.wcClass: Wlabel
+*status.weighty: 0
+*status.fill: both
+*status.label: starting...
+
+
+
+*save.gridx: 0
+*save.WcClass: Wbutton
+*save.label: Save
+*save.callback: save_cb
+*save.fill: none
+*save.weightx: 0
+*save.weighty: 0
+
+*exit.gridx: 1
+*exit.WcClass: Wbutton
+*exit. label: Exit
+*exit.callback: quit_cb
+*exit.gravity: East
+*exit.fill: None
+*exit.weighty: 0
+*exit.weightx: 1
+
+
 
 
 
