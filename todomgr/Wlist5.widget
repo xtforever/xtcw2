@@ -107,6 +107,9 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @trans <Btn5Up>: scroll_line_up()
 @trans <Btn4Up>: scroll_line_down()
 @trans <Btn2Down>: select_line()
+@trans <KeyPress>Up: cursor_up()
+@trans <KeyPress>Down: cursor_down()
+
 
 
 @private
@@ -161,6 +164,36 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
     $state = STATE_NORMAL;
     update_widget_state($);
   }
+}
+
+@proc cursor_up
+{
+	int p = $cursor;
+	if( p > 0 ) p--; else p=0;
+
+	int first = ($top_y+$line_height-1) / $line_height;
+	int new_y = p*$line_height;
+
+	TRACE(2,"%d %d %d",first, $top_y, new_y );	
+
+	if( p < first ) {
+	    gotoxy($,-1,new_y);
+	}
+	set_cursor2($,p);
+}
+
+@proc cursor_down
+{
+	int p = $cursor+1;
+	if( p >= $line_max ) return;
+	int last = ($top_y + $list_height) / $line_height;
+
+	/* make line at cursor the last visible line */
+	if( p >= last ) {	    
+	    int top = (p+1) * $line_height - $list_height;
+	    gotoxy($,-1,top);
+	}	    
+	set_cursor2($,p);
 }
 
 @proc scroll_line_up

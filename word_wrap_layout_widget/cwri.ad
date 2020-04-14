@@ -19,7 +19,7 @@ cwri.WcChildren: vb
 %% cwri.traceLevel: 0
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed 
+*vb.WcChildren: ed bt
 
 *l1.WcClass: Wbutton
 *l1.label: Hello
@@ -31,8 +31,7 @@ cwri.WcChildren: vb
 *ed.width: 300
 
 
-
-*bt.wcClass: Wbutton
+*bt.wcClass: Wlabel
 *bt.label: Exit
 *bt.callback: quit_cb
 *bt.gridy: 1

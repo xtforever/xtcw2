@@ -1,23 +1,37 @@
-%%
-%% set default colors
-%%
+
 %% Arrows: Font Symbola
 %% 2b71 to-top
 %% 2b73 to-bot
 %% 2b61 up
 %% 2b63 down
 %%
+
+
+%%
+%% set default colors
+%%
 *foreground: #A0A0E0
 *background: #0000C0
+*borderWidth: 0
 *Wedit.cursorColor: #FFFF00
 *fg_norm: #A0A0E0
-*bg_norm: #0000C0
+*bg_norm: #0000B0
+*fg_sel:  #A0A0E0
+*bg_sel:  #0000FF
+
 
 *todo.xftFont: Droid Serif-8
 *todo.symbolSize: 8
 *todo.want_visible_x: 30
 *todo.want_visible_y: 8
+*todo.bg_norm: #0000D8
 
+*status.bg_norm: #4040A0
+*status.fg_norm: #0000C0
+*status.xftFont: Droid Sans-8
+*status.borderWidth:4
+*status.borderColor:#1010A0
+	
 *xftFont:  Droid Sans-10
 % Only Wedit widget
 *fontName: Droid Sans-10
@@ -55,6 +69,7 @@ cwri.WcChildren: main
 *MenuButtons.gridy: 2
 *MenuButtons.wcClass: Gridbox
 *MenuButtons.WcChildren: save exit
+*MenuButtons.weighty: 0
 
 
 *status.gridy: 3
