@@ -40,6 +40,10 @@ int sock_create_and_bind (char *port)
       if (sfd == -1)
         continue;
 
+      int enable = 1;
+      if (setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+	  system_error("setsockopt(SO_REUSEADDR) failed");
+ 
       s = bind (sfd, rp->ai_addr, rp->ai_addrlen);
       if (s == 0)
         {

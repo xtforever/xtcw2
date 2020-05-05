@@ -161,6 +161,8 @@
     case COLOR_BG_HI: $pixel[COLOR_BG_HI]= $bg_hi; break;
     }
 
+    TRACE(1,"%s: pixel[%d]=%x", $name, num, $pixel[num] );
+
     /* !TODO! Check if Color is already alloced
       if( $xft_col[num] )
         XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),

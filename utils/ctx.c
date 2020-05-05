@@ -16,7 +16,7 @@ int ctx_init(int *CTX, int length, int size)
     int *d;
     int p;
     m_foreach(*CTX,p,d) {
-	if( d == 0 ) goto found;
+	if( *d == 0 ) goto found;
     }
     d = m_add(*CTX);
  found:

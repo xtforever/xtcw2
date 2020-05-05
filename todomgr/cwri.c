@@ -176,6 +176,9 @@ void todo_cb( Widget w, void *u, void *c )
     printf("Line: %d %s\n", lineno,s );
     free(s);
     wlist5_update_all(CWRI.todo);
+
+    XtSetKeyboardFocus( TopLevel, CWRI.ed );
+
 }
 
 void ActionCall(Widget w, void *u, void *c )
@@ -220,7 +223,6 @@ void test_cb( Widget w, void *u, void *c )
   XtVaGetValues(w, "label", &s, NULL );
   if( is_empty(s) ) return;
   printf("Label: %s\n", s );
-
 }
 
 void quit_cb( Widget w, void *u, void *c )
@@ -268,8 +270,10 @@ static void InitializeApplication( Widget top )
     trace_level = CWRI.traceLevel;
 
     TODO_LIST = m_create(100,sizeof(char*));
-    XtVaSetValues( CWRI.todo, "tableStrs", TODO_LIST, NULL );
     load_todo();
+    XtVaSetValues( CWRI.todo, "tableStrs", TODO_LIST, NULL );
+
+
 }
 
 /******************************************************************************
