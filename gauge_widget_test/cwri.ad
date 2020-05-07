@@ -1,0 +1,61 @@
+%%
+%% set default colors
+%%
+*color1: Yellow
+*foreground: #A0A0E0
+*background: #0000C0
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #A0A0E0
+*bg_norm: #0000C0
+*xftFont: Source Code Pro-5
+*vb.vgap: 2
+*borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+
+cwri.WcChildren: vb
+%% cwri.traceLevel: 0
+
+*vb.WcClass: vbox
+*vb.WcChildren:  bt g1 g2 g3 g4
+*bt.width: 250
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 0
+*bt.gridx: 0
+*bt.gravity: Center
+*bt.fill: Both
+
+*.Gauge.hh: 3mm
+
+
+*g1.WcClass: Gauge 
+*g1.fill: Width
+*g1.weighty: 0
+*g1.gridy: 1
+*g1.fg_norm: Brown
+*g1.qpercent: g1-percent
+
+*g2.WcClass: Gauge 
+*g2.fill: Width
+*g2.weighty: 0
+*g2.gridy: 2
+*g2.qpercent: g2-percent
+
+*g3.WcClass: Gauge 
+*g3.fill: Width
+*g3.weighty: 0
+*g3.gridy: 3
+*g3.qpercent: g3-percent
+
+*g4.WcClass: Gauge 
+*g4.fill: Width
+*g4.weighty: 0
+*g4.gridy: 4
+*g4.qpercent: g4-percent
+
+
