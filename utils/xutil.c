@@ -13,12 +13,13 @@ static int xft_font_angle( const char *name,int *n );
 
 void xft_calc_string_size( Widget X, XftFont *fn, char *s, int *w, int *h )
 {
-  XGlyphInfo extents;
-  Display *dpy = XtDisplay(X);
-  XftTextExtentsUtf8(dpy, fn, (FcChar8*)  s,
+    if( is_empty(s) ) s="";
+    XGlyphInfo extents;
+    Display *dpy = XtDisplay(X);
+    XftTextExtentsUtf8(dpy, fn, (FcChar8*)  s,
 		       strlen( s ), &extents);
-  if( w ) *w = extents.xOff;
-  if( h ) *h = fn->ascent + fn->descent;
+    if( w ) *w = extents.xOff;
+    if( h ) *h = fn->ascent + fn->descent;
 }
 
 int xft_textwidth( Display *dpy, XftFont *font, char *s )

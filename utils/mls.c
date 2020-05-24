@@ -65,7 +65,7 @@ static struct debug_info_st debi;
 //
 
 int trace_level = 0;
-static char buf[1024];
+static char buf[4096];
 
 void deb_err( int line, const char* file, const char *function, const char *format, ... )
 {
@@ -881,6 +881,12 @@ void m_putc(int m,char c)
   m_put(m,&c);
 }
 
+//!X! speicher ein int an das ende von marray m
+void m_puti(int m,int c)
+{
+  m_put(m,&c);
+}
+
 // Vorteile:
 // Übergabe eines Speicherbereichs an eine Funktion die
 // ggf. den Speicher vergrößern muss:
@@ -1258,6 +1264,7 @@ int m_fscan( int m, char delim, FILE *fp)
 // wird m>0 übergeben, erhält man einen mit null-terminierten string
 // führende und folgende Leerzeichen werden nicht gespeichert
 // es werden doppelte leerzeichen zu einem reduziert (squeeze).
+// tabs werden zu leerzeichen
 // die gelesenen daten werden an m angehängt, falls m existiert (i.e. m>0)!
 int m_fscan2( int m, char delim, FILE *fp)
 {

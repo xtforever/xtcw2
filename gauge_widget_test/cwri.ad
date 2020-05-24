@@ -20,7 +20,7 @@ cwri.WcChildren: vb
 %% cwri.traceLevel: 0
 
 *vb.WcClass: vbox
-*vb.WcChildren:  bt g1 g2 g3 g4
+*vb.WcChildren:  bt g1label g1 g2label g2 g3 g4
 *bt.width: 250
 *bt.wcClass: Wbutton
 *bt.label: Exit
@@ -32,6 +32,8 @@ cwri.WcChildren: vb
 
 *.Gauge.hh: 3mm
 
+*g1label.WcClass: Wlabel 
+*g1label.label: server1
 
 *g1.WcClass: Gauge 
 *g1.fill: Width
@@ -40,11 +42,14 @@ cwri.WcChildren: vb
 *g1.fg_norm: Brown
 *g1.qpercent: g1-percent
 
+*g2label.WcClass: Wlabel 
+*g2label.label: database
+
 *g2.WcClass: Gauge 
 *g2.fill: Width
 *g2.weighty: 0
 *g2.gridy: 2
-*g2.qpercent: g2-percent
+*g2.qpercent: myserver.iowait
 
 *g3.WcClass: Gauge 
 *g3.fill: Width

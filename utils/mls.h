@@ -210,6 +210,7 @@ int m_lookup( int m, int key );
 int m_lookup_obj( int m, void *obj, int size );
 int utf8_getchar(FILE *fp, utf8_char_t buf );
 void m_putc(int m, char c);
+void m_puti(int m, int  c);
 int m_lookup_str(int m, const char *key, int NOT_INSERT);
 int utf8char(char **s);
 int m_utf8char(int buf, int *p);
