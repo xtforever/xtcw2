@@ -1,0 +1,104 @@
+@class Wdemo2 (Core)
+@ Demo widget: draw some text
+  
+@PUBLIC
+@var <XftFont> XftFont* xftFont = <String> "Serif-22"
+@var Pixel foreground = XtDefaultForeground
+@var String label = "my name"
+
+@PRIVATE
+@var XftDraw *draw
+@var XftColor xcol[2]
+@def BG = $xcol
+@def FG = ($xcol+1)
+
+@METHODS
+@proc expose
+{
+        XTFUNC();
+	XftDrawRect($draw,BG,0,0,$width,$height);
+	paint1($);
+}
+
+@proc initialize
+{
+        XTFUNC();
+	int w,h;
+  	calculate_prefered_size($,&w,&h);
+	if( $width < w ) $width = w;
+	if( $height < h ) $height = h;  
+	init_colors($);
+	$draw=0;
+}
+
+@proc destroy
+{
+        XTFUNC();
+        if( $draw ) XftDrawDestroy( $draw );
+}
+
+@proc resize
+{
+	XTFUNC();
+}
+
+@proc realize
+ {
+        XTFUNC();
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent,
+			  *mask, attributes);
+        Display *dpy = XtDisplay($);
+  	$draw = XftDrawCreate(dpy, XtWindow($),
+                 DefaultVisual(dpy, DefaultScreen(dpy)), None);	
+}
+
+
+@UTILITIES
+@proc paint1($)
+{
+        XTFUNC();
+        int x,y,w,h;
+	char *s = $label;
+	if( is_empty(s) ) s="";
+        /* draw text centered */
+        h = $xftFont->height;
+        w = xft_textwidth(XtDisplay($), $xftFont, s );
+        x = ($width - w) / 2; if( x < 0 ) x=0;
+        y = ($height -h) / 2; if( y < 0 ) y=0;
+        XftDrawStringUtf8($draw, FG, $xftFont,
+    	     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+}
+
+@proc calculate_prefered_size($,int *w, int *h)
+{
+  calculate_size($,w,h);
+  (*w) += 20; /* i like some space around the label */
+  (*h) += 20;
+}
+
+@proc calculate_size($,int *w, int *h)
+{
+        xft_calc_string_size($, $xftFont, $label, w, h );
+}
+
+@proc init_colors($)
+{		
+	pixel_to_xftcolor( $, $background_pixel, BG );
+ 	pixel_to_xftcolor( $, $foreground,       FG );
+}
+
+@proc init_ixmap($)
+{
+}
+
+@IMPORTS
+@incl <assert.h>
+@incl <stdint.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xregion.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"

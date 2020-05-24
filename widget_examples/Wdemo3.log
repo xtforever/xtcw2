@@ -1,0 +1,12 @@
+This is TeX, Version 3.14159265 (TeX Live 2017/Debian) (preloaded format=tex 2018.10.12)  22 MAY 2020 01:17
+**Wdemo3.tex
+(./Wdemo3.tex
+! I can't find file `wbuildmac.tex'.
+l.1 \input wbuildmac.tex
+                        
+(Press Enter to retry, or Control-D to exit)
+Please type another input file name: ../wbuild/wbuildmac.tex
+(../wbuild/wbuildmac.tex
+\tempindent=\dimen16
+) [1] )
+Output written on Wdemo3.dvi (1 page, 4296 bytes).

@@ -1,0 +1,37 @@
+*foreground: #A0A0E0
+*background: #0000C0
+%% *borderWidth: 0
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+cwri.WcChildren: vb
+%% cwri.traceLevel: 0
+
+*vb.WcClass: GridBox
+*vb.WcChildren: demo demo3 txt ed mountframe
+
+*demo.WcClass: Wdemo2
+*demo.height: 700
+*demo.width: 300
+
+*demo3.WcClass: Wbutton
+*demo3.gridy: 1
+*demo3.label:  
+*demo3.xftFont: FontAwesome-22
+
+*txt.gridy: 2
+*txt.WcManaged: False
+*txt.WcClass: Wbutton
+*txt.translations: #overwrite <Btn1Down>: notify()\n
+*txt.callback: WcUnmanage(*txt) WcManage(*ed)
+
+*ed.gridy: 2
+*ed.WcManaged: True
+*ed.WcClass: Wedit
+*ed.callback: WcUnmanage(*ed) WcManage(*txt)
+
+*mountframe.gridy: 3
+*mountframe.WcClass: vbox
+
+

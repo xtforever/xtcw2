@@ -1,0 +1,33 @@
+
+
+@class Wdemo3(Wlabel)
+@  this is a very simple demo widget
+
+@METHODS
+
+@ overwrite
+  the expose method of the parent class
+@proc expose
+{
+	fprintf(stderr,"child: ");  XTFUNC();
+	#expose($,NULL,NULL);
+}
+
+@ init
+  of parent class
+  is called first by xt. 
+@proc initialize
+{
+	fprintf(stderr,"child: ");  XTFUNC();
+}
+
+@IMPORTS
+@incl <assert.h>
+@incl <stdint.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xregion.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
