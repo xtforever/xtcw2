@@ -1,5 +1,6 @@
 *foreground: #A0A0E0
 *background: #0000C0
+*mountframe*xftFont: Source Code Pro-8
 %% *borderWidth: 0
 %% -------------------
 *weightx: 1

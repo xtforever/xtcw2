@@ -152,6 +152,7 @@
     $height = Min($height,4096);	
     $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
                             DefaultDepth(dpy, DefaultScreen(dpy)));
+    TRACE(1,"Pixmap ID: %ld", $pixmap );
     if( $draw ) {
         XftDrawChange($draw, $pixmap );
     }

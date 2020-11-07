@@ -1,6 +1,7 @@
 #include "xl2.h"
 #include "ctx.h"
 #include "xutil.h"
+
 static XftFont *fnt_big;
 struct xl2_ctx {
     int init;
@@ -26,7 +27,6 @@ struct xl2_attr {
     XftColor *bg;
 };
 
-
 struct xl2_word {
     int init;
     XftFont *fnt;
@@ -38,14 +38,26 @@ struct xl2_word {
     int flags;
 };
 
-
-
-
-
 #include <math.h>
 #ifndef M_PI
 # define M_PI 3.14159265359
 #endif
+
+
+/*
+
+@fn.This
+is
+a
+Text
+
+
+split space and newline
+space is size of prev. word
+*/
+
+
+
 
 
 static XftFont* xft_fontopen2(Display *dpy, int screen, char* name, double size, Bool core, int angle)
@@ -175,7 +187,6 @@ static void add_word(int wl, XftFont *fnt, XftColor *fg, XftColor *bg, char *lab
     w.bg = bg;
 
 	/* detect word color and format */
-
     if( strcmp(label,"World")==0 ) {
 	TRACE(1,"font change");
 	w.fnt = fnt_big;

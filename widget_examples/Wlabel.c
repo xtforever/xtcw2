@@ -3,13 +3,13 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 252 "../build/source/Wlabel.widget"
-#include <X11/Xft/Xft.h>
 #line 253 "../build/source/Wlabel.widget"
-#include "converters-xft.h"
+#include <X11/Xft/Xft.h>
 #line 254 "../build/source/Wlabel.widget"
-#include <X11/Xmu/Converters.h>
+#include "converters-xft.h"
 #line 255 "../build/source/Wlabel.widget"
+#include <X11/Xmu/Converters.h>
+#line 256 "../build/source/Wlabel.widget"
 #include "mls.h"
 #include <xtcw/WlabelP.h>
 static void _resolve_inheritance(
@@ -77,25 +77,25 @@ static void alloc_pixmap(
 Widget
 #endif
 );
-#line 164 "../build/source/Wlabel.widget"
+#line 165 "../build/source/Wlabel.widget"
 static void invalidate_cache(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 179 "../build/source/Wlabel.widget"
+#line 180 "../build/source/Wlabel.widget"
 static void update_cache(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 214 "../build/source/Wlabel.widget"
+#line 215 "../build/source/Wlabel.widget"
 static void redraw(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 232 "../build/source/Wlabel.widget"
+#line 233 "../build/source/Wlabel.widget"
 static void default_label_draw(
 #if NeedFunctionPrototypes
 Widget,void *,void *
@@ -137,6 +137,7 @@ static void alloc_pixmap(self)Widget self;
     ((WlabelWidget)self)->core.height = Min(((WlabelWidget)self)->core.height,4096);	
     ((WlabelWidget)self)->wlabel.pixmap = XCreatePixmap(dpy, XtWindow(self), ((WlabelWidget)self)->core.width, ((WlabelWidget)self)->core.height,
                             DefaultDepth(dpy, DefaultScreen(dpy)));
+    TRACE(1,"Pixmap ID: %d", ((WlabelWidget)self)->wlabel.pixmap );
     if( ((WlabelWidget)self)->wlabel.draw ) {
         XftDrawChange(((WlabelWidget)self)->wlabel.draw, ((WlabelWidget)self)->wlabel.pixmap );
     }
@@ -145,16 +146,16 @@ static void alloc_pixmap(self)Widget self;
                        DefaultVisual(dpy, DefaultScreen(dpy)), None);
     }
 }
-#line 164 "../build/source/Wlabel.widget"
+#line 165 "../build/source/Wlabel.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 164 "../build/source/Wlabel.widget"
+#line 165 "../build/source/Wlabel.widget"
 static void invalidate_cache(Widget self)
 #else
-#line 164 "../build/source/Wlabel.widget"
+#line 165 "../build/source/Wlabel.widget"
 static void invalidate_cache(self)Widget self;
 #endif
-#line 165 "../build/source/Wlabel.widget"
+#line 166 "../build/source/Wlabel.widget"
 {
     if( ((WlabelWidget)self)->wlabel.label_cache ) {
         free(((WlabelWidget)self)->wlabel.label_cache);
@@ -166,16 +167,16 @@ static void invalidate_cache(self)Widget self;
         ((WlabelWidget)self)->wlabel.pixmap=0;
     }
 }
-#line 179 "../build/source/Wlabel.widget"
+#line 180 "../build/source/Wlabel.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 179 "../build/source/Wlabel.widget"
+#line 180 "../build/source/Wlabel.widget"
 static void update_cache(Widget self)
 #else
-#line 179 "../build/source/Wlabel.widget"
+#line 180 "../build/source/Wlabel.widget"
 static void update_cache(self)Widget self;
 #endif
-#line 180 "../build/source/Wlabel.widget"
+#line 181 "../build/source/Wlabel.widget"
 {
     TRACE(1,"call functions to redraw text");
 	if( ((WlabelWidget)self)->wlabel.pixmap == 0 ) alloc_pixmap(self);
@@ -206,16 +207,16 @@ static void update_cache(self)Widget self;
     XftDrawStringUtf8(((WlabelWidget)self)->wlabel.draw, ((WlabelWidget)self)->wheel.xft_col + ((WlabelWidget)self)->wheel.state, ((WlabelWidget)self)->wheel.xftFont,
     			     x,y+((WlabelWidget)self)->wheel.xftFont->ascent, (FcChar8*)s, strlen(s) );
 }
-#line 214 "../build/source/Wlabel.widget"
+#line 215 "../build/source/Wlabel.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 214 "../build/source/Wlabel.widget"
+#line 215 "../build/source/Wlabel.widget"
 static void redraw(Widget self)
 #else
-#line 214 "../build/source/Wlabel.widget"
+#line 215 "../build/source/Wlabel.widget"
 static void redraw(self)Widget self;
 #endif
-#line 215 "../build/source/Wlabel.widget"
+#line 216 "../build/source/Wlabel.widget"
 {
     if( !XtIsRealized(self)) return;
     TRACE(1,"%s dirty=%d", ((WlabelWidget)self)->core.name, ((WlabelWidget)self)->wlabel.dirty );
@@ -232,16 +233,16 @@ static void redraw(self)Widget self;
               0,0, ((WlabelWidget)self)->core.width, ((WlabelWidget)self)->core.height, /* source pixmap */
               0,0 ); /* target window x,y */
 }
-#line 232 "../build/source/Wlabel.widget"
+#line 233 "../build/source/Wlabel.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 232 "../build/source/Wlabel.widget"
+#line 233 "../build/source/Wlabel.widget"
 static void default_label_draw(Widget self,void * a,void * b)
 #else
-#line 232 "../build/source/Wlabel.widget"
+#line 233 "../build/source/Wlabel.widget"
 static void default_label_draw(self,a,b)Widget self;void * a;void * b;
 #endif
-#line 233 "../build/source/Wlabel.widget"
+#line 234 "../build/source/Wlabel.widget"
 {
   int x,y;
   XRectangle rect;

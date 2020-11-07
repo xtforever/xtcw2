@@ -1,3 +1,59 @@
+phase		client		host1		host2		
+INIT				   ->  REG
+						<- REPLY
+CLIENT
+		name c1 -> host2				
+						<- CLIENT c1,IP,PORT
+		to: c1      ->    forward
+				  to host2      send to c1
+
+
+
+July 2020
+server.name = host1
+
+on-receive:
+   msg=connect,127.0.0.1,5001
+	connect-to(127.0.0.1,5001)
+	send(register host1)
+	
+   msg=register,name
+	get-sender, reply(register host2)
+	
+
+
+
+connection properties
+
+- server socket
+- connection list
+- message forwarding
+
+
+commands
+
+- connect     127.0.0.1 50010
+- connect     127.0.1.1 50011
+- broadcast   BROADCAST IP/PORT MSG
+- 
+
+
+/* read data from socket conn_id, append new channels, close channels,... */
+ev = handle_event(bus, conn_id)
+
+/* append connection to connection list */
+append_connection(bus, socket_fd);
+
+/* remove connection from connection list */
+remove_connection(bus, conn_id );
+
+/* */
+send_message( bus, conn_id );
+
+/* */
+msg = get_message( bus, conn_id );
+
+
 
 
 struct nbus_ctx :     keeps track of connected clients
