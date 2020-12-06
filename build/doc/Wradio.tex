@@ -1,0 +1,642 @@
+\input wbuildmac.tex
+\Class{Wradio}Radio Widget - Nur Ein Widget einer Gruppe ist jeweils aktiv.
+  Die Gruppe wird durch das Feld {\tt radioGroup} identifiziert.
+  Wird ein Widget aktiviert, wird das Feld
+  {\tt activeWidget} des {\tt radioWidget} auf das zu aktivierende
+  Widget gesetzt. War {\tt activeWidget} gesetzt, wird das zugehörige
+  Widget deaktiviert.
+
+
+
+
+
+\Publicvars
+\Table{Wradio}
+XtNlabel&XtCLabel&String &NULL \cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&int &0 \cr
+XtNdraw{\underline}override&XtCDraw{\underline}override&XtCallbackProc &NULL \cr
+XtNinnerBorderPercent&XtCInnerBorderPercent&int &0 \cr
+XtNbackground{\underline}set&XtCBackground{\underline}set&Pixel &"Darkgrey"\cr
+XtNborderColAct&XtCBorderColAct&Pixel &"Green"\cr
+XtNborderColNorm&XtCBorderColNorm&Pixel &"Darkgrey"\cr
+XtNpixmapNames&XtCPixmapNames&String &NULL \cr
+XtNradioGroup&XtCRadioGroup&String &NULL \cr
+XtNradioData&XtCRadioData&XtPointer &NULL \cr
+XtNactive&XtCActive&int &0 \cr
+\endTable
+\Section
+\Publicvar{XtNlabel}
+String  label = {\langle}String{\rangle}NULL 
+
+\Section
+\Publicvar{XtNcornerRoundPercent}
+int  cornerRoundPercent = 0 
+
+\Section
+\Publicvar{XtNdraw{\underline}override}
+XtCallbackProc  draw{\underline}override = NULL 
+
+\Section
+\Publicvar{XtNinnerBorderPercent}
+int  innerBorderPercent = 0 
+
+\Section
+\Publicvar{XtNbackground{\underline}set}
+Pixel  background{\underline}set = {\langle}String{\rangle}"Darkgrey"
+
+\Section
+\Publicvar{XtNborderColAct}
+Pixel  borderColAct = {\langle}String{\rangle}"Green"
+
+\Section
+\Publicvar{XtNborderColNorm}
+Pixel  borderColNorm = {\langle}String{\rangle}"Darkgrey"
+
+\Section
+\Publicvar{XtNpixmapNames}
+String  pixmapNames = {\langle}String{\rangle}NULL 
+
+\Section
+\Publicvar{XtNradioGroup}
+String  radioGroup = NULL 
+
+\Section
+\Publicvar{XtNradioData}
+XtPointer  radioData = NULL 
+
+\Section
+\Publicvar{XtNactive}
+int  active = 0 
+
+\End\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&Int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&Int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Exports
+\Section
+\Code
+XtPointer  wradio{\underline}data( {\dollar})\endCode
+{\lbrace}
+        return {\dollar}radioData;
+{\rbrace}
+
+\Section
+\Code
+XtPointer  wradio{\underline}active{\underline}data( {\dollar})\endCode
+{\lbrace}
+        Widget w = rgroups{\underline}get{\underline}active{\underline}widget({\dollar});
+        return w ? wradio{\underline}data(w) : NULL;
+{\rbrace}
+
+\Section
+\Code
+wradio{\underline}select( {\dollar})\endCode
+{\lbrace}
+        set({\dollar}, 0,0,0 );
+{\rbrace}
+
+\Section
+\Code
+wradio{\underline}deselect( {\dollar})\endCode
+{\lbrace}
+    unset({\dollar}, 0,0,0 );
+{\rbrace}
+
+\End\Translations
+\Section
+\Code
+{\langle}Btn1Down{\rangle}: set() notify() \endCode
+
+
+\Section
+\Code
+{\langle}LeaveWindow{\rangle}: reset() \endCode
+
+
+\End\Actions
+\Section
+\Action{highlight}\Code
+void highlight({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  if( {\dollar}state == STATE{\underline}SELECTED ) return;
+  {\dollar}state = STATE{\underline}SELECTED;
+  {\dollar}expose({\dollar},NULL,NULL);
+{\rbrace}\endCode
+
+
+\Section
+\Action{reset}\Code
+void reset({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  if( {\dollar}state == STATE{\underline}NORMAL ) return;
+  {\dollar}state = STATE{\underline}NORMAL;
+  {\dollar}expose({\dollar},NULL,NULL);
+{\rbrace}\endCode
+
+
+\Section
+\Action{unset}\Code
+void unset({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    {\dollar}active = 0;
+    {\dollar}expose({\dollar}, NULL,NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Action{set}\Code
+void set({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+    {\dollar}active = 1;
+    Widget w = rgroups{\underline}get{\underline}active{\underline}widget({\dollar});
+    if( w {\ampersand}{\ampersand} w != {\dollar} ) unset(w, 0,0,0 );
+    rgroups{\underline}set{\underline}active{\underline}widget({\dollar});
+    {\dollar}expose({\dollar}, NULL,NULL );
+{\rbrace}\endCode
+
+
+\Section
+\Action{toggle}\Code
+void toggle({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+   if( {\dollar}active ) unset({\dollar},0,0,0); else set({\dollar},0,0,0);
+{\rbrace}\endCode
+
+
+\Section
+\Action{notify}\Code
+void notify({\dollar}, XEvent* event, String* params, Cardinal* num{\underline}params)
+{\lbrace}
+  XtCallCallbackList( {\dollar}, {\dollar}callback, event );
+{\rbrace}\endCode
+
+
+\End\Imports
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Converters.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} "error.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+struct {\lbrace}
+  char *fileName;
+  Pixmap map,mask;
+  XRectangle pm{\underline}rect;
+  int pm{\underline}depth; {\rbrace} pix{\underline}t\endCode
+
+
+\Section
+\Code
+struct {\lbrace}
+    char *name;
+    Widget active;
+{\rbrace} radio{\underline}group{\underline}t\endCode
+
+
+\Section
+\Code
+radio{\underline}group{\underline}t * rg\endCode
+
+
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+pix{\underline}t * pix\endCode
+
+
+\Section
+\Code
+GC  pix{\underline}gc\endCode
+
+
+\Section
+\Code
+int  label{\underline}width\endCode
+
+
+\End\Classvars
+\Section
+\Code
+int  rgroups = 0 \endCode
+
+
+\End\Methods
+\Section
+\Code
+class{\underline}initialize()
+{\lbrace}
+        converters{\underline}init();
+{\rbrace}\endCode
+
+
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  Display *dpy = XtDisplay({\dollar});
+  char *s = {\dollar}label;
+  int w=10,h=10;
+
+  /* init classvar
+     wbuild {\bar}{\dollar}{\bar} does not work for class{\underline}initialize
+  */
+
+
+  {\dollar}pix=0;
+  if( {\dollar}pixmapNames ) {\dollar}pix = load{\underline}pixmap({\dollar}, {\dollar}pixmapNames );
+  if( ! s {\bar}{\bar} ! *s )
+    s={\dollar}name;
+  {\dollar}label = XtNewString(s);
+
+  /* breite und höhe der Pixmap, falls vorhanden */
+
+  xft{\underline}calc{\underline}string{\underline}size( {\dollar}, {\dollar}xftFont, s, {\ampersand}{\dollar}label{\underline}width, 0 );
+  if( {\dollar}width == 0 ) {\lbrace}
+      if( {\dollar}pix ) w = {\dollar}pix-{\rangle}pm{\underline}rect.width; else w = {\dollar}label{\underline}width;
+      {\dollar}width = increase{\underline}by{\underline}percent( w, {\dollar}innerBorderPercent );
+  {\rbrace}
+
+  if( {\dollar}height == 0 ) {\lbrace}
+      h = {\dollar}pix ? {\dollar}pix-{\rangle}pm{\underline}rect.height : {\dollar}xftFont-{\rangle}height ;
+      {\dollar}height = increase{\underline}by{\underline}percent( h, {\dollar}innerBorderPercent);
+  {\rbrace}
+
+  if( {\dollar}draw{\underline}override == 0 )
+    {\dollar}draw{\underline}override = default{\underline}label{\underline}draw;
+
+    int activate{\underline}me = {\dollar}active;
+    {\dollar}rg = 0;
+    if(! {\dollar}radioGroup ) {\dollar}radioGroup = {\dollar}name;
+    rgroup{\underline}lookup({\dollar});
+
+    /* wir werden aktiviert, wenn wir die gruppe erzeugen
+       falls die Gruppe schon existiert hat ist
+       ein anderes widget aktiv und {\dollar}active wird
+       auf Null gesetzt.
+    */
+
+    if( activate{\underline}me ) {\lbrace} set({\dollar},0,0,0); notify({\dollar},0,0,0); {\rbrace}
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  exec{\underline}command({\dollar}, int  cmd, int  val)
+{\lbrace}
+  if( cmd == WHEEL{\underline}FIRE {\ampersand}{\ampersand} {\dollar}state == STATE{\underline}SELECTED ) {\lbrace}
+      set({\dollar},0,0,0);
+      notify({\dollar},0,0,0);
+      return 1;
+  {\rbrace}
+
+  return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+        XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+                          (Visual *) CopyFromParent, *mask, attributes);
+        /* this gc is Not shared and its writeable */
+        {\dollar}pix{\underline}gc    = XCreateGC(XtDisplay({\dollar}),XtWindow({\dollar}),0,NULL );
+        reshape{\underline}widget({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+resize({\dollar})
+{\lbrace}
+    if (XtIsRealized({\dollar})) reshape{\underline}widget({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+  if( {\dollar}draw) XftDrawDestroy( {\dollar}draw );
+  XtFree({\dollar}label);
+  if( {\dollar}pix{\underline}gc ) XFreeGC(XtDisplay({\dollar}),{\dollar}pix{\underline}gc);
+  if( {\dollar}pix ) unload{\underline}pixmap( {\dollar}, {\dollar}pix );
+  /* what if we are radioGroup and others want reach us ? */
+{\rbrace}\endCode
+
+
+\Section
+ARGS: old, request, $, args, num_args_ptr
+
+
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+  if ({\dollar}label != {\dollar}old{\dollar}label) {\lbrace}
+    XtFree({\dollar}old{\dollar}label);
+    {\dollar}label = XtNewString({\dollar}label);
+  {\rbrace}
+
+  return True; /* redisplay widget */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+  if( !XtIsRealized({\dollar})) return;
+  Display *dpy = XtDisplay({\dollar});
+  if( ! {\dollar}draw ) {\lbrace}
+    {\dollar}draw = XftDrawCreate(dpy, XtWindow({\dollar}),
+                          DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    if( ! {\dollar}draw ) error(1,0,"{\percent}s: cannot create xftdraw", {\dollar}name );
+  {\rbrace}
+
+  if( {\dollar}draw{\underline}override ) {\lbrace}
+      {\dollar}draw{\underline}override( {\dollar}, NULL, {\dollar}draw );
+      return;
+  {\rbrace}
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+Widget  lookup{\underline}widget({\dollar}, char * name)
+{\lbrace}
+    int numKids, child;
+    Widget    *wl, parent, ref;
+    ref={\dollar};
+    while( (parent = XtParent( ref )) )
+        {\lbrace}
+            if ( XtIsComposite( parent ) ) {\lbrace}
+                CompositeWidget cw = (CompositeWidget)parent;
+                wl = cw-{\rangle}composite.children;
+                child = 0;
+                numKids = cw-{\rangle}composite.num{\underline}children;
+                while( child {\langle} numKids ) {\lbrace}
+                    if( strcmp( XtName( wl[child] ), name ) == 0 ) return wl[child];
+                    child++;
+                {\rbrace}
+            {\rbrace}
+            ref=parent;
+        {\rbrace}
+    return 0;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+reshape{\underline}widget({\dollar})
+{\lbrace}
+        int w;
+        if( {\dollar}cornerRoundPercent {\rangle}0 {\ampersand}{\ampersand} {\dollar}cornerRoundPercent {\langle} 100 ) {\lbrace}
+            w = Min({\dollar}height,{\dollar}width);
+            w = w * {\dollar}cornerRoundPercent / 100;
+            XmuReshapeWidget( {\dollar}, XmuShapeRoundedRectangle, w, w );
+        {\rbrace}
+
+        if( {\dollar}pix ) {\lbrace}
+            pix{\underline}t *p = {\dollar}pix;
+            /* initialise pixmap position and mask */
+               /* center pixmap */
+            p-{\rangle}pm{\underline}rect.x  = ({\dollar}width - p-{\rangle}pm{\underline}rect.width) / 2;
+            p-{\rangle}pm{\underline}rect.y  = ({\dollar}height - p-{\rangle}pm{\underline}rect.height) / 2;
+               /* create mask for transparent background */
+
+            if( {\dollar}pix{\underline}gc ) {\lbrace}
+                XSetClipMask(XtDisplay({\dollar}), {\dollar}pix{\underline}gc,  p-{\rangle}mask);
+                XSetClipOrigin(XtDisplay({\dollar}), {\dollar}pix{\underline}gc,
+                               p-{\rangle}pm{\underline}rect.x, p-{\rangle}pm{\underline}rect.y );
+            {\rbrace}
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+default{\underline}label{\underline}draw({\dollar}, void * a, void * b)
+{\lbrace}
+  int x,y;
+  XRectangle rect;
+
+  char *s = {\dollar}label;
+  Display *dpy = XtDisplay({\dollar});
+
+  wheel{\underline}state st = {\dollar}state;
+  if( {\dollar}active {\ampersand}{\ampersand} st == STATE{\underline}NORMAL ) st = STATE{\underline}ARMED;
+
+  if( {\dollar}active )
+       XSetWindowBorder( dpy, XtWindow({\dollar}), {\dollar}borderColAct );
+  else XSetWindowBorder( dpy, XtWindow({\dollar}), {\dollar}borderColNorm );
+
+  if( {\dollar}pix ) {\lbrace}
+        pix{\underline}t *p = {\dollar}pix;
+        XCopyArea(dpy, p-{\rangle}map, XtWindow({\dollar}), {\dollar}pix{\underline}gc,
+                  0, 0, p-{\rangle}pm{\underline}rect.width, p-{\rangle}pm{\underline}rect.height,
+                  p-{\rangle}pm{\underline}rect.x, p-{\rangle}pm{\underline}rect.y );
+        return;
+  {\rbrace}
+
+
+  /* falls es keine Pixmap gibt verwende {\bar}label{\bar} und setze */
+  /* die Hintergrundfarbe passend zum aktuellen Zusatand */
+  XFillRectangle( dpy, XtWindow({\dollar}), {\dollar}gc[st], 0,0, {\dollar}width, {\dollar}height );
+
+  if( s {\ampersand}{\ampersand} *s ) {\lbrace}
+
+    y = ({\dollar}height - {\dollar}xftFont-{\rangle}height)/2;
+    x = ({\dollar}width - {\dollar}label{\underline}width) /2;
+    rect.x = 0; rect.y=0; rect.width={\dollar}width; rect.height={\dollar}height;
+    XftDrawSetClipRectangles( {\dollar}draw,0,0,{\ampersand}rect, 1);
+    XftDrawStringUtf8({\dollar}draw,{\dollar}xft{\underline}col + st, {\dollar}xftFont,
+                             x,y+{\dollar}xftFont-{\rangle}ascent, (FcChar8*)s, strlen(s) );
+    XftDrawSetClip({\dollar}draw,0);
+
+  {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+suche nach widget {\tt {\dollar}} in der radio group {\tt {\dollar}radioGroup}
+  falls noch nicht vorhanden wird eine neue Gruppe
+  angelegt.
+  returns: active widget
+
+
+\Code
+Widget  rgroup{\underline}lookup({\dollar})
+{\lbrace}
+    int p;
+    if( !{\dollar}rgroups )
+    {\lbrace}
+                {\dollar}rgroups = m{\underline}create(5,sizeof(radio{\underline}group{\underline}t));
+                printf("Group created:{\percent}d,{\percent}s{\backslash}n", {\dollar}rgroups, {\dollar}radioGroup);
+        {\rbrace}
+
+    /* radio group finden */
+    if( {\dollar}rg == NULL ) {\lbrace}
+        p = m{\underline}lookup{\underline}str( {\dollar}rgroups, {\dollar}radioGroup, -1 );
+        if( p {\rangle}= 0 )
+                {\lbrace}
+                        {\dollar}rg = mls( {\dollar}rgroups, p );
+                {\rbrace}
+        else
+        {\lbrace}   /* radio group anlegen ? */
+            {\dollar}rg = m{\underline}add({\dollar}rgroups);
+            {\dollar}rg-{\rangle}name = strdup( {\dollar}radioGroup );
+            {\dollar}rg-{\rangle}active  = {\dollar};
+            {\dollar}active = True;
+        {\rbrace}
+    {\rbrace}
+
+    if( {\dollar}rg-{\rangle}active == 0 ) {\dollar}rg-{\rangle}active  = {\dollar};
+    return {\dollar}rg-{\rangle}active;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Widget  rgroups{\underline}get{\underline}active{\underline}widget({\dollar})
+{\lbrace}
+        //might be reallocated, so we need to update the ptr
+        int p = m{\underline}lookup{\underline}str( {\dollar}rgroups, {\dollar}radioGroup, -1 );
+    if(p {\rangle}= 0)
+                {\dollar}rg = mls( {\dollar}rgroups, p );
+    else
+                {\dollar}rg = 0;
+    if(! {\dollar}rg ) ERR("Widget {\percent}s is not registered in any radio group", {\dollar}name );
+    return ( {\dollar}rg-{\rangle}active );
+{\rbrace}\endCode
+
+
+\Section
+\Code
+void  rgroups{\underline}set{\underline}active{\underline}widget({\dollar})
+{\lbrace}
+        int p = m{\underline}lookup{\underline}str( {\dollar}rgroups, {\dollar}radioGroup, -1 );
+    if(p {\rangle}= 0)
+                {\dollar}rg = mls( {\dollar}rgroups, p );
+    else
+                {\dollar}rg = 0;
+    if(! {\dollar}rg ) ERR("Widget {\percent}s is not registered in any radio group", {\dollar}name );
+    {\dollar}rg-{\rangle}active = {\dollar};
+{\rbrace}\endCode
+
+
+\Section
+\Code
+pix{\underline}t * load{\underline}pixmap({\dollar}, char * s)
+{\lbrace}
+        pix{\underline}t *p = calloc( 1,sizeof( pix{\underline}t ));
+        if( load{\underline}pix({\dollar},s, p ) )
+        {\lbrace}
+                free(p);
+                return 0;
+        {\rbrace}
+        return p;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+unload{\underline}pixmap({\dollar}, pix{\underline}t * p)
+{\lbrace}
+        XFreePixmap( XtDisplay({\dollar}), p-{\rangle}map );
+        XFreePixmap( XtDisplay({\dollar}), p-{\rangle}mask );
+        free( p );
+{\rbrace}\endCode
+
+
+\Section
+load a pixmap. store information about pixmap in {\tt *p}.
+  the filename ptr is stored too - but not a copy of that string.
+
+
+\Code
+int  load{\underline}pix({\dollar}, char * name, pix{\underline}t * p)
+{\lbrace}
+  Display *dpy = XtDisplay({\dollar});
+  unsigned int width, height, bw, depth;
+  Window win;
+  int err,x,y;
+
+  if( load{\underline}pixmap{\underline}from{\underline}file({\dollar}, name, {\ampersand} p-{\rangle}map, {\ampersand} p-{\rangle}mask) )
+    return -1;
+
+  if (! XGetGeometry(dpy, p-{\rangle}map, {\ampersand}win, {\ampersand}x, {\ampersand}y, {\ampersand}width, {\ampersand}height, {\ampersand}bw, {\ampersand}depth))
+    return -1;
+
+  /* printf("loading success {\percent}s{\backslash}n", name ); */
+  p-{\rangle}fileName = name;
+  p-{\rangle}pm{\underline}rect.width  = (unsigned short) width;
+  p-{\rangle}pm{\underline}rect.height = (unsigned short) height;
+  p-{\rangle}pm{\underline}depth = depth;
+  return 0;
+{\rbrace}\endCode
+
+
+\End\bye

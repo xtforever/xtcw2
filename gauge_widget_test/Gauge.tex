@@ -1,0 +1,505 @@
+\input wbuildmac.tex
+\Class{Gauge}\Publicvars
+\Table{Gauge}
+XtNlabel&XtCLabel&String &"60{\percent}"\cr
+XtNcornerRoundPercent&XtCCornerRoundPercent&int &"20"\cr
+XtNtimer&XtCTimer&int &"2000"\cr
+XtNqpercent&XtCQpercent&QVar &"zero"\cr
+XtNgauge{\underline}width&XtCGauge{\underline}width&Distance &"15mm"\cr
+XtNhh&XtCHh&Distance &"6mm"\cr
+XtNpercent0&XtCPercent0&int &50 \cr
+XtNpercent1&XtCPercent1&int &75 \cr
+XtNcolor0&XtCColor0&Pixel&"{\hashmark}00ff00"\cr
+XtNcolor1&XtCColor1&Pixel&"{\hashmark}807313"\cr
+XtNcolor2&XtCColor2&Pixel&"{\hashmark}ff0000"\cr
+\endTable
+\Section
+\Publicvar{XtNlabel}
+String  label = {\langle}String{\rangle}"60{\percent}"
+
+\Section
+\Publicvar{XtNcornerRoundPercent}
+int  cornerRoundPercent = "20"
+
+\Section
+\Publicvar{XtNtimer}
+int  timer = {\langle}String{\rangle}"2000"
+
+\Section
+\Publicvar{XtNqpercent}
+QVar  qpercent = "zero"
+
+\Section
+\Publicvar{XtNgauge{\underline}width}
+Distance  gauge{\underline}width = {\langle}String{\rangle}"15mm"
+
+\Section
+\Publicvar{XtNhh}
+Distance  hh = {\langle}String{\rangle}"6mm"
+
+\Section
+\Publicvar{XtNpercent0}
+int  percent0 = 50 
+
+\Section
+\Publicvar{XtNpercent1}
+int  percent1 = 75 
+
+\Section
+\Publicvar{XtNcolor0}
+{\langle}Pixel{\rangle} Pixel  color0 = {\langle}String{\rangle}"{\hashmark}00ff00"
+
+\Section
+\Publicvar{XtNcolor1}
+{\langle}Pixel{\rangle} Pixel  color1 = {\langle}String{\rangle}"{\hashmark}807313"
+
+\Section
+\Publicvar{XtNcolor2}
+{\langle}Pixel{\rangle} Pixel  color2 = {\langle}String{\rangle}"{\hashmark}ff0000"
+
+\End\Table{Wheel}
+XtNxftFont&XtCXFtFont&XftFont&"Sans-22"\cr
+XtNcallback&XtCCallback&Callback&NULL \cr
+XtNbg{\underline}norm&XtCBg{\underline}norm&Pixel&"lightblue"\cr
+XtNbg{\underline}sel&XtCBg{\underline}sel&Pixel&"yellow"\cr
+XtNbg{\underline}hi&XtCBg{\underline}hi&Pixel&"red"\cr
+XtNfg{\underline}norm&XtCFg{\underline}norm&Pixel&"black"\cr
+XtNfg{\underline}sel&XtCFg{\underline}sel&Pixel&"green"\cr
+XtNfg{\underline}hi&XtCFg{\underline}hi&Pixel&"white"\cr
+XtNuser{\underline}data&XtCUser{\underline}data&Int &0 \cr
+XtNfocus{\underline}group&XtCFocus{\underline}group&String &""\cr
+XtNstate&XtCState&Int &0 \cr
+XtNregister{\underline}focus{\underline}group&XtCRegister{\underline}focus{\underline}group&Boolean &True \cr
+\endTable
+\Table{Core}
+XtNx&XtCX&Position &0 \cr
+XtNy&XtCY&Position &0 \cr
+XtNwidth&XtCWidth&Dimension &0 \cr
+XtNheight&XtCHeight&Dimension &0 \cr
+borderWidth&XtCBorderWidth&Dimension &0 \cr
+XtNcolormap&XtCColormap&Colormap &NULL \cr
+XtNdepth&XtCDepth&Int &0 \cr
+destroyCallback&XtCDestroyCallback&XTCallbackList &NULL \cr
+XtNsensitive&XtCSensitive&Boolean &True \cr
+XtNtm&XtCTm&XTTMRec &NULL \cr
+ancestorSensitive&XtCAncestorSensitive&Boolean &False \cr
+accelerators&XtCAccelerators&XTTranslations &NULL \cr
+borderColor&XtCBorderColor&Pixel &0 \cr
+borderPixmap&XtCBorderPixmap&Pixmap &NULL \cr
+background&XtCBackground&Pixel &0 \cr
+backgroundPixmap&XtCBackgroundPixmap&Pixmap &NULL \cr
+mappedWhenManaged&XtCMappedWhenManaged&Boolean &True \cr
+XtNscreen&XtCScreen&Screen *&NULL \cr
+\endTable
+\Imports
+\Section
+\Code
+{\incl} {\langle}X11/Xatom.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xft/Xft.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "converters-xft.h"\endCode
+
+
+\Section
+\Code
+{\incl} "converters.h"\endCode
+
+
+\Section
+\Code
+{\incl} {\langle}X11/Xmu/Converters.h{\rangle}\endCode
+
+
+\Section
+\Code
+{\incl} "mls.h"\endCode
+
+
+\Section
+\Code
+{\incl} "xutil.h"\endCode
+
+
+\Section
+\Code
+{\incl} "micro{\underline}vars.h"\endCode
+
+
+\End\Privatevars
+\Section
+\Code
+XftDraw * draw\endCode
+
+
+\Section
+\Code
+Pixmap  pixmap\endCode
+
+
+\Section
+\Code
+GC  gc{\underline}copy\endCode
+
+
+\Section
+\Code
+int  prefered{\underline}width\endCode
+
+
+\Section
+\Code
+int  prefered{\underline}height\endCode
+
+
+\Section
+\Code
+XtIntervalId  tmr\endCode
+
+
+\Section
+\Code
+String  fromResource\endCode
+
+
+\Section
+\Code
+Widget  TopLevel\endCode
+
+
+\Section
+\Code
+XftColor  col[3]\endCode
+
+
+\End\Classvars
+\Section
+\Code
+XtEnum  compress{\underline}exposure = TRUE \endCode
+
+
+\Section
+\Code
+Atom  XA{\underline}UTF8{\underline}STRING = 0 \endCode
+
+
+\End\Methods
+\Section
+\Code
+initialize(Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    TRACE(1, "Gauge");
+    {\dollar}pixmap = 0;
+    {\dollar}draw = 0;
+    {\dollar}gc{\underline}copy =  XtGetGC({\dollar}, 0,0 );
+    if( {\dollar}width == 0 ) {\dollar}width = 10;
+    if( {\dollar}height == 0 ) {\dollar}height = 10;    
+    calculate{\underline}size({\dollar});
+    if(! {\dollar}XA{\underline}UTF8{\underline}STRING )
+        {\dollar}XA{\underline}UTF8{\underline}STRING = XInternAtom(XtDisplay({\dollar}), "UTF8{\underline}STRING", True);
+    {\dollar}tmr=0;
+    
+    Widget w;
+    {\dollar}TopLevel = {\dollar};
+    w = {\dollar};
+
+    while( ! XtIsShell(w) ) {\lbrace}
+      w = XtParent(w);
+      if( w ) {\dollar}TopLevel = w; else break;
+    {\rbrace}
+
+    xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}color0, {\dollar}col+0 );
+    xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}color1, {\dollar}col+1 );
+    xft{\underline}color{\underline}alloc( {\dollar}, {\dollar}color2, {\dollar}col+2 );
+
+    add{\underline}qpercent{\underline}cb({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+\Code
+realize({\dollar}, XtValueMask * mask, XSetWindowAttributes * attributes)
+{\lbrace}
+        TRACE(1, "Gauge");
+        XtCreateWindow({\dollar}, (unsigned int) InputOutput,
+                          (Visual *) CopyFromParent, *mask, attributes);
+        reshape{\underline}widget({\dollar});
+
+{\rbrace}\endCode
+
+
+\Section
+\Code
+resize({\dollar})
+{\lbrace}
+        TRACE(1, "Gauge");
+    if (XtIsRealized({\dollar})) {\lbrace}
+       if( {\dollar}width {\rangle} 4096 {\bar}{\bar} {\dollar}height {\rangle} 4096 ) return;
+       
+       reshape{\underline}widget({\dollar});
+       if( {\dollar}pixmap ) XFreePixmap(XtDisplay({\dollar}),{\dollar}pixmap);
+       {\dollar}pixmap=0;
+       alloc{\underline}pixmap({\dollar});
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+\Code
+destroy({\dollar})
+{\lbrace}
+
+        TRACE(1, "Gauge");
+    if( {\dollar}draw) XftDrawDestroy( {\dollar}draw );
+    
+    XtReleaseGC({\dollar},{\dollar}gc{\underline}copy);
+    XFreePixmap(XtDisplay({\dollar}),{\dollar}pixmap);
+    
+{\rbrace}\endCode
+
+
+\Section
+\Code
+Boolean  set{\underline}values(Widget  old, Widget  request, {\dollar}, ArgList  args, Cardinal * num{\underline}args)
+{\lbrace}
+    /* get{\underline}selection({\dollar}); */
+       return True;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+expose({\dollar}, XEvent * event, Region  region)
+{\lbrace}
+        TRACE(1, "Gauge");      
+        redraw({\dollar});
+{\rbrace}\endCode
+
+
+\Section
+parameter list ($, int cmd, int val)
+
+
+\Code
+int  exec{\underline}command({\dollar}, int  cmd, int  val)
+{\lbrace}
+  return 0;
+{\rbrace}\endCode
+
+
+\Section
+When our parent asks for this widget's preferred geometry,
+simply return the geometry as wanted
+Currently, the method always returns {\tt XtGeometryAlmost}. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return {\tt XtGeometryNo}) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+{\tt XtGeometryYes} should have been given.
+
+It seems that no harm is done by always returning {\tt XtGeometryAlmost} and
+letting Xt figure out what really needs to be changed.
+
+
+
+\Code
+XtGeometryResult  query{\underline}geometry({\dollar}, XtWidgetGeometry * request, XtWidgetGeometry * reply)
+{\lbrace}
+    reply-{\rangle}request{\underline}mode = CWX {\bar} CWY {\bar} CWWidth {\bar} CWHeight;
+    calculate{\underline}size({\dollar});
+    reply-{\rangle}x=0; reply-{\rangle}y=0;
+    reply-{\rangle}width =  {\dollar}prefered{\underline}width;
+    reply-{\rangle}height = {\dollar}prefered{\underline}height;
+
+    TRACE(1, "Gauge:{\percent}s: parent request is: {\percent}dx{\percent}d", XtName({\dollar}),
+             request-{\rangle}width,
+             request-{\rangle}width );
+
+    TRACE(1, "Gauge:{\percent}s: our prefered size is {\percent}dx{\percent}d", XtName({\dollar}),
+                  {\dollar}prefered{\underline}width,
+                  {\dollar}prefered{\underline}height );
+
+    return XtGeometryAlmost;
+{\rbrace}\endCode
+
+
+\End\Utilities
+\Section
+\Code
+reshape{\underline}widget({\dollar})
+{\lbrace}
+        int w;
+        if( {\dollar}cornerRoundPercent {\rangle}0 {\ampersand}{\ampersand} {\dollar}cornerRoundPercent {\langle} 100 ) {\lbrace}
+            w = Min({\dollar}height,{\dollar}width);
+            w = w * {\dollar}cornerRoundPercent / 100;
+            XmuReshapeWidget( {\dollar}, XmuShapeRoundedRectangle, w, w );
+        {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+called by update cache if pixmap==0
+
+
+\Code
+alloc{\underline}pixmap({\dollar})
+{\lbrace}
+    TRACE(1, "Gauge");
+    Display *dpy = XtDisplay({\dollar});
+
+    TRACE(2,"Gauge:{\percent}s size:{\percent}dx{\percent}d", XtName({\dollar}),  {\dollar}width, {\dollar}height );
+    {\dollar}pixmap = XCreatePixmap(dpy, XtWindow({\dollar}), {\dollar}width, {\dollar}height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+    if( {\dollar}draw ) {\lbrace}
+        XftDrawChange({\dollar}draw, {\dollar}pixmap );
+    {\rbrace}
+    else {\lbrace}
+        {\dollar}draw = XftDrawCreate(dpy, {\dollar}pixmap,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    {\rbrace}
+{\rbrace}\endCode
+
+
+\Section
+outputs a simple string on the window cache pixmap
+
+
+\Code
+str{\underline}print({\dollar}, int  x, int  y, char * s)
+{\lbrace}
+   if( is{\underline}empty(s) ) return;
+   XftDrawStringUtf8({\dollar}draw, {\dollar}xft{\underline}col + {\dollar}state, {\dollar}xftFont,
+                             x,y+{\dollar}xftFont-{\rangle}ascent, (FcChar8*)s, strlen(s) );
+{\rbrace}\endCode
+
+
+\Section
+redraws everything on pixmap cache
+
+
+\Code
+update{\underline}cache({\dollar})
+{\lbrace}
+    TRACE(1, "Gauge");
+    if( {\dollar}pixmap == 0 ) alloc{\underline}pixmap({\dollar});
+
+    /* clear background */
+    XFillRectangle(XtDisplay({\dollar}),{\dollar}pixmap, {\dollar}gc[{\dollar}state], 0,0,{\dollar}width,{\dollar}height );
+    
+    TRACE(1,"Gauge:{\percent}s size:{\percent}dx{\percent}d", {\dollar}name, {\dollar}width, {\dollar}height );
+    draw{\underline}percent({\dollar});
+
+    /* draw percent value on the left side inside gauge */
+    int val = *mv{\underline}var({\dollar}qpercent);
+    char buf[100];
+    snprintf(buf,sizeof buf, "{\percent}d{\percent}{\percent}", val ); 
+    draw{\underline}label({\dollar},buf);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+redraw({\dollar})
+{\lbrace}
+    TRACE(1, "Gauge");
+    if( !XtIsRealized({\dollar})) return;
+    update{\underline}cache({\dollar});
+    XCopyArea(XtDisplay({\dollar}),{\dollar}pixmap, XtWindow({\dollar}), {\dollar}gc{\underline}copy,
+              0,0, {\dollar}width, {\dollar}height, /* source pixmap */
+              0,0 ); /* target window x,y */
+{\rbrace}\endCode
+
+
+\Section
+\Code
+calculate{\underline}size({\dollar})
+{\lbrace}
+
+        int w,h;
+        xft{\underline}calc{\underline}string{\underline}size( {\dollar}, {\dollar}xftFont, {\dollar}label, {\ampersand}w, {\ampersand}h );
+        
+        {\dollar}prefered{\underline}width = w+4;
+        {\dollar}prefered{\underline}height = (h+2) * 2;
+
+        if( {\dollar}hh != 0 ) {\dollar}prefered{\underline}height={\dollar}hh;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+add{\underline}qpercent{\underline}cb({\dollar})
+{\lbrace}
+        mv{\underline}onwrite({\dollar}qpercent, (void*)redraw, {\dollar}, 0);     
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}pix{\underline}rect({\dollar}, int  from, int  to, int  col)
+{\lbrace}
+        XftColor *c = {\dollar}col +col;
+        XftDrawRect({\dollar}draw,c,from,0,to-from+1,{\dollar}height);  
+{\rbrace}\endCode
+
+
+\Section
+\Code
+int  percent{\underline}pixel(int  w, int  p)
+{\lbrace}
+        float x = w * 1.0 / 100.0 * p + 0.5;
+        return x;
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}pix({\dollar}, int  wx, int  p0, int  p1, int  col)
+{\lbrace}
+        int max = percent{\underline}pixel({\dollar}width,wx);
+        int from = percent{\underline}pixel({\dollar}width,p0);
+        int to = percent{\underline}pixel({\dollar}width,p1);
+        if( max {\langle} from ) return;
+        if( to  {\rangle} max  ) to = max;
+        draw{\underline}pix{\underline}rect({\dollar},from,to,col);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}percent({\dollar})
+{\lbrace}
+        int wx = *mv{\underline}var({\dollar}qpercent);
+        draw{\underline}pix({\dollar},wx,0,{\dollar}percent0,0);
+        draw{\underline}pix({\dollar},wx,{\dollar}percent0,{\dollar}percent1,1);
+        draw{\underline}pix({\dollar},wx,{\dollar}percent1,100,2);
+{\rbrace}\endCode
+
+
+\Section
+\Code
+draw{\underline}label({\dollar}, char * s)
+{\lbrace}
+    int px,py,h,w;
+    xft{\underline}calc{\underline}string{\underline}size( {\dollar}, {\dollar}xftFont, s, {\ampersand}w, {\ampersand}h );     
+
+
+    /* horizontal centered */
+    px = ({\dollar}width - w) / 2;
+    if( px {\langle} 0 ) px = 0;
+
+    /* left side attached */
+    px = 1;
+
+    /* vertical centered */
+    py = ({\dollar}height - h) / 2;
+    
+    str{\underline}print({\dollar},px,py,s);
+{\rbrace}\endCode
+
+
+\End\bye
