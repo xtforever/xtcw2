@@ -451,14 +451,15 @@
         return;
     }
 
-    /* insert data */
+    /* insert data, because this string is utf8 encoded
+     we need to check the size of each character */
     p=0;
     byte_len = strlen(s) +1;
     byte_pos = 0;
     while( p < x ) {
-        w = FcUtf8ToUcs4 ((uint8_t*)s + byte_pos, &ucs4, byte_len - byte_pos);
+        w = FcUtf8ToUcs4 ((uint8_t*)s + byte_pos, &ucs4, byte_len - byte_pos); /* get number of bytes for s[byte_pos) */
         if( w <=0 ) break;
-        byte_pos+=w; p++;
+        byte_pos+=w; p++;	/* find next character position */
     }
     s = realloc(s, byte_len+len);
     STR($lines,y) = s;
@@ -883,3 +884,4 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @incl "xutil.h"
 @incl "converters.h"
 @incl "mls.h"
+@incl "form_parse.h"

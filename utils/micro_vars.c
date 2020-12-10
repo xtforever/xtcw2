@@ -49,10 +49,15 @@ int mv_var_lookup( int q )
 }
 
 
-int *mv_var( int q )
+struct mv_data* mv_read_struct( int q )
 {
   int p = mv_var_lookup(q);
-  return & ((struct mv_data*)mls(MV.data, p))->data;
+  return mls(MV.data, p);
+}
+
+int *mv_var( int q )
+{
+  return & (mv_read_struct(q)->data);
 }
 
 int *mv_svar( char *s )

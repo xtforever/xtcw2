@@ -32,4 +32,7 @@ void mv_write(  int q_var, int d );
 
 /* init var with zero and return quark */
 int mv_zerovar(char *s);
+
+struct mv_data* mv_read_struct( int q );
+
 #endif
