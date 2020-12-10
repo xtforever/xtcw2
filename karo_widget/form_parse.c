@@ -3,19 +3,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "m_mysql.h"
+#include "form_parse.h"
 
-/* rule: X & Label Above */
-struct form_entry {
-  int label;
-  int x,y,len;
-  int typ;
-};
 
 
 
 /* 0-9A-Za-z isalnum */
-int skipalnum(int ln, int *p)
+static int skipalnum(int ln, int *p)
 {
   int ch;
   int start=1;
@@ -30,7 +24,7 @@ int skipalnum(int ln, int *p)
   return 0;
 }
 
-int above_label(int scr,int line_num, int pos)
+static int above_label(int scr,int line_num, int pos)
 {
   int label;
   if( line_num == 0 ) return 0;
@@ -50,7 +44,7 @@ int above_label(int scr,int line_num, int pos)
   return label;
 }
 
-int skipx(int ln,int *pos)
+static int skipx(int ln,int *pos)
 {
   int len=0;
   while( *pos < m_len(ln) && CHAR(ln,*pos)=='X' ) { len++; (*pos)++; }
@@ -108,68 +102,58 @@ void form_free(int f)
   struct form_entry *fe;
   int n;
   m_foreach(f,n,fe) { m_free(fe->label); }
-  m_free(f);    
-}
-
-
-void table_test(MYSQL *db)
-{
-    printf("table test\n");
-
-    int res = v_init();
-    if( m_mysql_query(db, "select * from server_info", res ) ) {
-	WARN("mysql error!");
-	return;
-    }
-
-    int num_fields =  field_count(res);
-    int num_rows   =  row_count(res);
+  m_free(f);
     
-    // print field names
-    for( int x=0; x < num_fields; x++ ) {	
-	printf("%s\t", field_name(res, x));
-    }
-    puts("");
-	
-    // print data
-    for( int y = 0; y < num_rows; y++ ) {
-	for( int x=0; x < num_fields; x++ ) {	
-	    printf("%s\t", get_entry(res, x,y));
-	}
-	puts("");
-    } 
-
 }
 
-
-int main(int argc, char **argv)
+static int file_to_marr(FILE *fp)
 {
-  m_init();
-  trace_level=1;
-  int ln,ret;
-  int frm=m_create(100,sizeof(int));
-  FILE *fp = fopen("formtest.frm2","r");
-  assert(fp);
-  do {
-    ln = m_create(100,1);
-    ret = m_fscan(ln,'\n',fp);
-    m_put(frm,&ln);
-  } while( ret == '\n' );
-  int forms = form_scan( frm );
-  int p,*d;
-  m_foreach(frm,p,d) m_free(*d);
-  m_free(frm);
-  
-  form_dump(forms);
-  form_free(forms); forms=0;
-
-  MYSQL *db = m_mysql_connect( "localhost", "cluster", "jens",
-		   "linux" );
-  // table_dump( db, "test1" );
-
-  table_test(db);
-  
-  m_mysql_close(db);
-  
-  m_destruct();
+    int scr=m_create(50,sizeof(int));
+    while(1) {
+	int ln = m_create(50,1);
+	int ret = m_fscan(ln,'\n',fp);
+	if( ret != '\n' ) break;
+	m_put(scr,&ln);
+    }
+    return scr;
 }
+
+void scr_to_display(int scr)
+{
+    /* kill comment lines, kill first character each line */
+    int p=0, ln;
+    while( p < m_len(scr) ) {    
+	ln = INT(scr,p);
+	if( CHAR(ln,0) == '#' ) {
+	    m_free(ln);		/* free line buffer */ 
+	    m_del(scr,p);	/* remove line frm line - list */
+	    continue;
+	}
+	m_del(ln,0); /* remove first character in line */ 
+	p++;
+    }
+}
+
+
+int form_from_file(char *name, int *pscr, int *pfrm)
+{
+    /* read screen to buffer */  
+    FILE *fp = fopen( name, "r");
+    ASERR(fp, "file not found: %s", name );
+    int scr   = file_to_marr(fp);
+    fclose(fp);
+  
+    int forms = form_scan( scr );
+
+    scr_to_display(scr);
+    /* we removed the first character from each line, now we have to 
+       adjust the field positions */
+    int n; struct form_entry *fe;
+    m_foreach(forms,n,fe) { fe->x --; }
+    
+    *pscr = scr;
+    *pfrm = forms;
+    return 0;
+}
+
+
