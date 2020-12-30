@@ -17,7 +17,7 @@ do
     fi
 done
 
-echo "void VexmoRegister(XtAppContext app);"
+echo "void XtcwRegister(XtAppContext app);"
 
 echo "#endif"
 }
