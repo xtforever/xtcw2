@@ -49,9 +49,6 @@ struct nbus_client {
 
 static int NBUS = 0;    
 
-
-
-
 static struct nbus_client *i_get_client(struct nbus_ctx *nbus, int client_id)
 {
     return mls(nbus->clients, client_id);    
@@ -61,7 +58,6 @@ static int i_new_client(struct nbus_ctx *nbus)
 {
     return ctx_init(&nbus->clients,10,sizeof(struct nbus_client));
 }
-
 
 static int i_add_new_client(struct nbus_ctx *nbus, int fd)
 {
@@ -74,7 +70,6 @@ static int i_add_new_client(struct nbus_ctx *nbus, int fd)
     nc->state = NBUS_OPEN;
     return id;
 }
-
 
 static void client_open_connection(struct nbus_client *nc, int fd)
 {
