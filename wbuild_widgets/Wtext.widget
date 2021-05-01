@@ -24,7 +24,7 @@
 @METHODS
 @proc initialize
 {
-	$draw_override = sensor_draw;	
+    $draw_override = sensor_draw;	
     $relayout = True;      
     $update = -1; 
     if( $text == NULL ) $text = $name;

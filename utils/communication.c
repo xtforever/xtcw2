@@ -209,7 +209,7 @@ int sock_accept(int sockfd)
   return newsockfd;
 }
 
-int sock_connect_service(char *server_ip, char *port )
+int sock_connect_service(char *server_ip, char *port ) /*  */
 {
   struct servent *servinfo;
   int portno;

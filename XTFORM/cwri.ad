@@ -19,51 +19,13 @@ cwri.WcChildren: vb
 %% cwri.traceLevel: 0
 
 *vb.WcClass: GridBox
-*vb.WcChildren: sr form bt
-
-
-*sr.WcClass: GridBox
-*sr.WcChildren: srl sre srf srb
-
-*srl.WcClass: Wlabel
-*srl.label: Lookup
-*srl.bg_norm: White
-*srl.fg_norm: Black
-*srl.xftFont: "Source Code Pro-12"
-*srl.margin: 20
-
-*sre.weightx: 100
-*sre.gridx: 1
-*sre.WcClass: Wedit
-*sre.callback: sr_lookup
-*sre.fontName: "Source Code Pro:style=Bold:size=12:-12"
-*sre.margin: 20
-
-*srf.gridx: 3
-*srf.WcClass: Wbutton
-*srf.label: 
-*srf.xftFont: FontAwesome
-*srf.bg_norm: black
-*srf.bg_sel: #101010
-*srf.callback: forward
-
-*srb.gridx: 2
-*srb.WcClass: Wbutton
-*srb.label: 
-*srb.xftFont: FontAwesome
-*srb.bg_norm: black
-*srb.bg_sel: #101010
-*srb.callback: backward
-
-*l1.WcClass: Wbutton
-*l1.label: Hello
-*l1.callback: WcSetValue( *ed.text: test )
+*vb.WcChildren: form bt
 
 *form.WcClass: KaroEd 
 *form.xftFont: Source Code Pro-12
 *form.bg_norm: black
 *form.grid_width: 60
-*form.grid_height: 25
+*form.grid_height: 16
 *form.fileForm: formtest.frm2
 *form.gridy: 1
 
@@ -77,5 +39,4 @@ cwri.WcChildren: vb
 *bt.gridWidth: 1
 *bt.bg_norm: black
 *bt.bg_sel: #101010
-
 *bt.xftFont: Source Code Pro-12
