@@ -1,0 +1,38 @@
+%%
+%% set default colors
+%%
+*foreground: #7F8C8D
+*background: #ECF0D1
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #FFFFFF
+*bg_norm: #1ACC9C
+*xftFont: "Source-Code-8"
+%% *borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+
+cwri.WcChildren: vb
+%% cwri.traceLevel: 0
+
+*vb.WcClass: GridBox
+*vb.WcChildren: ed bt
+
+*ed.WcClass: WeditMV
+*ed.fontName: Noto Serif-14
+*ed.gridx: 1
+*ed.height: 200
+*ed.width:  500
+*ed.textBuffer: myVariable
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 1
+*bt.gridx: 0
+
+*bt.gravity: Center
+*bt.fill: Both
+*bt.gridWidth: 2
