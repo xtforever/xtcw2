@@ -20,6 +20,7 @@ cwri.WcChildren: vb
 
 *vb.WcClass: GridBox
 *vb.WcChildren: wl bt
+*vb.width: 800
 
 *wl.WcClass: Wlist4 
 *wl.gridx: 0

@@ -34,4 +34,7 @@ void ManageWidget( Widget w, int managed );
 Bool rect_is_inside( XRectangle *r, int x, int y );
 void grab_window_quit(Widget w);
 
+void XtcwAppAddInput(Widget w,
+		     int fd, long mask, 
+		     void (*cb)(Widget, int *, XtInputId *) );
 #endif
