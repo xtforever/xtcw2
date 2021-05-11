@@ -345,7 +345,7 @@ int lst_read( lst_t l, int p, void **data, int n)
 // ist ML nicht init. oder m ausserhalb der
 // möglichen grenzen wird NULL übergeben
 // ansonsten ein zeiger auf auf den array-header
-static const inline lst_t* _get_list(int m)
+static inline lst_t* _get_list(int m)
 {
   if(ML==0 || m < 1 ) ERR("Not initialized");
   lst_t *l = (lst_t*) lst( ML, m );
