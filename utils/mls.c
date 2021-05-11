@@ -38,6 +38,7 @@ static const char *Version="Version:$Id: mls.c,v 1.1.1.1 2010-02-12 08:04:52 jen
 // 2018-12-28 m_write, lst_write
 //            lst_write bug: if m_len(m) and count=0 -> error
 // 2019-03-13 buffer overflow in deb_xxx better use vsnprintf :-)
+// 2021-05-11 m_next do nothing if list==0 
 // -----------------------------------------------------------------------------------------------------
 
 struct lst_owner_st {
@@ -344,7 +345,7 @@ int lst_read( lst_t l, int p, void **data, int n)
 // ist ML nicht init. oder m ausserhalb der
 // möglichen grenzen wird NULL übergeben
 // ansonsten ein zeiger auf auf den array-header
-static lst_t* _get_list(int m)
+static const inline lst_t* _get_list(int m)
 {
   if(ML==0 || m < 1 ) ERR("Not initialized");
   lst_t *l = (lst_t*) lst( ML, m );
@@ -395,9 +396,10 @@ void m_remove( int m, int p, int n )
 */
 int m_next( int m, int *p, void *d )
 {
-  lst_t *lp = _get_list(m);
-  if( !d ) ERR("Data address d is ZERO");
-  return lst_next(*lp,p,d);
+    if(!m) return 0;
+    lst_t *lp = _get_list(m);
+    if( !d ) ERR("Data address d is ZERO");
+    return lst_next(*lp,p,d);
 }
 
 // returns 0 - ok, 1 - liste schon initialisiert
