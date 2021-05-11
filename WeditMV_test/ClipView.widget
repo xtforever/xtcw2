@@ -1,0 +1,315 @@
+@class ClipView(  Wheel  )
+
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+@var Atom XA_UTF8_STRING = 0
+
+@PUBLIC
+@var String text = <String> "Hello World How are you?"
+@var int cornerRoundPercent = "20"
+@var int timer = <String> "2000"
+    
+@PRIVATE
+@var XftDraw *draw
+@var Pixmap pixmap
+@var GC gc_copy
+@var int prefered_width
+@var int prefered_height
+@var int mk_display
+@var XtIntervalId tmr
+
+
+@METHODS
+
+@proc initialize
+{
+    TRACE(1, "ClipView");
+    $pixmap = 0;
+    $draw = 0;
+    $gc_copy =  XtGetGC($, 0,0 );
+    if( $width == 0 ) $width = 10;
+    if( $height == 0 ) $height = 10;	
+    calculate_size($);
+    if(! $XA_UTF8_STRING )
+	$XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+
+    $mk_display = m_create(10,sizeof(char*));
+    $tmr=0;
+}
+
+@proc realize
+ {
+        TRACE(1, "ClipView");
+        XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+  	reshape_widget($);
+
+}
+
+@proc resize
+{
+    if (XtIsRealized($)) {
+       if( $width > 4096 || $height > 4096 ) return;
+       
+       reshape_widget($);
+       if( $pixmap ) XFreePixmap(XtDisplay($),$pixmap);
+       $pixmap=0;
+       alloc_pixmap($);
+    }
+}
+
+
+@proc destroy
+{
+    TRACE(1, "ClipView");
+    if( $draw) XftDrawDestroy( $draw );
+    XtReleaseGC($,$gc_copy);
+    XFreePixmap(XtDisplay($),$pixmap);
+    if($mk_display) m_free_strings($mk_display,0);
+    stop_timer($);
+}
+
+@proc set_values
+{
+    /* get_selection($); */
+      return True;
+}
+
+@proc expose
+{
+	
+    TRACE(1, "ClipView");
+    redraw($);
+}
+
+@ parameter list ($, int cmd, int val)
+@proc int exec_command
+{
+  return 0;
+}
+
+
+@ When our parent asks for this widget's preferred geometry,
+simply return the geometry as wanted
+Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return |XtGeometryNo|) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+|XtGeometryYes| should have been given.
+
+It seems that no harm is done by always returning |XtGeometryAlmost| and
+letting Xt figure out what really needs to be changed.
+
+@proc query_geometry
+{
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    calculate_size($);
+    reply->x=0; reply->y=0;
+    reply->width =  $prefered_width;
+    reply->height = $prefered_height;
+
+    TRACE(1, "ClipView:%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(1, "ClipView:%s: our prefered size is %dx%d", XtName($),
+                  $prefered_width,
+                  $prefered_height );
+
+    return XtGeometryAlmost;
+}
+
+
+@UTILITIES
+
+@proc reshape_widget($)
+{
+	int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = Min($height,$width);
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+
+	
+
+}
+
+@ called by update cache if pixmap==0
+@proc alloc_pixmap($)
+{
+    TRACE(1, "ClipView");
+    Display *dpy = XtDisplay($);
+
+    TRACE(2,"ClipView:%s size:%dx%d", XtName($),  $width, $height );
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+    if( $draw ) {
+        XftDrawChange($draw, $pixmap );
+    }
+    else {
+        $draw = XftDrawCreate(dpy, $pixmap,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    }
+}
+
+@ outputs a simple string on the window cache pixmap
+@proc str_print($, int x, int y, char *s )
+{
+   if( is_empty(s) ) return;
+   XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
+    			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+}
+					       
+@ redraws everything on pixmap cache
+@proc update_cache($)
+{
+    TRACE(1, "ClipView");
+    if( $pixmap == 0 ) alloc_pixmap($);
+
+    /* clear background */
+    XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height );
+
+    char *s ="test widget";
+    int i, x=15, y=0;
+    
+    TRACE(1,"ClipView:%s size:%dx%d", $name, $width, $height );
+    TRACE(1,"%s draw string: %s (%dx%d)",$name, s,x,y );
+
+    for(int i=0;i<2; i++) {
+	y = $xftFont->height * i;
+	str_print( $, x,y, v_kget($mk_display,i) );
+    }
+}
+
+
+@proc redraw($)
+{
+    TRACE(1, "ClipView");
+    if( !XtIsRealized($)) return;
+    if( ! $tmr ) start_timer($);
+    update_cache($);
+    XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
+              0,0, $width, $height, /* source pixmap */
+              0,0 ); /* target window x,y */
+}
+
+@proc calculate_size($)
+{
+
+	int w,h;
+	xft_calc_string_size( $, $xftFont, $text, &w, &h );
+	
+	$prefered_width = w+4;
+
+	$prefered_height = (h+2) * 2;
+	
+}
+
+
+
+@proc int lookup_cutboffer(Atom code)
+{
+    int cutbuffer;
+    switch ((unsigned) code) {
+    case XA_CUT_BUFFER0:
+        cutbuffer = 0;
+        break;
+    case XA_CUT_BUFFER1:
+        cutbuffer = 1;
+        break;
+    case XA_CUT_BUFFER2:
+        cutbuffer = 2;
+        break;
+    case XA_CUT_BUFFER3:
+        cutbuffer = 3;
+        break;
+    case XA_CUT_BUFFER4:
+        cutbuffer = 4;
+        break;
+    case XA_CUT_BUFFER5:
+        cutbuffer = 5;
+        break;
+    case XA_CUT_BUFFER6:
+        cutbuffer = 6;
+        break;
+    case XA_CUT_BUFFER7:
+        cutbuffer = 7;
+        break;
+    default:
+        cutbuffer = -1;
+        break;
+    }
+    return cutbuffer;
+}
+
+@ callback function, called by XtGetSelectionValue()
+@proc RequestSelection($, XtPointer client, Atom * selection, Atom * type,
+                       XtPointer value, unsigned long *length, int *format)
+{
+    int row = (intptr_t) client;
+    int len = *length;
+    char *s = value;
+
+    TRACE(2,"got row: %d", row );
+    if( is_empty(s) || 
+        (row < 0) || 
+        (row >= 2) )                return;    
+
+    /* no more than 100 bytes */
+    if( *length > 100 ) s[100]=0;
+    
+    TRACE(2,"value %s",s );    
+    v_kset( $mk_display, s, row );
+}
+
+@proc get_selection($)
+{
+
+    int row;
+
+    row = 0;
+    XtGetSelectionValue($, XA_PRIMARY, $XA_UTF8_STRING,
+			RequestSelection,
+			(void*)(intptr_t)row, 0);
+
+    row = 1;
+    XtGetSelectionValue($, XA_SECONDARY, $XA_UTF8_STRING,
+			RequestSelection,
+			(void*)(intptr_t)row, 0);
+}
+
+@proc stop_timer($)
+{
+   if( $tmr ) {
+     XtRemoveTimeOut($tmr);
+     $tmr=0;
+   }
+}
+
+@proc start_timer($)
+{
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, 
+         (XtTimerCallbackProc)timer_cb, $);
+}
+
+@proc timer_cb($, XtIntervalId *id)
+{
+    get_selection($);
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, 
+          (XtTimerCallbackProc)timer_cb, $);
+    redraw($);
+
+}
+
+
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"
+@incl "xutil.h"
