@@ -170,6 +170,18 @@ static int i_client_find(struct nbus_ctx *nbus, int fd)
     return -1;
 }
 
+/* deliver next message if buffer is empty 
+   returns: 1 - message is ready, 0 no message found 
+*/
+static int fetch_message_from_buffer( struct nbus_client *nc )
+{
+    if(! nc->msg_ready ) {
+	nc->msg_ready = extract_msg( nc->q, nc->msg );
+    }
+    return nc->msg_ready;
+}
+
+
 /* returns: -1 read error, 1 msg READY, 0 - waiting */
 static int msg_from_client(struct nbus_ctx *nbus, int fd)
 {
@@ -186,11 +198,7 @@ static int msg_from_client(struct nbus_ctx *nbus, int fd)
 
     /* if there is NO message waiting to be delivered,
        extract new message from queue */
-    if(! nc->msg_ready ) {
-	nc->msg_ready = extract_msg( nc->q, nc->msg );
-    }
-
-    return nc->msg_ready;
+    return fetch_message_from_buffer(nc);
 }
 
 
@@ -466,6 +474,7 @@ int nbus_printf( int bus, char *frm, ... )
     return e;
 }
 
+/* return ptr to client message */
 char* nbus_client_get_msg(int bus, int client_id)
 {
     struct nbus_ctx *nbus = i_get_nbus(bus);
@@ -474,8 +483,9 @@ char* nbus_client_get_msg(int bus, int client_id)
     return poll_msg(nc);
 }
 
-
-/* data is waiting on the server port */
+/* connection request is waiting on the server port,
+   accept connection and return client_id
+*/
 int nbus_server_message(int bus)
 {
     struct nbus_ctx *nbus = i_get_nbus(bus);
@@ -493,6 +503,14 @@ int nbus_server_message(int bus)
 }
 
 
+/* data is waiting on client socket,
+   fetch data and set current status
+
+   returns: client status
+   - NBUS_WAITING - messge was incomplete
+   - CLIENT_EXIT  - client connection lost
+   - CLIENT_REQ   - message ready
+*/
 int nbus_client_message(int bus, int client_id)
 {
     struct nbus_ctx *nbus = i_get_nbus(bus);

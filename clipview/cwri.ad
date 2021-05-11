@@ -26,6 +26,7 @@ cwri.WcChildren: vb
 
 *ed.WcClass: ClipView 
 *ed.gridx: 1
+*ed.xftFont: unifont-14
 
 *bt.wcClass: Wbutton
 *bt.label: Exit
