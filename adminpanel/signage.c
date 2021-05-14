@@ -175,6 +175,7 @@ struct chap_callback_st {
     int var;			// vset var
     int mvar;			// microvar
     int chap;			// number of the corresponding chapter
+    Widget widget;
 };
 
 chapter_info_t *get_chapter_info( int p )
@@ -188,6 +189,19 @@ chapter_info_t *get_chapter_info( int p )
     return mls(CHAPINFO,p);
 }
 
+
+void SetKeyboardFocus(Widget w)
+{
+    Widget shell, parent;
+
+    shell = parent = w;
+    while (parent) {
+        if (XtIsShell(shell = parent))
+            break;
+        parent = XtParent(parent);
+    }
+    XtSetKeyboardFocus(shell, w);
+}
 
 
 int CUR_PAGE = 0;
@@ -303,6 +317,7 @@ static Widget create_input_widget( int task, int var, Widget mgr )
     struct chap_callback_st *cb = m_add( chap->callback );
     cb->mvar = XrmStringToQuark( input_var  ); // used by weditMVWidgetClass
     cb->var  = v_lookup( chap->vset, name ); // used by string_expand
+    cb->widget = w;
     mv_onwrite( cb->mvar, input_cb, (void*) cb, 0 );
     free(input_var);
     
@@ -386,6 +401,7 @@ void chapter_cb( Widget w, void *u, void *c )
 
     if( chap == 0 ) {
 	switch_page(1);
+	
     }
 }
 

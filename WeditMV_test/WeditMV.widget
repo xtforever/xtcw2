@@ -17,7 +17,7 @@
 @trans <Btn1Down>:     set_cursor()
 @trans <Key>Return:    notify()
 @trans <Key>:          insert_char()
-
+@trans <FocusIn>:      SetKeyboardFocus()
 
 
 
@@ -582,6 +582,24 @@
 }
 
 @ACTIONS
+
+
+@ params: ($, XEvent *event _X_UNUSED, String *params _X_UNUSED, Cardinal *num_params _X_UNUSED)
+@proc SetKeyboardFocus
+{
+	TRACE(1,"try to set keyboard focus");
+    Widget shell, parent;
+
+    shell = parent = $;
+    while (parent) {
+        if (XtIsShell(shell = parent))
+            break;
+        parent = XtParent(parent);
+    }
+    XtSetKeyboardFocus(parent, $);
+}
+
+
 
 @proc info
 {
