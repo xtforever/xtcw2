@@ -18,19 +18,23 @@ cwri.WcChildren: vb
 %% cwri.traceLevel: 0
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed bt
+*vb.WcChildren: ed ed1 bt
 
 *ed.WcClass: WeditMV
 *ed.fontName: Noto Serif-14
 *ed.gridx: 1
-*ed.height: 200
-*ed.width:  500
-*ed.textBuffer: myVariable
+
+*ed1.textBuffer: myVariable
+*ed1.WcClass: WeditMV
+*ed1.fontName: Noto Serif-14
+*ed1.gridx: 1
+*ed1.textBuffer: myVariable1
+*ed1.gridy: 1
 
 *bt.wcClass: Wbutton
 *bt.label: Exit
 *bt.callback: quit_cb
-*bt.gridy: 1
+*bt.gridy: 2
 *bt.gridx: 0
 
 *bt.gravity: Center
