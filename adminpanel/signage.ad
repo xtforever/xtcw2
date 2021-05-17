@@ -3,7 +3,12 @@
 %%
 *foreground: #A0A0E0
 *background: #0000C0
-*Wedit.cursorColor: #FFFF00
+*WeditMV.cursorColor: #FFFF00
+*WeditMV.fontName: Source Code Pro-12
+*Wbutton.xftFont: Source Code Pro-12
+*Wbutton.borderWidth: 7
+*Wbutton.borderColor: #0000C0
+*Wbutton.height: 80
 *borderWidth: 0
 %%
 %% -------------------
@@ -17,8 +22,16 @@ signage.width: 1920
 *gb1.WcChildren: b1 term gb
 
 *term.WcClass: Wlist4
+*term.xftFont: Source Code Pro-8 
+*term.bg_norm: black
+*term.bg_hi: blue
+*term.bg_sel: black
+*term.fg_norm: green
+*term.fg_hi: green
+*term.fg_sel: green 
+
 *term.gridy: 1
-*term.line_max: 10
+*term.height: 200
 *term.getEntry: terminal_output_cb 
 *term.weighty: 100
 

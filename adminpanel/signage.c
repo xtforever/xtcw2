@@ -398,8 +398,8 @@ static chapter_info_t *create_chapter( int num )
 static void create_chapter0( Widget mgr, int task )
 {
     Widget w;
-    Arg wargs[10];
-    int n;
+
+
 
     chapter_info_t *chap = create_chapter( task );    
     int x, y, p; int *d;
@@ -416,12 +416,16 @@ static void create_chapter0( Widget mgr, int task )
     }
     
     char *label = "test chapter 0 leave";
-    n=0; x=0; 
-    XtSetArg(wargs[n], XtNgridx, x); n++;
-    XtSetArg(wargs[n], XtNgridy, y); n++;
-    XtSetArg(wargs[n], XtNlabel, label); n++;
+    x=0; 
+
      // w = XtCreateManagedWidget(label,wlabelWidgetClass, mgr, wargs, n );
-    w = XtCreateManagedWidget(label,wbuttonWidgetClass, mgr, wargs, n );
+    w = XtVaCreateManagedWidget(label,wbuttonWidgetClass, mgr,
+				XtNgridx,x,
+				XtNgridy,y,
+				XtNlabel, label,
+				XtNfill, 0,
+				XtNgravity, 3,
+				NULL );
     XtAddCallback(w, XtNcallback, chapter0_leave, (XtPointer)0 );
 }
 
