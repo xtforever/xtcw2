@@ -38,6 +38,8 @@
 #include "micro_vars.h"
 
 #include "Wlabel.h"
+#include "Wlist4.h"
+#include "Wlist-common.h"
 #include "Gridbox.h"
 #include "WeditMV.h"
 
@@ -49,19 +51,9 @@ int trace_main;
 
 static void incomming_msg(int fd, char *buf, int size);
 
-struct RC_DB {
-  int db;
-  int cur_chap;
-  int cur_var;
-};
-
 extern struct RC_DB RC;
 
 
-typedef struct rc_ent_st {
-  char *name;
-  int chap;
-} rc_ent_t;
 
 int PAGES;
 int LABELS;
@@ -223,6 +215,16 @@ void switch_page(int page)
 }
 
 
+void terminal_output_cb(Widget w, void *u, void *c)
+{
+    wlist_entry_t *ent = c;
+    TRACE(2, "wlist cb");
+    ent->max=10;
+    char *buf = NULL;
+    asprintf( &buf, "hello %d", ent->pos );
+    ent->data = buf;
+}
+
 void chapter0_leave( Widget w, void *u, void *c )
 {
     switch_page(0);
@@ -279,6 +281,21 @@ void input_cb( void *u )
     
 }
 
+void input_widget_enter_cb(Widget w, void *u, void *c)
+{
+    int task = (intptr_t) u;
+    TRACE(1,"Current task: %d", task );
+    struct chapter_info_st *chap = get_chapter_info(task);
+    struct chap_callback_st *cb;
+    int i=-1;
+    while( m_next(chap->callback, &i, &cb) ) {
+	if( cb->widget == w ) break;
+    }
+    i= (i+1) % m_len(chap->callback);
+    cb = mls(chap->callback, i);
+    SetKeyboardFocus( cb->widget );    
+}
+
 static Widget create_input_widget( int task, int var, Widget mgr )
 {
 
@@ -319,6 +336,7 @@ static Widget create_input_widget( int task, int var, Widget mgr )
     cb->var  = v_lookup( chap->vset, name ); // used by string_expand
     cb->widget = w;
     mv_onwrite( cb->mvar, input_cb, (void*) cb, 0 );
+    XtAddCallback( w, XtNcallback, input_widget_enter_cb, (void*)(intptr_t) task );
     free(input_var);
     
     return w;
@@ -425,6 +443,7 @@ static void RegisterApplication ( Widget top )
     /* -- Register application specific callbacks */
     RCB( top, quit_cb );
     RCB( top, test_cb );
+    RCB( top, terminal_output_cb );
 }
 
 /*  init application functions and structures and widgets

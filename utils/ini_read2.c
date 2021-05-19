@@ -18,19 +18,10 @@
 #include <stdlib.h>
 
 int yyparse(void);
+struct RC_DB RC;
 
 void vl_dump(int opts);
 
-struct RC_DB {
-  int db;
-  int cur_chap;
-  int cur_var;
-} RC;
-
-typedef struct rc_ent_st {
-  char *name;
-  int chap;
-} rc_ent_t;
 
 void rc_init( char *filename )
 {

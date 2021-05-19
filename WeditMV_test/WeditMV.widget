@@ -14,10 +14,11 @@
 @trans <Key>BackSpace: backward_char() remove_char()
 @trans <Ctrl>x:        info()
 @trans <Ctrl>v:        insert_selection()
-@trans <Btn1Down>:     set_cursor()
+@trans <Btn1Down>:     set_cursor() 
 @trans <Key>Return:    notify()
 @trans <Key>:          insert_char()
-@trans <FocusIn>:      SetKeyboardFocus()
+@trans <FocusIn>:      focus_in() SetKeyboardFocus()
+@trans <FocusOut>:     focus_out()
 
 
 
@@ -151,21 +152,13 @@
     if (XtIsRealized($)) resize_widget($);
 }
 
-@UTILITIES
-
-
-@ this function is called by mirco_vars if someone writes to a
-  variable with mv_write  
-@proc do_update($)
+@proc accept_focus
 {
-	char *str = "";	
-	int key = *mv_var($textBuffer);
-	if(! key ) return;
-	if(m_len(key) ) {
-		str = m_buf(key);		      
-	}
-	paint($);	
+	TRACE(2,"Class WeditMV: %s: ", XtName($) );
+	return True;
 }
+
+@UTILITIES
 
 
 @proc resize_widget($)
@@ -587,7 +580,7 @@
 @ params: ($, XEvent *event _X_UNUSED, String *params _X_UNUSED, Cardinal *num_params _X_UNUSED)
 @proc SetKeyboardFocus
 {
-	TRACE(1,"try to set keyboard focus");
+    TRACE(2,"try to set keyboard focus");
     Widget shell, parent;
 
     shell = parent = $;
@@ -596,7 +589,18 @@
             break;
         parent = XtParent(parent);
     }
-    XtSetKeyboardFocus(parent, $);
+    
+    XtSetKeyboardFocus(shell, $);
+}
+
+@proc focus_in
+{
+	TRACE(2, "WeditMV %s got focus", XtName($));
+}
+
+@proc focus_out
+{
+	TRACE(2, "WeditMV %s lost focus", XtName($));
 }
 
 

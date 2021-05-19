@@ -22,5 +22,19 @@ char *rc_key_value(char *chap, char *key );
 int rc_find_nearest_pair( int key, int val, int *pos, int *bufp, int *value );
 
 
+struct RC_DB {
+  int db;
+  int cur_chap;
+  int cur_var;
+};
+
+extern struct RC_DB RC;
+
+
+typedef struct rc_ent_st {
+  char *name;
+  int chap;
+} rc_ent_t;
+
 
 #endif
