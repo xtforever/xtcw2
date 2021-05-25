@@ -1,0 +1,8 @@
+VPATH=../utils
+#CC=gcc -I. -I../utils -g -O0 -DMLS_DEBUG -Wall
+CC=gcc -Wall -I. -I../utils  -O3
+ALL: clean mvar
+mvar: mls.o
+clean:
+	-${RM} *.o mvar
+

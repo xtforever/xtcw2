@@ -1,5 +1,6 @@
 /* most important define,
    check APPNAME.ad !
+xterm -e './100lines.sh; bash' &
 */
 #define APP_NAME "signage"
 
@@ -42,6 +43,7 @@
 #include "Wlist-common.h"
 #include "Gridbox.h"
 #include "WeditMV.h"
+static inline const char *m_str(const int m) { return m_buf(m); }
 
 Widget TopLevel;
 int trace_main;
@@ -240,7 +242,8 @@ static Widget create_script_widget( int task, int var, Widget mgr )
 				   XtNweightx, 1,
 				   XtNweighty, 0,
 				   XtNlabel, type,
-				   NULL);    
+				   NULL);
+    
 }
 
 // copy buffer to variable and terminate string with zero 
@@ -266,11 +269,11 @@ char* buffer_to_var( int buf, int len, int var )
 
 void input_cb( void *u )
 {
-    TRACE(1, "" );
+    TRACE(2, "" );
     struct chap_callback_st *cb = u;
     int buf = *mv_var( cb->mvar );
     buffer_to_var( buf, m_len(buf)-1, cb->var );
-    TRACE(1, "set var: %s=%s", v_kget(cb->var,0), v_kget(cb->var,1) );
+    TRACE(2, "set var: %s=%s", v_kget(cb->var,0), v_kget(cb->var,1) );
     
     struct chapter_info_st *chap = get_chapter_info( cb->chap );
     se_expand( & chap->se_script, chap->vset, 0 );
@@ -342,6 +345,17 @@ static Widget create_input_widget( int task, int var, Widget mgr )
     return w;
 }
 
+void exec_script_cb(Widget w, void *u, void *c)
+{
+    int task = (intptr_t) u;
+    chapter_info_t *chap = get_chapter_info(task);
+    TRACE(2,"script: %s", get_task_name(task));    
+    int buf;
+    buf = s_printf(0,0,"xterm -e './%s; bash' &",m_str(chap->se_script.buf) );
+    TRACE(2,"about to execute %s", m_str(buf) );    
+    system( m_str(buf) );
+}
+
 
 void create_widget_from_var( int task, int var, Widget mgr )
 {
@@ -361,6 +375,8 @@ void create_widget_from_var( int task, int var, Widget mgr )
 	    se_init( & chap->se_script );
 	    se_parse( & chap->se_script, type+7 );
 	    chap->w_script = create_script_widget( task, var, mgr );
+	    XtAddCallback( chap->w_script, XtNcallback,
+			   exec_script_cb, (void*) (intptr_t) task );
 	}
 }
 
@@ -382,8 +398,8 @@ static chapter_info_t *create_chapter( int num )
 static void create_chapter0( Widget mgr, int task )
 {
     Widget w;
-    Arg wargs[10];
-    int n;
+
+
 
     chapter_info_t *chap = create_chapter( task );    
     int x, y, p; int *d;
@@ -400,12 +416,16 @@ static void create_chapter0( Widget mgr, int task )
     }
     
     char *label = "test chapter 0 leave";
-    n=0; x=0; y=0;
-    XtSetArg(wargs[n], XtNgridx, x); n++;
-    XtSetArg(wargs[n], XtNgridy, y); n++;
-    XtSetArg(wargs[n], XtNlabel, label); n++;
+    x=0; 
+
      // w = XtCreateManagedWidget(label,wlabelWidgetClass, mgr, wargs, n );
-    w = XtCreateManagedWidget(label,wbuttonWidgetClass, mgr, wargs, n );
+    w = XtVaCreateManagedWidget(label,wbuttonWidgetClass, mgr,
+				XtNgridx,x,
+				XtNgridy,y,
+				XtNlabel, label,
+				XtNfill, 0,
+				XtNgravity, 3,
+				NULL );
     XtAddCallback(w, XtNcallback, chapter0_leave, (XtPointer)0 );
 }
 
