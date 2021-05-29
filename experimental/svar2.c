@@ -27,7 +27,12 @@
 
  */
 
-static int SVAR, SETS, HASH;
+static int SVAR, SVAR_FREE, SETS;
+
+
+/* implementation */
+static void svar_item_free( void *d );
+/* ------------------------------------------------ */
 
 
 #if 1
@@ -100,15 +105,85 @@ static svar_t* svar( int key )
     return mls(SVAR, key);
 }
 
-static svar_set_t* svar_sets( int p )
+/* static svar_set_t* svar_sets( int p ) */
+/* { */
+/*     return mls(SETS, p); */
+/* } */
+
+
+
+uint8_t *bitlist_byte(int m,int p)
 {
-    return mls(SETS, key);
+    int len = m_len(m);
+    if( p >= len ) {
+	m_setlen( m, p+1 );
+	memset( mls(m,len), 0, p - len + 1 );
+    }
+    return mls(m,p);
+}
+
+int  bitlist_test( int m, int p )
+{
+    int      offs  =  p/8;
+    uint8_t  bit   =  p & 8;
+    uint8_t  mask  =  ( 1 << bit );
+    uint8_t *b     = bitlist_byte( m, offs );
+    return  *b & mask;
+}
+
+void bitlist_set( int m, int p )
+{
+    int      offs  =  p/8;
+    uint8_t  bit   =  p & 8;
+    uint8_t  mask  =  ( 1 << bit );
+    uint8_t *b     = bitlist_byte( m, offs );
+    *b |= mask;
+}
+
+void bitlist_clr( int m, int p )
+{
+    int      offs  =  p/8;
+    uint8_t  bit   =  p & 8;
+    uint8_t  mask  =  ( 1 << bit );
+    uint8_t *b     = bitlist_byte( m, offs );
+    *b &= ~ mask;
+}
+
+int bitlist_find_zero( int m )
+{
+    uint8_t ch;
+    int len = m_len(m);
+    while( len-- ) {
+	ch = UCHAR(m,len);
+	if( ch == 0xff ) continue;
+	uint8_t bit = 7;
+	while( bit && (ch & (1 << bit)) ) bit--;
+	return len*8+bit;
+    }
+    return -1;
+}
+
+int bitlist_find_one( int m )
+{
+    uint8_t ch;
+    int len = m_len(m);
+    while( len-- ) {
+	ch = UCHAR(m,len);
+	if( ch == 0 ) continue;
+	uint8_t bit = 7;
+	while( bit && ! (ch & (1 << bit)) ) bit--;
+	return len*8+bit;
+    }
+    return -1;
 }
 
 
 static int svar_new(int buf)
 {
-   int hash_item = m_new( SVAR, 1);
+    int hash_item;
+    int *p = m_pop(SVAR_FREE);
+    if( p == NULL ) hash_item = m_new( SVAR, 1);
+    else hash_item = *p;
    svar_t *v = mls(SVAR, hash_item);
    memset(v,0,sizeof(*v));
    // use a list of integers to store a handle to the name
@@ -119,6 +194,22 @@ static int svar_new(int buf)
    m_put(v->name, &str);	       /* add to list */
    return hash_item;		       /* return this item */
 }
+
+/** @brief to be called by m_free_user, frees memory allocated by a svar 
+ *  @param pp pointer to svar handle
+ */
+static void svar_free( void *pp )
+{
+    int p = *(int *)pp;
+    svar_t *sv = svar( p );
+    if( sv->name == 0 ) {
+	// TRACE(1, "double free svar %d", p);
+	return;
+    }
+    svar_item_free( sv );
+    m_put( SVAR_FREE, &p );
+}
+
 
 /** find or insert variable (buf) in hash-table (hash)    
  */
@@ -151,7 +242,7 @@ static int hash_lookup(int hash, int buf, int byte_compare )
     // check if the same is already inside
     int p, *d;
     m_foreach( hash_item_list, p, d ) {
-	svar_t *v = mls(SVAR_DAT, *d);
+	svar_t *v = mls(SVAR, *d);
 	if( m_cmp( INT(v->name,0), buf ) == 0 ) return *d;
     }
 
@@ -162,13 +253,14 @@ static int hash_lookup(int hash, int buf, int byte_compare )
     return hash_item;
 }
 
-int hash_to_string( int hash_item )
-{
-    return svar(hash_item)->name;
-}
+/* static int hash_to_string( int hash_item ) */
+/* { */
+/*     return svar(hash_item)->name; */
+/* } */
 
 // convert mstring to hash-code
 // if buffer is not a multiple of 8 resize buffer
+// @returns hash-code for sbuf
 static int string_to_hash(int hash, int sbuf )
 {
     ASSERT( m_width(sbuf) == 1 );
@@ -179,22 +271,22 @@ static int string_to_hash(int hash, int sbuf )
 	m_setlen( sbuf, old_len );
     }
     
-    return check_hash2(hash, sbuf, 1);
+    return hash_lookup(hash, sbuf, 1);
 }
 
-int string_to_hash_fast(int hash, int sbuf )
-{
-    return check_hash2(hash, sbuf, 0);
-}
+/* static int string_to_hash_fast(int hash, int sbuf ) */
+/* { */
+/*     return  hash_lookup(hash, sbuf, 0); */
+/* } */
 
-int svar_key(int hash, int buf)
-{
-    return string_to_hash(hash, buf);
-}
+/* static int svar_key(int hash, int buf) */
+/* { */
+/*     return string_to_hash(hash, buf); */
+/* } */
 
 const char *svar_name( int v )
 {
-    return m_str( svar(v)->name );
+    return m_str( INT(svar(v)->name,0) );
 }
 
 int *svar_value( int v )
@@ -207,27 +299,42 @@ uint8_t *svar_type( int v )
     return & svar(v)->type ;
 }
 
-void m_free_list_of_list(int m)
+
+void mlist_free(void *d)
 {
-    int *item_list,p;
-    m_foreach(m,p,item_list) m_free(*item_list);
-    m_free(m);
+    m_free( *(int*) d );
 }
 
 void sets_free( void *d )
 {
     svar_set_t *item = d;
-    m_free_list_of_list(d->hash);
-    m_free(d->svar_key);
+    int p,*svar_list;
+    m_foreach( item->hash, p, svar_list) {
+	m_free_user(*svar_list, svar_free );
+    }
+    m_free( item->hash );
 }
 
-void svar_free( void *d )
+static void svar_item_free( void *d )
 {
     svar_t *item = d;
-    m_free( item->name );
+    m_free_list_of_list( item->name ); item->name=0;
     m_free( item->read_callbacks );
     m_free( item->write_callbacks );	
 }
+
+void m_free_user(int m, void (*free_h)(void*))
+{
+    void *d; int p;
+    m_foreach(m,p,d) free_h(d);
+    m_free(m);
+}
+
+void m_free_list_of_list(int m)
+{
+    m_free_user( m, mlist_free );
+}
+
 
 static int svar_find_signal_handler( int m, void (*fn) (void*, int) )
 {
@@ -285,79 +392,94 @@ void svar_write( int q, int data )
     ent->locked = 0;
 }
 
-static int cstring_to_hash( int hash, int buf, const char *b )
-{
-    int s,c;
-    m_write(buf,0,b, strlen(b)+1 );
-    c = string_to_hash(hash, buf ); 
-    return c;
-}
 
+/* static int cstring_to_hash( int hash, int buf, const char *b ) */
+/* { */
+/*     int c; */
+/*     m_write(buf,0,b, strlen(b)+1 ); */
+/*     c = string_to_hash(hash, buf );  */
+/*     return c; */
+/* } */
 
-void m_free_user(int m, void (*free_h)(void*))
+void hash_new(int p)
 {
-    void *d; int p;
-    m_foreach(m,p,d) free_h(d);
-    m_free(m);
+    svar_set_t *set = mls(SETS,p);
+    set->hash = m_create(SVAR_TABLE_SIZE+1, sizeof(int) );
+    m_setlen( set->hash, SVAR_TABLE_SIZE+1 );
 }
 
 void svar_create(void)
 {
-    SVAR = m_create(100, sizeof(svar_t) );
+    SVAR = m_create(100, sizeof(svar_t) );  m_add(SVAR);
     SETS = m_create(10, sizeof( svar_set_t) );
+    m_add(SETS); hash_new(0); // set zero is reserved for globals
+    SVAR_FREE= m_create(10, sizeof( int ));
 }
 
 void svar_destruct(void)
 {
-    m_free_user(SVAR, svar_free );
     m_free_user(SETS, sets_free );
+    m_free_user(SVAR, svar_free );
+    m_free(SVAR_FREE);
 }
 
-int hash_new(void)
-{
-    int hash = m_create(SVAR_TABLE_SIZE+1, sizeof(int) );
-    m_setlen( hash, SVAR_TABLE_SIZE+1 );
-    return hash;
-}
 
 int     s_create( void )
 {
     if( ! SVAR ) { svar_create(); }
     
     svar_set_t *set;
-    int p = m_len(SETS);
+    int p,len;
+
+    p = len = m_len(SETS);
     while(1) {
 	p--;
-	if( p < 0 ) { set = m_add(SETS); break; }
+	if( p < 0 ) { set = m_add(SETS); p=len; break; }
+	set = mls( SETS, p);
 	if( set->hash == 0 ) break;
     }
-    set->hash = hash_new();
-    set->svar_key = m_create(10,sizeof(int));
+    hash_new(p);
+    return p;
 }
 
 void    s_free( int vs )
 {
     svar_set_t *set= mls(SETS,vs);
+    if( set->hash == 0 ) {
+	WARN("double free set %d", vs);
+	return;
+    }
     sets_free( set );
     set->hash = 0;
-    set->svar_key = 0;
 }
 
-
-
-
-void svar_get_internals( int *svar, int *svar_dat )
+int s_lookup( int vs, int buf )
 {
-    *svar=SVAR;
-    *svar_dat=SVAR_DAT;
+    svar_set_t *set= mls(SETS,vs);
+    return string_to_hash(set->hash, buf ); 
+}
+
+int s_lookup_str( int vs, char *s )
+{
+    int buf = s_printf(0,0,s);
+    int c = s_lookup( vs, buf );
+    m_free(buf);
+    return c;
 }
 
 
-static int get_var_name(int q )
+
+
+/** @brief return array with var names 
+ */
+static int get_var_names( int q )
 {
     return svar(q)->name;
 }
 
+/** @brief copy the list src to dest if dest is null create dest
+ *  @returns dest
+ */
 int m_copy(int dest, int src)
 {
     int len = m_len(src);
@@ -365,8 +487,11 @@ int m_copy(int dest, int src)
     m_setlen(dest,len);
     memcpy( m_buf(dest),m_buf(src), len );
     return dest;
-}    
+}
 
+/** @brief make an empty string. if str is null create str
+ *  @returns str
+ */
 int s_clr( int str )
 {
     if( str <= 0 ) str=m_create(1,1);
@@ -385,50 +510,69 @@ int s_clr( int str )
 void    s_kset( int key, int buf, int row )
 {
     int val;
-    int var = get_var_name(key);
+    int var = get_var_names(key);
 
     if( row < 0 || row >= m_len(var) ) // append-value
 	{
 	    val = m_copy(0,buf); 
 	    m_put(var,&val);
+	    return;
 	}
-    else // replace value
-	{
-	    int row = INT(var,row);
-	    if( row > 0 ) {
-		m_copy(row,buf);
-	    } else {
-		val=m_copy(0,buf);
-		INT(var,row)=row;
-	    }
-	}
+    
+    int *pstr = mls(var,row);
+    *pstr = m_copy(*pstr, buf); /* overwrite or create */
 }
 
-void    v_kclr( int key )
+void    s_kclr( int key )
 {
-    int var = get_var_name(key);
+    int var = get_var_names(key);
     
-    int i=0; int *d; // start at second entry
+    int *d, i=0;		/* start at second entry */
     while( m_next(var,&i,&d) )
 	if( *d ) {
-	    m_free(*d); *d=NULL;
+	    m_free(*d); *d=0; /* free mstring */
 	}
 
     m_setlen(var,1);
 }
 
-int buf = v_kget( int key, int row )
+int  s_kget( int key, int row )
 {
-    int var = get_var_name(key);
+    int var = get_var_names(key);
     int len=m_len(var);
-    if( row >= len ) row=len-1;
+    if( row >= len || row < 0 ) row=len-1;
     return INT(var,row);
 }
 
-int v_klen( int key )
+int s_klen( int key )
 {
-    int var = get_var_name(key);
-    return m_len(var) -1;
+    int var = get_var_names(key);
+    return m_len(var);
 }
 
+int m_alloced_mem(int m)
+{
+    return m_bufsize(m) * m_width(m);
+}
 
+int svar_mem(int sp)
+{
+    svar_t *v = svar(sp);
+    int mem=0;
+    int p, *d;
+    m_foreach(v->name,p,d) {
+	mem+=m_alloced_mem(*d);
+    }
+    return mem;
+}
+
+void statistics_svar_allocated(int *a, int *mem, int *free)
+{
+    *a = *mem = *free = 0;
+    int p; svar_t *d;
+    m_foreach(SVAR,p,d) {
+	(*mem) += svar_mem(p);	    
+	if( d->name ) (*a)++;
+    }
+    *free = m_len(SVAR_FREE);
+}
