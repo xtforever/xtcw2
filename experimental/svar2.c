@@ -14,13 +14,21 @@
 
    code %= HASH_TABLE_SIZE
    
-   SVAR[ code ] = [ p1, p2, ... ]
+   HASH[ code ] = [ p1, p2, ... ]
 
    p1 : hash-unique_id
-   SVAR_DAT[p1] = {   name-ptr : key-name-char-array,
+   SVAR[p1] = {   name-ptr : key-name-char-array,
                       var_...  
 		  }
+
+    SETS = svar_set_t = [ (hash,keys) ]  
+       hash : list of hashed entries
+       keys : list of var-id's
+
  */
+
+static int SVAR, SETS, HASH;
+
 
 #if 1
 int s_strcpy(int dst, int src, int max)
@@ -56,7 +64,7 @@ int s_strcpy(int dst, int src, int max)
 }
 #endif
 
-static int SVAR, SETS, HASH;
+
 
 // Dedicated to Pippip, the main character in the 'Das Totenschiff' roman, actually the B.Traven himself, his real name was Hermann Albert Otto Maksymilian Feige.
 // CAUTION: Add 8 more bytes to the buffer being hashed, usually malloc(...+8) - to prevent out of boundary reads!
@@ -103,9 +111,13 @@ static int svar_new(int buf)
    int hash_item = m_new( SVAR, 1);
    svar_t *v = mls(SVAR, hash_item);
    memset(v,0,sizeof(*v));
-   v->name = m_create( SVAR_MAX, 1 );	
-   s_strcpy( v->name, buf, SVAR_MAX );
-   return hash_item;
+   // use a list of integers to store a handle to the name
+   v->name = m_create(2,sizeof(int)); // our list
+
+   int str =  m_create( SVAR_MAX, 1 ); /* new string */
+   s_strcpy( str, buf, SVAR_MAX );     /*  strcpy */
+   m_put(v->name, &str);	       /* add to list */
+   return hash_item;		       /* return this item */
 }
 
 /** find or insert variable (buf) in hash-table (hash)    
@@ -140,7 +152,7 @@ static int hash_lookup(int hash, int buf, int byte_compare )
     int p, *d;
     m_foreach( hash_item_list, p, d ) {
 	svar_t *v = mls(SVAR_DAT, *d);
-	if( m_cmp( v->name, buf ) == 0 ) return *d;
+	if( m_cmp( INT(v->name,0), buf ) == 0 ) return *d;
     }
 
  new_item:
@@ -339,4 +351,84 @@ void svar_get_internals( int *svar, int *svar_dat )
     *svar=SVAR;
     *svar_dat=SVAR_DAT;
 }
+
+
+static int get_var_name(int q )
+{
+    return svar(q)->name;
+}
+
+int m_copy(int dest, int src)
+{
+    int len = m_len(src);
+    if( dest <= 0 ) dest=m_create(len,1);
+    m_setlen(dest,len);
+    memcpy( m_buf(dest),m_buf(src), len );
+    return dest;
+}    
+
+int s_clr( int str )
+{
+    if( str <= 0 ) str=m_create(1,1);
+    m_setlen(str,1);
+    CHAR(str,0)=0;
+    return str;
+}
+
+// Access Stringlist Var
+//
+// row=0 - varname
+// row=1 - first value ...
+//
+// row < 0 OR row==Len : Append val
+// row > len : Error, exit
+void    s_kset( int key, int buf, int row )
+{
+    int val;
+    int var = get_var_name(key);
+
+    if( row < 0 || row >= m_len(var) ) // append-value
+	{
+	    val = m_copy(0,buf); 
+	    m_put(var,&val);
+	}
+    else // replace value
+	{
+	    int row = INT(var,row);
+	    if( row > 0 ) {
+		m_copy(row,buf);
+	    } else {
+		val=m_copy(0,buf);
+		INT(var,row)=row;
+	    }
+	}
+}
+
+void    v_kclr( int key )
+{
+    int var = get_var_name(key);
+    
+    int i=0; int *d; // start at second entry
+    while( m_next(var,&i,&d) )
+	if( *d ) {
+	    m_free(*d); *d=NULL;
+	}
+
+    m_setlen(var,1);
+}
+
+int buf = v_kget( int key, int row )
+{
+    int var = get_var_name(key);
+    int len=m_len(var);
+    if( row >= len ) row=len-1;
+    return INT(var,row);
+}
+
+int v_klen( int key )
+{
+    int var = get_var_name(key);
+    return m_len(var) -1;
+}
+
 
