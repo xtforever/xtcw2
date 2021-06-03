@@ -51,14 +51,22 @@ void svar_write( int q, int data );
 int  *svar_value( int q );
 char *svar_typename(int v);
 uint8_t *svar_type(int v);
-#define SVAR_ARRAY 1
-
+#define SVAR_ARRAY   8
 #define SVAR_INT     0
 #define SVAR_FLOAT   1
-
 #define SVAR_MSTRING 4
 #define SVAR_SVAR    5
 #define SVAR_MARRAY  6
+
+
+#define SVAR_INT_ARRAY     (0+8)
+#define SVAR_FLOAT_ARRAY   (1+8)
+#define SVAR_MSTRING_ARRAY (4+8)
+#define SVAR_SVAR_ARRAY    (5+8)
+#define SVAR_MARRAY_ARRAY  (6+8)
+
+#define svar_is_array(t) (t&SVAR_ARRAY)
+
 
 
 /*
