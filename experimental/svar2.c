@@ -201,6 +201,7 @@ static int svar_new(int buf)
 static void svar_free( void *pp )
 {
     int p = *(int *)pp;
+    TRACE(1,"id: %d", p );
     svar_t *sv = svar( p );
     if( sv->name == 0 ) {
 	// TRACE(1, "double free svar %d", p);
@@ -320,7 +321,39 @@ static void svar_item_free( void *d )
     svar_t *item = d;
     m_free_list_of_list( item->name ); item->name=0;
     m_free( item->read_callbacks );
-    m_free( item->write_callbacks );	
+    m_free( item->write_callbacks );
+    if(! item->type ) return;	/* no type info */
+
+    int t = (item->type >> 1) & 7; /* 3 bits */
+    TRACE(1,"free type %d", t );
+    int is_array   = item->type & 1;
+    int is_mstring = t == 4;
+    int is_svar    = t == 5;
+    int is_marray  = t == 6;
+    item->type = 0;		/* we do not want recursion */
+    /* if var1 contains var2 and var2 contains var1 we would have an
+       endless loop */
+    
+    /* handle simple case first */
+    if( ! is_array ) {
+	if( is_mstring || is_marray ) { m_free(item->value); return; } 
+	if( is_svar ) { svar_free(& item->value ); return; }    
+	return; 		/* no destructor needed */
+    }
+    
+    /* this svar->value contains an array, lets check the type of objects */
+
+    if( is_mstring || is_marray ) {
+	m_free_list_of_list(item->value);
+	return;
+    }
+
+    if( is_svar ) {
+	m_free_user(item->value, svar_free );
+	return;
+    }
+
+    m_free( item->value ); /* it's an array of some obj */
 }
 
 void m_free_user(int m, void (*free_h)(void*))
@@ -575,4 +608,37 @@ void statistics_svar_allocated(int *a, int *mem, int *free)
 	if( d->name ) (*a)++;
     }
     *free = m_len(SVAR_FREE);
+}
+
+
+/* svar types
+   bit
+   0		0 = single value
+		1 = array
+   3,2,1	000 = integer
+   		001 = float           
+                100 = mstring
+		101 = svar
+		110 = marray 
+
+   4 5 6 7      FREE
+*/
+char *svar_typename(int v)
+{
+    static char name[40];
+    int t = *svar_type(v);
+    *name=0;			/* clear string */
+    if( t & 1 ) {
+	strcpy(name, "array of "); /* 9 chars */
+    }
+    t = (t>>1) & 7;
+    switch( t ) {
+    case 0: strcat(name,"integer"); break;
+    case 1: strcat(name,"float"); break;
+    case 4: strcat(name,"mstring"); break;
+    case 5: strcat(name,"svar"); break;
+    case 6: strcat(name,"marray"); break;
+    default: strcat(name,"unknown"); break;
+    }
+    return name;
 }

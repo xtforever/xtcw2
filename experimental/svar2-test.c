@@ -6,6 +6,8 @@
 #include "mls.h"
 #include "svar2.h"
 
+char *mstr(int k) { return m_buf(k); }
+
 
 int read_keys_from_file( char *filename )
 {
@@ -59,7 +61,96 @@ void dump_svar(int key)
 	printf( " %s", m_str( s_kget(key,p)));
     }
     printf(" ]\n");
+
+    printf("TYPE: %s\n", svar_typename(key) );
+    int t = *svar_type(key);
+    t &= 0x0f;
+
+    if ( t & 1 ) {
+	t >>= 1;
+	if( t == SVAR_SVAR ) {
+	    printf("----------------\n");
+	    int m,p,*d;
+	    m=*svar_value(key);
+	    m_foreach(m,p,d) {
+		dump_svar(*d);
+	    }
+	    printf("----------------\n");
+	    return;
+	}	
+
+	if( t == SVAR_INT ) {
+	    printf("----------------\n");
+	    int m,p,*d;
+	    m=*svar_value(key);
+	    m_foreach(m,p,d) {
+		printf("%d ", *d );
+	    }
+	    printf("\n----------------\n");
+	    return;
+	}	
+
+    }
+
+    t >>= 1;
+    TRACE(1,"type: %d\n", t );
+    if( t == SVAR_MSTRING ) {
+	printf("value: %s\n", mstr(*svar_value(key)) );
+	return;
+    }
+    if( t == SVAR_INT ) {
+	printf("value: %d\n", *svar_value(key) );
+	return;
+    }
+    
+    
+    
 }
+
+
+void type_test(void)
+{
+    trace_level=0;
+    int vs = s_create();  
+    int key = s_lookup_str( vs, "myVar" );
+    dump_svar(key);
+
+    int mstr = s_printf(0,0,"Hello");
+    uint8_t *t = svar_type(key);
+    *t = (*t & 0x0f) | (SVAR_MSTRING << 1);
+    svar_write(key, mstr );
+    dump_svar(key);
+    int other_key = key;
+    
+    key = s_lookup_str( vs, "myVarArray" );
+    t = svar_type(key);
+    *t = (*t & 0x0f) | (SVAR_SVAR << 1) | SVAR_ARRAY;
+    int val = m_create(10,sizeof(int));
+    m_put(val, &other_key);
+    svar_write(key, val );
+    dump_svar(key);
+
+
+    key = s_lookup_str( vs, "myVarArrayInt" );
+    t = svar_type(key);
+    *t = (*t & 0x0f) | (SVAR_INT << 1) | SVAR_ARRAY;
+    val = m_create(10,sizeof(int));
+    for(int i=10;i<20;i++) {
+	m_put(val, &i);
+    }
+    svar_write(key, val );
+    dump_svar(key);
+
+
+    key = s_lookup_str( vs, "myVarArray" );
+    val = *svar_value(key);
+    m_put(val, &key);
+    dump_svar(key);
+
+
+    s_free(vs);
+}
+
 
 
 int print_stacksize(void);
@@ -74,16 +165,18 @@ void print_stats(void)
 }
 
 
+
+
 int main()
 {
     m_init();
     trace_level=2;
-
-    int keys = read_keys_from_file( "john.txt" );
-    
     svar_create();
 
-    
+    type_test();
+    goto leave;
+
+    int keys = read_keys_from_file( "john.txt" ); 
     int str = s_printf(0,0, "hello world");
 
     print_stacksize();
@@ -146,6 +239,7 @@ int main()
     m_free_list_of_list(keys);
     m_free(str);
     s_free(vs);
+ leave:
     svar_destruct();
     m_destruct();
 }

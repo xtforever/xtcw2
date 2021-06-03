@@ -47,6 +47,20 @@ void svar_destruct(void);
   char    s_ktype( int key );
   void    s_konwrite( int key, void (*fn) (void*, int), void *d, int remove );
 
+void svar_write( int q, int data );
+int  *svar_value( int q );
+char *svar_typename(int v);
+uint8_t *svar_type(int v);
+#define SVAR_ARRAY 1
+
+#define SVAR_INT     0
+#define SVAR_FLOAT   1
+
+#define SVAR_MSTRING 4
+#define SVAR_SVAR    5
+#define SVAR_MARRAY  6
+
+
 /*
  */
 

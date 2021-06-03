@@ -8,5 +8,6 @@ D=mls.o svar.o
 ALL: clean ${T} svar2-test
 ${T}: ${D}
 svar2-test: mls.o svar2.o
+
 clean:
 	-${RM} *.o ${T}
