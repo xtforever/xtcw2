@@ -51,6 +51,30 @@ void check_hash_speed( int seconds, int keys, int vs  )
 }
 
 
+/* lookup key 
+ * key1@key2@key3@key4 
+ * monster@t1 
+ * monster - lookup create svar-array, create hash table
+ *         - k=lookup t1, add k, return k
+ * 
+ */
+
+   
+void dump_svar(int key);
+
+void print_svar_value(int t, void *val )
+{
+    t &= ~ SVAR_ARRAY;
+    int x = *(int*) val;
+    switch( t ) {
+    case SVAR_INT: printf("%d", x); break;
+    case SVAR_FLOAT: printf("%f", *(float*) val); break;
+    case SVAR_MSTRING: printf("%s", mstr(x)); break;
+    case SVAR_MARRAY: printf("%d %d %d", x, m_len(x), m_width(x)); break;
+    case SVAR_KEY: dump_svar(x); break;
+    }
+}
+
 void dump_svar(int key)
 {
     int ch=0;
@@ -63,64 +87,24 @@ void dump_svar(int key)
     printf(" ]\n");
 
     printf("TYPE: %s\n", svar_typename(key) );
-    int t = *svar_type(key);
-    t &= 0x0f;
+    int t = *svar_type(key) & 0x0f;
 
-    if ( t & 1 ) {
-	t >>= 1;
-	if( t == SVAR_SVAR ) {
-	    printf("----------------\n");
-	    int m,p,*d;
-	    m=*svar_value(key);
-	    m_foreach(m,p,d) {
-		dump_svar(*d);
-	    }
-	    printf("----------------\n");
-	    return;
-	}	
-
-	if( t == SVAR_INT ) {
-	    printf("----------------\n");
-	    int m,p,*d;
-	    m=*svar_value(key);
-	    m_foreach(m,p,d) {
-		printf("%d ", *d );
-	    }
-	    printf("\n----------------\n");
-	    return;
-	}	
-	if( t == SVAR_FLOAT ) {
-	    printf("----------------\n");
-	    int m,p; float *d;
-	    m=*svar_value(key);
-	    m_foreach(m,p,d) {
-		printf("%f ", *d );
-	    }
-	    printf("\n----------------\n");
-	    return;
-	}	
-
-	
-    }
-
-    t >>= 1;
-    TRACE(1,"type: %d\n", t );
-    if( t == SVAR_MSTRING ) {
-	printf("value: %s\n", mstr(*svar_value(key)) );
+    if ( svar_is_array(t) ) {
+	printf("----------------\n");
+	m_foreach(m,p,d) {
+	    print_svar_value( t, svar_value(key) );
+	}
+	printf("----------------\n");
 	return;
-    }
-    if( t == SVAR_INT ) {
-	printf("value: %d\n", *svar_value(key) );
-	return;
-    }
-    if( t == SVAR_FLOAT ) {
-	printf("value: %f\n", *(float*)svar_value(key) );
-	return;
-    }
-    
-    
-    
+    }	
+
+    printf("value: "  );
+    print_svar_value( t, svar_value(key) );
+    printf("\n" );    
 }
+
+
+
 
 
 void type_test(void)
@@ -171,7 +155,17 @@ void type_test(void)
     *fval = 3.141;
     dump_svar(key);
 
+    /*
+      key = s_lookup_str_typed( vs, "myFloat", SVAR_FLOAT );
+      svar_float_set(key, 0, 3.141 );
+      dump_svar(key);
 
+      key = s_lookup_str_typed( vs, "myFloat", SVAR_FLOAT_ARRAY );
+      svar_float_set(key, -1, 3.141 );
+      svar_float_set(key, -1, 6.941 );
+      dump_svar(key);
+    */
+    
     s_free(vs);
 }
 
