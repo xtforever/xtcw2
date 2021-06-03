@@ -89,7 +89,18 @@ void dump_svar(int key)
 	    printf("\n----------------\n");
 	    return;
 	}	
+	if( t == SVAR_FLOAT ) {
+	    printf("----------------\n");
+	    int m,p; float *d;
+	    m=*svar_value(key);
+	    m_foreach(m,p,d) {
+		printf("%f ", *d );
+	    }
+	    printf("\n----------------\n");
+	    return;
+	}	
 
+	
     }
 
     t >>= 1;
@@ -100,6 +111,10 @@ void dump_svar(int key)
     }
     if( t == SVAR_INT ) {
 	printf("value: %d\n", *svar_value(key) );
+	return;
+    }
+    if( t == SVAR_FLOAT ) {
+	printf("value: %f\n", *(float*)svar_value(key) );
 	return;
     }
     
@@ -142,9 +157,18 @@ void type_test(void)
     dump_svar(key);
 
 
-    key = s_lookup_str( vs, "myVarArray" );
+    key = s_lookup_str( vs, "myVarArrayInt" );
     val = *svar_value(key);
     m_put(val, &key);
+    dump_svar(key);
+    
+    
+
+    key = s_lookup_str( vs, "myFloat" );
+    t = svar_type(key);
+    *t = (*t & 0x0f) | (SVAR_FLOAT << 1);
+    float *fval = (float*) svar_value(key);
+    *fval = 3.141;
     dump_svar(key);
 
 
