@@ -14,22 +14,35 @@ int SETS - all variable sets (list of svar_set_t)
 interface:
 */
 
+
+void m_free_user(int m, void (*free_h)(void*));
+void m_free_list_of_list(int m);
+int s_clr( int str );
+int m_copy(int dest, int src);
+void statistics_svar_allocated(int *a, int *mem, int *free);
+
+
+void svar_create(void);
+void svar_destruct(void);
+
+
   int     s_create( void );
   void    s_free( int vs );
   // using variable name
   int     s_set( int vs, const char* name, const char* value, int pos );
   void    s_vaset( int vs, ... );
-  void    s_clr( int vs, const char* name );
+  void    s_clear( int vs, const char* name );
   char*   s_get( int vs, const char* name, int pos );
   int     s_len( int vs, const char* name );
   void    s_remove( int vs,const  char* name );
-  int     s_lookup( int vs, const char* name );
+  int     s_lookup( int vs, int buf );
+  int     s_lookup_str( int vs, char *s );
   int     s_find_key(int vs, const char *name);
 
 // using variable index
-  void    s_kset( int key, const  char* value, int pos );
+  void    s_kset( int key, int buf, int pos );
   void    s_kclr( int key );
-  char*   s_kget( int key, int pos );
+  int     s_kget( int key, int pos );
   int     s_klen( int key );
   char    s_ktype( int key );
   void    s_konwrite( int key, void (*fn) (void*, int), void *d, int remove );
