@@ -5,42 +5,50 @@
 
 /*
 STORAGE:
-
 int SVAR - all variables 
-int HASH - all hash-tables (list of list of SVAR-indices)
-int SETS - all variable sets (list of svar_set_t)
+int HASH - hash-table (list of list of SVAR-indices)
 
 
-interface:
+svar_lookup( "myVar", SVAR_FLOAT )
+svar_get_float(k, 0);
+svar_get_int(k, 0);
+svar_get_svar(k, 0);
+
+svar_get_key(k,0);
+svar_get_val(k,0);
+svar_put_key(k,0, m );
+svar_put_val(k,0, m );
+
+svar_put_float(k, 0,    3.1);
+svar_put_int(k, 0,  svarid );
+svar_put_svar(k, 0,  num   );
+
+svar_get_keys(k);
+svar_get_vals(k);
+
+svar_write_callbacks( int q );
 */
 
 
+int s_clr( int str );
+int s_strcpy(int dst, int src, int max);
+int s_memcpy(int dst, int src, int max);
+int m_copy(int dest, int src);
 void m_free_user(int m, void (*free_h)(void*));
 void m_free_list_of_list(int m);
-int s_clr( int str );
-int m_copy(int dest, int src);
-void statistics_svar_allocated(int *a, int *mem, int *free);
 
 
-void svar_create(void);
-void svar_destruct(void);
-int svar_lookup(int buf);
-void svar_free(int key);
-
-
-
-// using variable index
-  void    s_kset( int key, int buf, int pos );
-  void    s_kclr( int key );
-  int     s_kget( int key, int pos );
-  int     s_klen( int key );
-  char    s_ktype( int key );
-  void    s_konwrite( int key, void (*fn) (void*, int), void *d, int remove );
-
-void svar_write( int q, int data );
-int  *svar_value( int q );
+void  svar_create(void);
+void  svar_destruct(void);
+int   svar_lookup(int buf);
+void  svar_free(int key);
+void  svar_onwrite( int key, void (*fn) (void*, int), void *d, int remove );
+void  svar_write_callbacks( int q );
+int*  svar_value( int q );
+char* svar_type(int v);
 const char *svar_typename(int v);
-uint8_t *svar_type(int v);
+
+
 #define SVAR_ARRAY   8
 #define SVAR_INT     0
 #define SVAR_FLOAT   1
@@ -48,13 +56,11 @@ uint8_t *svar_type(int v);
 #define SVAR_SVAR    5
 #define SVAR_MARRAY  6
 #define SVAR_MASK    0x0f
-
 #define SVAR_INT_ARRAY     (0+8)
 #define SVAR_FLOAT_ARRAY   (1+8)
 #define SVAR_MSTRING_ARRAY (4+8)
 #define SVAR_SVAR_ARRAY    (5+8)
 #define SVAR_MARRAY_ARRAY  (6+8)
-
 #define svar_is_array(t) (t&SVAR_ARRAY)
 
 
@@ -70,6 +76,7 @@ uint8_t *svar_type(int v);
 #define SVAR_TABLE_BITS 12
 
 #define SVAR_MAX (8 << SVAR_LEN_MULTIPLIER)
+#define SVAR_MAX2 (SVAR_MAX - sizeof(int))
 #define SVAR_TABLE_SIZE ((1 << SVAR_TABLE_BITS)-1)
 
 struct svar_signal {
@@ -78,20 +85,19 @@ struct svar_signal {
 };
 
 typedef struct svar_st {
-    int name;
+    struct {
+	int parent;
+	char name[SVAR_MAX2];
+    } name;
+    int key;
     int value;
     uint8_t type, locked;
     int write_callbacks;
     int read_callbacks;
 } svar_t;
 
-typedef struct svar_set_st {
-    int hash;
-    int svar_key;
-} svar_set_t;
 
-
-
+static inline const char *m_str(const int m) { return m_buf(m); }
 /**
  * @fn timespec_diff(struct timespec *, struct timespec *, struct timespec *)
  * @brief Compute the diff of two timespecs, that is a - b = result.
@@ -108,8 +114,8 @@ static inline void timespec_diff(struct timespec *a, struct timespec *b,
         result->tv_nsec += 1000000000L;
     }
 }
-int s_strcpy(int dst, int src, int max);
-static inline const char *m_str(const int m) { return m_buf(m); }
+
+void statistics_svar_allocated(int *a, int *mem, int *free);
 
 
 #endif
