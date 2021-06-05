@@ -25,51 +25,54 @@
        hash : list of hashed entries
        keys : list of var-id's
 
+
+       key1.key2.key3
+
+       0 + key1
+       hash(key1)+key2
+       hash(key2)+key3
+       
+       key = key1
+
+       h=lookup(key)
+       h1 = lookup ( #h + next_key )
+       add h1 to key
+       key = #h + key1
+       
+
  */
 
 static int SVAR, SVAR_FREE, SETS;
-
+static int HASH;
 
 /* implementation */
 static void svar_item_free( void *d );
+const char *svar_name( int v );
+
 /* ------------------------------------------------ */
 
-
-#if 1
+/** @brief copy string from src to dest
+ * the dst is always resized to max and will contain a termination zero
+ * an empty or not-allocated (i.e. zero) src is allowed
+ * if dst is zero it will be allocated
+ * @returns dst
+ */
 int s_strcpy(int dst, int src, int max)
 {
-    m_clear(dst);
-    int src_len = m_len(src);
-    int i; int ch;
-    for( i = 0; i < max -1; i++ ) {
-	if( i >= src_len ) break;	
-	ch = CHAR( src, i );
-	if( ch == 0 ) break;
-	m_putc(dst,ch);
-    }
-    m_putc(dst,0);
-    return m_len(dst);
-}
-#else
-
-int s_strcpy(int dst, int src, int max)
-{
-    assert( m_bufsize(dst) >= max );
+    if( ! dst ) dst = m_create(max,1);
+    
     if( m_bufsize(dst) < max ) {
 	m_setlen(dst,max);
     }
-
-
-    int c = Min(max,m_len(src));
-    memcpy( m_buf(dst), m_buf(src), c-1 );
+    int c=1;    
+    if( src && m_len(src) ) { /* not empty string */
+	c = Min(max,m_len(src));
+	memcpy( m_buf(dst), m_buf(src), c-1 );
+    }
     m_setlen( dst, c );
     CHAR(dst,c-1)=0;
-
-    return c;
+    return dst;
 }
-#endif
-
-
 
 // Dedicated to Pippip, the main character in the 'Das Totenschiff' roman, actually the B.Traven himself, his real name was Hermann Albert Otto Maksymilian Feige.
 // CAUTION: Add 8 more bytes to the buffer being hashed, usually malloc(...+8) - to prevent out of boundary reads!
@@ -180,25 +183,27 @@ int bitlist_find_one( int m )
 
 static int svar_new(int buf)
 {
+    int str;
     int hash_item;
-    int *p = m_pop(SVAR_FREE);
-    if( p == NULL ) hash_item = m_new( SVAR, 1);
-    else hash_item = *p;
-   svar_t *v = mls(SVAR, hash_item);
-   memset(v,0,sizeof(*v));
-   // use a list of integers to store a handle to the name
-   v->name = m_create(2,sizeof(int)); // our list
-
-   int str =  m_create( SVAR_MAX, 1 ); /* new string */
-   s_strcpy( str, buf, SVAR_MAX );     /*  strcpy */
-   m_put(v->name, &str);	       /* add to list */
-   return hash_item;		       /* return this item */
+    int *p = m_pop(SVAR_FREE);	/* get last deleted svar */
+    if( p )			/* svar to recycle found */
+	hash_item = *p;		/* use old svar */
+    else
+	hash_item = m_new( SVAR, 1); /* create new svar */
+    svar_t *v = mls(SVAR, hash_item); /* get svar memory */
+    memset(v,0,sizeof(*v));	      /* clear memory  */
+    // use a list of integers to store a handle to the name
+    v->name = m_create(2,sizeof(int)); /* create list of strings */
+    str = s_strcpy( 0, buf, SVAR_MAX ); /* copy to new string */
+    m_put(v->name, &str);	       /* add new string to list */
+    TRACE(2,"Created %d %s", hash_item, m_str(str) );
+    return hash_item;		       /* return this item */
 }
 
 /** @brief to be called by m_free_user, frees memory allocated by a svar 
  *  @param pp pointer to svar handle
  */
-static void svar_free( void *pp )
+static void svar_free_cb( void *pp )
 {
     int p = *(int *)pp;
     TRACE(1,"id: %d", p );
@@ -218,10 +223,9 @@ static int hash_lookup(int hash, int buf, int byte_compare )
 {
     int hash_item;
 
-    // lookup key in hash-table
-    uint32_t c = svar_hash(buf);
-    assert( c < SVAR_TABLE_SIZE );
-    int hash_item_list = INT(hash, c );
+
+    uint32_t c = svar_hash(buf); /* lookup key in hash-table */
+    int hash_item_list = INT(hash, c ); /* list of keys with same hash */
 
     // new entry
     if( hash_item_list == 0 ) {
@@ -262,18 +266,137 @@ static int hash_lookup(int hash, int buf, int byte_compare )
 // convert mstring to hash-code
 // if buffer is not a multiple of 8 resize buffer
 // @returns hash-code for sbuf
-static int string_to_hash(int hash, int sbuf )
+/* static int key_to_hash(int hash, int sbuf ) */
+/* { */
+/*     ASSERT( m_width(sbuf) == 1 ); */
+/*     int pad = (m_bufsize(sbuf) & 0x07); */
+/*     if( pad  ) { */
+/* 	int old_len = m_len(sbuf); */
+/* 	m_setlen( sbuf, m_bufsize(sbuf) + (8-pad) ); */
+/* 	m_setlen( sbuf, old_len ); */
+/*     } */
+    
+/*     return hash_lookup(hash, sbuf, 1); */
+/* } */
+
+/* 
+   lookup:
+   returns hash of key
+   example key = atest,btest,ctest
+   loop:
+     append(x , get key until dot )
+     h = hash(x)
+     if( seperator is zero ) return h
+     skip separator
+     write h to x
+     goto loop
+
+ */
+/* returns: position of new element */
+int m_binsert( int buf, const void *data, int (*cmpf) (const void *a,const void *b ), int with_duplicates )
 {
-    ASSERT( m_width(sbuf) == 1 );
-    int old_len = m_len(sbuf);
-    int pad = (m_bufsize(sbuf) & 0x0f);
-    if( pad  ) {
-	m_setlen( sbuf, m_bufsize(sbuf) + (8-pad) );
-	m_setlen( sbuf, old_len );
+    int left = 0;
+    int right = m_len(buf)+1;
+    int cur = 1;
+    void *obj;
+    int cmp;
+
+    if( m_len(buf)==0 ) {
+	m_put(buf,data);
+	return 0;
     }
     
-    return hash_lookup(hash, sbuf, 1);
+    while(1) {
+	cur = (left+right) / 2;
+	TRACE(1, "[%d %d] cur:%d", left, right, cur );	
+	obj = mls( buf, cur - 1 );
+	cmp = cmpf( data, obj );
+	if( cmp == 0 ) {
+	    if( ! with_duplicates ) return -1;
+	    break;
+	}
+	if( cmp < 0 ) {
+	    right=cur;
+	    if( left+1 == right ) break;
+	} else {
+	    left  = cur;
+	    if( left+1 == right ) {
+		cur++;
+		break;
+	    }
+	}
+    }
+    
+
+    cur--;
+    TRACE(1, "insert at %d", cur );
+    m_ins( buf, cur, 1 );
+    m_write( buf, cur, data, 1 );
+    return cur;
 }
+
+static int seperate(int dst, int src, int *start)
+{
+    while(1) {
+	char ch = CHAR(src,*start);
+	if( ch == '.' || ch == 0 ) { m_putc(dst,0); return ch; }
+	m_putc(dst,ch);
+	(*start)++;
+    }
+}
+
+static int compare_int(const void *a,const void *b)
+{
+    const int *a0 = a, *b0 = b;
+    return (*a0) - (*b0);
+}
+
+static void append_key_to_parent_collection(int parent, int key)
+{
+    int collection = *(int *) svar_value(parent);
+    m_binsert( collection, &key, compare_int, 0 );
+}
+
+
+static int  new_svar_container( int key )
+{
+    uint8_t *t = svar_type(key);
+    if( *t ) {
+	if( ((*t) & SVAR_MASK) == SVAR_SVAR_ARRAY ) return key;
+	ERR("Variable %s is not a container", svar_name(key) );
+    }
+    *t = ((*t) & SVAR_MASK) | SVAR_SVAR_ARRAY;
+    int *v = svar_value(key);
+    *v = m_create(10,sizeof(int));
+    return key;
+}
+
+
+static int string_to_hash(int hash, int buf)
+{
+    int ch;
+    int h;
+    int i=0;
+    int name = m_create(SVAR_MAX, 1);
+    int svar = 0;
+    while(1) {
+	ch = seperate(name, buf, & i );
+	h = hash_lookup(hash, name, 1);;
+	TRACE(2,"SVARID:%d NAME:%s\n", h, m_str(name) );
+	append_key_to_parent_collection(svar,h);
+	if( ch == 0 ) break;
+	i++;
+	s_printf(name,0,"%04x", h);	
+	memset(m_buf(name)+4,0,SVAR_MAX-4); /* fill with zero */
+	m_setlen(name,4);		    /* overwrite termination zero */
+	svar = new_svar_container(h);	    /* type of key is container */
+    }
+    m_free(name);
+    return h;
+}
+
+
+
 
 /* static int string_to_hash_fast(int hash, int sbuf ) */
 /* { */
@@ -311,7 +434,7 @@ void sets_free( void *d )
     svar_set_t *item = d;
     int p,*svar_list;
     m_foreach( item->hash, p, svar_list) {
-	m_free_user(*svar_list, svar_free );
+	m_free_user(*svar_list, svar_free_cb );
     }
     m_free( item->hash );
 }
@@ -324,36 +447,35 @@ static void svar_item_free( void *d )
     m_free( item->write_callbacks );
     if(! item->type ) return;	/* no type info */
 
-    int t = (item->type >> 1) & 7; /* 3 bits */
-    TRACE(1,"free type %d", t );
-    int is_array   = item->type & 1;
-    int is_mstring = t == 4;
-    int is_svar    = t == 5;
-    int is_marray  = t == 6;
+    int t = (item->type & SVAR_MASK); /* 4 bits */
+    int is_array   = t & SVAR_ARRAY;
+    t &= ~ SVAR_ARRAY;
+    
+    int is_marray = ( t==SVAR_MSTRING || t==SVAR_MARRAY );
+    int is_svar    = SVAR_SVAR;
     item->type = 0;		/* we do not want recursion */
     /* if var1 contains var2 and var2 contains var1 we would have an
        endless loop */
     
     /* handle simple case first */
     if( ! is_array ) {
-	if( is_mstring || is_marray ) { m_free(item->value); return; } 
-	if( is_svar ) { svar_free(& item->value ); return; }    
+	if( is_marray ) { m_free(item->value); return; } 
+	if( is_svar ) { svar_free_cb(& item->value ); return; }    
 	return; 		/* no destructor needed */
     }
     
     /* this svar->value contains an array, lets check the type of objects */
-
-    if( is_mstring || is_marray ) {
+    if( is_marray ) {		/* values are simple arrays */
 	m_free_list_of_list(item->value);
 	return;
     }
 
-    if( is_svar ) {
-	m_free_user(item->value, svar_free );
+    if( is_svar ) {		/* each value is a svar */
+	m_free_user(item->value, svar_free_cb ); /* recursion! */
 	return;
     }
 
-    m_free( item->value ); /* it's an array of some obj */
+    m_free( item->value ); /* it's an array of something completly different */
 }
 
 void m_free_user(int m, void (*free_h)(void*))
@@ -434,73 +556,36 @@ void svar_write( int q, int data )
 /*     return c; */
 /* } */
 
+int new_hashtable(void)
+{
+   int h =  m_create(SVAR_TABLE_SIZE+1, sizeof(int) );
+   m_setlen( h, SVAR_TABLE_SIZE+1 );
+   return h;
+}
+
+
 void hash_new(int p)
 {
     svar_set_t *set = mls(SETS,p);
-    set->hash = m_create(SVAR_TABLE_SIZE+1, sizeof(int) );
-    m_setlen( set->hash, SVAR_TABLE_SIZE+1 );
+    set->hash = new_hashtable();
 }
 
 void svar_create(void)
 {
-    SVAR = m_create(100, sizeof(svar_t) );  m_add(SVAR);
+    SVAR = m_create(100, sizeof(svar_t) );
+    new_svar_container( m_new(SVAR,1)); // one global svar with index 0
     SETS = m_create(10, sizeof( svar_set_t) );
     m_add(SETS); hash_new(0); // set zero is reserved for globals
     SVAR_FREE= m_create(10, sizeof( int ));
+    HASH =  new_hashtable();
 }
 
 void svar_destruct(void)
 {
     m_free_user(SETS, sets_free );
-    m_free_user(SVAR, svar_free );
+    m_free_user(SVAR, svar_free_cb );
     m_free(SVAR_FREE);
 }
-
-
-int     s_create( void )
-{
-    if( ! SVAR ) { svar_create(); }
-    
-    svar_set_t *set;
-    int p,len;
-
-    p = len = m_len(SETS);
-    while(1) {
-	p--;
-	if( p < 0 ) { set = m_add(SETS); p=len; break; }
-	set = mls( SETS, p);
-	if( set->hash == 0 ) break;
-    }
-    hash_new(p);
-    return p;
-}
-
-void    s_free( int vs )
-{
-    svar_set_t *set= mls(SETS,vs);
-    if( set->hash == 0 ) {
-	WARN("double free set %d", vs);
-	return;
-    }
-    sets_free( set );
-    set->hash = 0;
-}
-
-int s_lookup( int vs, int buf )
-{
-    svar_set_t *set= mls(SETS,vs);
-    return string_to_hash(set->hash, buf ); 
-}
-
-int s_lookup_str( int vs, char *s )
-{
-    int buf = s_printf(0,0,s);
-    int c = s_lookup( vs, buf );
-    m_free(buf);
-    return c;
-}
-
-
 
 
 /** @brief return array with var names 
@@ -527,10 +612,7 @@ int m_copy(int dest, int src)
  */
 int s_clr( int str )
 {
-    if( str <= 0 ) str=m_create(1,1);
-    m_setlen(str,1);
-    CHAR(str,0)=0;
-    return str;
+    return s_strcpy(str,0,1);
 }
 
 // Access Stringlist Var
@@ -623,22 +705,41 @@ void statistics_svar_allocated(int *a, int *mem, int *free)
 
    4 5 6 7      FREE
 */
-char *svar_typename(int v)
+const char *svar_typename(int v)
 {
     static char name[40];
-    int t = *svar_type(v);
+    int t = (*svar_type(v)) & SVAR_MASK;
     *name=0;			/* clear string */
-    if( t & 1 ) {
+    if( svar_is_array(t)) {
 	strcpy(name, "array of "); /* 9 chars */
+	t ^= SVAR_ARRAY;
     }
-    t = (t>>1) & 7;
+    
     switch( t ) {
-    case 0: strcat(name,"integer"); break;
-    case 1: strcat(name,"float"); break;
-    case 4: strcat(name,"mstring"); break;
-    case 5: strcat(name,"svar"); break;
-    case 6: strcat(name,"marray"); break;
+    case SVAR_INT: strcat(name,"integer"); break;
+    case SVAR_FLOAT: strcat(name,"float"); break;
+    case SVAR_MSTRING: strcat(name,"mstring"); break;
+    case SVAR_SVAR: strcat(name,"svar"); break;
+    case SVAR_MARRAY: strcat(name,"marray"); break;
     default: strcat(name,"unknown"); break;
     }
     return name;
 }
+
+
+/* 
+ * key1 - key
+ * key1.key2 - make key1 a container and key2 a key inside
+ * key1.key2.key3 - make key2 a container with key3 inside
+ * key1.key2 - list all keys inside container (lookup its value field) 
+ */
+int svar_lookup(int buf)
+{
+    return string_to_hash(HASH,buf);
+}
+
+void svar_free( int key )
+{
+    svar_free_cb( &key ); 
+}
+
