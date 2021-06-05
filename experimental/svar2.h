@@ -24,20 +24,10 @@ void statistics_svar_allocated(int *a, int *mem, int *free);
 
 void svar_create(void);
 void svar_destruct(void);
+int svar_lookup(int buf);
+void svar_free(int key);
 
 
-  int     s_create( void );
-  void    s_free( int vs );
-  // using variable name
-  int     s_set( int vs, const char* name, const char* value, int pos );
-  void    s_vaset( int vs, ... );
-  void    s_clear( int vs, const char* name );
-  char*   s_get( int vs, const char* name, int pos );
-  int     s_len( int vs, const char* name );
-  void    s_remove( int vs,const  char* name );
-  int     s_lookup( int vs, int buf );
-  int     s_lookup_str( int vs, char *s );
-  int     s_find_key(int vs, const char *name);
 
 // using variable index
   void    s_kset( int key, int buf, int pos );
@@ -49,7 +39,7 @@ void svar_destruct(void);
 
 void svar_write( int q, int data );
 int  *svar_value( int q );
-char *svar_typename(int v);
+const char *svar_typename(int v);
 uint8_t *svar_type(int v);
 #define SVAR_ARRAY   8
 #define SVAR_INT     0
@@ -57,7 +47,7 @@ uint8_t *svar_type(int v);
 #define SVAR_MSTRING 4
 #define SVAR_SVAR    5
 #define SVAR_MARRAY  6
-
+#define SVAR_MASK    0x0f
 
 #define SVAR_INT_ARRAY     (0+8)
 #define SVAR_FLOAT_ARRAY   (1+8)
