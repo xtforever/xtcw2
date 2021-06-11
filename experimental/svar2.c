@@ -42,7 +42,7 @@
 
  */
 
-static int SVAR, SVAR_FREE, SETS;
+static int SVAR, SVAR_FREE;
 static int HASH;
 
 /* implementation */
@@ -57,7 +57,7 @@ const char *svar_name( int v );
  * if dst is zero it will be allocated
  * @returns dst
  */
-int s_strcpy(int dst, int src, int max)
+int s_memcpy(int dst, int src, int max)
 {
     if( ! dst ) dst = m_create(max,1);
     
@@ -98,9 +98,14 @@ static uint32_t FNV1A_Pippip_Yurii(const char *str, size_t wrdlen)
 } // Last update: 2019-Oct-30, 14 C lines strong, Kaze.
 
 
-static uint32_t svar_hash(int sbuf)
+static uint32_t svar_hash(void *sbuf)
 {
-    return FNV1A_Pippip_Yurii( m_buf(sbuf), m_len(sbuf) );
+    // svar_name_t *sn = sbuf;
+    uint32_t h = FNV1A_Pippip_Yurii( sbuf, SVAR_MAX2 );
+    //    TRACE(2,"hash: %u, parent: %d, name: %s", h, sn->parent, sn->str );
+    //    for(int i=0;i<SVAR_MAX;i++) printf("%02x ", (unsigned char) sn->str[i] );
+    //    puts("");
+    return h;
 }
 
 static svar_t* svar( int key )
@@ -108,82 +113,11 @@ static svar_t* svar( int key )
     return mls(SVAR, key);
 }
 
-/* static svar_set_t* svar_sets( int p ) */
-/* { */
-/*     return mls(SETS, p); */
-/* } */
 
 
 
-uint8_t *bitlist_byte(int m,int p)
+static int svar_new( void *buf )
 {
-    int len = m_len(m);
-    if( p >= len ) {
-	m_setlen( m, p+1 );
-	memset( mls(m,len), 0, p - len + 1 );
-    }
-    return mls(m,p);
-}
-
-int  bitlist_test( int m, int p )
-{
-    int      offs  =  p/8;
-    uint8_t  bit   =  p & 8;
-    uint8_t  mask  =  ( 1 << bit );
-    uint8_t *b     = bitlist_byte( m, offs );
-    return  *b & mask;
-}
-
-void bitlist_set( int m, int p )
-{
-    int      offs  =  p/8;
-    uint8_t  bit   =  p & 8;
-    uint8_t  mask  =  ( 1 << bit );
-    uint8_t *b     = bitlist_byte( m, offs );
-    *b |= mask;
-}
-
-void bitlist_clr( int m, int p )
-{
-    int      offs  =  p/8;
-    uint8_t  bit   =  p & 8;
-    uint8_t  mask  =  ( 1 << bit );
-    uint8_t *b     = bitlist_byte( m, offs );
-    *b &= ~ mask;
-}
-
-int bitlist_find_zero( int m )
-{
-    uint8_t ch;
-    int len = m_len(m);
-    while( len-- ) {
-	ch = UCHAR(m,len);
-	if( ch == 0xff ) continue;
-	uint8_t bit = 7;
-	while( bit && (ch & (1 << bit)) ) bit--;
-	return len*8+bit;
-    }
-    return -1;
-}
-
-int bitlist_find_one( int m )
-{
-    uint8_t ch;
-    int len = m_len(m);
-    while( len-- ) {
-	ch = UCHAR(m,len);
-	if( ch == 0 ) continue;
-	uint8_t bit = 7;
-	while( bit && ! (ch & (1 << bit)) ) bit--;
-	return len*8+bit;
-    }
-    return -1;
-}
-
-
-static int svar_new(int buf)
-{
-    int str;
     int hash_item;
     int *p = m_pop(SVAR_FREE);	/* get last deleted svar */
     if( p )			/* svar to recycle found */
@@ -192,11 +126,8 @@ static int svar_new(int buf)
 	hash_item = m_new( SVAR, 1); /* create new svar */
     svar_t *v = mls(SVAR, hash_item); /* get svar memory */
     memset(v,0,sizeof(*v));	      /* clear memory  */
-    // use a list of integers to store a handle to the name
-    v->name = m_create(2,sizeof(int)); /* create list of strings */
-    str = s_strcpy( 0, buf, SVAR_MAX ); /* copy to new string */
-    m_put(v->name, &str);	       /* add new string to list */
-    TRACE(2,"Created %d %s", hash_item, m_str(str) );
+    memcpy( &(v->name), buf, sizeof(svar_name_t) );
+    TRACE(2,"Created %d %s", hash_item, svar_name(hash_item) );
     return hash_item;		       /* return this item */
 }
 
@@ -206,24 +137,33 @@ static int svar_new(int buf)
 static void svar_free_cb( void *pp )
 {
     int p = *(int *)pp;
-    TRACE(1,"id: %d", p );
+    TRACE(2,"id: %d", p );
+    if( p < 0 || p > m_len(SVAR) )
+	{
+	    puts("halt");
+	}
+    
     svar_t *sv = svar( p );
-    if( sv->name == 0 ) {
-	// TRACE(1, "double free svar %d", p);
+    if( sv->name.parent < 0 ) {
+	TRACE(1, "double free svar %d", p);
 	return;
     }
     svar_item_free( sv );
     m_put( SVAR_FREE, &p );
 }
 
+#define sizeofm(type, member) sizeof(((type *)0)->member)
+
+static const inline int svar_cmp( int id, void *buf )
+{
+    return memcmp( & (svar(id)->name), buf, sizeof(svar_name_t));
+}
 
 /** find or insert variable (buf) in hash-table (hash)    
  */
-static int hash_lookup(int hash, int buf, int byte_compare )
+static int hash_lookup(int hash, void *buf, int byte_compare )
 {
     int hash_item;
-
-
     uint32_t c = svar_hash(buf); /* lookup key in hash-table */
     int hash_item_list = INT(hash, c ); /* list of keys with same hash */
 
@@ -247,8 +187,7 @@ static int hash_lookup(int hash, int buf, int byte_compare )
     // check if the same is already inside
     int p, *d;
     m_foreach( hash_item_list, p, d ) {
-	svar_t *v = mls(SVAR, *d);
-	if( m_cmp( INT(v->name,0), buf ) == 0 ) return *d;
+	if( svar_cmp(*d,buf) == 0 ) return *d;
     }
 
  new_item:
@@ -335,12 +274,18 @@ int m_binsert( int buf, const void *data, int (*cmpf) (const void *a,const void 
     return cur;
 }
 
-static int seperate(int dst, int src, int *start)
+static int seperate(char *dst, int src, int *start)
 {
+    int i = 0;
     while(1) {
+	assert(i < SVAR_MAX);	/* paranoia */
 	char ch = CHAR(src,*start);
-	if( ch == '.' || ch == 0 ) { m_putc(dst,0); return ch; }
-	m_putc(dst,ch);
+	if( ch == '.' || ch == 0 ) {
+	    memset(dst,0,SVAR_MAX - i );
+	    return ch;
+	}
+	*dst++ = ch;
+	i++;
 	(*start)++;
     }
 }
@@ -358,9 +303,9 @@ static void append_key_to_parent_collection(int parent, int key)
 }
 
 
-static int  new_svar_container( int key )
+static int  new_svar_container(int key )
 {
-    uint8_t *t = svar_type(key);
+    uint8_t *t = (uint8_t*)svar_type(key);
     if( *t ) {
 	if( ((*t) & SVAR_MASK) == SVAR_SVAR_ARRAY ) return key;
 	ERR("Variable %s is not a container", svar_name(key) );
@@ -377,21 +322,19 @@ static int string_to_hash(int hash, int buf)
     int ch;
     int h;
     int i=0;
-    int name = m_create(SVAR_MAX, 1);
-    int svar = 0;
+    svar_name_t name;
+    name.parent = 0;
+    
     while(1) {
-	ch = seperate(name, buf, & i );
-	h = hash_lookup(hash, name, 1);;
-	TRACE(2,"SVARID:%d NAME:%s\n", h, m_str(name) );
-	append_key_to_parent_collection(svar,h);
+	ch = seperate(name.str, buf, & i );
+	h = hash_lookup(hash, &name, 1);
+	TRACE(2,"SVARID:%d NAME:%s PARENT:%d\n", h, name.str, name.parent );
+	append_key_to_parent_collection(name.parent,h);
 	if( ch == 0 ) break;
-	i++;
-	s_printf(name,0,"%04x", h);	
-	memset(m_buf(name)+4,0,SVAR_MAX-4); /* fill with zero */
-	m_setlen(name,4);		    /* overwrite termination zero */
-	svar = new_svar_container(h);	    /* type of key is container */
+	i++;	
+	name.parent = new_svar_container(h); /* type of key is container */
+	
     }
-    m_free(name);
     return h;
 }
 
@@ -410,7 +353,7 @@ static int string_to_hash(int hash, int buf)
 
 const char *svar_name( int v )
 {
-    return m_str( INT(svar(v)->name,0) );
+    return svar(v)->name.str;
 }
 
 int *svar_value( int v )
@@ -429,20 +372,11 @@ void mlist_free(void *d)
     m_free( *(int*) d );
 }
 
-void sets_free( void *d )
-{
-    svar_set_t *item = d;
-    int p,*svar_list;
-    m_foreach( item->hash, p, svar_list) {
-	m_free_user(*svar_list, svar_free_cb );
-    }
-    m_free( item->hash );
-}
-
+/* should have a list of destructors for each type */
 static void svar_item_free( void *d )
 {
     svar_t *item = d;
-    m_free_list_of_list( item->name ); item->name=0;
+    item->name.parent = -1;
     m_free( item->read_callbacks );
     m_free( item->write_callbacks );
     if(! item->type ) return;	/* no type info */
@@ -530,12 +464,11 @@ void svar_onwrite( int q, void (*fn) (void*, int), void *d, int remove )
 
 /** write to var q and call signal handler
  **/
-void svar_write( int q, int data )
+void svar_write_callbacks( int q )
 {
     int p;
     struct svar_signal *sig;
     svar_t* ent = svar(q);
-    ent->value = data;
     if(! ent->write_callbacks ) return;
     
     /* um rekursion zu verhindern wird signal blockiert */
@@ -563,37 +496,21 @@ int new_hashtable(void)
    return h;
 }
 
-
-void hash_new(int p)
-{
-    svar_set_t *set = mls(SETS,p);
-    set->hash = new_hashtable();
-}
-
 void svar_create(void)
 {
     SVAR = m_create(100, sizeof(svar_t) );
     new_svar_container( m_new(SVAR,1)); // one global svar with index 0
-    SETS = m_create(10, sizeof( svar_set_t) );
-    m_add(SETS); hash_new(0); // set zero is reserved for globals
-    SVAR_FREE= m_create(10, sizeof( int ));
+    SVAR_FREE = m_create(10, sizeof( int ));
     HASH =  new_hashtable();
 }
 
 void svar_destruct(void)
 {
-    m_free_user(SETS, sets_free );
-    m_free_user(SVAR, svar_free_cb );
+    m_free_user(SVAR, svar_item_free );
     m_free(SVAR_FREE);
+    m_free_list_of_list( HASH );
 }
 
-
-/** @brief return array with var names 
- */
-static int get_var_names( int q )
-{
-    return svar(q)->name;
-}
 
 /** @brief copy the list src to dest if dest is null create dest
  *  @returns dest
@@ -607,64 +524,6 @@ int m_copy(int dest, int src)
     return dest;
 }
 
-/** @brief make an empty string. if str is null create str
- *  @returns str
- */
-int s_clr( int str )
-{
-    return s_strcpy(str,0,1);
-}
-
-// Access Stringlist Var
-//
-// row=0 - varname
-// row=1 - first value ...
-//
-// row < 0 OR row==Len : Append val
-// row > len : Error, exit
-void    s_kset( int key, int buf, int row )
-{
-    int val;
-    int var = get_var_names(key);
-
-    if( row < 0 || row >= m_len(var) ) // append-value
-	{
-	    val = m_copy(0,buf); 
-	    m_put(var,&val);
-	    return;
-	}
-    
-    int *pstr = mls(var,row);
-    *pstr = m_copy(*pstr, buf); /* overwrite or create */
-}
-
-void    s_kclr( int key )
-{
-    int var = get_var_names(key);
-    
-    int *d, i=0;		/* start at second entry */
-    while( m_next(var,&i,&d) )
-	if( *d ) {
-	    m_free(*d); *d=0; /* free mstring */
-	}
-
-    m_setlen(var,1);
-}
-
-int  s_kget( int key, int row )
-{
-    int var = get_var_names(key);
-    int len=m_len(var);
-    if( row >= len || row < 0 ) row=len-1;
-    return INT(var,row);
-}
-
-int s_klen( int key )
-{
-    int var = get_var_names(key);
-    return m_len(var);
-}
-
 int m_alloced_mem(int m)
 {
     return m_bufsize(m) * m_width(m);
@@ -673,11 +532,8 @@ int m_alloced_mem(int m)
 int svar_mem(int sp)
 {
     svar_t *v = svar(sp);
+    (void)v;
     int mem=0;
-    int p, *d;
-    m_foreach(v->name,p,d) {
-	mem+=m_alloced_mem(*d);
-    }
     return mem;
 }
 
@@ -687,7 +543,7 @@ void statistics_svar_allocated(int *a, int *mem, int *free)
     int p; svar_t *d;
     m_foreach(SVAR,p,d) {
 	(*mem) += svar_mem(p);	    
-	if( d->name ) (*a)++;
+	if( d->name.parent != -1 ) (*a)++;
     }
     *free = m_len(SVAR_FREE);
 }
@@ -733,9 +589,25 @@ const char *svar_typename(int v)
  * key1.key2.key3 - make key2 a container with key3 inside
  * key1.key2 - list all keys inside container (lookup its value field) 
  */
-int svar_lookup(int buf)
+int svar_lookup(int buf, int type )
 {
-    return string_to_hash(HASH,buf);
+    int h = string_to_hash(HASH,buf);
+    if( type < 0 ) return h;
+
+    svar_t *v = svar(h);
+    uint8_t t = v->type;
+    // if type is undefined set type 
+    if( t == 0 ) {
+	v->type = type;
+	return h;
+    }
+
+    // lookup already defined variable and do a type compare 
+    if( t != type ) {
+	ERR("wrong type: svarname:%s id:%d", svar(h)->name.str, h );
+    }
+
+    return h;
 }
 
 void svar_free( int key )

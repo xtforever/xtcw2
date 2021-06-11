@@ -31,7 +31,6 @@ svar_write_callbacks( int q );
 
 
 int s_clr( int str );
-int s_strcpy(int dst, int src, int max);
 int s_memcpy(int dst, int src, int max);
 int m_copy(int dest, int src);
 void m_free_user(int m, void (*free_h)(void*));
@@ -40,12 +39,13 @@ void m_free_list_of_list(int m);
 
 void  svar_create(void);
 void  svar_destruct(void);
-int   svar_lookup(int buf);
+int   svar_lookup(int buf, int type );
 void  svar_free(int key);
 void  svar_onwrite( int key, void (*fn) (void*, int), void *d, int remove );
 void  svar_write_callbacks( int q );
 int*  svar_value( int q );
-char* svar_type(int v);
+uint8_t* svar_type(int v);
+const char* svar_name(int v);
 const char *svar_typename(int v);
 
 
@@ -62,7 +62,8 @@ const char *svar_typename(int v);
 #define SVAR_SVAR_ARRAY    (5+8)
 #define SVAR_MARRAY_ARRAY  (6+8)
 #define svar_is_array(t) (t&SVAR_ARRAY)
-
+#define svar_typeof(t,typ) ((t&SVAR_MAX)==typ)
+#define svar_define(t,typ) do { t = (t&~SVAR_MAX) | typ; } while(0)
 
 
 /*
@@ -75,8 +76,8 @@ const char *svar_typename(int v);
 // size of hash-table
 #define SVAR_TABLE_BITS 12
 
-#define SVAR_MAX (8 << SVAR_LEN_MULTIPLIER)
-#define SVAR_MAX2 (SVAR_MAX - sizeof(int))
+#define SVAR_MAX2 (8 << SVAR_LEN_MULTIPLIER)
+#define SVAR_MAX (SVAR_MAX2 - sizeof(int))
 #define SVAR_TABLE_SIZE ((1 << SVAR_TABLE_BITS)-1)
 
 struct svar_signal {
@@ -84,13 +85,15 @@ struct svar_signal {
     void (*fn) (void*, int );
 };
 
+typedef struct svar_name_st {
+    int parent;
+    char str[SVAR_MAX];
+} svar_name_t;
+    
+
 typedef struct svar_st {
-    struct {
-	int parent;
-	char name[SVAR_MAX2];
-    } name;
-    int key;
-    int value;
+    svar_name_t name;		/* hash friendly name */
+    int key,value;		/* same type */
     uint8_t type, locked;
     int write_callbacks;
     int read_callbacks;

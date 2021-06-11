@@ -6,9 +6,6 @@
 #include "mls.h"
 #include "svar2.h"
 
-char *mstr(int k) { return m_buf(k); }
-
-
 int read_keys_from_file( char *filename )
 {
     int keys = m_create(1000, sizeof(int) );
@@ -16,7 +13,7 @@ int read_keys_from_file( char *filename )
     assert(fp);
     int buf = m_create(100,1);
     while( m_fscan2(buf,'\n', fp ) == '\n' ) {
-	int sbuf = s_strcpy( 0, buf, SVAR_MAX );
+	int sbuf = s_memcpy( 0, buf, SVAR_MAX );
 	m_put(keys, &sbuf );
 	m_clear(buf);
     }
@@ -26,7 +23,7 @@ int read_keys_from_file( char *filename )
 }
 
 static inline void nl(void) { putchar(10); };
-void check_hash_speed( int seconds, int keys, int vs  )
+void check_hash_speed( int seconds, int keys  )
 {
     printf("trying %d seconds hashing\n",seconds );
     struct timespec tp0,tp1, tp2; // tv_sec, tv_nsec
@@ -37,7 +34,7 @@ void check_hash_speed( int seconds, int keys, int vs  )
 	{
 	    count++;
 	    int keynum = rand() % m_len(keys);
-	    svar_lookup( INT(keys, keynum) );
+	    svar_lookup( INT(keys, keynum), SVAR_FLOAT );
 	    clock_gettime(CLOCK_MONOTONIC, &tp1);
 	    timespec_diff(&tp1,&tp0,&tp2);	    
 	    if( tp2.tv_sec  >= seconds ) break;
@@ -68,7 +65,7 @@ void print_svar_value(int t, void *val )
     switch( t ) {
     case SVAR_INT: printf("%d", x); break;
     case SVAR_FLOAT: printf("%f", *(float*) val); break;
-    case SVAR_MSTRING: printf("%s", mstr(x)); break;
+    case SVAR_MSTRING: printf("%s", m_str(x)); break;
     case SVAR_MARRAY: printf("%d %d %d", x, m_len(x), m_width(x)); break;
     case SVAR_SVAR: dump_svar(x); break;
     }
@@ -76,17 +73,11 @@ void print_svar_value(int t, void *val )
 
 void dump_svar(int key)
 {
-    int p,*d,ch=0;
-    printf( "%s: [", m_str( s_kget(key,0)));
-    for( int p=1; p < s_klen(key); p++ ) {
-	if( ch ) putchar(ch);
-	ch=',';
-	printf( " %s", m_str( s_kget(key,p)));
-    }
-    printf(" ]\n");
-
-    printf("TYPE: %s\n", svar_typename(key) );
+    int p,*d;
     int t = *svar_type(key) & 0x0f;
+    printf( "svarname: %s:\n", svar_name(key));
+    printf("TYPE: (%d) %s\n", t, svar_typename(key) );
+
 
     if ( svar_is_array(t) ) {
 	printf("----------------\n");
@@ -183,18 +174,19 @@ void print_stats(void)
 
 void check1()
 {
-    int name = s_printf(0,0, "hello" );
-    int key = svar_lookup( name );
+    int name = s_printf(0,0, "hello2" );
+    int key = svar_lookup( name,-1 );
     printf("found: %s %d\n", m_str(name), key );
-
-    s_printf(name,0, "hello.test1" );
-    int key2 = svar_lookup( name );
+    dump_svar(key);
+    
+    s_printf(name,0, "hello.test1.test2" );
+    int key2 = svar_lookup( name, -1 );
     printf("found: %s %d\n", m_str(name), key2 );
 
     dump_svar(key);
 
-    s_printf(name,0, "hello.test1.test2" );
-    int key3 = svar_lookup( name );
+    s_printf(name,0, "hello.test1" );
+    int key3 = svar_lookup( name,-1 );
     printf("found: %s %d\n", m_str(name), key3 );
 
     dump_svar(key);
@@ -205,7 +197,7 @@ void check1()
         
     m_free(name);
     printf("READY____________________________________________\n\n");
-    exit(1);
+
 }
 
 
@@ -213,16 +205,27 @@ void check1()
 int main()
 {
     m_init();
-    trace_level=2;
+    trace_level=0;
     svar_create();
-    check1();
-    
+    // check1();
 
-    /* int keys = read_keys_from_file( "john.txt" );  */
-    /* int str = s_printf(0,0, "hello world"); */
-    /* print_stacksize(); */
-    /* m_free(str); */
-    /* m_free_list_of_list(keys); */
+
+    int name = s_printf(0,0, "hello2.hello3.hello4" );
+    int key = svar_lookup( name,-1 );
+    s_printf(name,0, "hello2.hello3.hello4b" );
+    key = svar_lookup( name,-1 );
+
+    s_printf(name,0, "hello2.hello3" );
+    key = svar_lookup( name,-1 );
+
+    dump_svar(key);
+
+    m_free(name);
+
+    int keys = read_keys_from_file( "john.txt" ); 
+    check_hash_speed( 5, keys  );
+
+    m_free_list_of_list(keys);
 
 
     svar_destruct();
