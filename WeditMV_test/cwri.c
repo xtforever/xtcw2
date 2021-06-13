@@ -7,6 +7,8 @@
  */
 
 #include "mls.h"
+#include "svar2.h"
+#include "opts.h"
 
 #include <signal.h>
 #include <stdlib.h>
@@ -33,6 +35,8 @@
 #include "wcreg2.h"
 #include <xtcw/register_wb.h>
 #include "xtcw/WeditMV.h"
+#include "xtcw/Woption.h"
+#include "xtcw/Wswitch.h"
 
 Widget TopLevel;
 int trace_main;
@@ -55,6 +59,9 @@ static XrmOptionDescRec options[] = {
 
 typedef struct CWRI_CONFIG {
     int traceLevel;
+    String option_group;
+    String svar_result;
+    String svar_all_results;
 } CWRI_CONFIG;
 
 #define FLD(n)  XtOffsetOf(CWRI_CONFIG,n)
@@ -62,7 +69,18 @@ static XtResource CWRI_CONFIG_RES [] = {
 
   { "traceLevel", "TraceLevel", XtRInt, sizeof(int),
    FLD(traceLevel), XtRImmediate, 0
-  }
+  },
+  { "option_group", "Option_group", XtRString, sizeof(XtRString),
+   FLD(option_group), XtRString, ""
+  },
+  { "svar_result", "Svar_result", XtRString, sizeof(XtRString),
+   FLD(svar_result), XtRString, ""
+  },
+  { "svar_all_results", "Svar_all_results", XtRString, sizeof(XtRString),
+   FLD(svar_all_results), XtRString, ""
+  },
+
+  
 
 };
 #undef FLD
@@ -78,6 +96,52 @@ void test_cb( Widget w, void *u, void *c )
   XtVaGetValues(w, "label", &s, NULL );
   if( is_empty(s) ) return;
   printf("Label: %s\n", s );
+
+}
+
+
+static void dump_mstring_array(int k )
+{
+    int p,*d;
+    m_foreach(k, p, d ) {
+	printf("pos: %d, value: %s\n", p, m_str(*d) );
+    }
+}
+
+static void option_changed(void *ctx, int key )
+{
+    (void)ctx;
+    TRACE(1,"svar onwrite callback: %d, val: %d, type: %d", key,
+	  *svar_value(key), *svar_type(key) );
+
+    
+    dump_mstring_array( *svar_value(key) );
+}
+
+void option_cb( Widget w, void *u, void *c )
+{
+  printf("cb from option\n");
+
+  if(! XtIsSubclass(w, woptionWidgetClass ) ) return;
+
+  char *s,*val;
+  XtVaGetValues(w, "label", &s, "value", &val, NULL );
+  printf("Label: %s\nValue: %s\n", s, val );
+
+  Widget w1 = get_active_widget(CWRI.option_group);
+  if( w1 != w )      TRACE(1,"Achtung Active widget not current widget" );
+
+  int k = svar_lookup_str( CWRI.svar_result, -1 );
+  svar_t *v = svar(k);
+  TRACE(1, "svar-name:%s, svar-type:%d", svar_name(k), *svar_type(k) );
+  if( *svar_type(k) == SVAR_MSTRING_ARRAY ) {
+      int p,*d;
+      m_foreach( *svar_value(k), p, d ) {
+	  TRACE(1,"svar-pos: %d, svar-value: %s", p, m_str(*d) );
+      }
+  }
+  
+
 
 }
 
@@ -105,11 +169,14 @@ static void RegisterApplication ( Widget top )
     /* -- Register widget classes and constructors */
     // RCP( top, wbatt );
     RCP( top, weditMV );
+    RCP( top, woption );
+    RCP( top, wswitch );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
     RCB( top, quit_cb );
     RCB( top, test_cb );
+    RCB( top, option_cb );
 }
 
 
@@ -125,6 +192,9 @@ void update_edit_buffer_cb( void *ctx )
     
 }
 
+
+
+
 /*  init application functions and structures and widgets
     All widgets are created, but not visible.
     functions can now communicate with widgets
@@ -135,6 +205,8 @@ static void InitializeApplication( Widget top )
     EditBuffer = XrmStringToQuark( EDITBUFFERNAME  );
     TRACE(1, "register %d", EditBuffer );
     mv_onwrite(EditBuffer, update_edit_buffer_cb, 0, 0);
+    int k = svar_lookup_str( CWRI.svar_result, -1 );
+    svar_onwrite( k, option_changed, 0, 0 ); 
 }
 
 /******************************************************************************
@@ -164,7 +236,8 @@ int main ( int argc, char **argv )
     XtAppContext app;
     m_init();
     mv_init();
-
+    svar_init();
+    
     TRACE(2,"test");
     XtSetLanguageProc (NULL, NULL, NULL);
     XawInitializeWidgetSet();
@@ -228,6 +301,8 @@ int main ( int argc, char **argv )
 
     XtAppMainLoop ( app ); /* use XtAppSetExitFlag */
     XtDestroyWidget(appShell);
+
+    svar_destruct();
     m_destruct();
 
     return EXIT_SUCCESS;
