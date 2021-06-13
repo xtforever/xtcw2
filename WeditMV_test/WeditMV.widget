@@ -1,7 +1,7 @@
 @class WeditMV (Core)
 @ Editor Widget
   with microvars support
-
+  with svar support
 
 
 
@@ -14,10 +14,10 @@
 @trans <Key>BackSpace: backward_char() remove_char()
 @trans <Ctrl>x:        info()
 @trans <Ctrl>v:        insert_selection()
-@trans <Btn1Down>:     set_cursor() 
+@trans <Btn1Down>:     set_cursor() SetKeyboardFocus() 
 @trans <Key>Return:    notify()
 @trans <Key>:          insert_char()
-@trans <FocusIn>:      focus_in() SetKeyboardFocus()
+@trans <FocusIn>:      focus_in() 
 @trans <FocusOut>:     focus_out()
 
 
@@ -32,11 +32,13 @@
 @var <Callback> XtCallbackList callback  = NULL
 @var String label = NULL
 @var QVar textBuffer = <String> "defaultEditBuffer"
+@var String svar = <String> "defaultEditBuffer"
 
 @PRIVATE
 @def BG = 0
 @def FG = 1
 @def CRSR = 2
+
 
 @type pix_info = struct { Pixmap data; XRectangle r; }
 
@@ -60,6 +62,7 @@
 @var int left_pixel_offset
 @var int dirty
 @var int dirty_str
+@var int key_svar
 
 @CLASSVARS
 @var Atom XA_UTF8_STRING = 0
@@ -91,6 +94,12 @@
   if( $height < h) $height = h;
   if(! $XA_UTF8_STRING )
       $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+
+  /* svar support, with write callbacks on state change
+     if the widget is redrawn the text is send to the svar
+  */
+  $key_svar = svar_lookup_str($svar, SVAR_MSTRING_ARRAY );
+  
 }
 
 @proc destroy
@@ -120,14 +129,10 @@
 {
     int i;
     for(i=0;i<*num_args;i++) {
-        if( strcmp(args[i].name, "label" ) ==0 )
-            {
-                int l = m_len($str_m);
-                m_write($label_m, 0, m_buf($str_m), l );
-                CHAR($label_m, l-1)=0;
-                *((char**)args[i].value) = m_buf($label_m);
-                return;
-            }
+        if( strcmp(args[i].name, "label" ) ==0 ) {
+            *((char**)args[i].value) = get_text_buffer($);
+            return;
+        }
     }
 }
 
@@ -244,8 +249,14 @@
         draw_pixmap_on_window($); $crsr_on = 0;
         draw_cursor($);
         $dirty = 0;
+
 	// send buffer handle to application
 	mv_write( $textBuffer, $str_m );
+
+	// copy buffer to svar and call svar write callbacks
+	update_svar($);
+	svar_write_callbacks($key_svar);
+	
 	TRACE(1, "widget %s sent to %d", $name, $textBuffer );
 }
 
@@ -574,6 +585,29 @@
     paint($);
 }
 
+
+@ copy current text to label_m as an buffer
+  then return pointer to label_m
+  the buffer is zero terminated
+@proc char* get_text_buffer($)
+{
+	int l = m_len($str_m);
+        m_write($label_m, 0, m_buf($str_m), l );
+        CHAR($label_m, l-1)=0;
+	m_setlen($label_m,l);
+	return m_buf($label_m);
+}
+
+@ copy current text to svar
+  should be optimized if used as on key-pressed callback
+@proc update_svar($)
+{
+	int *v = svar_value($key_svar);
+	char *str = get_text_buffer($);
+	*v = append_mstring_array(*v,0, XtName($),
+	     str, NULL );
+}
+
 @ACTIONS
 
 
@@ -687,3 +721,5 @@
 @incl "mls.h"
 @incl "font.h"
 @incl "micro_vars.h"
+@incl "svar2.h"
+@incl "opts.h"

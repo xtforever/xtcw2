@@ -68,7 +68,7 @@ cwri.svar_all_results: result
 *ed1.gridx: 1
 *ed1.textBuffer: myVariable1
 *ed1.gridy: 1
-
+*ed1.svar: result.ed1
 
 *dbt.wcClass: Wbutton
 *dbt.label: DUMP RESULTS
