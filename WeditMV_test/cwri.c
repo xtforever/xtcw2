@@ -62,6 +62,7 @@ typedef struct CWRI_CONFIG {
     String option_group;
     String svar_result;
     String svar_all_results;
+    int key_svar_all_results;
 } CWRI_CONFIG;
 
 #define FLD(n)  XtOffsetOf(CWRI_CONFIG,n)
@@ -100,13 +101,35 @@ void test_cb( Widget w, void *u, void *c )
 }
 
 
-static void dump_mstring_array(int k )
+static void dump_mstring_array( int value )
 {
     int p,*d;
-    m_foreach(k, p, d ) {
+    m_foreach(value, p, d ) {
 	printf("pos: %d, value: %s\n", p, m_str(*d) );
     }
 }
+
+static void print_svar(int k)
+{
+  svar_t *v = svar(k);
+  printf( "svar-name:%s, svar-type:%d\n",
+	  svar_name(k), *svar_type(k) );
+  if( v->type == SVAR_MSTRING_ARRAY ) {
+      dump_mstring_array( v->value );
+  }
+}
+
+static void dump_svar_array(int key)
+{
+    svar_t *v = svar(key);
+    int p,*d;
+    m_foreach(v->value,p,d) {
+	printf("---- result: %d -----\n", p );
+	print_svar(*d);
+    }
+    
+}
+
 
 static void option_changed(void *ctx, int key )
 {
@@ -117,6 +140,18 @@ static void option_changed(void *ctx, int key )
     
     dump_mstring_array( *svar_value(key) );
 }
+
+void result_dump_cb( Widget w, void *u, void *c )
+{
+    int key = CWRI.key_svar_all_results;
+    svar_t *v = svar(key);
+    if( (v->type & SVAR_MASK) == SVAR_SVAR_ARRAY ) {
+	printf("my results:\n");
+	dump_svar_array(key);
+	printf("---------------------\n");
+    }
+}
+
 
 void option_cb( Widget w, void *u, void *c )
 {
@@ -177,6 +212,7 @@ static void RegisterApplication ( Widget top )
     RCB( top, quit_cb );
     RCB( top, test_cb );
     RCB( top, option_cb );
+    RCB( top, result_dump_cb );
 }
 
 
@@ -206,7 +242,10 @@ static void InitializeApplication( Widget top )
     TRACE(1, "register %d", EditBuffer );
     mv_onwrite(EditBuffer, update_edit_buffer_cb, 0, 0);
     int k = svar_lookup_str( CWRI.svar_result, -1 );
-    svar_onwrite( k, option_changed, 0, 0 ); 
+    svar_onwrite( k, option_changed, 0, 0 );
+
+    
+    CWRI.key_svar_all_results = svar_lookup_str( CWRI.svar_all_results, -1 );
 }
 
 /******************************************************************************
