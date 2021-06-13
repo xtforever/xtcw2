@@ -96,6 +96,7 @@
   }
 
   if( $state != $old$state) {
+      if( $state < 0 || $state > STATE_MAX ) $state = 0;
       do_expose=0;
       $dirty=1;
       redraw($); /* redraw only if neccessary */

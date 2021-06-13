@@ -63,6 +63,10 @@ typedef struct CWRI_CONFIG {
     String svar_result;
     String svar_all_results;
     int key_svar_all_results;
+
+    Widget inpv; /* input-verify example */
+    int key_result_ed1; /* input-verify svar w/ callback */
+    
 } CWRI_CONFIG;
 
 #define FLD(n)  XtOffsetOf(CWRI_CONFIG,n)
@@ -71,6 +75,10 @@ static XtResource CWRI_CONFIG_RES [] = {
   { "traceLevel", "TraceLevel", XtRInt, sizeof(int),
    FLD(traceLevel), XtRImmediate, 0
   },
+  { NULL, NULL, XtRWidget, sizeof(Widget),
+   FLD(inpv), XtRString, "*inpv"
+  },
+
   { "option_group", "Option_group", XtRString, sizeof(XtRString),
    FLD(option_group), XtRString, ""
   },
@@ -87,6 +95,9 @@ static XtResource CWRI_CONFIG_RES [] = {
 #undef FLD
 
 struct CWRI_CONFIG CWRI;
+
+
+
 
 void test_cb( Widget w, void *u, void *c )
 {
@@ -128,6 +139,83 @@ static void dump_svar_array(int key)
 	print_svar(*d);
     }
     
+}
+
+static void set_label(Widget w, char *s)
+{
+    XtVaSetValues(w, "label", s, NULL );
+}
+static void set_state(Widget w, int e)
+{
+    TRACE(1,"%d", e );
+    XtVaSetValues(w, "state", e == 0, NULL );
+}
+
+
+/** @brief fail safe - get string entry from marray of mstring
+ *  easy string extract function for marray-string-lists.
+ *
+ *  @param   v   handle of the marray to marray structure 
+ *  @param   p   if <0 return last element, else return v[p] 
+ *  @return      the string buffer from v[p] or an empty string 
+ */
+static const char* ma_get_str(int v, int p)
+{
+    if( v <=0 ) return "";
+    if( m_len(v) == 0 ) return "";
+    if( p < 0 ) { p = m_len(v)-1; }
+    else if( m_len(v) <= p ) return "";
+    int ms = INT(v, p );
+    if( ms <= 0 ) return "";
+    if( m_len(ms) == 0 ) return "";
+    return m_str(ms);
+}
+
+/** @brief fail safe get string from svar
+ */
+static const char* svar_get_str(int svar_key, int p)
+{
+    svar_t *v = svar(svar_key);
+    int buf = -1;
+    if( p == -1 || p == 0 ) { /* return svar value if SVAR_STRING */
+	if( (v->type & SVAR_MASK) == SVAR_MSTRING ) {
+	    buf = v->value;
+	    goto check_return_str;
+	}
+    }
+
+    if( (v->type & SVAR_MASK) != SVAR_MSTRING_ARRAY ) {
+	WARN("list is not an mstring array");
+	return "";
+    }
+
+    if( p > m_len(v->value) ) {
+	WARN("index %d is greater than list %d", p, m_len(v->value) );
+	return "";
+    }
+    if( p < 0 ) p = m_len(v->value)-1;
+    buf = INT(v->value,p);
+
+ check_return_str:
+    if( buf <= 0 ) return "";
+    if( m_len(buf) == 0 ) return "";
+    return m_str(buf);   
+}
+
+
+
+/* register a write callback for result.ed1 
+   check values array: [ name,value ]
+   check for number
+   update CWRI.inpv
+*/
+static void ed1_changed(void *ctx, int key)
+{
+    int e, intnum;
+    const char *str = svar_get_str( key, 1 );
+    e = sscanf( str , "%d", &intnum );
+    set_label(CWRI.inpv, e ? "Num" : "NaN" );
+    set_state(CWRI.inpv, e );
 }
 
 
@@ -246,6 +334,9 @@ static void InitializeApplication( Widget top )
 
     
     CWRI.key_svar_all_results = svar_lookup_str( CWRI.svar_all_results, -1 );
+
+    CWRI.key_result_ed1 = svar_lookup_str( "result.ed1", -1 );
+    svar_onwrite(CWRI.key_result_ed1, ed1_changed, 0, 0 );
 }
 
 /******************************************************************************

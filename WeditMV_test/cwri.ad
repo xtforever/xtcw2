@@ -19,10 +19,8 @@ cwri.traceLevel: 1
 cwri.option_group: vb.opttest
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed op sw ed1 dbt bt
-
-*op.WcClass: Vbox
-*op.WcChildren: op1 op2 op3 op4
+*vb.WcChildren: ed op inpv ed1 dbt bt
+*vb.op.WcClass: Vbox
 
 *op1.WcClass: Woption
 *op2.WcClass: Woption
@@ -40,6 +38,8 @@ cwri.option_group: vb.opttest
 cwri.svar_result: result.options
 cwri.svar_all_results: result
 
+%% VBOX start
+*op.WcChildren: op1 op2 op3 op4 sw
 *op1.label: opt1
 *op1.value: optval1
 *op2.label: opt2
@@ -55,8 +55,17 @@ cwri.svar_all_results: result
 *sw.value_on: set-Opt
 *sw.value_off: clear-opt
 *sw.svar: result.switch
-*sw.gridy: 1
 *sw.act: 1
+%% VBOX end
+
+%% input-verify label
+%% *inpv is used by cwri.c
+%% could this be used with svar?
+*vb.inpv.WcClass: Wlabel
+*vb.inpv.label: -undef-
+*vb.inpv.gridx: 0
+*vb.inpv.gridy: 1
+ 
 
 *ed.WcClass: WeditMV
 *ed.fontName: Noto Serif-14
