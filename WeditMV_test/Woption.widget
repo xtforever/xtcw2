@@ -1,0 +1,103 @@
+@class Woption (Wlabel)
+@ simple Option-Button with Wheel Support 
+
+
+@PUBLIC
+@var String group = <String> "dummy"
+@var String value = <String> "dummy"
+@var String svar  = <String> "dummy"
+@var int act = 0
+
+@PRIVATE
+@var int key_group
+@var int key_svar
+
+
+@METHODS 
+@proc initialize
+{
+        TRACE(2,"Wbutton:%s focus group: %s", $name, $focus_group );
+	$key_group = register_widget_group( $, $group );	
+	$key_svar  = svar_lookup_str($svar, SVAR_MSTRING_ARRAY );
+
+	 if( $act ) {
+	    TRACE(1,"Set Active: %s", XtName($) );
+	    $state = STATE_ARMED;
+	    init_svar_result($);
+	    /* can be done with no widget interaction ! */
+	    set_default_active_widget($, $key_group ); 
+	 }
+}
+
+@proc exec_command
+{
+  Cardinal null;
+  if( cmd == WHEEL_FIRE ) {
+    if( $state == STATE_SELECTED ) { notify($, NULL,NULL, &null ); return 1; }
+  }
+  
+  return 0;
+}
+
+
+@TRANSLATIONS
+@trans   <EnterWindow>: highlight()
+@trans   <LeaveWindow>: reset()
+@trans   <BtnDown>:     notify()
+
+@ACTIONS
+
+@proc activate
+{
+	$act = 1;
+  	/* if( $state == STATE_SELECTED ) return; */
+  	$state = STATE_ARMED;
+  	$expose($,NULL,NULL);
+}
+
+@proc deactivate
+{
+	$act = 0;
+  	if( $state == STATE_SELECTED ) return;
+  	$state = STATE_NORMAL;
+  	$expose($,NULL,NULL);
+}
+
+@proc highlight
+{
+  if( $state == STATE_SELECTED ) return;
+  $state = STATE_SELECTED;
+  $expose($,NULL,NULL);
+}
+
+@proc reset
+{
+  if( $state == STATE_NORMAL ) return;
+  $state = $act ? STATE_ARMED : STATE_NORMAL;
+  $expose($,NULL,NULL);
+}
+
+@proc notify
+{
+	change_active_widget($,$key_group);
+	init_svar_result($);
+	svar_write_callbacks($key_svar);
+	XtCallCallbackList( $, $callback, event );
+}
+
+
+@UTILITIES
+
+@proc void init_svar_result($)
+{
+	int *v = svar_value($key_svar);
+	*v = append_mstring_array(*v,0,
+	       $group, $label, $value, NULL );
+}
+
+@IMPORTS
+@incl "opts.h"
+@incl "mls.h"
+@incl "svar2.h"
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"

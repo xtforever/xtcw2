@@ -42,7 +42,7 @@
 
  */
 
-static int SVAR, SVAR_FREE;
+static int SVAR = -1, SVAR_FREE;
 static int HASH;
 
 /* implementation */
@@ -108,7 +108,7 @@ static uint32_t svar_hash(void *sbuf)
     return h;
 }
 
-static svar_t* svar( int key )
+svar_t* svar( int key )
 {
     return mls(SVAR, key);
 }
@@ -376,9 +376,15 @@ void mlist_free(void *d)
 static void svar_item_free( void *d )
 {
     svar_t *item = d;
+
+    TRACE(1,"svar-name: %s", item->name.str );
+    if( item->name.parent < 0 ) {
+	TRACE(1,"double free");
+	return;
+    }
     item->name.parent = -1;
-    m_free( item->read_callbacks );
-    m_free( item->write_callbacks );
+    m_free( item->read_callbacks ); item->read_callbacks=0;
+    m_free( item->write_callbacks ); item->write_callbacks=0;
     if(! item->type ) return;	/* no type info */
 
     int t = (item->type & SVAR_MASK); /* 4 bits */
@@ -423,6 +429,14 @@ void m_free_list_of_list(int m)
 {
     m_free_user( m, mlist_free );
 }
+
+void m_clear_mstring_array(int m)
+{
+    int p, *d;
+    m_foreach(m,p,d) m_free(*d);
+    m_clear(m);
+}
+
 
 
 static int svar_find_signal_handler( int m, void (*fn) (void*, int) )
@@ -498,6 +512,7 @@ int new_hashtable(void)
 
 void svar_create(void)
 {
+    if( SVAR >=0 ) return;
     SVAR = m_create(100, sizeof(svar_t) );
     new_svar_container( m_new(SVAR,1)); // one global svar with index 0
     SVAR_FREE = m_create(10, sizeof( int ));
@@ -506,9 +521,11 @@ void svar_create(void)
 
 void svar_destruct(void)
 {
+    
     m_free_user(SVAR, svar_item_free );
     m_free(SVAR_FREE);
     m_free_list_of_list( HASH );
+    SVAR=-1;
 }
 
 
@@ -609,6 +626,16 @@ int svar_lookup(int buf, int type )
 
     return h;
 }
+
+int svar_lookup_str(char *s, int type )
+{
+    int buf = m_create(SVAR_MAX,1);
+    m_write(buf,0,s,strlen(s)+1);
+    int k = svar_lookup(buf,type);
+    m_free(buf);
+    return k;
+}
+
 
 void svar_free( int key )
 {

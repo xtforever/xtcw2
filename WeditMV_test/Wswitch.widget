@@ -1,0 +1,109 @@
+@class Wswitch (Wlabel)
+@ simple Switch-Button with Wheel Support 
+
+
+@PUBLIC
+@var String value_off = <String> "dummy"
+@var String value_on  = <String> "dummy"
+@var String label_off = <String> "dummy"
+@var String label_on  = <String> "dummy"
+@var String svar  = <String> "dummy"
+@var int act = 0
+
+@PRIVATE
+@var int key_svar
+
+
+@METHODS 
+@proc initialize
+{
+        TRACE(2,"Wbutton:%s focus group: %s", $name, $focus_group );
+	$label = $label_off;
+	$key_svar  = svar_lookup_str($svar, SVAR_MSTRING_ARRAY );
+	if( $act ) {
+	    $state = STATE_ARMED;
+	    $label = $label_on;
+	}
+	else $label = $label_off;
+	init_svar($);
+}
+
+@proc exec_command
+{
+  Cardinal null;
+  if( cmd == WHEEL_FIRE ) {
+    if( $state == STATE_SELECTED ) { notify($, NULL,NULL, &null ); return 1; }
+  }
+  
+  return 0;
+}
+
+
+@TRANSLATIONS
+@trans   <EnterWindow>: highlight()
+@trans   <LeaveWindow>: reset()
+@trans   <BtnDown>:     notify()
+
+@ACTIONS
+
+@proc activate
+{
+  	if( $act == 1 ) return; 
+	$act = 1;
+  	$state = STATE_ARMED;
+	$label = $label_on;
+  	$expose($,NULL,NULL);
+}
+
+@proc deactivate
+{
+  	if( $act == 0 ) return; 
+	$act = 0;
+  	$state = STATE_NORMAL;
+	$label = $label_off;
+  	$expose($,NULL,NULL);
+}
+
+@proc highlight
+{
+  if( $state == STATE_SELECTED ) return;
+  $state = STATE_SELECTED;
+  $expose($,NULL,NULL);
+}
+
+@proc reset
+{
+  if( $state == STATE_NORMAL ) return;
+  $state = $act ? STATE_ARMED : STATE_NORMAL;
+  $expose($,NULL,NULL);
+}
+
+@proc toggle
+{
+	if( $act ) deactivate($,0,0,0);
+	else activate($,0,0,0);
+}
+
+@proc notify
+{
+	toggle($,0,0,0);	
+	init_svar($);
+	svar_write_callbacks($key_svar);
+	XtCallCallbackList( $, $callback, event );
+}
+
+@utilities
+@proc void init_svar($)
+{
+	int *v = svar_value($key_svar);
+	*v = append_mstring_array(*v,0, $label,
+	     $act ? $value_on : $value_off, NULL );
+}
+
+
+@IMPORTS
+@incl "opts.h"
+@incl "mls.h"
+@incl "svar2.h"
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"

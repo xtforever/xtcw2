@@ -22,6 +22,7 @@
 @var GC gc_copy
 @var int state_cache
 @var Bool dirty
+@var String label_mem
 
 @METHODS
 
@@ -34,7 +35,8 @@
   if( ! s || ! *s )
     s=$name;
 
-  $label = XtNewString(s);
+  $label_mem = XtNewString(s);
+  $label = $label_mem;
 
   if( $width == 0 ) {
     XftTextExtentsUtf8(dpy, $xftFont, (FcChar8*)  s,
@@ -72,7 +74,7 @@
 @proc destroy
 {
   if( $draw) XftDrawDestroy( $draw );
-  XtFree($label);
+  XtFree($label_mem);
   XtFree($label_cache);
   XtReleaseGC($,$gc_copy);
   if( $pixmap ) XFreePixmap(XtDisplay($),$pixmap);
@@ -85,9 +87,9 @@
   int do_expose = 0;
 
   if ($label != $old$label) {
-      XtFree($old$label);
+      XtFree($old$label_mem);
       if( $label == 0) $label="";
-      $label = XtNewString($label);
+      $label = $label_mem = XtNewString($label);
       do_expose = 0;
       $dirty=1;
       redraw($); /* redraw only if neccessary */

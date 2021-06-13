@@ -2,6 +2,7 @@
 #define SVAR_H
 #include <time.h>
 #include <stdint.h>
+#include "mls.h"
 
 /*
 STORAGE:
@@ -25,7 +26,6 @@ svar_put_svar(k, 0,  num   );
 
 svar_get_keys(k);
 svar_get_vals(k);
-
 svar_write_callbacks( int q );
 */
 
@@ -35,11 +35,13 @@ int s_memcpy(int dst, int src, int max);
 int m_copy(int dest, int src);
 void m_free_user(int m, void (*free_h)(void*));
 void m_free_list_of_list(int m);
-
+void m_clear_mstring_array(int m);
 
 void  svar_create(void);
+static inline const void svar_init(void) { svar_create(); }
 void  svar_destruct(void);
 int   svar_lookup(int buf, int type );
+int   svar_lookup_str(char *s, int type );
 void  svar_free(int key);
 void  svar_onwrite( int key, void (*fn) (void*, int), void *d, int remove );
 void  svar_write_callbacks( int q );
@@ -99,6 +101,7 @@ typedef struct svar_st {
     int read_callbacks;
 } svar_t;
 
+svar_t *svar(int k);
 
 static inline const char *m_str(const int m) { return m_buf(m); }
 /**

@@ -15,10 +15,48 @@
 
 
 cwri.WcChildren: vb
-%% cwri.traceLevel: 0
+cwri.traceLevel: 1
+cwri.option_group: vb.opttest
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed ed1 bt
+*vb.WcChildren: ed op sw ed1 dbt bt
+
+*op.WcClass: Vbox
+*op.WcChildren: op1 op2 op3 op4
+
+*op1.WcClass: Woption
+*op2.WcClass: Woption
+*op3.WcClass: Woption
+*op4.WcClass: Woption
+
+*op1.group: vb.opttest
+*op2.group: vb.opttest
+*op2.act: 1
+*op3.group: vb.opttest
+*op4.group: vb.opttest
+*Woption.callback: option_cb
+*Woption.svar: result.options
+
+cwri.svar_result: result.options
+cwri.svar_all_results: result
+
+*op1.label: opt1
+*op1.value: optval1
+*op2.label: opt2
+*op2.value: optval2
+*op3.label: opt3
+*op3.value: optval3
+*op4.label: opt4
+*op4.value: optval4
+
+*sw.WcClass: Wswitch
+*sw.label_on:  ON
+*sw.label_off: OFF 
+*sw.value_on: set-Opt
+*sw.value_off: clear-opt
+*sw.svar: result.switch
+*sw.gridy: 1
+*sw.act: 1
 
 *ed.WcClass: WeditMV
 *ed.fontName: Noto Serif-14
@@ -31,12 +69,22 @@ cwri.WcChildren: vb
 *ed1.textBuffer: myVariable1
 *ed1.gridy: 1
 
+
+*dbt.wcClass: Wbutton
+*dbt.label: DUMP RESULTS
+*dbt.callback: result_dump_cb
+*dbt.gridy: 2
+*dbt.gridx: 0
+*dbt.gravity: Center
+*dbt.fill: Both
+*dbt.gridWidth: 2
+*dbt.heightIncreasePercent: 100
+
 *bt.wcClass: Wbutton
 *bt.label: Exit
 *bt.callback: quit_cb
-*bt.gridy: 2
+*bt.gridy: 3
 *bt.gridx: 0
-
 *bt.gravity: Center
 *bt.fill: Both
 *bt.gridWidth: 2
