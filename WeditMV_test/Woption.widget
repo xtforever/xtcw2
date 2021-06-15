@@ -12,6 +12,19 @@
 @var int key_group
 @var int key_svar
 
+@EXPORTS
+@proc String woption_value($)
+{
+        return $value;
+}
+
+
+@proc String woption_active_value($)
+{
+        Widget w = get_active_widget($group);
+        return w ? woption_value(w) : "";
+}
+
 
 @METHODS 
 @proc initialize

@@ -37,6 +37,7 @@
 #include "xtcw/WeditMV.h"
 #include "xtcw/Woption.h"
 #include "xtcw/Wswitch.h"
+#include "xtcw/Radio2.h"
 
 Widget TopLevel;
 int trace_main;
@@ -294,6 +295,7 @@ static void RegisterApplication ( Widget top )
     RCP( top, weditMV );
     RCP( top, woption );
     RCP( top, wswitch );
+    RCP( top, radio2 );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */

@@ -1,4 +1,4 @@
-@class Gridbox (Constraint) @nodoc @nocode @file="../widgets/Gridbox"
+@class Gridbox (Constraint) @nodoc @nocode @file="xtcw/Gridbox"
 # @nopubinclude
 
 @public

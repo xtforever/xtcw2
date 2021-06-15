@@ -1,0 +1,60 @@
+@class Radio2 (Gridbox)
+@ ein radio group widget das eine gridbox und mehrere
+  radio buttons erzeugt, einzig eine durch komma getrennte
+  liste von namen muss angegeben werden.
+  Die resource "value" gibt das aktive radio widget an.
+  Die namen der Radio widgets stehen im StringMArray lst.
+
+@PUBLIC
+@var StringMArray lst = <String> "Hello,World"
+@var String svar = <String> "dummy"
+@var String value = <String> "dummy"
+
+@PRIVATE
+@var String radioGroup
+
+@METHODS
+@proc initialize
+{
+        asprintf( & $radioGroup, "group_%p", (void*)$ );
+        do_layout($);
+}
+
+@proc destroy
+{
+        free($radioGroup);
+        m_free_strings($lst,0);
+}
+
+@UTILITIES
+@proc do_layout($)
+{
+	int act;
+        Widget w;
+        int i;
+        char *grid = "gridx";
+        for( i=0; i<$num_children;i++ )
+             XtDestroyWidget($children[0]);
+        for( i=0; i<m_len($lst); i++ ) {
+             fprintf(stderr,"create %s\n", STR($lst,i));
+
+	     act = strcmp( STR($lst,i), $value ) == 0; 
+	     
+	     w = XtVaCreateManagedWidget(STR($lst,i),
+                woptionWidgetClass, $,
+                grid, i,
+                "group", $radioGroup,
+                "value", STR($lst,i),
+		"label", STR($lst,i),
+		"svar", $svar,
+		"act", act,
+                NULL );
+        }
+}
+
+
+@IMPORTS
+
+@incl <xtcw/Woption.h>
+@incl "converters.h"
+@incl "mls.h"
