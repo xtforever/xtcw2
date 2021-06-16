@@ -1,10 +1,53 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
 #include "mls.h"
 #include "svar2.h"
+#include "svar_expand.h"
+
+void dump_svar(int key);
+
+int svar_mstring_array(char *name, ... )
+{
+    
+    int k = svar_lookup_str(name,SVAR_MSTRING_ARRAY);
+    svar_t *v = svar(k);
+
+
+    va_list ap;
+    va_start(ap,name);
+    v->value = vas_append_mstring_array(v->value,0, ap);
+    va_end(ap);
+    return k;
+}
+
+
+
+void check2(void)
+{
+    TRACE(3,"starting check2");
+    int k = svar_mstring_array("test1.vara", "ahello", NULL  );
+    svar_mstring_array("test1.varb", "bhello0","bhello1", "bhello2", NULL  );
+    svar_mstring_array("test1.varc", "chello", NULL  );
+
+    k = svar_lookup_str("test1",-1);
+    dump_svar(k);
+    const char *s =   svexp_string( "test1", "varb=$varb" );
+    printf("expand simple: %s\n", s );
+    s =   svexp_string( "test1", "varb=$varb[1]" );
+    printf("expand array: %s\n", s );
+    s =   svexp_string( "test1", "varb=$'varb[*]" );
+    printf("expand array*: %s\n", s );
+
+
+    svar_destruct();
+    m_destruct();
+    exit(1);
+}
+
 
 int read_keys_from_file( char *filename )
 {
@@ -205,9 +248,9 @@ void check1()
 int main()
 {
     m_init();
-    trace_level=0;
+    trace_level=1;
     svar_create();
-    // check1();
+    check2();
 
 
     int name = s_printf(0,0, "hello2.hello3.hello4" );

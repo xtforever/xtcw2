@@ -105,7 +105,7 @@
 {
 	int *v = svar_value($key_svar);
 	*v = append_mstring_array(*v,0,
-	       $group, $label, $value, NULL );
+	       $value, $label, $group, NULL );
 }
 
 @IMPORTS

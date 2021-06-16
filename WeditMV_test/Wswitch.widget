@@ -96,8 +96,9 @@
 @proc void init_svar($)
 {
 	int *v = svar_value($key_svar);
-	*v = append_mstring_array(*v,0, $label,
-	     $act ? $value_on : $value_off, NULL );
+	*v = append_mstring_array(*v,0, 
+	     $act ? $value_on : $value_off,
+	     $label, NULL );
 }
 
 

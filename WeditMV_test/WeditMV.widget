@@ -604,8 +604,8 @@
 {
 	int *v = svar_value($key_svar);
 	char *str = get_text_buffer($);
-	*v = append_mstring_array(*v,0, XtName($),
-	     str, NULL );
+	*v = append_mstring_array(*v,0, str, XtName($),
+	     NULL );
 }
 
 @ACTIONS

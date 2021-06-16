@@ -98,6 +98,7 @@ static XtResource CWRI_CONFIG_RES [] = {
 struct CWRI_CONFIG CWRI;
 
 
+static const char* svar_get_str(int svar_key, int p);
 
 
 void test_cb( Widget w, void *u, void *c )
@@ -139,7 +140,13 @@ static void dump_svar_array(int key)
 	printf("---- result: %d -----\n", p );
 	print_svar(*d);
     }
-    
+
+    m_foreach(v->value,p,d) {
+	const char *value = svar_get_str(*d, 0);
+	const char *name = svar_name(*d);
+	printf("name=value: %s=%s\n", name, value );
+    }
+    puts("");
 }
 
 static void set_label(Widget w, char *s)
@@ -239,6 +246,9 @@ void result_dump_cb( Widget w, void *u, void *c )
 	dump_svar_array(key);
 	printf("---------------------\n");
     }
+
+
+    
 }
 
 

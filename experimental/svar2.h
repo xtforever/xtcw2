@@ -29,6 +29,11 @@ svar_get_vals(k);
 svar_write_callbacks( int q );
 */
 
+/* some functions to access data stored in typed svar */
+const char* svar_get_str(int svar_key, int p);
+int svar_get_str_count(int svar_key);
+
+
 
 int s_clr( int str );
 int s_memcpy(int dst, int src, int max);

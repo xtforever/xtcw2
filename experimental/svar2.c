@@ -49,6 +49,55 @@ static int HASH;
 static void svar_item_free( void *d );
 const char *svar_name( int v );
 
+/** @brief fail safe get string from svar
+ * p==-1 returns last value
+ * p==0  returns first value
+ * if svar is mstring p==0 and p==-1 returns the array
+ * p > 0 : returns m_str(value[p]) 
+ */
+const char* svar_get_str(int svar_key, int p)
+{
+    svar_t *v = svar(svar_key);
+    int buf = -1;
+    if( p == -1 || p == 0 ) { /* return svar value if SVAR_STRING */
+	if( (v->type & SVAR_MASK) == SVAR_MSTRING ) {
+	    buf = v->value;
+	    goto check_return_str;
+	}
+    }
+
+    if( (v->type & SVAR_MASK) != SVAR_MSTRING_ARRAY ) {
+	WARN("list is not an mstring array");
+	return "";
+    }
+
+    if( p > m_len(v->value) ) {
+	WARN("index %d is greater than list %d", p, m_len(v->value) );
+	return "";
+    }
+    if( p < 0 ) p = m_len(v->value)-1;
+    buf = INT(v->value,p);
+
+ check_return_str:
+    if( buf <= 0 ) return "";
+    if( m_len(buf) == 0 ) return "";
+    return m_str(buf);   
+}
+
+int svar_get_str_count(int svar_key)
+{
+    svar_t *v = svar(svar_key);
+    if( (v->type & SVAR_MASK) == SVAR_MSTRING ) {
+	return 1;
+    }
+    if( (v->type & SVAR_MASK) != SVAR_MSTRING_ARRAY ) {
+	WARN("list is not an mstring array");
+	return -1;
+    }
+    return m_len(v->value);
+}
+
+
 /* ------------------------------------------------ */
 
 /** @brief copy string from src to dest
