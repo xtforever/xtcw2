@@ -43,9 +43,7 @@ void check2(void)
     printf("expand array*: %s\n", s );
 
 
-    svar_destruct();
-    m_destruct();
-    exit(1);
+
 }
 
 
@@ -65,6 +63,25 @@ int read_keys_from_file( char *filename )
     return keys;
 }
 
+static int m_mcopy(int dest, int destp, int src, int srcp, int src_count  )
+{
+    if( dest <=0 ) dest = m_create(
+				   destp+m_len(src)-srcp,
+				   m_width(src) );
+    
+    int width = Min( m_width(src), m_width(dest) );
+    int src_len = m_len(src);
+    if( src_count < 0 ) src_count = src_len - srcp;
+    m_setlen(dest, destp + src_count );
+    for(int i=0;i<src_count;i++) {
+	void *from = mls(src,srcp);
+	memcpy( mls(dest,destp), from, width );
+	srcp++;
+	destp++;
+    }
+    return dest;
+}
+
 static inline void nl(void) { putchar(10); };
 void check_hash_speed( int seconds, int keys  )
 {
@@ -73,11 +90,21 @@ void check_hash_speed( int seconds, int keys  )
     clock_gettime(CLOCK_MONOTONIC, &tp0);
     srand( (int) tp0.tv_nsec );
     unsigned count=0;
+
+
+    int buf = s_printf(0,0,"hashspeed.");
+    int buf_len = m_len(buf)-1;
+    m_setlen(buf, SVAR_MAX);
+
+    
     while(1)
 	{
 	    count++;
 	    int keynum = rand() % m_len(keys);
-	    svar_lookup( INT(keys, keynum), SVAR_FLOAT );
+	    int keystr = INT(keys, keynum);
+	    m_write(buf,buf_len, m_str(keystr), m_len(keystr) );
+
+	    svar_lookup(buf , SVAR_FLOAT );
 	    clock_gettime(CLOCK_MONOTONIC, &tp1);
 	    timespec_diff(&tp1,&tp0,&tp2);	    
 	    if( tp2.tv_sec  >= seconds ) break;
@@ -87,6 +114,7 @@ void check_hash_speed( int seconds, int keys  )
     n = n * 1E6 + (tp2.tv_nsec / 1E3); 
     n = (count * 1.0) / n;
     printf("hash/µsec: %Le, hash: %u,  %lu sec, %lu nsec\n\n", n, count, tp2.tv_sec,tp2.tv_nsec);
+    m_free( buf );
 }
 
 
@@ -234,25 +262,25 @@ void check1()
 
     dump_svar(key);
     
-    trace_level=1;
+
     svar_free(key);
-    trace_level=2;
+
         
     m_free(name);
     printf("READY____________________________________________\n\n");
 
 }
 
-
-
-int main()
+void check3(void)
 {
-    m_init();
-    trace_level=1;
-    svar_create();
-    check2();
+    int keys = read_keys_from_file( "john.txt" ); 
+    check_hash_speed( 5, keys  );
+    m_free_list_of_list(keys);
+}
 
 
+void check4(void)
+{
     int name = s_printf(0,0, "hello2.hello3.hello4" );
     int key = svar_lookup( name,-1 );
     s_printf(name,0, "hello2.hello3.hello4b" );
@@ -264,11 +292,19 @@ int main()
     dump_svar(key);
 
     m_free(name);
+}
 
-    int keys = read_keys_from_file( "john.txt" ); 
-    check_hash_speed( 5, keys  );
 
-    m_free_list_of_list(keys);
+int main()
+{
+    m_init();
+    trace_level=0;
+    svar_create();
+
+    check1();
+    check2();
+    check3();
+    
 
 
     svar_destruct();

@@ -69,8 +69,8 @@ const char *svar_typename(int v);
 #define SVAR_SVAR_ARRAY    (5+8)
 #define SVAR_MARRAY_ARRAY  (6+8)
 #define svar_is_array(t) (t&SVAR_ARRAY)
-#define svar_typeof(t,typ) ((t&SVAR_MAX)==typ)
-#define svar_define(t,typ) do { t = (t&~SVAR_MAX) | typ; } while(0)
+#define svar_typeof(t,typ) ((t&SVAR_MASK)==typ)
+#define svar_define(t,typ) t = ((t&~SVAR_MASK) | typ)
 
 
 /*
