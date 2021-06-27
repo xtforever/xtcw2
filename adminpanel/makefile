@@ -1,4 +1,4 @@
-TARGET=signage
+TARGET=admpanel
 
 debug_enable ?= 1
 
@@ -40,15 +40,11 @@ COMPTAG="\"PROD_$(shell date)\""
 CFLAGS+= -O3 -DTAG=$(COMPTAG)
 endif
 
-DEPS=WeditMV.o
+DEPS=WeditMV.o Woption.o   Wswitch.o Radio2.o opts.o svar2.o 
 LOADLIBES=$(libdir)/libxtcw.a $(XORGLIB)
 ALL: $(TARGET) 
 
 $(TARGET):  $(DEPS) 
-
-
-install:
-	cp signage signage.ad /home/tc
 
 
 clean:

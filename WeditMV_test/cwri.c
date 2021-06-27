@@ -98,9 +98,6 @@ static XtResource CWRI_CONFIG_RES [] = {
 struct CWRI_CONFIG CWRI;
 
 
-static const char* svar_get_str(int svar_key, int p);
-
-
 void test_cb( Widget w, void *u, void *c )
 {
   printf("cb\n");
@@ -179,36 +176,6 @@ static const char* ma_get_str(int v, int p)
     return m_str(ms);
 }
 
-/** @brief fail safe get string from svar
- */
-static const char* svar_get_str(int svar_key, int p)
-{
-    svar_t *v = svar(svar_key);
-    int buf = -1;
-    if( p == -1 || p == 0 ) { /* return svar value if SVAR_STRING */
-	if( (v->type & SVAR_MASK) == SVAR_MSTRING ) {
-	    buf = v->value;
-	    goto check_return_str;
-	}
-    }
-
-    if( (v->type & SVAR_MASK) != SVAR_MSTRING_ARRAY ) {
-	WARN("list is not an mstring array");
-	return "";
-    }
-
-    if( p > m_len(v->value) ) {
-	WARN("index %d is greater than list %d", p, m_len(v->value) );
-	return "";
-    }
-    if( p < 0 ) p = m_len(v->value)-1;
-    buf = INT(v->value,p);
-
- check_return_str:
-    if( buf <= 0 ) return "";
-    if( m_len(buf) == 0 ) return "";
-    return m_str(buf);   
-}
 
 
 
@@ -219,11 +186,14 @@ static const char* svar_get_str(int svar_key, int p)
 */
 static void ed1_changed(void *ctx, int key)
 {
+    TRACE(1, "result.ed1 %d", svar_lookup_str("result.ed1", -1 ));
     int e, intnum;
-    const char *str = svar_get_str( key, 1 );
+    const char *str = svar_get_str( key, 0 );
     e = sscanf( str , "%d", &intnum );
     set_label(CWRI.inpv, e ? "Num" : "NaN" );
     set_state(CWRI.inpv, e );
+
+
 }
 
 

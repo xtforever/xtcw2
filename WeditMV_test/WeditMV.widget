@@ -246,8 +246,11 @@
 {
         clear_pixmap($);
         draw_text_on_pixmap($);
-        draw_pixmap_on_window($); $crsr_on = 0;
-        draw_cursor($);
+        draw_pixmap_on_window($);
+	if( $crsr_on ) {
+	    $crsr_on=0;
+            draw_cursor($);
+	}	
         $dirty = 0;
 
 	// send buffer handle to application
@@ -273,6 +276,11 @@
     if( $crsr_on ) cursor_toggle($);
 }
 
+@proc cursor_show($)
+{
+    if(! $crsr_on ) cursor_toggle($);
+}
+
 @ remove old cursor and draw new cursor on window
 @proc cursor_xdraw($, XRectangle *r)
 {
@@ -285,9 +293,9 @@
 
 @proc calculate_prefered_size($,int *w, int *h)
 {
-  calculate_size($,w,h);
-  (*w) += 20;
-  (*h) += 20;
+  (*h) = $xftFont->height; /* $xftFont->ascent + $xftFont->descent+2; /*
+  (*w) = $txt.width;
+  if( *w == 0 || *w > 18000 ) *w = 50;      
 }
 
 
@@ -602,10 +610,13 @@
   should be optimized if used as on key-pressed callback
 @proc update_svar($)
 {
+
 	int *v = svar_value($key_svar);
 	char *str = get_text_buffer($);
 	*v = append_mstring_array(*v,0, str, XtName($),
 	     NULL );
+	TRACE(1, "svar: %d value=%d", $key_svar, *v );
+
 }
 
 @ACTIONS
@@ -630,14 +641,14 @@
 @proc focus_in
 {
 	TRACE(2, "WeditMV %s got focus", XtName($));
+	cursor_show($);
 }
 
 @proc focus_out
 {
 	TRACE(2, "WeditMV %s lost focus", XtName($));
+	cursor_undraw($);
 }
-
-
 
 @proc info
 {

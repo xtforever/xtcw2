@@ -3,3 +3,11 @@
 *.o
 *.3
 nohup.out
+*.tex
+
+cwri
+Wheel.c
+Wlabel.c
+parse.tab.c
+parse.tab.h
+

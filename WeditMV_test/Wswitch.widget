@@ -7,11 +7,12 @@
 @var String value_on  = <String> "dummy"
 @var String label_off = <String> "dummy"
 @var String label_on  = <String> "dummy"
-@var String svar  = <String> "dummy"
+@var Distance sizex  = <String> "0"
+@var int key_svar = 0
 @var int act = 0
 
 @PRIVATE
-@var int key_svar
+
 
 
 @METHODS 
@@ -19,7 +20,6 @@
 {
         TRACE(2,"Wbutton:%s focus group: %s", $name, $focus_group );
 	$label = $label_off;
-	$key_svar  = svar_lookup_str($svar, SVAR_MSTRING_ARRAY );
 	if( $act ) {
 	    $state = STATE_ARMED;
 	    $label = $label_on;
@@ -36,6 +36,21 @@
   }
   
   return 0;
+}
+
+
+@proc query_geometry
+{
+    int w,h;
+    char *s = strlen($label_on) > strlen($label_off) ? $label_on : $label_off;
+    calculate_label_size($, s, &w, &h );  
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    reply->width =  w;
+    reply->height = h;
+    TRACE(2, "%s: our prefered size is %dx%d", XtName($),
+                  w,h );
+    return XtGeometryAlmost;
 }
 
 
@@ -95,10 +110,27 @@
 @utilities
 @proc void init_svar($)
 {
+	if( $key_svar <= 0 ) return;
 	int *v = svar_value($key_svar);
 	*v = append_mstring_array(*v,0, 
 	     $act ? $value_on : $value_off,
 	     $label, NULL );
+}
+
+@proc calculate_label_size($, char *s, int *w, int *h)
+{
+	XGlyphInfo extents;
+  	Display *dpy = XtDisplay($);
+    	XftTextExtentsUtf8(dpy, $xftFont, (FcChar8*)  s,
+		       strlen( s ), &extents);
+
+	*w = increase_by_percent( extents.xOff, $leftOffsetPercent );
+
+	if( *w < $sizex ) {
+	    *w = $sizex;   	
+        }
+
+    	*h  = increase_by_percent( $xftFont->height, $heightIncreasePercent);
 }
 
 
@@ -108,3 +140,4 @@
 @incl "svar2.h"
 @incl <X11/Xft/Xft.h>
 @incl "converters-xft.h"
+@incl "converters.h"

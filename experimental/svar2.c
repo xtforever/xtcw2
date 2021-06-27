@@ -95,6 +95,12 @@ int svar_get_str_count(int svar_key)
 	WARN("list is not an mstring array");
 	return -1;
     }
+
+    if( v->value <= 0 ) {
+	WARN("this var is not initialized: %s", svar_name(svar_key) );
+	return 0;
+    }
+    
     return m_len(v->value);
 }
 
@@ -442,7 +448,9 @@ static void svar_item_free( void *d )
     t &= ~ SVAR_ARRAY;
     
     int is_marray = ( t==SVAR_MSTRING || t==SVAR_MARRAY );
-    int is_svar    = SVAR_SVAR;
+    int is_svar    = t == SVAR_SVAR;
+    int is_string  = t == SVAR_STRING;
+	
     item->type = 0;		/* we do not want recursion */
     /* if var1 contains var2 and var2 contains var1 we would have an
        endless loop */
@@ -450,7 +458,8 @@ static void svar_item_free( void *d )
     /* handle simple case first */
     if( ! is_array ) {
 	if( is_marray ) { m_free(item->value); return; } 
-	if( is_svar ) { svar_free_cb(& item->value ); return; }    
+	if( is_svar ) { svar_free_cb(& item->value ); return; }
+	if( is_string ) { free( (void*)(intptr_t)item->value ); item->value=0; return; }
 	return; 		/* no destructor needed */
     }
     
@@ -459,11 +468,19 @@ static void svar_item_free( void *d )
 	m_free_list_of_list(item->value);
 	return;
     }
-
+    
+    if( is_string ) {
+	m_free_strings( item->value, 0);
+	return;
+    }
+    
     if( is_svar ) {		/* each value is a svar */
 	m_free_user(item->value, svar_free_cb ); /* recursion! */
 	return;
     }
+
+
+    
 
     m_free( item->value ); /* it's an array of something completly different */
 }

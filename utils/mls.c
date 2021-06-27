@@ -396,7 +396,7 @@ void m_remove( int m, int p, int n )
 */
 int m_next( int m, int *p, void *d )
 {
-    if(!m) return 0;
+    if(!m || !m_len(m) ) return 0;
     lst_t *lp = _get_list(m);
     if( !d ) ERR("Data address d is ZERO");
     return lst_next(*lp,p,d);
@@ -957,15 +957,16 @@ void m_puti(int m,int c)
 //
 void m_free_strings(int list, int CLEAR_ONLY )
 {
-  int index; char **strp;
-  m_foreach(list,index,strp) {
-    if( *strp ) free(*strp);
-    *strp=NULL;
-  }
-  if( CLEAR_ONLY )
-    m_clear(list); // reset array size to zero
-  else
-    m_free(list); // free array
+    int index; char **strp;
+
+    m_foreach(list,index,strp) {
+	if( *strp ) free(*strp);
+	*strp=NULL;
+    }
+    if( CLEAR_ONLY )
+	m_clear(list); // reset array size to zero
+    else
+	m_free(list); // free array
 
 }
 

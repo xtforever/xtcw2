@@ -6,7 +6,7 @@
 #include <time.h>
 #include "mls.h"
 #include "svar2.h"
-#include "svar_expand.h"
+
 
 void dump_svar(int key);
 
@@ -63,24 +63,6 @@ int read_keys_from_file( char *filename )
     return keys;
 }
 
-static int m_mcopy(int dest, int destp, int src, int srcp, int src_count  )
-{
-    if( dest <=0 ) dest = m_create(
-				   destp+m_len(src)-srcp,
-				   m_width(src) );
-    
-    int width = Min( m_width(src), m_width(dest) );
-    int src_len = m_len(src);
-    if( src_count < 0 ) src_count = src_len - srcp;
-    m_setlen(dest, destp + src_count );
-    for(int i=0;i<src_count;i++) {
-	void *from = mls(src,srcp);
-	memcpy( mls(dest,destp), from, width );
-	srcp++;
-	destp++;
-    }
-    return dest;
-}
 
 static inline void nl(void) { putchar(10); };
 void check_hash_speed( int seconds, int keys  )
@@ -295,18 +277,67 @@ void check4(void)
 }
 
 
+
+void mcheck(int a, int l, int w)
+{
+    printf("check %d (length=%d,width=%d)\n", a,l,w );
+    if( m_width(a) != w || m_len(a) != l ) ERR("check failed");
+}
+void mdump(int a)
+{
+    int k,*p; m_foreach(a,k,p) { printf("%c%d", k ? ',' : 32, *p ); }
+    putchar(10);
+}
+
 int main()
 {
     m_init();
     trace_level=0;
     svar_create();
 
-    check1();
-    check2();
+    // check1();
+    // check2();
     check3();
     
+	goto ende;
 
+    int f1 = m_create(5,sizeof(int));
+    for(int x =0; x < 5; x++ )
+	m_put(f1,&x);
 
+    trace_level=1;
+    int f2 = m_mcopy(0,0,f1,0,5);
+    mcheck(f2,5,sizeof(int) );
+    
+    trace_level=0;
+
+    m_mcopy(f1,5,f2,4,-1);
+    mcheck(f1,6,sizeof(int) );
+
+    // append f2 to f1
+    m_mcopy(f1,-1,f2,-1,-1);
+    mcheck(f1,11,sizeof(int) );
+
+    // copy/append
+    m_clear(f1);
+    m_mcopy(f1,-1,f2,-1,-1);
+    mcheck(f1,5,sizeof(int) );
+
+    // overwrite
+    m_mcopy(f1,1,f2,0,1);
+    mcheck(f1,5,sizeof(int) );
+    mdump(f1);
+
+    m_clear(f1);
+    m_mcopy(f1,1,f2,1,800);
+    mcheck(f1,5,sizeof(int) );
+    mdump(f1);
+    
+    
+    m_free(f1);
+    m_free(f2);
+    
+ende:
     svar_destruct();
     m_destruct();
 }

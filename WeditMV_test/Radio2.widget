@@ -9,6 +9,7 @@
 @var StringMArray lst = <String> "Hello,World"
 @var String svar = <String> "dummy"
 @var String value = <String> "dummy"
+@var <Callback> XtCallbackList callback  = NULL
 
 @PRIVATE
 @var String radioGroup
@@ -49,9 +50,16 @@
 		"svar", $svar,
 		"act", act,
                 NULL );
-        }
+	    XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, $ );
+	}
+
 }
 
+@UTILITIES
+@proc update_cb(Widget dummy, $, void *class_data )
+{
+	XtCallCallbackList( $, $callback, class_data );
+}
 
 @IMPORTS
 

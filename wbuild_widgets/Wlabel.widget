@@ -23,13 +23,16 @@
 @var int state_cache
 @var Bool dirty
 @var String label_mem
+@var int prefered_width
+@var int prefered_height
+
+
+
 
 @METHODS
 
 @proc initialize
 {
-  XGlyphInfo extents;
-  Display *dpy = XtDisplay($);
   char *s = $label;
 
   if( ! s || ! *s )
@@ -38,23 +41,56 @@
   $label_mem = XtNewString(s);
   $label = $label_mem;
 
-  if( $width == 0 ) {
-    XftTextExtentsUtf8(dpy, $xftFont, (FcChar8*)  s,
-		       strlen( s ), &extents);
+  int w,h;
+  calculate_label_size($, s, &w, &h );
 
-    $width = increase_by_percent( extents.xOff, $leftOffsetPercent );
-  }
-
-  if( $height == 0 )
-    $height = increase_by_percent( $xftFont->height, $heightIncreasePercent);
-
+  $prefered_width  = $width  = w;
+  $prefered_height = $height = h;
   $dirty=0;
   $label_cache = 0;
   $pixmap = 0;
   $draw = 0;
   $gc_copy =  XtGetGC($, 0,0 );
-
 }
+
+@ When our parent asks for this widget's preferred geometry,
+simply return the geometry as indicated by our label.
+Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return |XtGeometryNo|) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+|XtGeometryYes| should have been given.
+
+It seems that no harm is done by always returning |XtGeometryAlmost| and
+letting Xt figure out what really needs to be changed.
+
+@proc query_geometry
+{
+
+    int w,h;
+    calculate_label_size($, $label, &w, &h );
+  
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    reply->width =  w;
+    reply->height = h;
+
+    if( request == NULL ) {
+       TRACE(2,"no requested/intended size");
+    }
+    else {
+        TRACE(2, "%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+    }
+
+    TRACE(2, "%s: our prefered size is %dx%d", XtName($),
+                  w,h );
+
+
+    return XtGeometryAlmost;
+}
+
 
 @proc realize
  {
@@ -65,6 +101,10 @@
 
 @proc resize
 {
+
+    if( $width > 18000 ) $width=$prefered_width;
+    if( $height > 18000 ) $height=$prefered_height;
+    
     TRACE(3, "%s: resize: %dx%d", $name, $width, $height );
     if (XtIsRealized($)) reshape_widget($);
     invalidate_cache($);
@@ -251,6 +291,21 @@
     XftDrawSetClip($draw,0);
   }
 }
+
+
+@proc calculate_label_size($, char *s, int *w, int *h)
+{
+	XGlyphInfo extents;
+  	Display *dpy = XtDisplay($);
+    	XftTextExtentsUtf8(dpy, $xftFont, (FcChar8*)  s,
+		       strlen( s ), &extents);
+
+	*w = increase_by_percent( extents.xOff, $leftOffsetPercent );
+
+
+    	*h  = increase_by_percent( $xftFont->height, $heightIncreasePercent);
+}
+
 
 @IMPORTS
 @incl <X11/Xft/Xft.h>

@@ -98,60 +98,7 @@ Widget change_active_widget(Widget new, int key)
 	    XtCallActionProc( *w, "activate", 0,0,0 );
 	    TRACE(1,"activate %d", p );
 	}
-    }	
-}
-
-int s_strdup(int r, const char *str)
-{
-    int l,p;
-    if( is_empty(str) ) { // return empty buffer
-	if( r <= 0 ) r = m_create(1,1); else m_clear(r);
-	m_putc(r,0);
-	return r;
     }
-    
-    l = strlen(str)+1; // return copy of string 
-    if( r <= 0 ) r = m_create(l,1); else m_clear(r);
-    m_write(r,0,str,l);
-    return r;
+    return new;
 }
 
-static int app_cstr_mstrl( int m, const char *name )
-{
-    int x = s_strdup(0,name);
-    m_put(m,&x);
-    return m;
-}
-
-
-static int vas_create_mstring_array(int m, va_list ap )
-{
-    char *name;
-    while( (name = va_arg( ap, char* )) != NULL )
-    {
-	app_cstr_mstrl( m, name );
-    }
-    return m;
-}
-
-
-int append_mstring_array(int m,int offset, ... )
-{
-    va_list ap;
-    if(!m) {
-	m=m_create(10,sizeof(int));
-    } else {
-	int len = m_len(m);
-	if( offset >= 0 ) {
-	    while( offset < len-- ) {
-		m_free( INT(m,len) );		
-	    }
-	}
-	m_setlen(m,offset);
-    }
-    
-    va_start(ap,offset);
-    vas_create_mstring_array(m,ap);
-    va_end(ap);
-    return m;
-}
