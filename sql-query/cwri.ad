@@ -1,0 +1,74 @@
+ %%
+%% set default colors
+%%
+
+*foreground: #A0A0E0
+*background: #0000C0
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #A0A0E0
+*bg_norm: #0000C0
+*xftFont: "Source-Code-12"
+*borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+
+cwri.WcChildren: vb
+%% cwri.traceLevel: 0
+
+
+
+*vb.WcClass: GridBox
+*vb.WcChildren: edx term bt
+
+%% --------------------
+*edx.WcClass: Gridbox
+*edx.WcChildren: l1 ed
+*edx.weightx: 0
+*edx.weighty: 0
+
+
+*l1.WcClass: Wlabel
+*l1.label: Kunde
+*l1.weightx: 1
+
+*ed.WcClass: WeditMV
+*ed.gridx: 1
+*ed.fill: Width
+*ed.width: 400
+*ed.svar: customername
+*ed.callback: edit_customername
+*ed.translations: #augment <Btn2Down>: insert_selection()
+*ed.cursorColor: #DDBABE
+*ed.background:  #1010E0
+*ed.weightx: 100
+%% --------------------
+
+
+*term.WcClass: Wlist4
+*term.xftFont: Source Code Pro-10 
+*term.bg_norm: black
+*term.bg_hi: blue
+*term.bg_sel: black
+*term.fg_norm: green
+*term.fg_hi: green
+*term.fg_sel: green 
+*term.gridy: 1
+*term.getEntry: terminal_output_cb 
+*term.weighty: 0
+*term.prefered_lines: 8
+*term.tabs: 30
+*term.weightx: 1
+*term.weighty: 1
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 2
+*bt.gridx: 0
+*bt.gravity: Center
+*bt.fill: None
+*bt.weightx: 0
+*bt.weighty: 0
