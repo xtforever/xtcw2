@@ -247,7 +247,7 @@ int main ( int argc, char **argv )
     XawInitializeWidgetSet();
 
 
-    test_sql_connection("gpe");
+    // test_sql_connection("gpe");
 
     
     /*  --  Intialize Toolkit creating the application shell

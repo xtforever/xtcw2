@@ -89,9 +89,10 @@
   copy_str( $, s );
   // mv_onwrite( $textBuffer, (void*)do_update, $, 0 );
   TRACE(1,"%s using mvar %d", $name, $textBuffer );
-  calculate_prefered_size($,&w,&h);
-  if( $width < w ) $width = w;
-  if( $height < h) $height = h;
+
+  str_to_glyphlist($);
+  if( $width < w ) $width = $txt.width;
+  if( $height < h) $height = $txt.height;
   if(! $XA_UTF8_STRING )
       $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
 
@@ -161,6 +162,19 @@
 {
 	TRACE(2,"Class WeditMV: %s: ", XtName($) );
 	return True;
+}
+
+
+@proc query_geometry
+{
+    int w,h;
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    w = reply->width =  $txt.width;
+    h = reply->height = $txt.height;
+    TRACE(2, "%s: our prefered size is %dx%d", XtName($),
+                  w,h );
+    return XtGeometryAlmost;
 }
 
 @UTILITIES
@@ -297,7 +311,6 @@
   (*w) = $txt.width;
   if( *w == 0 || *w > 18000 ) *w = 50;      
 }
-
 
 @proc calculate_size($,int *w, int *h)
 {
