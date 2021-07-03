@@ -1,0 +1,43 @@
+ %%
+%% set default colors
+%%
+
+*foreground: #A0A0E0
+*background: #0000C0
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #A0A0E0
+*bg_norm: #0000C0
+*xftFont: "Source-Code-22"
+%% *borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+
+cwri.WcChildren: vb
+%% cwri.traceLevel: 0
+
+*vb.WcClass: GridBox
+*vb.WcChildren: ed bt
+
+*l1.WcClass: Wbutton
+*l1.label: Hello
+*l1.callback: WcSetValue( *ed.text: test )
+
+*ed.WcClass: Wlabel 
+*ed.gridx: 1
+*ed.height: 700
+*ed.width: 300
+
+
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 1
+*bt.gridx: 0
+
+*bt.gravity: Center
+*bt.fill: Both
+*bt.gridWidth: 2
