@@ -31,9 +31,16 @@
 #include <xutil.h>
 #include "wcreg2.h"
 #include <xtcw/register_wb.h>
-
+#include "subshell.h"
 
 #include "xtcw/Gauge.h"
+
+char *m_str(int m) { return m_buf(m); }
+
+static struct fork2_info *SPROC = NULL;
+static XtInputId sprocid[2];
+static Widget popShell = NULL;
+
 
 Widget TopLevel;
 int trace_main;
@@ -86,6 +93,219 @@ void quit_cb( Widget w, void *u, void *c )
     XtAppSetExitFlag( XtWidgetToApplicationContext(w) );
 }
 
+void popdown_cb( Widget w, void *u, void *c )
+{
+    int letter = (intptr_t) u;
+    TRACE(1,"popdown %c", letter );
+    char msg[3] = { 0, 10, 0 };
+    msg[0]=letter;
+    
+    fork2_write(SPROC, msg  );
+    XtPopdown(popShell);
+}
+
+
+int do_sproc(int n, int buf)
+{
+    int err = fork2_read(SPROC, n);
+
+    if( err ) {
+	TRACE(1,"error pipe %d", n);
+	XtRemoveInput(sprocid[n]); sprocid[n]=0;
+	if( sprocid[0] == 0 &&
+	    sprocid[1] == 0  ) {
+	    fork2_close(SPROC);
+	    SPROC=0;
+	}
+	return err;
+    }
+    
+    err =  fork2_getline(SPROC,n,buf);
+    if( !err  ) TRACE(1, "%s", m_str(buf) );
+    return err;
+}
+
+
+
+int matchone( char *s, char *charset )
+{
+    int ch;
+    while( ch=*charset++ ) {
+	if( *s == ch ) break;
+    }
+    return ch;
+}
+
+int matchinside(char *s, char *charset )
+{
+    int ch;
+    while(*s) {
+	ch = matchone(s,charset);
+	if( ch ) return ch;
+	s++;
+    }
+    return 0;
+}
+
+
+void make_button(Widget gb, int gx, char *label, int ret )
+{
+    Widget bt = XtVaCreateManagedWidget( label, wbuttonWidgetClass, gb,
+				  "label", label,
+				  "gridy", 1,
+				  "gridx", gx,
+				  NULL );
+	
+    XtAddCallback(bt, "callback", popdown_cb,(XtPointer)(intptr_t) ret );	
+}
+
+
+void make_request(char *q, char *letters )
+{
+    static int question = 0;
+    if( ! question ) question = m_create(20,1);
+
+    int button_yes    = 0;
+    int button_no     = 0;
+    int button_abort  = 0;
+    int button_cancel = 0;
+    
+    if( matchinside(letters, "jJyY") )
+	button_yes = 1;
+    if( matchinside(letters, "nN") )
+	button_no = 1;
+    if( matchinside(letters, "aAqQ") )
+	button_abort = 1;
+    if( matchinside(letters, "cC") )
+	button_cancel = 1;
+
+    if( popShell ) {
+	XtDestroyWidget(popShell);
+    }
+
+    m_clear(question);
+    m_write( question, 0, q, strlen(q) );
+    m_putc(question,32); m_putc(question,'?');
+
+    Widget shell2;
+    popShell = shell2 = XtCreatePopupShell ( "shell2", topLevelShellWidgetClass,
+                                  TopLevel, NULL, 0 );
+
+    
+    Widget gb = XtCreateManagedWidget ( "Widget", gridboxWidgetClass,
+                            shell2, NULL, 0 );
+
+
+    Widget bt; int gx=0;
+
+    if( button_yes ) make_button(gb,gx++,"yes",'y');
+    if( button_no ) make_button(gb,gx++,"no",'n');
+    if( button_abort ) make_button(gb,gx++,"abort",'a');
+    if( button_cancel ) make_button(gb,gx++,"cancel",'c');
+
+    Widget lb = XtVaCreateManagedWidget( "header", wlabelWidgetClass, gb,
+					 "label", m_str(question),
+					 "gridy", 0,
+					 "gridx", 0,
+					 "gridWidth", gx,
+					 NULL );
+    
+    XtPopup ( popShell, XtGrabNone );	
+}
+
+
+// find (YNCA) ? 
+void parse_req(int buf)
+{
+    char *regex = "(.*)\\( *([YNCAynca/]*) *\\) *\\?";
+
+
+    int m = m_regex( 0, regex, m_str(buf) );
+    if( m_len(m) < 2 ) goto leave;
+
+    TRACE(1,"Question: %s, Answers: %s", STR(m,1), STR(m,2) );
+
+    make_request( STR(m,1), STR(m,2) );
+    
+ leave:
+    m_free_strings(m,0);
+}
+
+
+static void sproc_stdout_cb( XtPointer p, int *n, XtInputId *id )
+{
+    int buf = m_create(100,1);
+    if( do_sproc(0,buf) ) goto leave;
+    parse_req(buf);
+ leave:
+    m_free(buf);
+    return;
+}
+
+static void sproc_stderr_cb( XtPointer p, int *n, XtInputId *id )
+{
+    int buf = m_create(100,1);
+    if( do_sproc(1,buf) == 0 ) TRACE(1,"%s", m_str(buf) );    
+    m_free(buf);
+}
+
+
+
+void popup_cb( Widget w, void *u, void *c )
+{
+    Widget shell2;
+    TRACE(1,"popup");
+
+    /*
+    if( ! popShell ) {
+    popShell = shell2 = XtCreatePopupShell ( "shell2", topLevelShellWidgetClass,
+                                  TopLevel, NULL, 0 );
+
+    
+    Widget gb = XtCreateManagedWidget ( "Widget", gridboxWidgetClass,
+                            shell2, NULL, 0 );
+
+
+    Widget lb = XtVaCreateManagedWidget( "header", wlabelWidgetClass, gb,
+					 "label", "would you like to exit",
+					 "gridy", 0,
+					 "gridx", 0,
+					 "gridWidth", 2,
+					 NULL );
+    
+    Widget bt = XtVaCreateManagedWidget( "yes", wbuttonWidgetClass, gb,
+					 "label", "yes",
+					 "gridy", 1,
+					 "gridx", 0,
+			     NULL );
+    XtAddCallback(bt, "callback", popdown_cb, 0 );
+
+    bt = XtVaCreateManagedWidget( "no", wbuttonWidgetClass, gb,
+					 "label", "no",
+					 "gridy", 1,
+					 "gridx", 1,
+			     NULL );
+    XtAddCallback(bt, "callback", popdown_cb, (XtPointer)1 );
+
+    }
+    
+    XtPopup ( popShell, XtGrabNone );
+    */
+    
+    if( ! SPROC ) {	
+	SPROC = fork2_open( "./testshell.sh", "1", "2", "3", NULL );
+	sprocid[0]=
+	XtAppAddInput(XtWidgetToApplicationContext(TopLevel),
+		      SPROC->fd[ CHILD_STDOUT_RD ], (XtPointer)  (XtInputReadMask),
+		     sproc_stdout_cb, NULL );
+	sprocid[1] =
+    	XtAppAddInput(XtWidgetToApplicationContext(TopLevel),
+		      SPROC->fd[ CHILD_STDERR_RD ],(XtPointer)  (XtInputReadMask),
+		      sproc_stderr_cb, NULL );
+    }
+    
+}
+
 
 
 /* --------------------------------------------------------------------------------------------------------------------
@@ -109,7 +329,9 @@ static void RegisterApplication ( Widget top )
     /* -- Register application specific callbacks */
     RCB( top, quit_cb );
     RCB( top, test_cb );
+    RCB( top, popup_cb );
 }
+
 
 /*  init application functions and structures and widgets
     All widgets are created, but not visible.
