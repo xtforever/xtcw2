@@ -118,6 +118,8 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @var GC titleBarGC
 @actions
 
+
+
 @proc highlight
 {
   if( $state == STATE_NORMAL ) {
@@ -193,7 +195,11 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
       $drag_time = 0;
 }
 
-
+@proc toggle_line_state_act
+{
+	int lineno = translate_ypos_to_lineno($,event->xbutton.y );
+	toggle_line_state( $, lineno );
+}
 
 
 @ Der |select| Action-Handler wertet auswählen eines Eintrags der Liste aus
@@ -203,7 +209,8 @@ zusätzlich wird der |notify| Handler aufgerufen.
 
 @proc select_line
 {
-	XtCallCallbackList($,$notify,event);
+	int lineno = translate_ypos_to_lineno($,event->xbutton.y );
+	XtCallCallbackList($,$notify,lineno);
 }
 
 

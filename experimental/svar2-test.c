@@ -99,6 +99,36 @@ void check_hash_speed( int seconds, int keys  )
     m_free( buf );
 }
 
+void check_hash_speed_fast( int seconds, int keys  )
+{
+    printf("trying %d seconds hashing\n",seconds );
+    struct timespec tp0,tp1, tp2; // tv_sec, tv_nsec
+    clock_gettime(CLOCK_MONOTONIC, &tp0);
+    srand( (int) tp0.tv_nsec );
+    unsigned count=0;
+
+
+    /* get parent container */
+    int buf = s_printf(0,0,"hashspeed2");
+    int parent = create_container(buf);
+
+    while(1)
+	{
+	    count++;
+	    int keynum = rand() % m_len(keys);
+	    int keystr = INT(keys, keynum);
+	    lookup_container( parent, keystr );
+	    clock_gettime(CLOCK_MONOTONIC, &tp1);
+	    timespec_diff(&tp1,&tp0,&tp2);	    
+	    if( tp2.tv_sec  >= seconds ) break;
+	}
+    
+    long double n = tp2.tv_sec;
+    n = n * 1E6 + (tp2.tv_nsec / 1E3); 
+    n = (count * 1.0) / n;
+    printf("hash/µsec: %Le, hash: %u,  %lu sec, %lu nsec\n\n", n, count, tp2.tv_sec,tp2.tv_nsec);
+    m_free( buf );
+}
 
 /* lookup key 
  * key1@key2@key3@key4 
@@ -256,7 +286,8 @@ void check1()
 void check3(void)
 {
     int keys = read_keys_from_file( "john.txt" ); 
-    check_hash_speed( 10, keys  );
+    check_hash_speed( 5, keys  );
+    check_hash_speed_fast( 5, keys  );
     m_free_list_of_list(keys);
 }
 

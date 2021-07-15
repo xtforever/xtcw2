@@ -367,7 +367,7 @@ static int  new_svar_container(int key )
 	ERR("Variable %s is not a container", svar_name(key) );
     }
     *t = ((*t) & SVAR_MASK) | SVAR_SVAR_ARRAY;
-    int *v = svar_value(key);
+    int *v = (int *)svar_value(key);
     *v = m_create(10,sizeof(int));
     return key;
 }
@@ -394,8 +394,29 @@ static int string_to_hash(int hash, int buf)
     return h;
 }
 
+int fast_string_to_hash( svar_name_t *name )
+{
+    int h = hash_lookup(HASH, name, 1);
+    append_key_to_parent_collection(name->parent,h);
+    return h;
+}
 
+int create_container( int keystr )
+{
+    int h = string_to_hash( HASH, keystr );
+    new_svar_container(h);
+    return h;
+}
 
+int lookup_container( int container, int keystr )
+{
+    svar_name_t name;
+    name.parent = container;
+    int len = m_len(keystr);
+    len = Min( len, SVAR_MAX);
+    memcpy(name.str, m_buf(keystr), len );
+    return fast_string_to_hash( &name );
+}
 
 /* static int string_to_hash_fast(int hash, int sbuf ) */
 /* { */
@@ -412,7 +433,7 @@ const char *svar_name( int v )
     return svar(v)->name.str;
 }
 
-int *svar_value( int v )
+intptr_t *svar_value( int v )
 {
     return & svar(v)->value ;
 }
@@ -666,7 +687,21 @@ const char *svar_typename(int v)
     return name;
 }
 
-
+static void create_typed_svar( svar_t *v, uint8_t type )
+{
+    v->type = type;
+    /* non-array int32 types do not need init */
+    /* SVAR_INT, SVAR_FLOAT, SVAR_STRING */
+    if( type & SVAR_ARRAY ) {
+	v->value = m_create(10,sizeof(intptr_t));	
+    }
+    else { // kein array
+	if( (type & SVAR_MASK) == SVAR_MSTRING ) {
+	    v->value = m_create(10,1);
+	    return;
+	}
+    }
+}
 /* 
  * key1 - key
  * key1.key2 - make key1 a container and key2 a key inside
@@ -682,7 +717,7 @@ int svar_lookup(int buf, int type )
     uint8_t t = v->type;
     // if type is undefined set type 
     if( t == 0 ) {
-	v->type = type;
+	create_typed_svar( v, type );
 	return h;
     }
 
@@ -1052,4 +1087,46 @@ int m_mcopy(int dest, int destp, int src, int srcp, int src_count  )
     element_copy( dest, destp, src, srcp, src_count, width  );
     return dest;
 }
+
+
+
+
+/* class interfacce */
+void   s_construct( int v3 );
+void   s_destruct( int  v3  );
+void   s_set_value( int v3, int pos, void *data );
+void*  s_get_value( int v3, int pos );
+void*  s_clear(int v3);  // remove all items 
+
+
+/* mgmt interface */
+/* same as class interface */
+
+
+svar3_t* svar3( int v3 );
+
+
+
+/* string list interface */
+void    s_kset( int sl, const  char* value, int pos );
+void    s_kclr( int sl );
+char*   s_kget( int sl, int pos );
+int     s_klen( int sl );
+void    s_kfree( int sl );
+void    s_kdel( int sl, int pos );
+
+
+/* integer interface */
+int     s_iget( int v3 );
+void    s_iput( int v3, int data );
+
+
+/* groups and lookup */
+int lookup( int group, int buf, int type );
+int lookup_str( int group, char *buf, int type );
+int lookup_path( int  path, int type );
+int lookup_path_str( char *path, int type );
+
+
+
 

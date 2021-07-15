@@ -19,11 +19,14 @@ cwri.WcChildren: vb
 %% cwri.traceLevel: 0
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed bt
+*vb.WcChildren: l1 ed bt
+
 
 *l1.WcClass: Wbutton
 *l1.label: Hello
-*l1.callback: WcSetValue( *ed.text: test )
+*l1.callback: popup_cb 
+
+
 
 *ed.WcClass: Wlabel 
 *ed.gridx: 1

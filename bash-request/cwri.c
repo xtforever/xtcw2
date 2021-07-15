@@ -101,7 +101,9 @@ void popdown_cb( Widget w, void *u, void *c )
     msg[0]=letter;
     
     fork2_write(SPROC, msg  );
-    XtPopdown(popShell);
+    // XtPopdown(popShell);
+    XtDestroyWidget(popShell);
+    popShell=0;
 }
 
 
@@ -112,7 +114,9 @@ int do_sproc(int n, int buf)
     if( err ) {
 	TRACE(1,"error pipe %d", n);
 	XtRemoveInput(sprocid[n]); sprocid[n]=0;
-	if( sprocid[0] == 0 &&
+	/* close if stderr and stdout closed, because stderr can be closed and 
+	   then  a message in stdout could be delivered */
+	if( sprocid[0] == 0 && 
 	    sprocid[1] == 0  ) {
 	    fork2_close(SPROC);
 	    SPROC=0;
@@ -160,48 +164,38 @@ void make_button(Widget gb, int gx, char *label, int ret )
 }
 
 
-void make_request(char *q, char *letters )
+#define B_YES      1
+#define B_NO       2
+#define B_ABORT    4
+#define B_CANCEL   8
+
+void make_yn_request(char *q, char *letters )
 {
     static int question = 0;
     if( ! question ) question = m_create(20,1);
 
-    int button_yes    = 0;
-    int button_no     = 0;
-    int button_abort  = 0;
-    int button_cancel = 0;
+    int button = 0;    
+    static char btab[256] = { ['y']=B_YES, ['n']=B_NO, ['a']=B_ABORT, ['c']=B_CANCEL };
+    for( char *s=letters; *s; s++) { button |= btab[ tolower(*s) ]; }
     
-    if( matchinside(letters, "jJyY") )
-	button_yes = 1;
-    if( matchinside(letters, "nN") )
-	button_no = 1;
-    if( matchinside(letters, "aAqQ") )
-	button_abort = 1;
-    if( matchinside(letters, "cC") )
-	button_cancel = 1;
-
     if( popShell ) {
 	XtDestroyWidget(popShell);
     }
 
-    m_clear(question);
-    m_write( question, 0, q, strlen(q) );
-    m_putc(question,32); m_putc(question,'?');
+    s_printf(question,0,"%s ?", q );
 
     Widget shell2;
     popShell = shell2 = XtCreatePopupShell ( "shell2", topLevelShellWidgetClass,
                                   TopLevel, NULL, 0 );
-
     
     Widget gb = XtCreateManagedWidget ( "Widget", gridboxWidgetClass,
                             shell2, NULL, 0 );
 
-
-    Widget bt; int gx=0;
-
-    if( button_yes ) make_button(gb,gx++,"yes",'y');
-    if( button_no ) make_button(gb,gx++,"no",'n');
-    if( button_abort ) make_button(gb,gx++,"abort",'a');
-    if( button_cancel ) make_button(gb,gx++,"cancel",'c');
+    int gx=0;
+    if( button & B_YES ) make_button(gb,gx++,"yes",'y');
+    if( button & B_NO ) make_button(gb,gx++,"no",'n');
+    if( button & B_ABORT ) make_button(gb,gx++,"abort",'a');
+    if( button & B_CANCEL ) make_button(gb,gx++,"cancel",'c');
 
     Widget lb = XtVaCreateManagedWidget( "header", wlabelWidgetClass, gb,
 					 "label", m_str(question),
@@ -217,16 +211,14 @@ void make_request(char *q, char *letters )
 // find (YNCA) ? 
 void parse_req(int buf)
 {
+    // check if buf contains a yes/no question 
     char *regex = "(.*)\\( *([YNCAynca/]*) *\\) *\\?";
-
-
     int m = m_regex( 0, regex, m_str(buf) );
-    if( m_len(m) < 2 ) goto leave;
-
-    TRACE(1,"Question: %s, Answers: %s", STR(m,1), STR(m,2) );
-
-    make_request( STR(m,1), STR(m,2) );
-    
+    if( m_len(m) > 1 ) { 
+	TRACE(1,"Question: %s, Answers: %s", STR(m,1), STR(m,2) );
+	make_yn_request( STR(m,1), STR(m,2) );
+    }  
+  
  leave:
     m_free_strings(m,0);
 }

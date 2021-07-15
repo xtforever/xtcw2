@@ -59,10 +59,12 @@ int   svar_lookup_str(char *s, int type );
 void  svar_free(int key);
 void  svar_onwrite( int key, void (*fn) (void*, int), void *d, int remove );
 void  svar_write_callbacks( int q );
-int*  svar_value( int q );
+intptr_t*  svar_value( int q );
 uint8_t* svar_type(int v);
 const char* svar_name(int v);
 const char *svar_typename(int v);
+
+
 
 
 #define SVAR_ARRAY   8
@@ -106,13 +108,17 @@ typedef struct svar_name_st {
 
 typedef struct svar_st {
     svar_name_t name;		/* hash friendly name */
-    int key,value;		/* same type */
+    intptr_t key,value;		/* same type */
     uint8_t type, locked;
     int write_callbacks;
     int read_callbacks;
 } svar_t;
 
 svar_t *svar(int k);
+int fast_string_to_hash( svar_name_t *name );
+int lookup_container( int container, int keystr );
+int create_container( int keystr );
+
 
 static inline const char *m_str(const int m) { return m_buf(m); }
 /**

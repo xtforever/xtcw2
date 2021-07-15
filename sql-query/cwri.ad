@@ -56,7 +56,8 @@ cwri.WcChildren: vb
 *term.fg_hi: green
 *term.fg_sel: green 
 *term.gridy: 1
-*term.getEntry: terminal_output_cb 
+*term.getEntry: terminal_output_cb
+*term.notify:   wlist_notify_cb 
 *term.weighty: 0
 *term.prefered_lines: 8
 *term.tabs: 30

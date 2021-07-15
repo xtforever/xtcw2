@@ -44,18 +44,18 @@ static void xclose( int *fd )
 static void fork2_exec(struct fork2_info *child, char *filename, char **args )
 {
     memset( child->fd, 0xff, sizeof( child->fd ));
-    if( pipe2( child->fd, O_NONBLOCK ) ) ERR("pipe2");
-    if( pipe2( child->fd+2, O_NONBLOCK ) ) ERR("pipe2");
-    if( pipe2( child->fd+4, O_NONBLOCK ) ) ERR("pipe2");
+    if( pipe2( child->fd, 0 ) ) ERR("pipe2");
+    if( pipe2( child->fd+2, 0) ) ERR("pipe2");
+    if( pipe2( child->fd+4, 0) ) ERR("pipe2");
 
     pid_t cpid = fork();
     if (cpid == -1) ERR("fork");
     if (cpid == 0) {            /* Child reads from pipe */
         dup2(child->fd[1],1);   /* make STDOUT==1 same as WRITE-TO==1 end
-                                   of pipe-A  */
+				   of pipe-A  */
 
 	dup2(child->fd[2],0);   /* make STDIN==0 same as READ-FROM==0 end
-                                   of pipe-B */
+	                         of pipe-B */
 
 	/* stdin = read-end of pipe a */
 	dup2(child->fd[5], 2);  /* stderr = write-end of pipe c */

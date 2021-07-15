@@ -15,7 +15,7 @@ PKGDATADIR  ?= $(prefix)/etc/xtcw
 CC = gcc
 
 
-CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I.
+CFLAGS += -D_GNU_SOURCE -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I.
 XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm
 LOADLIBES +=  $(XORGLIB)
 
@@ -44,7 +44,7 @@ ALL: $(TARGET)
 
 Gauge.o: xl2.h xl2.c
 
-$(TARGET): Gauge.o xl2.o $(libdir)/libxtcw.a
+$(TARGET): Gauge.o xl2.o subshell.o $(libdir)/libxtcw.a
 
 clean:
 	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex Gauge.c Wheel.c 
