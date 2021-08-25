@@ -37,7 +37,7 @@
 
 char *m_str(int m) { return m_buf(m); }
 
-static struct fork2_info *SPROC = NULL;
+static struct fork2_info *SPROC = NULL, *STERM=NULL;
 static XtInputId sprocid[2];
 static Widget popShell = NULL;
 
@@ -74,6 +74,20 @@ static XtResource CWRI_CONFIG_RES [] = {
 #undef FLD
 
 struct CWRI_CONFIG CWRI;
+
+int TERM_FH=-1;
+void term_open()
+{
+    if( TERM_FH != -1 ) close(TERM_FH);
+    int term_name=s_printf(0,0,"/tmp/admpanel.log.XXXXXX");
+    TERM_FH = mkstemp( m_str(term_name) );
+    ASSERT(TERM_FH!=-1);
+    unlink( m_str(term_name) );
+    int cmd = s_printf(0,0,"xterm -e '/usr/bin/tail -f %s", m_str(term_name));
+    system( m_str(cmd) );
+    m_free(cmd); m_free(term_name);
+}
+
 
 void test_cb( Widget w, void *u, void *c )
 {
@@ -227,8 +241,11 @@ void parse_req(int buf)
 static void sproc_stdout_cb( XtPointer p, int *n, XtInputId *id )
 {
     int buf = m_create(100,1);
-    if( do_sproc(0,buf) ) goto leave;
+    if( do_sproc(0,buf) ) goto leave; 
+
+    dprintf(TERM_FH, "%s\n", m_str(buf) ); /* output to xterm via log-file */
     parse_req(buf);
+    
  leave:
     m_free(buf);
     return;
@@ -294,6 +311,8 @@ void popup_cb( Widget w, void *u, void *c )
     	XtAppAddInput(XtWidgetToApplicationContext(TopLevel),
 		      SPROC->fd[ CHILD_STDERR_RD ],(XtPointer)  (XtInputReadMask),
 		      sproc_stderr_cb, NULL );
+
+	term_open(); /* log output to xterm */	
     }
     
 }
