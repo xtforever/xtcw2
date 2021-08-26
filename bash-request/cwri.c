@@ -79,15 +79,15 @@ int TERM_FH=-1;
 void term_open()
 {
     if( TERM_FH != -1 ) close(TERM_FH);
-    int term_name=s_printf(0,0,"/tmp/admpanel.log.XXXXXX");
-    TERM_FH = mkstemp( m_str(term_name) );
-    ASSERT(TERM_FH!=-1);
-    unlink( m_str(term_name) );
-    int cmd = s_printf(0,0,"xterm -e '/usr/bin/tail -f %s", m_str(term_name));
+    char *s = "script.fifo";
+    mkfifo( s, 0600 );
+    int cmd = s_printf(0,0,"xterm -e 'cat < %s' &", s);
     system( m_str(cmd) );
-    m_free(cmd); m_free(term_name);
+    TRACE(1, "exec: %s", m_str(cmd) );
+    TERM_FH = open( s, O_WRONLY  );
+    ASSERT(TERM_FH != -1 );   
+    m_free(cmd);
 }
-
 
 void test_cb( Widget w, void *u, void *c )
 {
@@ -121,27 +121,43 @@ void popdown_cb( Widget w, void *u, void *c )
 }
 
 
+/* einlesen der daten vom stream n
+   ausgeben der daten vom streambuffer
+   return -1 wenn der stream tot ist und der buffer leer
+*/
+
 int do_sproc(int n, int buf)
 {
-    int err = fork2_read(SPROC, n);
+    TRACE(1,"");
+    int err;
+    // noch daten vom stream lesen ?
+    if( sprocid[n] ) {
+	err = fork2_read(SPROC, n);
+	if( err ) {
+	    TRACE(1,"error reading pipe %d", n);
+	    XtRemoveInput(sprocid[n]); sprocid[n]=0;
+	}
+    }
 
-    if( err ) {
-	TRACE(1,"error pipe %d", n);
-	XtRemoveInput(sprocid[n]); sprocid[n]=0;
+    err =  fork2_getline(SPROC,n,buf);    
+    if( err  ) {
+	/* check if we can close this subshell */
 	/* close if stderr and stdout closed, because stderr can be closed and 
 	   then  a message in stdout could be delivered */
-	if( sprocid[0] == 0 && 
-	    sprocid[1] == 0  ) {
+	if( sprocid[0] == 0 && sprocid[1] == 0  ) {
 	    fork2_close(SPROC);
 	    SPROC=0;
 	}
-	return err;
+	return -1;
     }
-    
-    err =  fork2_getline(SPROC,n,buf);
-    if( !err  ) TRACE(1, "%s", m_str(buf) );
-    return err;
+
+    TRACE(1, "%s", m_str(buf) );
+    return 0;
 }
+
+
+    
+
 
 
 
@@ -238,23 +254,61 @@ void parse_req(int buf)
 }
 
 
+
+static void term_output(int buf )
+{
+    write( TERM_FH, m_buf(buf), m_len(buf) );
+    write( TERM_FH, "\n", 1 );
+}
+
+
+static int  sproc_read(int n)
+{
+    ASERR( sprocid[n] != 0 && SPROC, "read without open file/subshell" );
+    if( fork2_read(SPROC, n) ) {
+	TRACE(1,"error reading pipe %d", n);
+	XtRemoveInput(sprocid[n]);
+	sprocid[n]=0;
+ 
+	if( sprocid[0] == 0 && sprocid[1] == 0  ) {
+	    fork2_close(SPROC);
+	    SPROC=0;
+	    return -1;
+	}
+    }
+    return 0;
+}
+
+
 static void sproc_stdout_cb( XtPointer p, int *n, XtInputId *id )
 {
+    TRACE(1, "" );
     int buf = m_create(100,1);
-    if( do_sproc(0,buf) ) goto leave; 
 
-    dprintf(TERM_FH, "%s\n", m_str(buf) ); /* output to xterm via log-file */
-    parse_req(buf);
+    // data available, now read 
+    if( sproc_read(0) ) goto leave;
+    
+    while(! fork2_getline( SPROC, 0, buf) ) {
+	term_output( buf );
+	parse_req(buf);
+	m_clear(buf);
+	TRACE(1, "next" );
+    }
     
  leave:
     m_free(buf);
+    TRACE(1, "leave" );
     return;
 }
 
 static void sproc_stderr_cb( XtPointer p, int *n, XtInputId *id )
 {
     int buf = m_create(100,1);
-    if( do_sproc(1,buf) == 0 ) TRACE(1,"%s", m_str(buf) );    
+    if( ! sproc_read(1) ) { 
+	while(! fork2_getline( SPROC, 1, buf) ) {
+	    TRACE(1,"%s", m_str(buf) );    
+	}
+    }
     m_free(buf);
 }
 
@@ -262,47 +316,10 @@ static void sproc_stderr_cb( XtPointer p, int *n, XtInputId *id )
 
 void popup_cb( Widget w, void *u, void *c )
 {
-    Widget shell2;
-    TRACE(1,"popup");
-
-    /*
-    if( ! popShell ) {
-    popShell = shell2 = XtCreatePopupShell ( "shell2", topLevelShellWidgetClass,
-                                  TopLevel, NULL, 0 );
-
-    
-    Widget gb = XtCreateManagedWidget ( "Widget", gridboxWidgetClass,
-                            shell2, NULL, 0 );
-
-
-    Widget lb = XtVaCreateManagedWidget( "header", wlabelWidgetClass, gb,
-					 "label", "would you like to exit",
-					 "gridy", 0,
-					 "gridx", 0,
-					 "gridWidth", 2,
-					 NULL );
-    
-    Widget bt = XtVaCreateManagedWidget( "yes", wbuttonWidgetClass, gb,
-					 "label", "yes",
-					 "gridy", 1,
-					 "gridx", 0,
-			     NULL );
-    XtAddCallback(bt, "callback", popdown_cb, 0 );
-
-    bt = XtVaCreateManagedWidget( "no", wbuttonWidgetClass, gb,
-					 "label", "no",
-					 "gridy", 1,
-					 "gridx", 1,
-			     NULL );
-    XtAddCallback(bt, "callback", popdown_cb, (XtPointer)1 );
-
-    }
-    
-    XtPopup ( popShell, XtGrabNone );
-    */
-    
-    if( ! SPROC ) {	
+    if( ! SPROC ) {
+	term_open(); /* log output to xterm via fifo */
 	SPROC = fork2_open( "./testshell.sh", "1", "2", "3", NULL );
+	
 	sprocid[0]=
 	XtAppAddInput(XtWidgetToApplicationContext(TopLevel),
 		      SPROC->fd[ CHILD_STDOUT_RD ], (XtPointer)  (XtInputReadMask),
@@ -312,7 +329,6 @@ void popup_cb( Widget w, void *u, void *c )
 		      SPROC->fd[ CHILD_STDERR_RD ],(XtPointer)  (XtInputReadMask),
 		      sproc_stderr_cb, NULL );
 
-	term_open(); /* log output to xterm */	
     }
     
 }
