@@ -47,6 +47,9 @@ xterm -e './100lines.sh; bash' &
 #include "Woption.h"
 #include "Wswitch.h"
 #include "Radio2.h"
+#include "SelectReq.h"
+#include "script_call.h"
+#include "m_tool.h"
 
 
 
@@ -324,9 +327,21 @@ void input_widget_enter_cb(Widget w, void *u, void *c)
     while( m_next(chap->callback, &i, &cb) ) {
 	if( cb->widget == w ) break;
     }
+
+    TRACE(3, "current: %p, num:%d", w,i );
+        
     i= (i+1) % m_len(chap->callback);
     cb = mls(chap->callback, i);
-    SetKeyboardFocus( cb->widget );    
+
+
+    TRACE(3, "next: %p, num:%d", cb->widget,i );
+    
+    XtCallActionProc( w, "focus_out", NULL, NULL, 0 );
+    XtCallActionProc( cb->widget, "focus_in", NULL, NULL, 0 );
+    XtCallActionProc( cb->widget, "SetKeyboardFocus", NULL, NULL, 0 );
+
+    
+    // SetKeyboardFocus( cb->widget );    
 }
 
 
@@ -366,7 +381,7 @@ static Widget create_input_widget( int task, int var, Widget mgr )
 				XtNgridy, GridY,
 				XtNweightx, 100,
 				XtNweighty, 0,
-				XtNlabel, name,
+				XtNlabel, "",
 				XtNfill, FillHeight | FillWidth,
 				// XtNborderWidth, 2,
 				NULL);
@@ -509,10 +524,17 @@ void exec_script_cb(Widget w, void *u, void *c)
     struct chapter_info_st *chap = get_chapter_info(task);
     const char *s = svexp_string( chap->name, chap->script_cmd );
     TRACE(2,"task: %d, Name:%s, Script:%s", task, chap->name, s );
-    int buf = s_printf(0,0,"xterm -e './%s; bash' &",s);
-    TRACE(2,"about to execute %s", m_str(buf) );    
-    system( m_str(buf) );
-    m_free(buf);
+    int args;
+    args = ms_split( 0, (char*)s, " ", 1 );
+
+    char **d; int p;
+    m_foreach(args,p,d) {
+	printf(" %s\n", *d );
+    }
+    printf("*****************\n" );
+
+    run_script(TopLevel, args);
+    m_free_strings(args,0);
 }
 
 
@@ -557,9 +579,13 @@ static chapter_info_t *create_chapter( int num )
     chap->callback = m_create(5, sizeof (struct chap_callback_st ));
     chap->name = get_task_name(num);
     chap->opt = get_section(chap->name); 
+
+    TRACE(2, "create chapter %s",  chap->name );
     return chap;
 }
 
+
+#if 0
 // 
 // unmanage  SIGNAGE.widget_grid
 // manage       chapter[0].widget_grid
@@ -596,6 +622,7 @@ static void create_chapter0( Widget mgr, int task )
     XtAddCallback(w, XtNcallback, chapter0_leave, (XtPointer)0 );
 }
 
+#endif
 
 
 /* mgr is a empty gridbox
@@ -675,6 +702,7 @@ static void RegisterApplication ( Widget top )
     RCP( top, woption );
     RCP( top, wswitch );
     RCP( top, radio2 );
+    RCP( top, selectReq );
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
     RCB( top, quit_cb );
@@ -700,9 +728,15 @@ static void create_menu_page(Widget mgr)
     int max = m_len( options );
     int xmax,ymax;
     LABELS=m_create(max,sizeof(Widget));
-    double a = sqrt(max);
+    double a = ceil(sqrt(max));
+    
+
     xmax = a;
     ymax = (max / a)+1;
+
+
+    TRACE(2,"max:%d xmax=%d,ymax=%d",max, xmax, ymax );
+
     MAX_LABELS = 0;
     for(int y=0;y<ymax;y++) {
 	for(int x=0;x<xmax;x++) {
@@ -731,14 +765,15 @@ static void InitializeApplication( Widget top )
 
     slog_init( top, SIGNAGE.socket );
     slog_cb = incomming_msg;
-    rc_init( SIGNAGE.inifile );
 
+    rc_init( SIGNAGE.inifile );
+    
     PAGES=m_create(10,sizeof(Widget));
 
     Widget w =  SIGNAGE.widget_grid;
-    Widget mgr, menu;
+    Widget mgr;
 
-    menu = mgr = XtCreateManagedWidget("menu",gridboxWidgetClass, w, NULL,0 );
+    mgr = XtCreateManagedWidget("menu",gridboxWidgetClass, w, NULL,0 );
     m_put(PAGES, &mgr);
     create_menu_page(mgr);
     XtUnmanageChild( mgr );
@@ -746,6 +781,7 @@ static void InitializeApplication( Widget top )
     int task_list = get_all_tasks();
     int p,*d;
     m_foreach( task_list, p, d ) {
+	
 	mgr = XtCreateManagedWidget("chapter_mgr",gridboxWidgetClass, w, NULL,0 );
 	m_put(PAGES, &mgr);
 	create_task(mgr, p ); // task 0 in section task
@@ -755,6 +791,11 @@ static void InitializeApplication( Widget top )
     
     XtManageChild( get_page_widget(0) );
     CUR_PAGE=0;
+}
+
+static void DestroyApplication(void)
+{
+    // rc_free();
 }
 
 /******************************************************************************
@@ -878,6 +919,8 @@ int main ( int argc, char **argv )
 
     XtAppMainLoop ( app ); /* use XtAppSetExitFlag */
     XtDestroyWidget(appShell);
+
+    DestroyApplication();
     svar_destruct();
     m_destruct();
 

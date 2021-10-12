@@ -304,6 +304,8 @@ col{\underline}set({\dollar}, int  num)
     case COLOR{\underline}BG{\underline}HI: {\dollar}pixel[COLOR{\underline}BG{\underline}HI]= {\dollar}bg{\underline}hi; break;
     {\rbrace}
 
+    TRACE(1,"{\percent}s: pixel[{\percent}d]={\percent}x", {\dollar}name, num, {\dollar}pixel[num] );
+
     /* !TODO! Check if Color is already alloced
       if( {\dollar}xft{\underline}col[num] )
         XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)),

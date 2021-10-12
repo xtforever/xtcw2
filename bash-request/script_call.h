@@ -2,7 +2,7 @@
 #define SCRIPT_CALL_H
 #include <X11/Intrinsic.h>
 
-void run_script( XtAppContext app, int arg_list );
+int run_script( Widget w, int arg_list );
 
     
 #endif

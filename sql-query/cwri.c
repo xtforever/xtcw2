@@ -48,8 +48,6 @@ int trace_main;
 
 int simple_query(int res, char *query)
 {
-
-
   MYSQL *sql = m_mysql_connect( NULL, "custsrv", NULL, "linux" );
   char *real_query = strdup(str_expand( res, query ));
   TRACE(1, "query: %s", real_query );
@@ -75,6 +73,7 @@ static XrmOptionDescRec options[] = {
 typedef struct CWRI_CONFIG {
     int traceLevel;
     Widget widget_term;
+    String query;
 } CWRI_CONFIG;
 
 #define FLD(n)  XtOffsetOf(CWRI_CONFIG,n)
@@ -83,6 +82,11 @@ static XtResource CWRI_CONFIG_RES [] = {
   { "traceLevel", "TraceLevel", XtRInt, sizeof(int),
    FLD(traceLevel), XtRImmediate, 0
   },
+  { "query", "Query", XtRString, sizeof(String),
+    FLD(query), XtRString, ""
+  },
+
+  
   { NULL, NULL, XtRWidget, sizeof(Widget),
     FLD(widget_term), XtRString, "*term"
   },
@@ -160,17 +164,48 @@ static char *CurrentCustomerName   = "";
 void test_sql_connection(const char *custname)
 {
 
+    TRACE(2,"Query: %s", CWRI.query );
     if( SQL_RES ) v_free(SQL_RES);
     SQL_RES = v_init();
         
     // char *custname = "gpe";
-    char *query = "select custid, c.dbservid, a.srvid,nfsserver,nfsbasedir,adminnode,dbslave,backupsrv,backuppath from custdb c left join dbserv_alias a on c.dbservid=a.dbservid left join serverinfo i on a.srvid=i.srvid or c.dbservid=i.srvid where custid like '$custname%'";
-    
+    char *query = "select custid, c.dbservid, a.srvid, nfsserver,nfsbasedir,adminnode,dbslave,backupsrv,backuppath from custdb c left join dbserv_alias a on c.dbservid=a.dbservid left join serverinfo i on a.srvid=i.srvid or c.dbservid=i.srvid where custid like '$custname%'";
+
+    if(!CWRI.query) {
+	ERR("Missing cwri.query in resource file");
+    }
+
+    query = CWRI.query;
+
     v_set(SQL_RES, "custname", custname, -1 );
     
     // create and execute query 
     int err = simple_query(SQL_RES,query);    
     TRACE(2,"row count: %d", row_count(SQL_RES) );
+}
+
+
+/* sql connection test */
+void sql_get_status(void)
+{
+
+    v_free(SQL_RES);
+    SQL_RES = v_init();
+        
+    // char *custname = "gpe";
+    char *query = "show global status";
+   
+    // create and execute query 
+    int err = simple_query(SQL_RES,query);    
+    TRACE(2,"row count: %d", row_count(SQL_RES) );
+
+    int len = row_count(SQL_RES);
+    for(int y = 0; y < len; y++ ) {
+	printf("%d: %s:%s\n", y, get_entry(SQL_RES,0,y), get_entry(SQL_RES,1,y) );
+    }
+
+    v_free(SQL_RES); SQL_RES=0;
+
 }
 
 
@@ -421,7 +456,7 @@ int main ( int argc, char **argv )
     XawInitializeWidgetSet();
 
 
-    // test_sql_connection("gpe");
+    // sql_get_status();
 
     
     /*  --  Intialize Toolkit creating the application shell

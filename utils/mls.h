@@ -126,7 +126,10 @@ int m_ins(int m, int p, int n);
 int m_width( int m);
 void m_resize( int m, int new_size);
 void m_remove( int m, int p, int n );
-
+    
+static inline char *m_str(int m) { return m_buf(m); };
+    
+    
 // ********************************************
 //
 // array handling  debugging functions

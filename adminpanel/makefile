@@ -18,7 +18,7 @@ CC = gcc
 CFLAGS += -D_GNU_SOURCE
 CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I. -I../utils -Ixtcw
 
-XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm
+XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil
 LOADLIBES +=  $(XORGLIB)
 
 # where to find wbuild and wb.sh
@@ -40,12 +40,13 @@ COMPTAG="\"PROD_$(shell date)\""
 CFLAGS+= -O3 -DTAG=$(COMPTAG)
 endif
 
-DEPS=WeditMV.o Woption.o   Wswitch.o Radio2.o opts.o svar2.o 
+DEPS=SelectReq.o WeditMV.o Woption.o  Wswitch.o Radio2.o opts.o svar2.o script_call.o m_tool.o subshell.o
 LOADLIBES=$(libdir)/libxtcw.a $(XORGLIB)
-ALL: $(TARGET) 
+ALL: $(TARGET) mttest
 
-$(TARGET):  $(DEPS) 
+$(TARGET):  $(DEPS)   
 
+mttest: m_tool.o subshell.o ../utils/mls.c
 
 clean:
 	${RM} -rf $(TARGET) *.o src doc xtcw *~

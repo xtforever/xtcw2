@@ -1,4 +1,6 @@
 #!/bin/bash
+git status | tee sta
+
 echo "hello, do u  want ice cream ( Y/n/a ) ?"
 echo >&2 this-is-an-error-msg
 read a

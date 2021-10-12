@@ -55,10 +55,6 @@ const hb_script_t scripts[NUM_EXAMPLES] = {
     HB_SCRIPT_HAN,
 };
 
-enum {
-    ENGLISH=0, ARABIC, CHINESE
-};
-
 inline static uint get_component( Pixel px, ulong m )
 {
     ulong p = px;
@@ -88,18 +84,24 @@ void cairo_set_source_rgb_from_pixel_dpy(Display *dpy, cairo_t *c, Pixel px)
   char *cstring
  */
 
-
-int write_to_pixmap( Display *dpy, Pixmap p,  Pixel foreground, Pixel background, int width, int height )
+// extern FT_Library	_XftFTlibrary;
+int write_to_pixmap( Display *dpy, Pixmap p,  Pixel foreground, XftFont *font, int width, int height, int id_lang, char *txt )
 {
 
     /* Init freetype */
     FT_Library ft_library;
     assert(!FT_Init_FreeType(&ft_library));
 
+    double font_size;
+    FcPattern *pat = font->pattern;
+    FcPatternGetDouble( pat, FC_SIZE, 0, &font_size ); 
+    
+
+    
     /* Load our fonts */
     FT_Face ft_face[NUM_EXAMPLES];
-    assert(!FT_New_Face(ft_library, "fonts/DejaVuSerif.ttf", 0, &ft_face[ENGLISH]));
-    assert(!FT_Set_Char_Size(ft_face[ENGLISH],FONT_SIZE*64, FONT_SIZE*64,0,0));
+    // assert(!FT_New_Face(ft_library, "fonts/DejaVuSerif.ttf", 0, &ft_face[ENGLISH]));
+    // assert(!FT_Set_Char_Size(ft_face[ENGLISH],FONT_SIZE*64, FONT_SIZE*64,0,0));
     assert(!FT_New_Face(ft_library, "fonts/amiri-0.104/amiri-regular.ttf", 0, &ft_face[ARABIC]));
     assert(!FT_Set_Char_Size(ft_face[ARABIC],FONT_SIZE*64, FONT_SIZE*64,0,0 ));
     assert(!FT_New_Face(ft_library, "fonts/fireflysung-1.3.0/fireflysung.ttf", 0, &ft_face[CHINESE]));
@@ -107,15 +109,19 @@ int write_to_pixmap( Display *dpy, Pixmap p,  Pixel foreground, Pixel background
 
     /* Get our cairo font structs */
     cairo_font_face_t *cairo_ft_face[NUM_EXAMPLES];
-    cairo_ft_face[ENGLISH] = cairo_ft_font_face_create_for_ft_face(ft_face[ENGLISH], 0);
+
+    FT_Face face = XftLockFace ( font );
+    cairo_ft_face[ENGLISH] = cairo_ft_font_face_create_for_ft_face(face, 0);
+    
     cairo_ft_face[ARABIC]  = cairo_ft_font_face_create_for_ft_face(ft_face[ARABIC], 0);
     cairo_ft_face[CHINESE] = cairo_ft_font_face_create_for_ft_face(ft_face[CHINESE], 0);
 
     /* Get our harfbuzz font/face structs */
     hb_font_t *hb_ft_font[NUM_EXAMPLES];
     hb_face_t *hb_ft_face[NUM_EXAMPLES];
-    hb_ft_font[ENGLISH] = hb_ft_font_create(ft_face[ENGLISH], NULL);
-    hb_ft_face[ENGLISH] = hb_ft_face_create(ft_face[ENGLISH], NULL);
+    hb_ft_font[ENGLISH] = hb_ft_font_create(face, NULL);
+    hb_ft_face[ENGLISH] = hb_ft_face_create(face, NULL);
+
     hb_ft_font[ARABIC]  = hb_ft_font_create(ft_face[ARABIC] , NULL);
     hb_ft_face[ARABIC]  = hb_ft_face_create(ft_face[ARABIC] , NULL);
     hb_ft_font[CHINESE] = hb_ft_font_create(ft_face[CHINESE], NULL);
@@ -228,8 +234,11 @@ int write_to_pixmap( Display *dpy, Pixmap p,  Pixel foreground, Pixel background
             }
 	    cairo_set_source_rgb_from_pixel_dpy( dpy, cr, foreground );
             // cairo_set_source_rgba (cr, 0.5, 0.5, 0.5, 1.0);
+
+	    
             cairo_set_font_face(cr, cairo_ft_face[i]);
-            cairo_set_font_size(cr, FONT_SIZE);
+
+	    cairo_set_font_size(cr, i==0 ? font_size : FONT_SIZE );
             cairo_show_glyphs(cr, cairo_glyphs, glyph_count);
 
             free(cairo_glyphs);
@@ -255,7 +264,6 @@ int write_to_pixmap( Display *dpy, Pixmap p,  Pixel foreground, Pixel background
 
 
 	cairo_show_page(cr);
-
 
 	
         /* We're now done with our cairo surface */
@@ -320,6 +328,7 @@ int write_to_pixmap( Display *dpy, Pixmap p,  Pixel foreground, Pixel background
     /* SDL_DestroyRenderer(renderer); */
     /* SDL_DestroyWindow(screen); */
     /* SDL_Quit(); */
-
+    XftUnlockFace(font);
+    
     return 0;
 }

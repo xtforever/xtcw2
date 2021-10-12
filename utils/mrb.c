@@ -8,19 +8,27 @@
    rd == wr   : Buffer full
 */
 
+
 inline static char buf_empty(struct mrb *b) { return (b->rd < 0); }
 inline static char buf_full(struct mrb *b) { return (b->rd == b->wr); }
 inline static void read_inc(struct mrb *b, int n)
 {
     b->rd = (b->rd + n) % b->size;
     if( b->rd == b->wr ) {
-        b->rd = -1; b->wr=0;
+        b->rd = -1; b->wr=0; // buffer empty
     }
 }
+
+
+
 inline static void write_inc(struct mrb *b, int n)
 {
     b->wr = (b->wr + n) % b->size;
 }
+
+
+
+
 inline static int  write_size_max(struct mrb *b)
 {
     return ( b->rd < b->wr ) ? (b->size - b->wr) : (b->rd - b->wr);
@@ -60,6 +68,13 @@ int mrb_get(struct mrb *b)
     int ch = b->buf[b->rd];
     read_inc(b,1);
     return ch;
+}
+
+int mrb_last(struct mrb *b)
+{
+    if( buf_empty(b) ) return -1;
+    int p = b->wr > 0 ? b->wr -1 : b->size-1;
+    return b->buf[p];
 }
 
 /** get ptr to *n consecutive allocated bytes
@@ -155,12 +170,12 @@ int mrb_get_line(struct mrb *q, int line )
 
 #define MRB_MAX_ERROR 10
 
-static void mrb_error_clear(struct mrb *q)
+void mrb_error_clear(struct mrb *q)
 {
     q->read_error=0;
 }
 
-static int mrb_error(struct mrb *q)
+int mrb_error(struct mrb *q)
 {
     if(q->read_error > MRB_MAX_ERROR ) return -1;
     q->read_error++;

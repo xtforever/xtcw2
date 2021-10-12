@@ -40,7 +40,7 @@ static inline void timespec_diff(struct timespec *a, struct timespec *b,
     }
 }
 int s_strcpy(int dst, int src, int max);
-static inline const char *m_str(const int m) { return m_buf(m); }
+
 
 void svar_init(void);
 void svar_free(void);

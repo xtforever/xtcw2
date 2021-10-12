@@ -35,6 +35,10 @@ void mrb_free( struct mrb *b, int bytes );
 void mrb_destroy(struct mrb *m);
 int mrb_sock_read(struct mrb *q, int fd );
 int mrb_get_line(struct mrb *q, int line );
+int mrb_last(struct mrb *q);
+
+int mrb_error(struct mrb *q);
+void mrb_error_clear(struct mrb *q);
 
 int mro_init(int length, int size );
 void mro_free(int num);

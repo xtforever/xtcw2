@@ -3,15 +3,15 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 181 "../build/source/Wheel.widget"
-#include <X11/Xft/Xft.h>
-#line 182 "../build/source/Wheel.widget"
-#include "converters-xft.h"
 #line 183 "../build/source/Wheel.widget"
-#include "focus-group.h"
+#include <X11/Xft/Xft.h>
 #line 184 "../build/source/Wheel.widget"
-#include "apputil.h"
+#include "converters-xft.h"
 #line 185 "../build/source/Wheel.widget"
+#include "focus-group.h"
+#line 186 "../build/source/Wheel.widget"
+#include "apputil.h"
+#line 187 "../build/source/Wheel.widget"
 #include "xutil.h"
 #include <xtcw/WheelP.h>
 static void _resolve_inheritance(
@@ -83,6 +83,8 @@ static void col_set(self,num)Widget self;int  num;
     case COLOR_BG_SEL: ((WheelWidget)self)->wheel.pixel[COLOR_BG_SEL]= ((WheelWidget)self)->wheel.bg_sel; break;
     case COLOR_BG_HI: ((WheelWidget)self)->wheel.pixel[COLOR_BG_HI]= ((WheelWidget)self)->wheel.bg_hi; break;
     }
+
+    TRACE(1,"%s: pixel[%d]=%x", ((WheelWidget)self)->core.name, num, ((WheelWidget)self)->wheel.pixel[num] );
 
     /* !TODO! Check if Color is already alloced
       if( $xft_col[num] )

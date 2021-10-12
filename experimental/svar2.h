@@ -120,7 +120,7 @@ int lookup_container( int container, int keystr );
 int create_container( int keystr );
 
 
-static inline const char *m_str(const int m) { return m_buf(m); }
+
 /**
  * @fn timespec_diff(struct timespec *, struct timespec *, struct timespec *)
  * @brief Compute the diff of two timespecs, that is a - b = result.

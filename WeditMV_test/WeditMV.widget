@@ -307,7 +307,7 @@
 
 @proc calculate_prefered_size($,int *w, int *h)
 {
-  (*h) = $xftFont->height; /* $xftFont->ascent + $xftFont->descent+2; /*
+  (*h) = $xftFont->height; /* $xftFont->ascent + $xftFont->descent+2; */
   (*w) = $txt.width;
   if( *w == 0 || *w > 18000 ) *w = 50;      
 }
@@ -654,7 +654,7 @@
 @proc focus_in
 {
 	TRACE(2, "WeditMV %s got focus", XtName($));
-	cursor_show($);
+	draw_cursor($);
 }
 
 @proc focus_out

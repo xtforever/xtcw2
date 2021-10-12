@@ -1,6 +1,8 @@
 %%
 %% set default colors
 %%
+*allowShellResize: true
+
 *foreground: #ecf0f1
 *background: #ffffff
 *Gridbox.background: white 
@@ -43,10 +45,12 @@ $ disabled
 *Woption.bg_sel:	#2ecc71
 *Woption.fg_sel: 	#95a5a6
 
-
-*WeditMV.foreground:	#1abc9c
+%% light-green: #1abc9c
+*WeditMV.foreground:	#008c7c
 *WeditMV.cursorColor:	#95a5a6
 *WeditMV.fontName: Source Code Pro-12
+%% *WeditMV.background: #661166
+*WeditMV.background: #ecf0f1
 
 
 *Wbutton.xftFont:  DejaVu Sans Condensed-12

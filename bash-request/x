@@ -1,349 +1,755 @@
 [2]main: test
-[1]initialize: Gauge
-[1]_m_create: NEW LIST 2 allocated by ctx_init:12 in ctx.c
-[1]_m_create: NEW LIST 3 allocated by xl2_init:95 in xl2.c
-[1]_m_create: NEW LIST 4 allocated by m_split:984 in mls.c
-[1]_m_free: Free List 4
-[1]word_measure: Hello 82 38 10
-[1]word_measure: World 94 38 10
-[1]word_measure: How 70 38 10
-[1]word_measure: are 53 38 10
-[1]word_measure: you? 76 38 10
+[2]initialize: Wbutton:l1 focus group: 
 [2]initialize: Wbutton:bt focus group: 
-[1]_m_create: NEW LIST 4 allocated by xl2_init:95 in xl2.c
-[1]_m_create: NEW LIST 5 allocated by m_split:984 in mls.c
-[1]_m_free: Free List 5
-[1]word_measure: Hello 82 38 10
-[1]word_measure: World 94 38 10
-[1]word_measure: How 70 38 10
-[1]word_measure: are 53 38 10
-[1]word_measure: you? 76 38 10
-[1]query_geometry: Gauge:ed: parent request is: 0x0
-[1]query_geometry: Gauge:ed: our prefered size is 300x700
+[2]query_geometry: l1: parent request is: 12640x12640
+[2]query_geometry: l1: our prefered size is 42x19
+[2]query_geometry: ed: parent request is: 12640x12640
+[2]query_geometry: ed: our prefered size is 21x19
+[2]query_geometry: bt: parent request is: 12640x12640
+[2]query_geometry: bt: our prefered size is 30x19
+[3]computeWidHgtInfo: x:0,y:0,w:1,h:1
+
 [3]computeWidHgtInfo: x:1,y:0,w:1,h:1
 
 [3]computeWidHgtInfo: x:0,y:1,w:2,h:1
 
 [3]computeWidHgtInfo: Cols:2,Rows:2
-[3]resize: bt: resize: 309x37
-[1]realize: Gauge
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: Gauge:ed size:300x700
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011722
-[2]alloc_pixmap: XDRAWCREATE
-[1]update_cache: Gauge:ed size:300x700
-[1]update_cache: ed draw string: Hello World How are you? (0x331)
+[3]resize: bt: resize: 73x19
+[1]expose: l1
+[1]redraw: l1 dirty=0
+[1]redraw: l1 force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: l1
+[1]alloc_pixmap: Pixmap ID: 52428811
+[1]update_cache: draw string
+[1]update_cache: l1 draw string: Hello (1x0)
+[1]redraw: l1 draw pixmap: cache=Hello
+[1]expose: ed
+[1]redraw: ed dirty=0
+[1]redraw: ed force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: ed
+[1]alloc_pixmap: Pixmap ID: 52428814
+[1]update_cache: draw string
+[1]update_cache: ed draw string: ed (0x0)
+[1]redraw: ed draw pixmap: cache=ed
 [1]expose: bt
 [1]redraw: bt dirty=0
 [1]redraw: bt force update
 [1]update_cache: call functions to redraw text
 [1]alloc_pixmap: bt
+[1]alloc_pixmap: Pixmap ID: 52428816
 [1]update_cache: draw string
-[1]update_cache: bt draw string: Exit (124x0)
+[1]update_cache: bt draw string: Exit (22x0)
 [1]redraw: bt draw pixmap: cache=Exit
-[1]expose: bt
-[1]redraw: bt dirty=0
-[1]redraw: bt force update
+[1]expose: l1
+[1]redraw: l1 dirty=0
+[1]redraw: l1 force update
 [1]update_cache: call functions to redraw text
 [1]update_cache: draw string
-[1]update_cache: bt draw string: Exit (124x0)
-[1]redraw: bt draw pixmap: cache=Exit
-[1]expose: bt
-[1]redraw: bt dirty=0
-[1]redraw: bt force update
+[1]update_cache: l1 draw string: Hello (1x0)
+[1]redraw: l1 draw pixmap: cache=Hello
+[1]_m_create: NEW LIST 2 allocated by vas_printf:1800 in mls.c
+[1]term_open: exec: xterm -e 'cat < script.fifo' &
+[1]_m_free: Free List 2
+[1]_m_create: NEW LIST 2 allocated by fork2_open:96 in subshell.c
+[1]_m_free: Free List 2
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 51 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:0 wr:51 size:1024, used:51
+[2]mrb_getline: buffer read bytes: 51
+[2]mrb_getline: copy 51 bytes to linebuffer
+[1]sproc_stderr_cb: exec: ./testshell.sh <./testshell.sh> <1> <2> <3> 
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 1024 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:0 wr:0 size:1024, used:1024
+[2]mrb_getline: buffer read bytes: 18
+[2]mrb_getline: copy 18 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:18 wr:0 size:1024, used:1006
+[2]mrb_getline: buffer read bytes: 45
+[2]mrb_getline: copy 45 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:63 wr:0 size:1024, used:961
+[2]mrb_getline: buffer read bytes: 62
+[2]mrb_getline: copy 62 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:125 wr:0 size:1024, used:899
+[2]mrb_getline: buffer read bytes: 1
+[2]mrb_getline: copy 1 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:126 wr:0 size:1024, used:898
+[2]mrb_getline: buffer read bytes: 51
+[2]mrb_getline: copy 51 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:177 wr:0 size:1024, used:847
+[2]mrb_getline: buffer read bytes: 81
+[2]mrb_getline: copy 81 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:258 wr:0 size:1024, used:766
+[2]mrb_getline: buffer read bytes: 97
+[2]mrb_getline: copy 97 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:355 wr:0 size:1024, used:669
+[2]mrb_getline: buffer read bytes: 25
+[2]mrb_getline: copy 25 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:380 wr:0 size:1024, used:644
+[2]mrb_getline: buffer read bytes: 29
+[2]mrb_getline: copy 29 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:409 wr:0 size:1024, used:615
+[2]mrb_getline: buffer read bytes: 31
+[2]mrb_getline: copy 31 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:440 wr:0 size:1024, used:584
+[2]mrb_getline: buffer read bytes: 20
+[2]mrb_getline: copy 20 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:460 wr:0 size:1024, used:564
+[2]mrb_getline: buffer read bytes: 43
+[2]mrb_getline: copy 43 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:503 wr:0 size:1024, used:521
+[2]mrb_getline: buffer read bytes: 42
+[2]mrb_getline: copy 42 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:545 wr:0 size:1024, used:479
+[2]mrb_getline: buffer read bytes: 39
+[2]mrb_getline: copy 39 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:584 wr:0 size:1024, used:440
+[2]mrb_getline: buffer read bytes: 38
+[2]mrb_getline: copy 38 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:622 wr:0 size:1024, used:402
+[2]mrb_getline: buffer read bytes: 33
+[2]mrb_getline: copy 33 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:655 wr:0 size:1024, used:369
+[2]mrb_getline: buffer read bytes: 33
+[2]mrb_getline: copy 33 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:688 wr:0 size:1024, used:336
+[2]mrb_getline: buffer read bytes: 1
+[2]mrb_getline: copy 1 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:689 wr:0 size:1024, used:335
+[2]mrb_getline: buffer read bytes: 24
+[2]mrb_getline: copy 24 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:713 wr:0 size:1024, used:311
+[2]mrb_getline: buffer read bytes: 81
+[2]mrb_getline: copy 81 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:794 wr:0 size:1024, used:230
+[2]mrb_getline: buffer read bytes: 23
+[2]mrb_getline: copy 23 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:817 wr:0 size:1024, used:207
+[2]mrb_getline: buffer read bytes: 17
+[2]mrb_getline: copy 17 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:834 wr:0 size:1024, used:190
+[2]mrb_getline: buffer read bytes: 29
+[2]mrb_getline: copy 29 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:863 wr:0 size:1024, used:161
+[2]mrb_getline: buffer read bytes: 24
+[2]mrb_getline: copy 24 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:887 wr:0 size:1024, used:137
+[2]mrb_getline: buffer read bytes: 21
+[2]mrb_getline: copy 21 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:908 wr:0 size:1024, used:116
+[2]mrb_getline: buffer read bytes: 26
+[2]mrb_getline: copy 26 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:934 wr:0 size:1024, used:90
+[2]mrb_getline: buffer read bytes: 27
+[2]mrb_getline: copy 27 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:961 wr:0 size:1024, used:63
+[2]mrb_getline: buffer read bytes: 19
+[2]mrb_getline: copy 19 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:980 wr:0 size:1024, used:44
+[2]mrb_getline: buffer read bytes: 23
+[2]mrb_getline: copy 23 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:1003 wr:0 size:1024, used:21
+[2]mrb_getline: buffer read bytes: 21
+[2]mrb_getline: copy 21 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 21 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:0 wr:21 size:1024, used:21
+[2]mrb_getline: buffer read bytes: 21
+[2]mrb_getline: copy 21 bytes to linebuffer
+[1]sproc_stderr_cb: this-is-an-error-msg
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 605 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:0 wr:605 size:1024, used:605
+[2]mrb_getline: buffer read bytes: 5
+[2]mrb_getline: copy 5 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:5 wr:605 size:1024, used:600
+[2]mrb_getline: buffer read bytes: 7
+[2]mrb_getline: copy 7 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:12 wr:605 size:1024, used:593
+[2]mrb_getline: buffer read bytes: 11
+[2]mrb_getline: copy 11 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:23 wr:605 size:1024, used:582
+[2]mrb_getline: buffer read bytes: 30
+[2]mrb_getline: copy 30 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:53 wr:605 size:1024, used:552
+[2]mrb_getline: buffer read bytes: 26
+[2]mrb_getline: copy 26 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:79 wr:605 size:1024, used:526
+[2]mrb_getline: buffer read bytes: 27
+[2]mrb_getline: copy 27 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:106 wr:605 size:1024, used:499
+[2]mrb_getline: buffer read bytes: 34
+[2]mrb_getline: copy 34 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:140 wr:605 size:1024, used:465
+[2]mrb_getline: buffer read bytes: 29
+[2]mrb_getline: copy 29 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:169 wr:605 size:1024, used:436
+[2]mrb_getline: buffer read bytes: 29
+[2]mrb_getline: copy 29 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:198 wr:605 size:1024, used:407
+[2]mrb_getline: buffer read bytes: 28
+[2]mrb_getline: copy 28 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:226 wr:605 size:1024, used:379
+[2]mrb_getline: buffer read bytes: 25
+[2]mrb_getline: copy 25 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:251 wr:605 size:1024, used:354
+[2]mrb_getline: buffer read bytes: 25
+[2]mrb_getline: copy 25 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:276 wr:605 size:1024, used:329
+[2]mrb_getline: buffer read bytes: 31
+[2]mrb_getline: copy 31 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:307 wr:605 size:1024, used:298
+[2]mrb_getline: buffer read bytes: 22
+[2]mrb_getline: copy 22 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:329 wr:605 size:1024, used:276
+[2]mrb_getline: buffer read bytes: 20
+[2]mrb_getline: copy 20 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:349 wr:605 size:1024, used:256
+[2]mrb_getline: buffer read bytes: 37
+[2]mrb_getline: copy 37 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:386 wr:605 size:1024, used:219
+[2]mrb_getline: buffer read bytes: 25
+[2]mrb_getline: copy 25 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:411 wr:605 size:1024, used:194
+[2]mrb_getline: buffer read bytes: 20
+[2]mrb_getline: copy 20 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:431 wr:605 size:1024, used:174
+[2]mrb_getline: buffer read bytes: 25
+[2]mrb_getline: copy 25 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:456 wr:605 size:1024, used:149
+[2]mrb_getline: buffer read bytes: 18
+[2]mrb_getline: copy 18 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:474 wr:605 size:1024, used:131
+[2]mrb_getline: buffer read bytes: 1
+[2]mrb_getline: copy 1 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:475 wr:605 size:1024, used:130
+[2]mrb_getline: buffer read bytes: 90
+[2]mrb_getline: copy 90 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:565 wr:605 size:1024, used:40
+[2]mrb_getline: buffer read bytes: 40
+[2]mrb_getline: copy 40 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]parse_req: Question: hello, do u  want ice cream , Answers: Y/n/a
+[1]_m_create: NEW LIST 4 allocated by make_yn_request:205 in cwri.c
+[2]initialize: Wbutton:yes focus group: 
+[2]initialize: Wbutton:no focus group: 
+[2]initialize: Wbutton:abort focus group: 
+[2]query_geometry: yes: parent request is: 208x208
+[2]query_geometry: yes: our prefered size is 28x19
+[2]query_geometry: no: parent request is: 208x208
+[2]query_geometry: no: our prefered size is 21x19
+[2]query_geometry: abort: parent request is: 208x208
+[2]query_geometry: abort: our prefered size is 45x19
+[2]query_geometry: header: parent request is: 208x208
+[2]query_geometry: header: our prefered size is 247x19
+[3]computeWidHgtInfo: x:0,y:1,w:1,h:1
+
+[3]computeWidHgtInfo: x:1,y:1,w:1,h:1
+
+[3]computeWidHgtInfo: x:2,y:1,w:1,h:1
+
+[3]computeWidHgtInfo: x:0,y:0,w:3,h:1
+
+[3]computeWidHgtInfo: Cols:3,Rows:2
+[3]resize: yes: resize: 73x19
+[3]resize: no: resize: 66x19
+[3]resize: abort: resize: 90x19
+[3]resize: header: resize: 249x19
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]expose: yes
+[1]redraw: yes dirty=0
+[1]redraw: yes force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: yes
+[1]alloc_pixmap: Pixmap ID: 52428825
+[1]update_cache: draw string
+[1]update_cache: yes draw string: yes (23x0)
+[1]redraw: yes draw pixmap: cache=yes
+[1]expose: no
+[1]redraw: no dirty=0
+[1]redraw: no force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: no
+[1]alloc_pixmap: Pixmap ID: 52428827
+[1]update_cache: draw string
+[1]update_cache: no draw string: no (23x0)
+[1]redraw: no draw pixmap: cache=no
+[1]expose: abort
+[1]redraw: abort dirty=0
+[1]redraw: abort force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: abort
+[1]alloc_pixmap: Pixmap ID: 52428829
+[1]update_cache: draw string
+[1]update_cache: abort draw string: abort (23x0)
+[1]redraw: abort draw pixmap: cache=abort
+[1]expose: header
+[1]redraw: header dirty=0
+[1]redraw: header force update
+[1]update_cache: call functions to redraw text
+[1]alloc_pixmap: header
+[1]alloc_pixmap: Pixmap ID: 52428831
+[1]update_cache: draw string
+[1]update_cache: header draw string: hello, do u  want ice cream  ? (6x0)
+[1]redraw: header draw pixmap: cache=hello, do u  want ice cream  ?
+[1]expose: l1
+[1]redraw: l1 dirty=0
+[1]redraw: l1 force update
 [1]update_cache: call functions to redraw text
 [1]update_cache: draw string
-[1]update_cache: bt draw string: Exit (124x0)
-[1]redraw: bt draw pixmap: cache=Exit
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:303x691
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011730
-[3]resize: bt: resize: 312x28
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:303x691
-[1]update_cache: ed draw string: Hello World How are you? (0x326)
-[1]expose: bt
-[1]redraw: bt dirty=0
-[1]redraw: bt force update
+[1]update_cache: l1 draw string: Hello (1x0)
+[1]redraw: l1 draw pixmap: cache=Hello
+[1]expose: yes
+[1]redraw: yes dirty=0
+[1]redraw: yes force update
 [1]update_cache: call functions to redraw text
-[1]alloc_pixmap: bt
 [1]update_cache: draw string
-[1]update_cache: bt draw string: Exit (125x0)
-[1]redraw: bt draw pixmap: cache=Exit
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:303x691
-[1]update_cache: ed draw string: Hello World How are you? (0x326)
-[1]expose: bt
-[1]redraw: bt dirty=0
-[1]redraw: bt force update
-[1]redraw: bt draw pixmap: cache=Exit
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:325x631
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011734
-[3]resize: bt: resize: 350x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:325x631
-[1]update_cache: ed draw string: Hello World How are you? (0x296)
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:325x631
-[1]update_cache: ed draw string: Hello World How are you? (0x296)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:365x515
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011736
-[3]resize: bt: resize: 430x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:365x515
-[1]update_cache: ed draw string: Hello World How are you? (0x238)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:359x496
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011738
-[3]resize: bt: resize: 418x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:359x496
-[1]update_cache: ed draw string: Hello World How are you? (0x229)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:310x493
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011740
-[3]resize: bt: resize: 320x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:310x493
-[1]update_cache: ed draw string: Hello World How are you? (0x227)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:275x537
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011742
-[3]resize: bt: resize: 284x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:275x537
-[1]update_cache: ed draw string: Hello World How are you? (0x249)
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:275x537
-[1]update_cache: ed draw string: Hello World How are you? (0x249)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:406x597
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011744
-[3]resize: bt: resize: 512x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:406x597
-[1]update_cache: ed draw string: Hello World How are you? (0x279)
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:406x597
-[1]update_cache: ed draw string: Hello World How are you? (0x279)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:508x584
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011746
-[3]resize: bt: resize: 716x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:508x584
-[1]update_cache: ed draw string: Hello World How are you? (46x273)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:548x515
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011748
-[3]resize: bt: resize: 796x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:548x515
-[1]update_cache: ed draw string: Hello World How are you? (66x238)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:536x488
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011750
-[3]resize: bt: resize: 772x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:536x488
-[1]update_cache: ed draw string: Hello World How are you? (60x225)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:478x467
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011752
-[3]resize: bt: resize: 656x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:478x467
-[1]update_cache: ed draw string: Hello World How are you? (31x214)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:403x479
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011754
-[3]resize: bt: resize: 506x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:403x479
-[1]update_cache: ed draw string: Hello World How are you? (0x220)
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:403x479
-[1]update_cache: ed draw string: Hello World How are you? (0x220)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:469x553
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011756
-[3]resize: bt: resize: 638x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:469x553
-[1]update_cache: ed draw string: Hello World How are you? (27x257)
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:469x553
-[1]update_cache: ed draw string: Hello World How are you? (27x257)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:477x544
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011758
-[3]resize: bt: resize: 654x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:477x544
-[1]update_cache: ed draw string: Hello World How are you? (31x253)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:455x513
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011760
-[3]resize: bt: resize: 610x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:455x513
-[1]update_cache: ed draw string: Hello World How are you? (20x237)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:388x499
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011762
-[3]resize: bt: resize: 476x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:388x499
-[1]update_cache: ed draw string: Hello World How are you? (0x230)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:380x505
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011764
-[3]resize: bt: resize: 460x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:380x505
-[1]update_cache: ed draw string: Hello World How are you? (0x233)
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:380x505
-[1]update_cache: ed draw string: Hello World How are you? (0x233)
-[1]resize: Gauge resize
-[1]alloc_pixmap: Gauge
-[2]alloc_pixmap: XFREE: 1
-[2]alloc_pixmap: Gauge:ed size:370x592
-[2]alloc_pixmap: XCREATE
-[2]alloc_pixmap: XCREATE:65011766
-[3]resize: bt: resize: 440x65535
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:370x592
-[1]update_cache: ed draw string: Hello World How are you? (0x277)
-[1]expose: bt
-[1]redraw: bt dirty=0
-[1]redraw: bt force update
-[1]update_cache: call functions to redraw text
-[1]alloc_pixmap: bt
-[1]update_cache: draw string
-[1]update_cache: bt draw string: Exit (189x32748)
-[1]redraw: bt draw pixmap: cache=Exit
-[1]expose: Gauge
-[1]redraw: Gauge
-[1]update_cache: Gauge
-[1]update_cache: Gauge:ed size:370x592
-[1]update_cache: ed draw string: Hello World How are you? (0x277)
-X Error of failed request:  BadAlloc (insufficient resources for operation)
-  Major opcode of failed request:  53 (X_CreatePixmap)
-  Serial number of failed request:  304
-  Current serial number in output stream:  312
-ERROR in funtion: '_m_next'. Called by 'word_list_measure:80' in 'xl2.c'
-Checking Handle 4
-Array was created by xl2_init in xl2.c:95
-Base Address Structure: 0x562635850420
-Base Address Data (d):0x56263585042c
-Elem.Width (w):56
-Buffer size(max):100
-Used Size(l):5
+[1]update_cache: yes draw string: yes (23x0)
+[1]redraw: yes draw pixmap: cache=yes
+[1]popdown_cb: popdown y
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 23 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:0 wr:23 size:1024, used:23
+[2]mrb_getline: buffer read bytes: 23
+[2]mrb_getline: copy 23 bytes to linebuffer
+[1]_m_create: NEW LIST 3 allocated by m_regex:1071 in mls.c
+[1]_m_free: Free List 3
+[1]sproc_stdout_cb: next
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[1]fork2_read: leave
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: leave
+[1]_m_create: NEW LIST 2 allocated by sproc_stderr_cb:304 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[2]fork2_read: error reading from child
+[1]sproc_read: error reading pipe 1
+[1]fork2_getline: 
+[1]mrb_getline: rd:-1 wr:0 size:1024, used:0
+[1]_m_free: Free List 2
+[1]sproc_stdout_cb: 
+[1]_m_create: NEW LIST 2 allocated by sproc_stdout_cb:284 in cwri.c
+[2]mrb_read: chunksize: 1024
+[2]mrb_read: read: 0 OK
+[2]fork2_read: error reading from child
+[1]sproc_read: error reading pipe 0
+[2]fork2_close: sending kill
+[2]fork2_close: waitpid = 31651
+[1]fork2_getline: 

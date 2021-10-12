@@ -5,10 +5,11 @@ CC=gcc-10 -Wall -I. -I../utils  -O3 -march=znver2
 
 T=svar-test
 D=mls.o svar.o
-ALL: clean ${T} svar2-test
+ALL: clean ${T} svar2-test svar-util-test
 ${T}: ${D}
 svar2-test: mls.o svar2.o 
 svar4-test: mls.o svar2.o 
+svar-util-test: svar-util.o svar3.o mls.o
 
 clean:
 	-${RM} *.o ${T}

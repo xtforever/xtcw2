@@ -1103,7 +1103,7 @@ void*  s_clear(int v3);  // remove all items
 /* same as class interface */
 
 
-svar3_t* svar3( int v3 );
+svar_t* svar( int v3 );
 
 
 

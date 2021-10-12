@@ -18,7 +18,8 @@ int ctx_init(int *CTX, int length, int size)
     m_foreach(*CTX,p,d) {
 	if( *d == 0 ) goto found;
     }
-    d = m_add(*CTX);
+    p = m_new(*CTX,1);
+    d = mls(*CTX, p);
  found:
     *d=1;
     return p;

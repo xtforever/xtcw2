@@ -16,6 +16,8 @@
 
 
 cwri.WcChildren: vb
+cwri.query: select custid, c.dbservid, a.srvid, concat(nfsserver,':',nfsbasedir) nfs,adminnode,dbslave,backupsrv,backuppath from custdb c left join dbserv_alias a on c.dbservid=a.dbservid left join serverinfo i on a.srvid=i.srvid or c.dbservid=i.srvid where custid like '$custname%'
+
 %% cwri.traceLevel: 0
 
 
@@ -42,7 +44,8 @@ cwri.WcChildren: vb
 *ed.callback: edit_customername
 *ed.translations: #augment <Btn2Down>: insert_selection()
 *ed.cursorColor: #DDBABE
-*ed.background:  #1010E0
+*ed.background:  #F010E0
+%% cwri.vb.edx.ed.background:  #1010E0
 *ed.weightx: 100
 %% --------------------
 
