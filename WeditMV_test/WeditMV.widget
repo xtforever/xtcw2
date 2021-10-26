@@ -78,7 +78,7 @@
  $draw = 0;
  // $xftFont = XftFontOpenName( dpy, DefaultScreen(dpy), $fontName );
   $xftFont = font_load(dpy, DefaultScreen(dpy), $fontName );
-  int w,h;
+  int w=10,h=10;
   alloc_colors($);
   if(! $label ) $label = $name;
   $glyph_m = m_create( 50, sizeof(XftGlyphFontSpec) );

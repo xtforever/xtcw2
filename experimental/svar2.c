@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
-
+#include "m_tool.h"
 #include "svar2.h"
 
 /* hash datastruct
@@ -288,47 +288,6 @@ static int hash_lookup(int hash, void *buf, int byte_compare )
 
  */
 /* returns: position of new element */
-int m_binsert( int buf, const void *data, int (*cmpf) (const void *a,const void *b ), int with_duplicates )
-{
-    int left = 0;
-    int right = m_len(buf)+1;
-    int cur = 1;
-    void *obj;
-    int cmp;
-
-    if( m_len(buf)==0 ) {
-	m_put(buf,data);
-	return 0;
-    }
-    
-    while(1) {
-	cur = (left+right) / 2;
-	TRACE(1, "[%d %d] cur:%d", left, right, cur );	
-	obj = mls( buf, cur - 1 );
-	cmp = cmpf( data, obj );
-	if( cmp == 0 ) {
-	    if( ! with_duplicates ) return -1;
-	    break;
-	}
-	if( cmp < 0 ) {
-	    right=cur;
-	    if( left+1 == right ) break;
-	} else {
-	    left  = cur;
-	    if( left+1 == right ) {
-		cur++;
-		break;
-	    }
-	}
-    }
-    
-
-    cur--;
-    TRACE(1, "insert at %d", cur );
-    m_ins( buf, cur, 1 );
-    m_write( buf, cur, data, 1 );
-    return cur;
-}
 
 static int seperate(char *dst, int src, int *start)
 {
@@ -346,11 +305,6 @@ static int seperate(char *dst, int src, int *start)
     }
 }
 
-static int compare_int(const void *a,const void *b)
-{
-    const int *a0 = a, *b0 = b;
-    return (*a0) - (*b0);
-}
 
 static void append_key_to_parent_collection(int parent, int key)
 {
@@ -486,7 +440,7 @@ static void svar_item_free( void *d )
     
     /* this svar->value contains an array, lets check the type of objects */
     if( is_marray ) {		/* values are simple arrays */
-	m_free_list_of_list(item->value);
+	m_free_list(item->value);
 	return;
     }
     
@@ -496,7 +450,7 @@ static void svar_item_free( void *d )
     }
     
     if( is_svar ) {		/* each value is a svar */
-	m_free_user(item->value, svar_free_cb ); /* recursion! */
+	m_free_user(item->value, svar_free_cb, 0 ); /* recursion! */
 	return;
     }
 
@@ -506,24 +460,6 @@ static void svar_item_free( void *d )
     m_free( item->value ); /* it's an array of something completly different */
 }
 
-void m_free_user(int m, void (*free_h)(void*))
-{
-    void *d; int p;
-    m_foreach(m,p,d) free_h(d);
-    m_free(m);
-}
-
-void m_free_list_of_list(int m)
-{
-    m_free_user( m, mlist_free );
-}
-
-void m_clear_mstring_array(int m)
-{
-    int p, *d;
-    m_foreach(m,p,d) m_free(*d);
-    m_clear(m);
-}
 
 
 
@@ -610,9 +546,9 @@ void svar_create(void)
 void svar_destruct(void)
 {
     
-    m_free_user(SVAR, svar_item_free );
+    m_free_user(SVAR, svar_item_free,1  );
     m_free(SVAR_FREE);
-    m_free_list_of_list( HASH );
+    m_free_list( HASH );
     SVAR=-1;
 }
 
@@ -1040,52 +976,6 @@ static void array_copy( int dest, int destp, int src, int srcp, int src_count  )
     void *to   = mls(dest,destp);
     size_t n = src_count * m_width(src); 
     memcpy( to, from, n );
-}
-
-int m_mcopy(int dest, int destp, int src, int srcp, int src_count  )
-{
-    if(srcp < 0) srcp=0;
-    /* if no lenght is given or length outside of array, copy full array */
-    int src_len = m_len(src);
-    if( src_count < 0 || src_count + srcp > m_len(src) )
-	{
-	    src_count = src_len - srcp;	
-	}
-
-    /* so far, we have checked srcp,src_count, now look at the others */
-
-    
-    /* create dest if not exists */
-    if( dest <=0 ) {
-	if( destp <0 ) destp=0;	
-	int dest_len = destp + src_count;
-        dest = m_create( dest_len,  m_width(src) );
-    }
-
-    /* shortcurt */
-    if( src_count == 0 )
-	return dest;
-
-    /* if no dest offset is given assume user wants to append */
-    if( destp < 0 ) destp=m_len(dest);
-    
-    /* resize dest to fit src array */
-    if( m_len(dest) < destp + src_count )
-	m_setlen(dest, destp + src_count );
-
-
-    // printf("normalized: srcoff=%d,dstoff=%d,count=%d\n", srcp,destp,src_count);
-    
-    /* check if src and dest are of same element size */
-    if( m_width(src) == m_width(dest) ) {
-	array_copy( dest,destp,src,srcp,src_count);
-	return dest;
-    }
-       
-    int width = Min( m_width(src), m_width(dest) );
-    
-    element_copy( dest, destp, src, srcp, src_count, width  );
-    return dest;
 }
 
 

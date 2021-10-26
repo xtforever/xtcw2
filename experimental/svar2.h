@@ -38,10 +38,10 @@ int vas_append_mstring_array(int m,int offset, va_list ap);
 int s_clr( int str );
 int s_memcpy(int dst, int src, int max);
 int m_copy(int dest, int src);
-void m_free_user(int m, void (*free_h)(void*));
+
 void m_free_list_of_list(int m);
 void m_clear_mstring_array(int m);
-int m_mcopy(int dest, int destp, int src, int srcp, int src_count  ); /* todo: extensive testing needed */
+
 
 
 /* some functions to access data stored in typed svar */

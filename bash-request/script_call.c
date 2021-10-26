@@ -219,7 +219,7 @@ static int parse_list_item(int buf)
     int m = m_regex( 0, regex, m_str(buf) );
     if( m_len(m) > 1 ) { 
 	TRACE(3,"found: '%s' '%s'", STR(m,1), STR(m,2) );
-	PARSE_LIST.lines = ms_app( PARSE_LIST.lines, STR(m,2) , NULL );
+	PARSE_LIST.lines = m_str_app( PARSE_LIST.lines, STR(m,2) , NULL );
 
 
 #if 0	/* check list-lines array */

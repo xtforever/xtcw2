@@ -46,7 +46,5 @@ ALL: $(TARGET) mttest
 
 $(TARGET):  $(DEPS)   
 
-mttest: m_tool.o subshell.o ../utils/mls.c
-
 clean:
-	${RM} -rf $(TARGET) *.o src doc xtcw *~
+	${RM} -rf $(TARGET) *.o src doc xtcw *~ *.3 *.tex script.fifo

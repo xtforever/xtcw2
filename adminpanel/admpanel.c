@@ -525,7 +525,7 @@ void exec_script_cb(Widget w, void *u, void *c)
     const char *s = svexp_string( chap->name, chap->script_cmd );
     TRACE(2,"task: %d, Name:%s, Script:%s", task, chap->name, s );
     int args;
-    args = ms_split( 0, (char*)s, " ", 1 );
+    args = m_str_split( 0, (char*)s, " ", 1 );
 
     char **d; int p;
     m_foreach(args,p,d) {
