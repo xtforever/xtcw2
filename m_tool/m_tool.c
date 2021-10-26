@@ -18,7 +18,7 @@ int m_str_app(int m, ...)
     va_list ap;
     if(!m) m=m_create(3,sizeof(char*));
     va_start(ap,m);
-    ms_va_app(m,ap);
+    m_str_va_app(m,ap);
     va_end(ap);
     return m;
 }
@@ -80,7 +80,7 @@ static char* dup_word( char **s, char *delim, int trimws )
     return NULL;   
 }
 
-int m_split(int m, char *s, char* delim, int trimws )
+int m_str_split(int m, char *s, char* delim, int trimws )
 {
      if(!m) m=m_create(3,sizeof(char*));
      char *w;
@@ -163,7 +163,7 @@ static void element_copy( int dest, int destp, int src, int srcp, int src_count,
  * if *destp* is <0 append *src* to *dest* 
  * @returns dest 
  */  
-int m_copy(int dest, int destp, int src, int srcp, int src_count  )
+int m_mcopy(int dest, int destp, int src, int srcp, int src_count  )
 {
     int dest_len;
     int src_len = m_len(src);

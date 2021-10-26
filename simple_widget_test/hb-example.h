@@ -10,7 +10,7 @@ enum {
     ENGLISH=0, ARABIC, CHINESE
 };
 
+int write_to_pixmap( Display *dpy, Pixmap p,  Pixel foreground, XftFont *font, int width, int height, int id_lang, char *txt , int x0, int y0 );
 
-int write_to_pixmap( Display *dpy, Pixmap p, Pixel foreground, XftFont *fn, int width, int height );
-
+int hb_measure( Display *dpy, XftFont *font, int id_lang, char *txt, int *w, int *h );
 #endif

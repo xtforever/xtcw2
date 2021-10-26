@@ -1,0 +1,116 @@
+@class Wtextwrap(Core)
+@  this is a very simple textwrap demo widget
+
+@PUBLIC
+
+@ the resource |label| tells the widget what to draw, it has no memory management  
+@var String label     =  <String> "Hello"
+@ this font is loaded via fontconfig, also no memory management
+@var String fontName  =  <String> "Source Code Pro-42"
+@ you can use names from rgb.txt or use #AABBCC for direct 24bit rgb color 
+@var Pixel background =  <String> "Darkgrey"
+@ this is the textcolor
+@var Pixel foreground =  <String> XtDefaultForeground
+@var int textWidth = 40
+@var int textHeight= 20
+
+
+@PRIVATE
+@var Pixmap pixmap
+@var XftFont *xftFont
+@var GC gc_bg
+@var XftDraw *draw
+@var XftColor fg
+
+@METHODS
+
+@ init of parent class is called first by xt.
+  we must init private variables
+  everything else could be done later
+@proc initialize
+{
+	$pixmap = 0;
+	Display *dpy = XtDisplay($);
+	$xftFont = XftFontOpenName( dpy, DefaultScreen(dpy), $fontName );
+	/* xt fills with foreground color - so fg = bg */
+     	XGCValues values = { .foreground = $background };
+     	$gc_bg = XtGetGC($, GCForeground, &values);
+	pixel_to_xftcolor($,$foreground,& $fg );
+}
+
+@ if the pixmap handle is zero the pixmap will be recreated on the next expose event
+  we need to redraw everything if our layout changes 
+@proc resize
+{
+	free_pixmap($); 
+}
+
+@proc realize
+{
+        XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+}
+
+@ overwrite the expose method of the parent class
+  this function is called everytime we need to redraw ourself
+@proc expose
+{
+	if( ! $pixmap ) create_pixmap($);
+	XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_bg,
+              0,0, $width, $height, /* source pixmap */
+              0,0 ); /* target window x,y */
+}
+
+@ this is not neccessary but nice to have
+  if we calculate our size then the layout can be automatically optimized at runtime
+  this is called geometry management and is performed by special
+  management widgets
+@proc query_geometry
+{
+	XGlyphInfo extents;
+	Display *dpy = XtDisplay($);
+	XftTextExtentsUtf8(XtDisplay($), $xftFont,
+		(FcChar8*)  "The Quick Brown fox jumps",25, &extents);
+		       	  
+	reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    	    reply->x=0; reply->y=0;
+    	    reply->width  =   (extents.xOff * $textWidth * 1.0) / 25;
+    	    reply->height =  $xftFont->height * $textHeight;
+	return XtGeometryAlmost;
+}
+
+@proc destroy
+{
+	XtReleaseGC($,$gc_bg);
+	free_pixmap($);
+}
+
+@UTILITIES
+
+@proc free_pixmap($)
+{
+   if( $pixmap ) XFreePixmap(XtDisplay($),$pixmap);
+   $pixmap=0;
+}
+
+@proc create_pixmap($)
+{
+    	if( $pixmap ) return;
+    	Display *dpy = XtDisplay($);	
+    	$pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+			DefaultDepth(dpy, DefaultScreen(dpy)));
+	XFillRectangle(XtDisplay($),$pixmap, $gc_bg, 0,0,$width,$height );
+    	t2_write_to_pixmap( XtDisplay($), $pixmap, & $fg, $xftFont, $width, $height,
+     			 $label, $textWidth, 0, 0 );
+}
+
+
+@IMPORTS
+@incl <assert.h>
+@incl <stdint.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xregion.h>
+@incl "xutil.h"
+@incl "xt-text-wrap.h"

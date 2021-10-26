@@ -34,6 +34,8 @@
 
 
 #include "xtcw/Gauge.h"
+#include "xtcw/Wdemo3.h"
+#include "xtcw/Wtextwrap.h"
 
 Widget TopLevel;
 int trace_main;
@@ -104,6 +106,8 @@ static void RegisterApplication ( Widget top )
     /* -- Register widget classes and constructors */
     // RCP( top, wbatt );
     RCP( top, gauge );
+    RCP( top, wdemo3 );
+    RCP( top, wtextwrap );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */

@@ -10,7 +10,7 @@
 void test_signal(void)
 {
 
-    int args = ms_split(0, "sh -c ./start-deploy.sh", " ",1 );
+    int args = m_str_split(0, "sh -c ./test-error.sh", " ",1 );
     int sh = shell_create( args );
     m_free_strings(args,0);
     signal (SIGCHLD, shell_signal_cb);
@@ -33,7 +33,7 @@ void test_signal(void)
 void test1( char *s, char *c, int t )
 {
     char **d; int p;
-    int a = ms_split(0, s, c, t );
+    int a = m_str_split(0, s, c, t );
     printf( "%s\n", s );
     m_foreach(a,p,d) {
 	printf( "[%s] ", *d );

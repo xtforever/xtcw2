@@ -1,0 +1,69 @@
+ %%
+%% set default colors
+%%
+
+*foreground: #A0A0E0
+*background: #0000C0
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #A0A0E0
+*bg_norm: #0000C0
+*xftFont: "Source-Code-22"
+%% *borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+
+cwri.WcChildren: vb
+%% cwri.traceLevel: 0
+
+*vb.WcClass: GridBox
+*vb.WcChildren: ed1 ed2 ed3 dm1 tw bt
+
+*ed1.WcClass: Gauge 
+*ed1.gridx:0 
+*ed1.fontName: EB Garamond-32
+
+
+*ed2.WcClass: Gauge 
+*ed2.gridx: 1
+*ed2.fontName: Noto Sans Arabic-32
+*ed2.lang: 1
+*ed2.label:  هذه بعض النصوص العربية
+
+
+*ed3.WcClass: Gauge 
+*ed3.gridx: 2
+*ed3.fontName: Noto Serif CJK SC-32 
+*ed3.lang: 2
+*ed3.label: 這是一些中
+*ed3.weightx: 10
+
+*dm1.wcClass: Wdemo3
+*dm1.fontName: DejaVu Serif:style=Italic:size=30
+*dm1.gridy: 1
+*dm1.gridx: 0
+*dm1.weighty: 0
+*dm1.fill: Both
+
+*tw.wcClass: Wtextwrap
+*tw.fontName: DejaVu Serif:style=Italic:size=12
+*tw.textWidth: 30
+*tw.textHeight: 5
+*tw.label: Setzet immer voraus, daß der Mensch im ganzen das Rechte \
+Will, im einzelnen nur rechnet mir niemals darauf.
+*tw.gridy: 1
+*tw.gridx: 1
+*tw.fill: Both
+
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 1
+*bt.gridx: 2
+*bt.weighty: 0
+*bt.gravity: Center
+*bt.fill: Both
+*bt.gridWidth: 1
