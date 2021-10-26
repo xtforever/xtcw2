@@ -1,0 +1,124 @@
+@class SelectReq(  Gridbox  )
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+
+@PUBLIC
+@var int lines = 0
+@var <Callback> XtCallbackList callback   = NULL
+
+@PRIVATE
+@var Widget wl
+@var int selection
+@var int extern_lines
+
+@METHODS
+@proc initialize
+{
+    TRACE(1, "SelectReq: %s", $name);
+    prepare_list($);
+    add_widgets($);
+}
+
+@proc destroy
+{
+	if( $extern_lines == 0 ) {
+	    m_free_strings($lines,0);
+	    $lines=0;
+	}
+}
+
+@ACTIONS
+
+
+
+
+
+@UTILITIES
+@proc prepare_list($)
+{
+    $selection=-1;
+    $extern_lines = $lines;
+    if( $lines ) return;
+    
+    $lines = m_create(100,sizeof(char*));
+    for(int i = 0;i<100;i++) {
+	char *a;
+	asprintf(&a,"%d hello world", i);
+	m_put( $lines, &a);
+    }	
+}
+
+@proc add_widgets($)
+{
+
+	Widget w;
+	w = XtVaCreateManagedWidget( "a", wbuttonWidgetClass, $,
+				  "label", "Abbruch",
+				  "gridy", 1,
+				  "gridx", 0,
+				  "fill", 1,
+				  "weighty", 0,
+				  NULL );
+	XtAddCallback(w, "callback",(XtCallbackProc) abbruch_cb, $ );
+	
+	w = XtVaCreateManagedWidget( "b", wbuttonWidgetClass, $,
+				  "label", "OK",
+				  "gridy", 1,
+				  "gridx", 1,
+				  "fill", 1,
+  				  "weighty", 0,	
+				  NULL );
+	XtAddCallback(w, "callback",(XtCallbackProc) ok_cb, $ );
+	
+	w = $wl = XtVaCreateManagedWidget( "c", wlist4WidgetClass, $,
+				  "label", "3test",
+				  "gridy", 0,
+				  "gridx", 0,
+				  "gridWidth", 2,
+				  "tableStrs", $lines,
+				  "height", 500,
+				  "width", 500,
+				  NULL );				  
+        XtAddCallback(w, "notify",(XtCallbackProc) notify_cb, $ );	\
+
+	TRACE(1, "line count: %d", m_len($lines) );
+}
+
+@ called by Wlist4
+@proc notify_cb(Widget w, $, void *d )
+{
+	TRACE(1,"notify");
+	int lineno = (intptr_t)d;
+	printf("%d %s\n", lineno, STR($lines,lineno) );
+	if( $selection >= 0 )
+	    wlist4_set_line_state( $wl, $selection, 0 );
+	$selection=lineno;
+        wlist4_set_line_state( $wl, lineno, 1 );
+}
+
+@ called by Wbutton
+@proc ok_cb(Widget w, $, void *d )
+{
+	XtCallCallbackList( $, $callback, (void*)(intptr_t)$selection );
+}
+
+@ called by Wbutton
+@proc abbruch_cb(Widget w, $, void *d )
+{
+	XtCallCallbackList( $, $callback, (void*)-1 );
+}
+
+
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl "xtcw/Wlabel.h"
+@incl "xtcw/Wlist4.h"
+@incl "xtcw/Wbutton.h"
+@incl "mls.h"
+@incl "xutil.h"

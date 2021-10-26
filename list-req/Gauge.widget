@@ -1,0 +1,124 @@
+@class SelectReq(  Wheel  )
+
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+@var Atom XA_UTF8_STRING = 0
+
+@PUBLIC
+@var String script = <String> "./generate-lines.sh"
+@var int prefered_width
+@var int prefered_height
+    
+@PRIVATE
+
+
+@METHODS
+
+@proc initialize
+{
+    TRACE(1, "SelectReq: %s", $name);
+    if( $width == 0 )  $width = 10; 
+    if( $height == 0 ) $height = 10;
+}
+
+@proc realize
+{
+         TRACE(1, "SelectReq");
+         XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+}
+
+@proc resize
+{
+	TRACE(1, "SelectReq");
+    	if (XtIsRealized($)) {
+       	   if( $width > 4096 || $height > 4096 ) return;
+}
+
+
+@proc destroy
+{
+	TRACE(1, "SelectReq");
+}
+
+@proc set_values
+{
+       return True;
+}
+
+@proc expose
+{
+	TRACE(1, "SelectReq");
+    	redraw($);
+}
+
+@ parameter list ($, int cmd, int val)
+@proc int exec_command
+{
+  return 0;
+}
+
+
+@ When our parent asks for this widget's preferred geometry,
+simply return the geometry as wanted
+Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return |XtGeometryNo|) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+|XtGeometryYes| should have been given.
+
+It seems that no harm is done by always returning |XtGeometryAlmost| and
+letting Xt figure out what really needs to be changed.
+
+@proc query_geometry
+{
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    calculate_size($);
+    reply->x=0; reply->y=0;
+    reply->width =  $prefered_width;
+    reply->height = $prefered_height;
+
+    TRACE(1, "SelectReq:%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(1, "SelectReq:%s: our prefered size is %dx%d", XtName($),
+                  $prefered_width,
+                  $prefered_height );
+
+    return XtGeometryAlmost;
+}
+
+
+@UTILITIES
+
+@proc redraw($)
+{
+    TRACE(1, "SelectReq");
+    
+    if( !XtIsRealized($)) return;
+    
+    
+    
+
+}
+
+@proc calculate_size($)
+{
+}
+
+
+
+
+
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"
+@incl "xutil.h"
+
