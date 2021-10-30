@@ -550,10 +550,10 @@ void WcSetValue( w, resSpec )
         */
         if ( stat == BARFED )
 	{
-	    if (target)	XtFree(target);
-	    if (res)	XtFree(res);
-	    if (type)	XtFree(type);
-	    if (value)	XtFree(value);
+	    XtFree(target);
+	    XtFree(res);
+	    XtFree(type);
+	    XtFree(value);
 	    goto free_all_specs;
 	}
 
@@ -562,10 +562,10 @@ void WcSetValue( w, resSpec )
         if ( NULL == (targetWidget = WcFullNameToWidget( w, target )) )
         {
 	    WcxBarf( w, TARGET_NOT_FOUND, resSpec );
-	    if (target)	XtFree(target);
-	    if (res)	XtFree(res);
-	    if (type)	XtFree(type);
-	    if (value)	XtFree(value);
+	    XtFree(target);
+	    XtFree(res);
+	    XtFree(type);
+	    XtFree(value);
 	    goto do_next_res_spec;
         }
 
@@ -576,9 +576,9 @@ void WcSetValue( w, resSpec )
 	    if (! (type = WcGetResourceType( targetWidget, res )) )
 	    {
 		WcxBarf( w, NO_SUCH_RESOURCE, resSpec );
-		if (target)	XtFree(target);
-		if (res)	XtFree(res);
-		if (value)	XtFree(value);
+		XtFree(target);
+		XtFree(res);
+		XtFree(value);
 		goto do_next_res_spec;
 	    }
         }
@@ -614,10 +614,10 @@ free_all_specs:
     */
     for ( inx-- ; -1 < inx ; inx-- )
     {
-	if (spec[inx].target)  XtFree(spec[inx].target);
-	if (spec[inx].res)     XtFree(spec[inx].res);
-	if (spec[inx].type)    XtFree(spec[inx].type);
-	if (spec[inx].value)   XtFree(spec[inx].value);
+	XtFree(spec[inx].target);
+	XtFree(spec[inx].res);
+	XtFree(spec[inx].type);
+	XtFree(spec[inx].value);
     }
 }
 

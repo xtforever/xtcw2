@@ -1,4 +1,6 @@
 #include "mls.h"
+#include "m_tool.h"
+
 #include <stdint.h>
 #include <time.h>
 
@@ -41,10 +43,10 @@ int s_memcpy(int dst, int src, int max)
 
 int HASH_ID=0;
 struct hash_id_st {
-    void *d;
     char name[HASH_SIZE];
+    void *d;
 };
-  
+
 int alloc_hash_id( void *ctx, void * a )
 {
     if(!HASH_ID) HASH_ID=m_create(100, sizeof(struct hash_id_st) );
@@ -64,6 +66,7 @@ struct hash_id_st *hash_id( int p )
 {
     return mls(HASH_ID, p);
 }
+
 
 
 // Dedicated to Pippip, the main character in the 'Das Totenschiff' roman, actually the B.Traven himself, his real name was Hermann Albert Otto Maksymilian Feige.
@@ -86,13 +89,13 @@ static uint32_t FNV1A_Pippip_Yurii(const char *str, size_t wrdlen)
 	}
 	hash32 = (uint32_t)(hash64 ^ (hash64>>32));
 	hash32 ^= (hash32 >> 16);
-	return hash32 & HASH_TABLE_MASK;
+	return hash32;
 } // Last update: 2019-Oct-30, 14 C lines strong, Kaze.
 
 
 inline static uint32_t simple_hash( void *buf )
 {
-    return  FNV1A_Pippip_Yurii( buf, HASH_SIZE );
+    return  FNV1A_Pippip_Yurii( buf, HASH_SIZE ) & HASH_TABLE_MASK;
 }
 
 
@@ -133,14 +136,18 @@ int hash_lookup( int hash, void *buf,
 
 int HASH_TABLE = 0;
 
-int hash_simple_key( int key )
+
+
+int hash_simple_key( void* key )
 {
     if(!HASH_TABLE) {
 	HASH_TABLE=m_create( HASH_TABLE_SIZE, sizeof(int) );
 	m_setlen(HASH_TABLE,HASH_TABLE_SIZE );
     }
-    return hash_lookup( HASH_TABLE, m_buf(key),  cmp_hash_id, alloc_hash_id, NULL );
+    return hash_lookup( HASH_TABLE, key,  cmp_hash_id, alloc_hash_id, NULL );
 }
+
+
 
 
 int read_keys_from_file( char *filename )
@@ -161,7 +168,7 @@ int read_keys_from_file( char *filename )
 }
 
 static inline void nl(void) { putchar(10); };
-void check_hash_speed( int seconds, int keys  )
+void check_hash_speed( int seconds, int keys, int (*lookup)(void *)  )
 {
     printf("trying %d seconds hashing\n",seconds );
     struct timespec tp0,tp1, tp2; // tv_sec, tv_nsec
@@ -172,7 +179,7 @@ void check_hash_speed( int seconds, int keys  )
 	{
 	    count++;
 	    int keynum = rand() % m_len(keys);
-	    hash_simple_key( INT(keys, keynum) );
+	    lookup( m_buf(INT(keys, keynum)) );
 	    clock_gettime(CLOCK_MONOTONIC, &tp1);
 	    timespec_diff(&tp1,&tp0,&tp2);	    
 	    if( tp2.tv_sec  >= seconds ) break;
@@ -187,11 +194,11 @@ void check_hash_speed( int seconds, int keys  )
 }
 
 
-void verify_hash(int keys )
+void verify_hash(int keys, int (*lookup)(void*) )
 {
     int p, *k;
     m_foreach( keys, p, k ) {
-	int hash_key = hash_simple_key( *k );
+	int hash_key = lookup( m_buf(*k) );
 	struct hash_id_st *ent = hash_id( hash_key );
 
 	if( strcmp( m_buf(*k), ent->name ) ) {
@@ -226,6 +233,25 @@ void hash_stats(char *s)
     printf("arrays used: %d\n", arrays_used );
 }
 
+int SORTED_KEYS;
+int sk_cmp(const void *a, const void *b)
+{
+    return memcmp(a,b,HASH_SIZE);
+}
+
+/* struct hash_id_st */
+int lookup_sorted_keys( void *key )
+{
+    if(!SORTED_KEYS) {
+	SORTED_KEYS=m_create(4000,sizeof(struct hash_id_st));	
+    }
+    struct hash_id_st ent;
+    memcpy(ent.name,key,HASH_SIZE);
+    int pos = m_binsert( SORTED_KEYS, &ent, sk_cmp, 0 );
+    return pos;
+}
+
+
 int main()
 {
     m_init();
@@ -233,10 +259,17 @@ int main()
 
     int keys = read_keys_from_file( "john.txt" );
     printf("number of keys: %d\n", m_len(keys) );
-    check_hash_speed(1,keys);
-    verify_hash( keys );
+    check_hash_speed(10,keys, hash_simple_key);
+    verify_hash( keys, hash_simple_key );
     hash_stats("statistics");
-    { int p,*k; m_foreach(keys,p,k) m_free(*k); m_free(keys); }
 
+    puts("");
+    check_hash_speed(10,keys, lookup_sorted_keys );
+    printf("sorted keys: %d\n", m_len(SORTED_KEYS));
+    m_free(SORTED_KEYS);
+    
+    { int p,*k; m_foreach(keys,p,k) m_free(*k); m_free(keys); }
+    { int p,*k; m_foreach(HASH_TABLE,p,k) m_free(*k); m_free(HASH_TABLE); }
+    m_free(HASH_ID);
     m_destruct();
 }

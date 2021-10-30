@@ -325,9 +325,10 @@ int map_lookup( int group, char *name );
 
 
 /*
-  g =   mvar_group_create
-  v =   mvar_create( g, name, STRING );
-  sz = 
+  g  =   zvar_group_create();					
+  v  =   zvar_create( g, name, STRING );
+  sz =   zvar_get_name(); g[0..3]=  
+
 
  */
 

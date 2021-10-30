@@ -283,10 +283,7 @@ void WcBuffer_Free( this )
 {
     if ( this != NULL )
     {
-	if ( this->buffer != NULL )
-	{
-	    XtFree( this->buffer );
-	}
+	XtFree( this->buffer );
 	XtFree( (char*)this );
     }
 }
