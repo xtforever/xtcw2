@@ -288,7 +288,7 @@ void check3(void)
     int keys = read_keys_from_file( "john.txt" ); 
     check_hash_speed( 5, keys  );
     check_hash_speed_fast( 5, keys  );
-    m_free_list_of_list(keys);
+    m_free_list(keys);
 }
 
 
