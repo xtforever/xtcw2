@@ -372,3 +372,23 @@ int main()
 }
 
 
+
+
+/*
+
+  int n = vrec_create( ); // new var with name 4byte integer
+  
+  int k = vrec_lookup( n, "xk2", STRING ); // n!=0 - create a var inside var(n)
+           n - last 4 bytes of var-name
+           v1=create var xk2+n (type)
+	   v2=create var n (integer)
+	   append v1 to v2 
+	   
+   
+  int l = mvar_get_len( n )                 // anzahl keys im record
+  int k = mvar_get_integer( n, x )          // get entry x 
+  int s = mvar_get_type( k )
+  char*s = mvar_get_string( k, 0 )
+
+
+ */
