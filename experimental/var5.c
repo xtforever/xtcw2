@@ -396,13 +396,7 @@ long mvar_get_integer( int id, int p )
 
 /* */
 
-struct var_mapper {
-    struct var_name name;
-    int id;
-};
 
-int VAR_MAP = 0;
-int map_name( int group, char *name, int id );
 
 /* falls group==0 var_create
    sonst var_create und dem vset hinzufuegen
@@ -410,34 +404,35 @@ int map_name( int group, char *name, int id );
 
 int map_lookup( int group, char *name, char *typename )
 {
-    if(!VAR_MAP) {
-	VAR_MAP=m_create(10,sizeof(struct var_mapper));	
-    }
-
-    struct var_mapper m;
-    memset(&m,0,sizeof(m));
-    strncpy(m.name.name, name, sizeof(m.name.name) );
-    
+    /* find a variable with name=(group,name) */
     int p;
-    struct var_mapper *vm;
-    m_foreach(VAR_MAP,p,vm) {
-	if( vm->name.group == group && memcmp(m.name.name,vm->name.name,sizeof(vm->name.name)) == 0 ) {
-	    return vm->id;
-	}	
+    struct mvar_mem_st *vm;
+    m_foreach(MVAR_MEM,p,vm) {
+	if(! vm->init ||  ! vm->var ) continue; 
+	struct var_name *n = & vm->var->name;
+	if( n->group == group && strncmp(n->name,name,sizeof(n->name)) == 0 ) {
+	    return p;
+	}
     }
 
     if( !typename ) return -1;
-    m.id = mvar_create(typename);
-    m.name.group=group;
-    m_put( VAR_MAP, &m );
-    if(group) var_put_integer(group, m.id, -1);     
-    return m.id;
+    /* if no variable is found and a typename provided */
+    /* create and init a new variable */
+    
+    p = mvar_create(typename);
+    var_t *v = mvar_get(p);
+    strncpy(v->name.name, name, sizeof(v->name.name) );
+    v->name.group=group;    
+
+    /* a group-id equals variable-id, it's a container to for variables */
+    if(group) mvar_put_integer(group, p, -1);
+
+    return p;
 }
 
 void  map_destruct(void)
 {
-    m_free(VAR_MAP);
-    VAR_MAP=0;
+
 }
 
 
@@ -500,7 +495,7 @@ void test1()
     mvar_destroy(z);
 
     int p = mvar_create( "VSET" );
-    int *pvar = vset_get_value( mvar_get(p) );
+    // int *pvar = vset_get_value( mvar_get(p) );
 
     map_test();
     map_destruct();
