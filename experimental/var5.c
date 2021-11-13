@@ -158,115 +158,89 @@ var_t *integer_impl_create(void)
 {
     integer_var_t *s = calloc(1, sizeof(integer_var_t) );
     s->fn = &INTEGER_VAR_IF;
+    s->value=m_create(1,sizeof(long));
     return (var_t*) s;
 }
 
 void integer_impl_destroy(var_t *v)
 {
-    free(v);
+    integer_var_t *s = (integer_var_t*)v;
+    m_free(s->value); 
+    free(s);
 }
 
 char *integer_impl_get_string(var_t *v, int p)
 {
+    long val = integer_impl_get_integer(v,p);
     integer_var_t *s = (integer_var_t*)v;
     snprintf( s->fn->buffer, sizeof(s->fn->buffer),
-	      "%ld", s->value );
+	      "%ld", val );
     return s->fn->buffer;    
 }
 
 int integer_impl_put_string(var_t *v,char *str, int p)
 {
-    integer_var_t *s = (integer_var_t*)v;
-    s->value = atol(str);
-    return 0;
+    return integer_impl_put_integer(v,atol(str),p);
 }
 
 int integer_impl_put_integer(var_t *v, long value, int p)
 {
     integer_var_t *s = (integer_var_t*)v;
-    s->value = value;
+    if( p < 0 ) {
+	m_put(s->value,&value);
+	return 0;
+    }
+    if( p > m_len(s->value) ) m_setlen(s->value,p+1);
+    *(long *)mls(s->value,p)=value;
     return 0;
 }
 
 long integer_impl_get_integer(var_t *v, int p)
 {
     integer_var_t *s = (integer_var_t*)v;
-    return s->value;
+    if( p >= m_len(s->value) ) return -1;
+    return *(long *)mls(s->value,p);
 }
 
 /* ---------------------------------------------------------------------*/
 
-/* same as var_if */
-struct vset_var_if {
-    struct var_if core;
-};
 
-/* same as var_st but with extensions */
+#define vset_var_if integer_var_if
+
+/* same as integer_var_st  */
 struct vset_var_st {
     struct vset_var_if *fn;
     struct var_name name;
-    int var;
+    long value;
 };
 
 typedef struct vset_var_st vset_var_t;
-
-var_t *vset_impl_create(void);
-void  vset_impl_destroy(var_t *v);
+void mvar_destroy(int p);
+void  vset_impl_destroy(var_t *v)
+{
+    long *d; int p;
+    integer_var_t *s = (integer_var_t*)v;
+    m_foreach(s->value,p,d) {
+	mvar_destroy(*d);
+    }
+    m_free(s->value);
+    free(s);
+}
 
 struct vset_var_if VSET_VAR_IF = {
  .core = {
     .if_type = VAR_VSET,
-    .create = vset_impl_create,
+    .put_string = integer_impl_put_string,
+    .get_string = integer_impl_get_string,
+    .put_integer = integer_impl_put_integer,
+    .get_integer = integer_impl_get_integer,
+    .create = integer_impl_create,
     .destroy = vset_impl_destroy
  }
  };
 
-var_t *vset_impl_create(void)
-{
-    vset_var_t *s = calloc(1, sizeof(vset_var_t) );
-    s->fn = &VSET_VAR_IF;
-    s->var = m_create(5,sizeof(int));
-    return (var_t*) s;
-}
 
-void mvar_destroy(int p);
-
-void vset_impl_destroy(var_t *v)
-{
-    vset_var_t *s = (vset_var_t*)v;
-    int p,*d;
-    if( s->var ) {
-	m_foreach(s->var,p,d) {
-	    mvar_destroy(*d);
-	}
-	m_free(s->var);
-	s->var=0;
-    }
-    free(v);
-}
-
-int *vset_get_value(var_t *v)
-{
-    if( v->fn->if_type != VAR_VSET) {
-	set_error(v, "this isn't a vset class");
-	return 0;
-    }
-    vset_var_t *s = (vset_var_t*)v;
-    return & s->var;
-}
-
-int vset_impl_put_integer(var_t *v, long value, int p)
-{
-    vset_var_t *s = (vset_var_t*)v;
-    if( p < 0 ) {
-	m_put(s->var, &value );
-	return 0;
-    }
-    
-    INT(s->var,p)=value;
-    return 0;
-}
-
+/* -----------------------------------------------------------*/
 
 
 var_t *var_create( void *dfn )
@@ -430,20 +404,15 @@ int map_lookup( int group, char *name, char *typename )
     return p;
 }
 
-void  map_destruct(void)
-{
-
-}
 
 
 
-
-
-void mt( int g, char *s, char *t )
+int  mt( int g, char *s, char *t )
 {
     printf("lookup %d %s %s: id=",g,s,t ? t : "null" );
     int id = map_lookup( g,s,t );
     printf("%d\n", id );
+    return id;
 }
 
 
@@ -455,6 +424,9 @@ void map_test(void)
     mt( 0, "hello", NULL  );
     mt( vs, "hello", NULL  );
     mt( vs+1, "hello", NULL  );
+    mvar_destroy(vs);
+    mt( vs, "hello", NULL );
+    mt( vs, "hello1", NULL );
 }
 
 
@@ -487,18 +459,18 @@ void test1()
 
     var_register( &STRING_VAR_IF, "STRING" );
     var_register( &INTEGER_VAR_IF, "INTEGER" );
-    var_register( &INTEGER_VAR_IF, "VSET" );
+    var_register( &VSET_VAR_IF, "VSET" );
     int z = mvar_create( "STRING" );
     mvar_put_string( z, "hello world" , 0);
     s = mvar_get_string( z, 0 );
     printf("stored string is: %s\n", s );
     mvar_destroy(z);
 
-    int p = mvar_create( "VSET" );
+    // int p = mvar_create( "VSET" );
     // int *pvar = vset_get_value( mvar_get(p) );
 
     map_test();
-    map_destruct();
+    
     
     mvar_destroy_all();
     var_register_destroy();
