@@ -1,12 +1,69 @@
-/* var5 interface 
+/* 
+
+   storage:
+
+   VAR_CALLBACK		structs with callback pointer
+			one per variable
+			primary-key: var-id
+
+   VAR_IF		structs with interface functions 
+			one per variable-type
+			primary-key: index
+     
+   MVAR_MEM		pointer to variables
+			primary-key: (group,name)
+			        key: index (var-id)
+
+   Each variable has two attributes, name and group.
+   Together they form a unique identifier.
+   
+   They can be used to form a graph:
+   tree: list of (node1,node2)
+
+   node1 = group
+   node2 = var-id
+   
+   A leave node is a node with arbitrary type
+   A branch starts at a node with type VSET
+  
+   
+            (1:(root,0) )
+
+       (2:(n1,1))     (4:(n3,1))         
+
+       (3:(n2,2))        
+
+       root,n1 - must have type VSET (or INTEGER) 
+       n2,n3   - type is arbitrary
+
+
+   mvar_parse can be used to create/access the tree.
+   example:
+      node = mv_parse( *root.n1.n2, "STRING" )      
+      - this call will construct three nodes (root,n1,n2)
+
+      node = mv_parse( *root.n3, "INTEGER" )
+      - this call will construct one node (n3)
+      
+   The complete tree is accessable with the id of the
+   root-node 
+   to query the root id you have multiple possibilities:
+   id = mv_lookup( 0, "root", NULL );
+   id = mv_lookup_path( "#0.root", NULL );
+   id = mv_lookup_path( "root", NULL );
+   id = mv_parse( "root", NULL );
+   id = mv_parse( "*root", NULL );
+   
+   
+
+   var5 interface 
+
+   
 
    init
+     mvar_init
 
-     mvar_registry( &STRING_VAR_IF, "STRING", VAR_STRING );
-     
-
-   create anon variables:
-   
+   create anon variables:   
      int id = mvar_anon(0, "VSET" );
 
 
@@ -48,18 +105,12 @@
 #include <stdint.h>
 #include "mls.h"
 #include "ctx.h"
+#include "var5.h"
 
-#define VAR_INTEGER 0
-#define VAR_STRING 1
-#define VAR_VSET 2
-#define VAR_REC 3
-
-#define MAX_VAR 32
-#define MAX_VARNAME (MAX_VAR-4)
 
 struct var_st;
 typedef struct var_st var_t; 
-typedef void (*varsig_t) (void*,int);
+
 
 
 struct var_if {
@@ -456,7 +507,7 @@ int  mvar_registry( void *funcs, char *name, int id )
     return id;
 }
 
-int  var_register_new( void *funcs, char *name )
+int  mvar_registry_new( void *funcs, char *name )
 {
     int id = m_len(VAR_IF);
     return mvar_registry( funcs,name,id);
@@ -488,7 +539,7 @@ struct var_if *var_register_lookup(char *name)
     return vreg_getif(p);
 }
 
-char* var_register_typename( int id )
+char* mvar_name_of_type( int id )
 {
     return vreg_get(id)->name;
 }
@@ -520,6 +571,7 @@ int mvar_create( char *type_name )
     v = mls(MVAR_MEM,p);
     v->var = var_create( vreg_getif(ifnum) );
     v->var->var_if = ifnum;
+    TRACE(1,"new var %d : %s", p+1, type_name );
     return p +1;
 }
 
@@ -596,6 +648,45 @@ int mvar_parse_path(int mp, int *group)
 }
 
 
+static int next_dot(int m, int *p, int w)
+{    
+    int l = m_len(m);
+    while( *p < l ) {
+	int ch =  CHAR(m,*p);
+	(*p)++;	
+	if( !ch || ch  ==  '.' ) {
+	    m_putc(w, 0);
+	    return ch;
+	}
+	m_putc(w,ch);
+    }
+    return -1;
+}
+
+int mvar_parse( int mp, char *typ )
+{
+    int ch = CHAR(mp,0);
+    if( ch != '*' ) return mvar_lookup_path(mp,typ);
+
+    /* multi-point-parser */
+    int id    =  0;
+    int group =  0;
+    int start =  1;
+    int w     =  m_create(20,1);
+    char *t   =  "VSET";
+    
+    do {
+	m_clear(w);
+	ch = next_dot( mp, &start, w );
+	if( ch < 0 ) ERR("error parsing %s", m_str(mp));
+	if( ch == 0 ) t = typ;  
+	group = id;	
+	id = mvar_lookup(group, m_str(w), t);
+
+    } while( ch );
+    m_free(w);
+    return id;
+}
 
 
 /* suche nach einer variable mit name (group,name)
@@ -674,6 +765,9 @@ int mvar_lookup_path( int mp, char *t )
     return mvar_lookup(g, mls(mp,p), t);
 }
 
+
+
+
 void mvar_destruct(void)
 {
     mvar_free_all();
@@ -681,200 +775,10 @@ void mvar_destruct(void)
     var_callback_destroy();
 }
 
-void var_dump(int id)
+
+void mvar_init(void)
 {
-    int tt = trace_level;
-    trace_level=2;
-    int varname = mvar_path(id, 0);
-    int t = mvar_type(id) ;
-    char *typename = var_register_typename( t );
-    printf("varname: %s\n", m_str(varname)  ); m_free(varname);
-    printf("typename: %s\n", typename  );
-    int l = mvar_length(id);
-    printf("length: %d\n", l );
-    printf("content: ");
-
-    if( t == VAR_VSET ) {
-	for(int i=0;i<l;i++) {
-	    int x = mvar_get_integer(id,i);
-	    printf("dumping var: %d\n", x );
-	    var_dump(x);
-	}
-    }
-    else {
-	int ch = 32;
-	for(int i=0;i<l;i++) {
-	    char *s = mvar_get_string(id,i);
-	    printf("%c%s", ch, s); ch=',';
-	}	
-	putchar(10);
-    }
-
-    putchar(10);
-    trace_level=tt;
-}
-
-
-
-int  mt( int g, char *s, char *t )
-{
-    printf("lookup (%d:%s) %s: id=",g,s,t ? t : "null" );
-    int id = mvar_lookup( g,s,t );
-    printf("%d\n", id );
-    return id;
-}
-
-
-void map_test(void)
-{
-
-    int vs = mvar_vset();    
-    printf("created vset: %d\n", vs );
-
-    int x= mt( vs, "my-int", "INTEGER" );
-    mt( vs, "my-int", "INTEGER" );
-    
-    mt( 0, "hello", "STRING" );
-    mt( vs, "hello", "STRING" );
-    mt( 0, "hello", NULL  );
-    mt( vs, "hello", NULL  );
-    mt( vs+1, "hello", NULL  );
-
-
-    printf("adding own-list to integer var %d\n", x );
-    int y = mt( x, "own-list", "INTEGER" );
-
-    int mp = mvar_path(x,0);
-    printf("my-int full name: %s\n", m_str(mp) );
-
-    int g,p;
-    p=mvar_parse_path(mp,&g);
-    printf("parsed: name=%s, group=%d\n", (char*)mls(mp,p), g );
-
-    int xx = mvar_lookup_path( mp, 0 );
-    printf("mvar_lookup_path returns: %d\n", xx);
-    mt( vs, "my-int", 0 );
-    mt( vs, "2nd-int", "INTEGER" );
-    printf( "elements in %s: %d\n", m_str(mp), mvar_length(xx));
-    m_free(mp);
-
-    var_dump(vs);
-    var_dump(xx);
-    var_dump(y);
-
-    mvar_free(vs);
-    mt( vs, "hello", NULL );
-    mt( vs, "hello1", NULL );
-    (void)y;
-
-    int rec = mt( 0, "my-record", "VSET" );
-    int col, cols = 3;
-    col = mt( rec, "userid", "INTEGER" );
-    col = mt( rec, "name", "STRING" );
-    col = mt( rec, "age", "INTEGER" );
-
-    char *ent[3] = { "100", "jens", "42" };
-    for(int i=0;i<cols;i++) {
-	int var = mvar_get_integer(rec,i);
-	mvar_put_string( var, ent[i], -1 );
-    }
-    
-    var_dump( rec );
-    mvar_free( rec );
-}
-
-void cb1(void *c, int q)
-{
-    printf("callback for %d\n", q );
-    var_dump(q);
-    puts("leaving cb");
-}
-
-
-void callback_test(void)
-{
-    int vs = mvar_vset(); 
-    int q1 = mvar_lookup(vs,"cb-test1", "INTEGER");
-    int q2 = mvar_lookup(vs,"cb-test2", "INTEGER");
-    int q3 = mvar_lookup(vs,"cb-test3", "INTEGER");
-
-    mvar_put_integer( q1, 101, -1 );
-    mvar_put_integer( q2, 202, -1 );
-    mvar_put_integer( q3, 303, -1 );
-    
-    var_set_callback( q1, cb1, NULL, 0 );
-    var_set_callback( q2, cb1, NULL, 0 );
-    var_set_callback( q3, cb1, NULL, 0 );
-
-    var_set_callback( q1, cb1, NULL, 1 );
-    var_set_callback( q3, cb1, NULL, 1 );
-
-    var_call_callbacks(q1);
-    var_call_callbacks(q2);
-    var_call_callbacks(q3);
-
-    mvar_free( vs );
-}
-
-
-
-
-/*
-  g  =   zvar_group_create();					
-  v  =   zvar_create( g, name, STRING );
-  sz =   zvar_get_name(); g[0..3]=  
-
-
- */
-
-
-void test1()
-{
-    puts("start");
     mvar_registry( &STRING_VAR_IF, "STRING", VAR_STRING );
     mvar_registry( &INTEGER_VAR_IF, "INTEGER", VAR_INTEGER );
     mvar_registry( &VSET_VAR_IF, "VSET", VAR_VSET );
-   
-    char *s;
-    var_t *m;
-    m = var_create( &STRING_VAR_IF );
-    var_put_string( m, "hello", 0 );
-    s = var_get_string( m, 0 );
-    printf("stored string is: %s\n", s );
-    var_destroy( m ); 
-
-    m = var_create( &INTEGER_VAR_IF );
-    var_put_string( m, "1002", 0 );
-    s = var_get_string( m, 0 );
-    printf("stored string is: %s\n", s );
-    var_destroy( m );    
-
-    // mvar_registry( &REC_VAR_IF, "REC", VAR_REC );
-    int z = mvar_create( "STRING" );
-    mvar_put_string( z, "hello world" , 0);
-    s = mvar_get_string( z, 0 );
-    printf("stored string is: %s\n", s );
-    mvar_free(z);
-
-    // int p = mvar_create( "VSET" );
-    // int *pvar = vset_get_value( mvar_get(p) );
-
-    map_test();
-
-    callback_test();
-    
-
-}
-
-
-    
-
-int main()
-{
-    m_init();
-    trace_level=3;
-    test1();
-
-    mvar_destruct();
-    m_destruct();
 }
