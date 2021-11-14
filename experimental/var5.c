@@ -1,3 +1,45 @@
+/* var5 interface 
+
+   init
+
+   mvar_registry( &STRING_VAR_IF, "STRING", VAR_STRING );
+     var_register_destroy					removed - integrated in mvar_destruct
+
+   create anon variables:
+     int id = map_anon_create(0, "VSET" );			mvar_anon
+
+   create anon vset variables:
+     int  g = vset_create();					mvar_group()
+
+   find/create a variable
+     int q =  map_lookup( group,sname,stype );			mvar_lookup
+     int q =  map_lookup_path(mp,stype);			mvar_lookup_path
+     int offs = mvar_parse_path(mp,&group);
+     mvar_destroy(q);						mvar_free
+     mvar_destroy_all						removed - integrated in mvar_destruct
+
+   read/write
+     mvar_put_string(q,s,p)
+     mvar_get_string(q,p)
+     mvar_put_integer(q,v,p)
+     mvar_get_integer(q,p)
+
+   inspect
+     mvar_type(q)
+     mvar_group(q)
+     mvar_name(q)
+     mvar_id(q)
+     mvar_path(q)
+     mvar_length(q)
+
+   signals
+     var_set_callback( q1, cb1, ctx, 0 )			
+     var_call_callbacks( q1 )
+     var_callback_destroy
+
+     
+     
+ */
 #include <stdio.h> 
 #include <stdlib.h>
 #include <string.h>
@@ -402,7 +444,7 @@ struct var_register_st *vreg_get(int id)
 }
 
 
-int  var_register( void *funcs, char *name, int id )
+int  mvar_registry( void *funcs, char *name, int id )
 {
     if( !VAR_IF ) VAR_IF=m_create(10,sizeof(struct var_register_st)); 
     if( id >= m_len(VAR_IF)) m_setlen(VAR_IF, id+1);    
@@ -415,7 +457,7 @@ int  var_register( void *funcs, char *name, int id )
 int  var_register_new( void *funcs, char *name )
 {
     int id = m_len(VAR_IF);
-    return var_register( funcs,name,id);
+    return mvar_registry( funcs,name,id);
 }
 
 
@@ -631,47 +673,6 @@ int map_lookup_path( int mp, char *t )
 }
 
 
-/* var5 interface 
-
-   init
-     var_register( &STRING_VAR_IF, "STRING", VAR_STRING );
-     var_register_destroy
-
-   create anon variables:
-     int id = map_anon_create(0, "VSET" );
-
-   create anon vset variables:
-     int  g = vset_create();
-
-   find/create a variable
-     int q =  map_lookup( group,sname,stype );
-     int q =  map_lookup_path(mp,stype);
-     int offs = mvar_parse_path(mp,&group);
-     mvar_destroy(q);
-     mvar_destroy_all
-
-   read/write
-     mvar_put_string(q,s,p)
-     mvar_get_string(q,p)
-     mvar_put_integer(q,v,p)
-     mvar_get_integer(q,p)
-
-   inspect
-     mvar_type(q)
-     mvar_group(q)
-     mvar_name(q)
-     mvar_id(q)
-     mvar_path(q)
-     mvar_length(q)
-
-   signals
-     var_set_callback( q1, cb1, ctx, 0 )
-     var_call_callbacks( q1 )
-     var_callback_destroy
-
-     
-     
- */
 
 
 void var_dump(int id)
@@ -824,9 +825,9 @@ void callback_test(void)
 void test1()
 {
     puts("start");
-    var_register( &STRING_VAR_IF, "STRING", VAR_STRING );
-    var_register( &INTEGER_VAR_IF, "INTEGER", VAR_INTEGER );
-    var_register( &VSET_VAR_IF, "VSET", VAR_VSET );
+    mvar_registry( &STRING_VAR_IF, "STRING", VAR_STRING );
+    mvar_registry( &INTEGER_VAR_IF, "INTEGER", VAR_INTEGER );
+    mvar_registry( &VSET_VAR_IF, "VSET", VAR_VSET );
    
     char *s;
     var_t *m;
@@ -842,7 +843,7 @@ void test1()
     printf("stored string is: %s\n", s );
     var_destroy( m );    
 
-    // var_register( &REC_VAR_IF, "REC", VAR_REC );
+    // mvar_registry( &REC_VAR_IF, "REC", VAR_REC );
     int z = mvar_create( "STRING" );
     mvar_put_string( z, "hello world" , 0);
     s = mvar_get_string( z, 0 );
