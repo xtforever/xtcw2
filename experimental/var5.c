@@ -2,21 +2,23 @@
 
    init
 
-   mvar_registry( &STRING_VAR_IF, "STRING", VAR_STRING );
-     var_register_destroy					removed - integrated in mvar_destruct
+     mvar_registry( &STRING_VAR_IF, "STRING", VAR_STRING );
+     
 
    create anon variables:
-     int id = map_anon_create(0, "VSET" );			mvar_anon
+   
+     int id = mvar_anon(0, "VSET" );
+
 
    create anon vset variables:
-     int  g = vset_create();					mvar_group()
+     int  g = mvar_vset();
 
    find/create a variable
-     int q =  map_lookup( group,sname,stype );			mvar_lookup
-     int q =  map_lookup_path(mp,stype);			mvar_lookup_path
+     int q =  mvar_lookup( group,sname,stype );			
+     int q =  mvar_lookup_path(mp,stype);			
      int offs = mvar_parse_path(mp,&group);
-     mvar_destroy(q);						mvar_free
-     mvar_destroy_all						removed - integrated in mvar_destruct
+     mvar_free(q);
+
 
    read/write
      mvar_put_string(q,s,p)
@@ -341,7 +343,7 @@ void  vset_impl_destroy(var_t *v);
 var_t *vset_impl_create(void);
 char *vset_impl_get_string(var_t *v, int p);
 
-void mvar_destroy(int p);
+void mvar_free(int p);
 int mvar_path(int id, int mp);
 
 #define vset_var_if integer_var_if
@@ -378,7 +380,7 @@ void  vset_impl_destroy(var_t *v)
     long *d; int p;
     integer_var_t *s = (integer_var_t*)v;
     m_foreach(s->value,p,d) {
-	mvar_destroy(*d);
+	mvar_free(*d);
     }
     m_free(s->value);
     free(s);
@@ -528,12 +530,12 @@ void mvar_free_cb( int *ctx, int p )
     v->var=0;
 }
 
-void mvar_destroy_all(void)
+void mvar_free_all(void)
 {
     ctx_destruct( &MVAR_MEM, mvar_free_cb );
 }
 
-void mvar_destroy(int p)
+void mvar_free(int p)
 {
     ctx_free( &MVAR_MEM, p-1, mvar_free_cb );
 }
@@ -611,7 +613,7 @@ int mvar_parse_path(int mp, int *group)
 
    
 */
-int map_lookup( int group, char *name, char *typename )
+int mvar_lookup( int group, char *name, char *typename )
 {
     /* find a variable with name=(group,name) */
     int p;
@@ -644,7 +646,7 @@ int map_lookup( int group, char *name, char *typename )
 }
 
 /* create a new anon-variable, t must be specified */ 
-int map_anon_create( int g, char *t )
+int mvar_anon( int g, char *t )
 {
     ASERR( !is_empty(t), "type must be specified" );
     /* make it easier to create unique names */
@@ -654,26 +656,30 @@ int map_anon_create( int g, char *t )
     do {
 	n++;
 	sprintf(buf, "€%lx", n );
-    } while( map_lookup( g, buf, NULL ) > 0 );
+    } while( mvar_lookup( g, buf, NULL ) > 0 );
     
-    return map_lookup(g,buf,t);
+    return mvar_lookup(g,buf,t);
 }
 
-int vset_create(void)
+int mvar_vset(void)
 {
-    return map_anon_create(0,"VSET");
+    return mvar_anon(0,"VSET");
 }
 
-int map_lookup_path( int mp, char *t )
+int mvar_lookup_path( int mp, char *t )
 {
     int p,g;
     p=mvar_parse_path(mp,&g);
     if( p < 0 ) return -1;
-    return map_lookup(g, mls(mp,p), t);
+    return mvar_lookup(g, mls(mp,p), t);
 }
 
-
-
+void mvar_destruct(void)
+{
+    mvar_free_all();
+    var_register_destroy();
+    var_callback_destroy();
+}
 
 void var_dump(int id)
 {
@@ -713,7 +719,7 @@ void var_dump(int id)
 int  mt( int g, char *s, char *t )
 {
     printf("lookup (%d:%s) %s: id=",g,s,t ? t : "null" );
-    int id = map_lookup( g,s,t );
+    int id = mvar_lookup( g,s,t );
     printf("%d\n", id );
     return id;
 }
@@ -722,7 +728,7 @@ int  mt( int g, char *s, char *t )
 void map_test(void)
 {
 
-    int vs = vset_create();    
+    int vs = mvar_vset();    
     printf("created vset: %d\n", vs );
 
     int x= mt( vs, "my-int", "INTEGER" );
@@ -745,8 +751,8 @@ void map_test(void)
     p=mvar_parse_path(mp,&g);
     printf("parsed: name=%s, group=%d\n", (char*)mls(mp,p), g );
 
-    int xx = map_lookup_path( mp, 0 );
-    printf("map_lookup_path returns: %d\n", xx);
+    int xx = mvar_lookup_path( mp, 0 );
+    printf("mvar_lookup_path returns: %d\n", xx);
     mt( vs, "my-int", 0 );
     mt( vs, "2nd-int", "INTEGER" );
     printf( "elements in %s: %d\n", m_str(mp), mvar_length(xx));
@@ -756,7 +762,7 @@ void map_test(void)
     var_dump(xx);
     var_dump(y);
 
-    mvar_destroy(vs);
+    mvar_free(vs);
     mt( vs, "hello", NULL );
     mt( vs, "hello1", NULL );
     (void)y;
@@ -774,7 +780,7 @@ void map_test(void)
     }
     
     var_dump( rec );
-    mvar_destroy( rec );
+    mvar_free( rec );
 }
 
 void cb1(void *c, int q)
@@ -787,10 +793,10 @@ void cb1(void *c, int q)
 
 void callback_test(void)
 {
-    int vs = vset_create(); 
-    int q1 = map_lookup(vs,"cb-test1", "INTEGER");
-    int q2 = map_lookup(vs,"cb-test2", "INTEGER");
-    int q3 = map_lookup(vs,"cb-test3", "INTEGER");
+    int vs = mvar_vset(); 
+    int q1 = mvar_lookup(vs,"cb-test1", "INTEGER");
+    int q2 = mvar_lookup(vs,"cb-test2", "INTEGER");
+    int q3 = mvar_lookup(vs,"cb-test3", "INTEGER");
 
     mvar_put_integer( q1, 101, -1 );
     mvar_put_integer( q2, 202, -1 );
@@ -807,7 +813,7 @@ void callback_test(void)
     var_call_callbacks(q2);
     var_call_callbacks(q3);
 
-    mvar_destroy( vs );
+    mvar_free( vs );
 }
 
 
@@ -848,7 +854,7 @@ void test1()
     mvar_put_string( z, "hello world" , 0);
     s = mvar_get_string( z, 0 );
     printf("stored string is: %s\n", s );
-    mvar_destroy(z);
+    mvar_free(z);
 
     // int p = mvar_create( "VSET" );
     // int *pvar = vset_get_value( mvar_get(p) );
@@ -857,9 +863,7 @@ void test1()
 
     callback_test();
     
-    mvar_destroy_all();
-    var_register_destroy();
-    var_callback_destroy();
+
 }
 
 
@@ -870,5 +874,7 @@ int main()
     m_init();
     trace_level=3;
     test1();
+
+    mvar_destruct();
     m_destruct();
 }
