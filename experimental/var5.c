@@ -15,6 +15,8 @@
 
 struct var_st;
 typedef struct var_st var_t; 
+typedef void (*varsig_t) (void*,int);
+
 
 struct var_if {
     int    (*put_string) ( var_t *v, char *s, int p );
@@ -40,6 +42,88 @@ struct var_st {
 
 void set_error(var_t *v, char *s ) {
 };
+
+int VAR_CALLBACK = 0;
+struct var_callback {
+    int var_id;
+    int signal, locked;
+};
+
+struct var_signal {
+    void *d;
+    varsig_t fn;
+};
+
+int callback_lookup_pos( int q )
+{
+    if(!VAR_CALLBACK) VAR_CALLBACK=m_create(1,sizeof(struct var_callback));
+    int p;
+    struct var_callback *cb;
+    m_foreach(VAR_CALLBACK,p,cb) {
+	if( cb->var_id == q ) return p;
+    }
+    cb = m_add(VAR_CALLBACK);
+    cb->var_id = q;
+    cb->signal=0; cb->locked=0;
+    return m_len(VAR_CALLBACK)-1;    
+}
+
+struct var_callback * callback_lookup( int q )
+{
+    int p = callback_lookup_pos( q );
+    return mls(VAR_CALLBACK,p);
+}
+
+void var_set_callback( int q, varsig_t fn, void *d, int remove )
+{
+    struct var_callback *ent = callback_lookup(q);
+    int p;
+    struct var_signal *sig;
+    
+    if(!ent->signal) ent->signal = m_create( 1, sizeof(struct var_signal));
+
+    /* finde signal und falls remove==TRUE entfernen */
+    m_foreach( ent->signal, p, sig ) {
+        if( sig->fn == fn && sig->d == d ) {
+            if( remove ) m_del(ent->signal,p);
+            return;
+        }
+    }
+    if( remove ) return;
+
+    /* signal noch nicht vorhanden, remove==FALSE, jetzt hinzufügen */
+    sig = m_add(ent->signal);
+    sig->d = d;
+    sig->fn = fn;
+}
+
+void var_call_callbacks( int q )
+{
+    struct var_callback *ent = callback_lookup(q);
+    if(! ent->signal ) return;
+
+    /* um rekursion zu verhindern wird signal blockiert */
+    if( ent->locked ) return;
+    ent->locked = 1;
+    
+    int p;
+    struct var_signal *sig;
+    m_foreach( ent->signal, p, sig ) {
+	if( sig->fn ) sig->fn( sig->d, q );
+    }
+    ent->locked = 0;
+}
+
+void var_callback_destroy(void)
+{
+    int p;
+    struct var_callback *ent;
+    m_foreach( VAR_CALLBACK, p, ent ) {
+	if( ent->signal ) m_free(ent->signal);
+    }
+    m_free(VAR_CALLBACK);
+    VAR_CALLBACK=0;
+}
 
 
 /* same as var_if */
@@ -342,6 +426,11 @@ void var_register_destroy(void)
     m_free(VAR_IF);    
 }
 
+int vreg_ifnum(char *name)
+{
+    return m_lookup_str(VAR_IF,name,1);
+}
+
 struct var_if *vreg_getif(uint8_t id)
 {
     return vreg_get(id)->fn;
@@ -349,12 +438,11 @@ struct var_if *vreg_getif(uint8_t id)
 
 struct var_if *var_register_lookup(char *name)
 {
-    int p=m_lookup_str(VAR_IF,name,1);
+    int p=vreg_ifnum(name);
     if( p < 0 )
 	ERR("could not find registerd class %s", name );
     return vreg_getif(p);
 }
-
 
 char* var_register_typename( int id )
 {
@@ -382,9 +470,12 @@ static inline var_t *mvar_get(int p )
 int mvar_create( char *type_name )
 {
     struct mvar_mem_st *v;
+    int ifnum = vreg_ifnum(type_name);
+    if( ifnum < 0 ) ERR("interface %s not defined", type_name);
     int p = ctx_init(&MVAR_MEM, 10, sizeof(*v) );
     v = mls(MVAR_MEM,p);
-    v->var = var_create( var_register_lookup(type_name) );    
+    v->var = var_create( vreg_getif(ifnum) );
+    v->var->var_if = ifnum;
     return p +1;
 }
 
@@ -542,6 +633,10 @@ int map_lookup_path( int mp, char *t )
 
 /* var5 interface 
 
+   init
+     var_register( &STRING_VAR_IF, "STRING", VAR_STRING );
+     var_register_destroy
+
    create anon variables:
      int id = map_anon_create(0, "VSET" );
 
@@ -549,27 +644,32 @@ int map_lookup_path( int mp, char *t )
      int  g = vset_create();
 
    find/create a variable
-     int id =  map_lookup( group,sname,stype );
-     int id =  map_lookup_path(mp,stype);
+     int q =  map_lookup( group,sname,stype );
+     int q =  map_lookup_path(mp,stype);
      int offs = mvar_parse_path(mp,&group);
+     mvar_destroy(q);
+     mvar_destroy_all
 
    read/write
-     mvar_put_string
-     mvar_get_string
-     mvar_put_integer
-     mvar_get_integer
+     mvar_put_string(q,s,p)
+     mvar_get_string(q,p)
+     mvar_put_integer(q,v,p)
+     mvar_get_integer(q,p)
 
    inspect
-     mvar_type
-     mvar_group
-     mvar_name
-     mvar_id
-     mvar_path
-     mvar_length
+     mvar_type(q)
+     mvar_group(q)
+     mvar_name(q)
+     mvar_id(q)
+     mvar_path(q)
+     mvar_length(q)
 
    signals
-     mvar_onchange 
+     var_set_callback( q1, cb1, ctx, 0 )
+     var_call_callbacks( q1 )
+     var_callback_destroy
 
+     
      
  */
 
@@ -634,11 +734,12 @@ void map_test(void)
     mt( vs+1, "hello", NULL  );
 
 
-    
+    printf("adding own-list to integer var %d\n", x );
     int y = mt( x, "own-list", "INTEGER" );
 
     int mp = mvar_path(x,0);
     printf("my-int full name: %s\n", m_str(mp) );
+
     int g,p;
     p=mvar_parse_path(mp,&g);
     printf("parsed: name=%s, group=%d\n", (char*)mls(mp,p), g );
@@ -659,8 +760,6 @@ void map_test(void)
     mt( vs, "hello1", NULL );
     (void)y;
 
-
-
     int rec = mt( 0, "my-record", "VSET" );
     int col, cols = 3;
     col = mt( rec, "userid", "INTEGER" );
@@ -677,7 +776,38 @@ void map_test(void)
     mvar_destroy( rec );
 }
 
+void cb1(void *c, int q)
+{
+    printf("callback for %d\n", q );
+    var_dump(q);
+    puts("leaving cb");
+}
 
+
+void callback_test(void)
+{
+    int vs = vset_create(); 
+    int q1 = map_lookup(vs,"cb-test1", "INTEGER");
+    int q2 = map_lookup(vs,"cb-test2", "INTEGER");
+    int q3 = map_lookup(vs,"cb-test3", "INTEGER");
+
+    mvar_put_integer( q1, 101, -1 );
+    mvar_put_integer( q2, 202, -1 );
+    mvar_put_integer( q3, 303, -1 );
+    
+    var_set_callback( q1, cb1, NULL, 0 );
+    var_set_callback( q2, cb1, NULL, 0 );
+    var_set_callback( q3, cb1, NULL, 0 );
+
+    var_set_callback( q1, cb1, NULL, 1 );
+    var_set_callback( q3, cb1, NULL, 1 );
+
+    var_call_callbacks(q1);
+    var_call_callbacks(q2);
+    var_call_callbacks(q3);
+
+    mvar_destroy( vs );
+}
 
 
 
@@ -723,11 +853,12 @@ void test1()
     // int *pvar = vset_get_value( mvar_get(p) );
 
     map_test();
-    
+
+    callback_test();
     
     mvar_destroy_all();
     var_register_destroy();
-    
+    var_callback_destroy();
 }
 
 
@@ -735,13 +866,8 @@ void test1()
 
 int main()
 {
-    struct base2 b1;
-    b1.x = 5;
-    b1.z = 10;
-    b1.mm = 100;
-    
     m_init();
-    trace_level=1;
+    trace_level=3;
     test1();
     m_destruct();
 }
