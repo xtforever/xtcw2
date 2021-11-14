@@ -5,19 +5,18 @@
 #include "mls.h"
 #include "ctx.h"
 
+#define VAR_INTEGER 0
 #define VAR_STRING 1
-#define VAR_INTEGER 2
-#define VAR_VSET 3
-#define VAR_REC 4
+#define VAR_VSET 2
+#define VAR_REC 3
 
-
+#define MAX_VAR 32
+#define MAX_VARNAME (MAX_VAR-4)
 
 struct var_st;
 typedef struct var_st var_t; 
 
 struct var_if {
-    int id;
-    int if_type;
     int    (*put_string) ( var_t *v, char *s, int p );
     char*  (*get_string) (var_t *v, int p);
     int    (*put_integer) ( var_t *v, long val, int p );
@@ -30,14 +29,14 @@ struct var_if {
 
 struct var_name {
     uint32_t group;
-    char name[29]; /* one padding zero */
+    char name[MAX_VARNAME+1]; /* one padding zero */
 };
 
-typedef struct var_st {
-    struct var_if *fn;
-    struct var_name name;
+typedef
+struct var_st {
+    uint8_t var_if;
+    struct var_name;
 } var_t;
-
 
 void set_error(var_t *v, char *s ) {
 };
@@ -45,23 +44,23 @@ void set_error(var_t *v, char *s ) {
 
 /* same as var_if */
 struct string_var_if {
-    struct var_if core;
+    struct var_if;
 };
 
 /* same as var_st but with extensions */
 struct string_var_st {
-    struct string_var_if *fn;
-    struct var_name name;
+    struct var_st;
     int lst;
 };
 typedef struct string_var_st string_var_t;
 
+/* later 
 char *string_get_string(var_t *v, int p)
 {
-    if( v->fn->if_type != VAR_STRING ) {
+    if( v->var_if != VAR_STRING ) {
 	set_error(v, "this isn't a string class");
 	return "";
-    }
+    }    
     string_var_t *s = (string_var_t*)v;
     return s->fn->core.get_string(v,p);
 }
@@ -75,6 +74,7 @@ int string_put_string(var_t *v, char *str, int p)
     string_var_t *s = (string_var_t*)v;
     return s->fn->core.put_string(v,str,p);
 }
+*/
 
 var_t *string_impl_create(void);
 void  string_impl_destroy(var_t *v);
@@ -83,15 +83,12 @@ int string_impl_put_string(var_t *v,char *str, int p);
 int string_impl_length(var_t *v);
 
 struct string_var_if STRING_VAR_IF = {
- .core = {
-    .if_type = VAR_STRING,
     .put_string = string_impl_put_string,
     .get_string = string_impl_get_string,
     .length     = string_impl_length,
     .create = string_impl_create,
     .destroy = string_impl_destroy
- }
- };
+};
 
 int string_impl_length(var_t *v)
 {
@@ -102,7 +99,6 @@ int string_impl_length(var_t *v)
 var_t *string_impl_create(void)
 {
     string_var_t *s = calloc(1, sizeof(string_var_t) );
-    s->fn = &STRING_VAR_IF;
     s->lst = m_create(2,sizeof(char*));
     return (var_t*) s;
 }
@@ -131,18 +127,16 @@ int string_impl_put_string(var_t *v,char *str, int p)
 
 /* same as var_if */
 struct integer_var_if {
-    struct var_if core;
+    struct var_if;
     char buffer[100];
 };
 
 /* same as var_st but with extensions */
+typedef 
 struct integer_var_st {
-    struct integer_var_if *fn;
-    struct var_name name;
+    struct var_st;
     int value;
-};
-
-typedef struct integer_var_st integer_var_t;
+} integer_var_t;
 
 var_t* integer_impl_create(void);
 void   integer_impl_destroy(var_t *v);
@@ -153,8 +147,6 @@ int    integer_impl_put_integer(var_t *v, long val, int p);
 int    integer_impl_length(var_t *v);
 
 struct integer_var_if INTEGER_VAR_IF = {
- .core = {
-    .if_type = VAR_INTEGER,
     .put_string = integer_impl_put_string,
     .get_string = integer_impl_get_string,
     .put_integer = integer_impl_put_integer,
@@ -162,13 +154,11 @@ struct integer_var_if INTEGER_VAR_IF = {
     .length      = integer_impl_length,
     .create = integer_impl_create,
     .destroy = integer_impl_destroy
- }
- };
+};
 
 var_t *integer_impl_create(void)
 {
     integer_var_t *s = calloc(1, sizeof(integer_var_t) );
-    s->fn = &INTEGER_VAR_IF;
     s->value=m_create(1,sizeof(long));
     return (var_t*) s;
 }
@@ -188,11 +178,11 @@ void integer_impl_destroy(var_t *v)
 
 char *integer_impl_get_string(var_t *v, int p)
 {
+    static char buffer[100];
     long val = integer_impl_get_integer(v,p);
-    integer_var_t *s = (integer_var_t*)v;
-    snprintf( s->fn->buffer, sizeof(s->fn->buffer),
+    snprintf( buffer, sizeof(buffer),
 	      "%ld", val );
-    return s->fn->buffer;    
+    return buffer;    
 }
 
 int integer_impl_put_string(var_t *v,char *str, int p)
@@ -231,27 +221,20 @@ int mvar_path(int id, int mp);
 #define vset_var_if integer_var_if
 
 /* same as integer_var_st  */
+typedef
 struct vset_var_st {
-    struct vset_var_if *fn;
-    struct var_name name;
-    int value;
-};
+    struct integer_var_st;
+} vset_var_t;
 
-typedef struct vset_var_st vset_var_t;
 struct vset_var_if VSET_VAR_IF = {
- .core = {
-    .if_type = VAR_VSET,
     .put_string = integer_impl_put_string,
     .get_string = vset_impl_get_string,
     .put_integer = integer_impl_put_integer,
     .get_integer = integer_impl_get_integer,
     .length = integer_impl_length,
-    .create =  vset_impl_create,
+    .create =  integer_impl_create,
     .destroy = vset_impl_destroy,
- }
- 
  };
-
 
 char *vset_impl_get_string(var_t *v, int p)
 {
@@ -275,119 +258,16 @@ void  vset_impl_destroy(var_t *v)
     free(s);
 }
 
-var_t *vset_impl_create(void)
-{
-    var_t *v = integer_impl_create();
-    v->fn = (struct var_if*)&VSET_VAR_IF;
-    return v;
-}
-
-
-
 /* -----------------------------------------------------------*/
 
-/* same as var_if */
-struct rec_var_if {
-    struct var_if core;
-    char buffer[100];
-};
-
-/* same as var_st but with extensions */
-struct rec_var_st {
-    struct rec_var_if *fn;
-    struct var_name name;
-    int lst;
-};
-
-typedef struct rec_var_st rec_var_t;
-
-var_t* rec_impl_create(void);
-void   rec_impl_destroy(var_t *v);
-char*  rec_impl_get_string(var_t *v, int p);
-int    rec_impl_put_string(var_t *v,char *str, int p);
-long   rec_impl_get_integer(var_t *v, int p);
-int    rec_impl_put_integer(var_t *v, long val, int p);
-int    rec_impl_length(var_t *v);
-int    rec_to_string (var_t *v, int buf, int p);
-
-struct rec_var_if REC_VAR_IF = {
- .core = {
-    .if_type = VAR_REC,
-    .put_string = rec_impl_put_string,
-    .get_string = rec_impl_get_string,
-    .put_integer = rec_impl_put_integer,
-    .get_integer = rec_impl_get_integer,
-    .length      = rec_impl_length,
-    .to_string   = rec_to_string,
-    .create = rec_impl_create,
-    .destroy = rec_impl_destroy
- }
- };
-
-var_t *rec_impl_create(void)
-{
-    rec_var_t *s = calloc(1, sizeof(rec_var_t) );
-    s->fn = &REC_VAR_IF;
-    s->lst=m_create(1,sizeof(int));
-    return (var_t*) s;
-}
-
-int rec_impl_length(var_t *v)
-{
-    rec_var_t *s = (rec_var_t*)v;
-    return m_len(s->lst); 
-}
-
-void rec_impl_destroy(var_t *v)
-{
-    rec_var_t *s = (rec_var_t*)v;
-    m_free(s->lst); 
-    free(s);
-}
-
-char *rec_impl_get_string(var_t *v, int p)
-{
-    long val = rec_impl_get_integer(v,p);
-    rec_var_t *s = (rec_var_t*)v;
-    
-    int mp = mvar_path(val,0);    
-    snprintf( s->fn->buffer, sizeof(s->fn->buffer),
-	      "%s", m_str(mp) );
-    m_free(mp);
-    return s->fn->buffer;    
-}
-
-int    rec_to_string (var_t *v, int buf, int p)
-{
-    return -1;
-}
-
-
-
-int rec_impl_put_string(var_t *v,char *str, int p)
-{
-    return rec_impl_put_integer(v,atol(str),p);
-}
-
-int rec_impl_put_integer(var_t *v, long value, int p)
-{
-    rec_var_t *s = (rec_var_t*)v;
-    if( p < 0 ) {
-	m_put(s->lst,&value);
-	return 0;
-    }
-    if( p >= m_len(s->lst) ) m_setlen(s->lst,p+1);
-    *(int *)mls(s->lst,p)=value;
-    return 0;
-}
-
-long rec_impl_get_integer(var_t *v, int p)
-{
-    rec_var_t *s = (rec_var_t*)v;
-    if( p >= m_len(s->lst) ) return -1;
-    return *(int *)mls(s->lst,p);
-}
 /* --------------------------------------------------------*/
+struct var_if *vreg_getif(uint8_t id);
+
+struct var_if *var_getif(var_t *v)
+{
+    return vreg_getif( v->var_if );
+}
+
 
 var_t *var_create( void *dfn )
 {
@@ -397,79 +277,88 @@ var_t *var_create( void *dfn )
 
 void var_destroy(var_t*v)
 {
-    v->fn->destroy(v);
+    var_getif(v)->destroy(v);
 }
 
 int var_put_string( var_t *v, char *s, int p )
 {
-    return v->fn->put_string ? v->fn->put_string(v,s,p) : -1;
+    struct var_if *fn = var_getif(v);
+    return fn->put_string ? fn->put_string(v,s,p) : -1;
 }
 char* var_get_string( var_t *v, int p )
 {
-    return v->fn->get_string ? v->fn->get_string(v,p) : "";
+    struct var_if *fn = var_getif(v);
+    return fn->get_string ? fn->get_string(v,p) : "";
 }
 long var_get_integer( var_t *v, int p )
 {
-    return v->fn->get_integer ? v->fn->get_integer(v,p) : -1;
+    struct var_if *fn = var_getif(v);
+    return fn->get_integer ? fn->get_integer(v,p) : -1;
 }
 int var_put_integer( var_t *v, long val, int p )
 {
-    return v->fn->put_integer ? v->fn->put_integer(v,val,p) : -1;
+    struct var_if *fn = var_getif(v);
+    return fn->put_integer ? fn->put_integer(v,val,p) : -1;
 }
 int var_length( var_t *v )
 {
-    return v->fn->length ? v->fn->length(v) : -1;
+    struct var_if *fn = var_getif(v);
+    return fn->length ? fn->length(v) : -1;
 }
 
 static int VAR_IF = 0;
-
 struct var_register_st {
-    int init;
     char *name;
     struct var_if *fn;
 };
 
-void var_register( void *funcs, char *name )
+struct var_register_st *vreg_get(int id)
 {
-    struct var_if *fn = (struct var_if *) funcs;
-    struct var_register_st *v;
-    int p = ctx_init(&VAR_IF, 10, sizeof(*v) );
-    v = mls(VAR_IF, p);
-    v->name = name;
-    v->fn = fn;
+    return mls(VAR_IF,id);
 }
 
-char* var_register_typename( int t )
+
+int  var_register( void *funcs, char *name, int id )
 {
-    int p;
-    struct var_register_st *d;
-    m_foreach( VAR_IF, p, d ) {
-	if( d->init ) {
-	    if( d->fn->if_type == t ) return d->name;
-	}
-    }
-    ERR("could not find registerd type %d", t);
-    return NULL; /* never reached */
-    
+    if( !VAR_IF ) VAR_IF=m_create(10,sizeof(struct var_register_st)); 
+    if( id >= m_len(VAR_IF)) m_setlen(VAR_IF, id+1);    
+    struct var_register_st *v = vreg_get(id);
+    v->name = strdup(name);
+    v->fn = funcs;
+    return id;
+}
+
+int  var_register_new( void *funcs, char *name )
+{
+    int id = m_len(VAR_IF);
+    return var_register( funcs,name,id);
 }
 
 
 void var_register_destroy(void)
 {
-    ctx_destruct( &VAR_IF, NULL );
+    int p; struct var_register_st *v;
+    m_foreach(VAR_IF,p,v) { free(v->name); }
+    m_free(VAR_IF);    
+}
+
+struct var_if *vreg_getif(uint8_t id)
+{
+    return vreg_get(id)->fn;
 }
 
 struct var_if *var_register_lookup(char *name)
 {
-    int p;
-    struct var_register_st *d;
-    m_foreach( VAR_IF, p, d ) {
-	if( d->init ) {
-	    if( strcmp(name,d->name) == 0 ) return d->fn;
-	}
-    }
-    ERR("could not find registerd class %s", name );
-    return NULL; /* never reached */
+    int p=m_lookup_str(VAR_IF,name,1);
+    if( p < 0 )
+	ERR("could not find registerd class %s", name );
+    return vreg_getif(p);
+}
+
+
+char* var_register_typename( int id )
+{
+    return vreg_get(id)->name;
 }
 
 
@@ -482,6 +371,7 @@ struct mvar_mem_st {
 
 static inline var_t *mvar_get(int p )
 {
+    ASERR(p>0,"var <=0: %d", p);
     return ((struct mvar_mem_st*)mls(MVAR_MEM,p -1)) -> var;
 }
 
@@ -534,17 +424,17 @@ long mvar_get_integer( int id, int p )
 }
 int mvar_type(int id)
 {
-    return mvar_get(id)->fn->if_type;
+    return mvar_get(id)->var_if;
 }
 int mvar_group(int id)
 {
-    return mvar_get(id)->name.group;
+    return mvar_get(id)->group;
 }
 
 /* dangerous - could be not null terminated */
 char* mvar_name(int id)
 {
-    return mvar_get(id)->name.name;
+    return mvar_get(id)->name;
 }
 
 int mvar_length(int id)
@@ -595,8 +485,8 @@ int map_lookup( int group, char *name, char *typename )
     struct mvar_mem_st *vm;
     m_foreach(MVAR_MEM,p,vm) {
 	if(! vm->init ||  ! vm->var ) continue; 
-	struct var_name *n = & vm->var->name;
-	if( n->group == group && strncmp(n->name,name,sizeof(n->name)) == 0 ) {
+	var_t *v = vm->var;
+	if( v->group == group && strncmp(v->name,name,sizeof(v->name)) == 0 ) {
 	    return p +1; /* never returns zero */
 	}
     }
@@ -607,8 +497,8 @@ int map_lookup( int group, char *name, char *typename )
     
     p = mvar_create(typename);
     var_t *v = mvar_get(p);
-    strncpy(v->name.name, name, sizeof(v->name.name)-1 );
-    v->name.group=group;    
+    strncpy(v->name, name, sizeof(v->name)-1 );
+    v->group=group;    
 
     /* a group-id equals variable-id, it's a container to for variables */
     if(group) {
@@ -770,9 +660,19 @@ void map_test(void)
     (void)y;
 
 
-    int rec = mt( 0, "my-record", "REC" );
-    mt( rec, "my-int", "INTEGER" );
-    mt( rec, "my-string", "STRING" );
+
+    int rec = mt( 0, "my-record", "VSET" );
+    int col, cols = 3;
+    col = mt( rec, "userid", "INTEGER" );
+    col = mt( rec, "name", "STRING" );
+    col = mt( rec, "age", "INTEGER" );
+
+    char *ent[3] = { "100", "jens", "42" };
+    for(int i=0;i<cols;i++) {
+	int var = mvar_get_integer(rec,i);
+	mvar_put_string( var, ent[i], -1 );
+    }
+    
     var_dump( rec );
     mvar_destroy( rec );
 }
@@ -794,6 +694,9 @@ void map_test(void)
 void test1()
 {
     puts("start");
+    var_register( &STRING_VAR_IF, "STRING", VAR_STRING );
+    var_register( &INTEGER_VAR_IF, "INTEGER", VAR_INTEGER );
+    var_register( &VSET_VAR_IF, "VSET", VAR_VSET );
    
     char *s;
     var_t *m;
@@ -809,10 +712,7 @@ void test1()
     printf("stored string is: %s\n", s );
     var_destroy( m );    
 
-    var_register( &STRING_VAR_IF, "STRING" );
-    var_register( &INTEGER_VAR_IF, "INTEGER" );
-    var_register( &VSET_VAR_IF, "VSET" );
-    var_register( &REC_VAR_IF, "REC" );
+    // var_register( &REC_VAR_IF, "REC", VAR_REC );
     int z = mvar_create( "STRING" );
     mvar_put_string( z, "hello world" , 0);
     s = mvar_get_string( z, 0 );
@@ -830,12 +730,18 @@ void test1()
     
 }
 
+
+    
+
 int main()
 {
+    struct base2 b1;
+    b1.x = 5;
+    b1.z = 10;
+    b1.mm = 100;
+    
     m_init();
     trace_level=1;
     test1();
     m_destruct();
 }
-
-
