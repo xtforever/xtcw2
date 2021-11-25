@@ -58,13 +58,16 @@
 
    var5 interface 
 
-   
+   types:
+     VAR_INTEGER 
+     VAR_STRING 
+     VAR_VSET 
 
    init
      mvar_init
 
    create anon variables:   
-     int id = mvar_anon(0, "VSET" );
+     int id = mvar_anon(0, VAR_VSET );
 
 
    create anon vset variables:
@@ -94,7 +97,7 @@
    signals
      var_set_callback( q1, cb1, ctx, 0 )			
      var_call_callbacks( q1 )
-     var_callback_destroy
+     var_callback_destroyv
 
      
      
@@ -107,11 +110,15 @@
 #include "ctx.h"
 #include "var5.h"
 
+#define HASH_SIZE (4*8)
+#define HASH_BITS 14
+#define HASH_TABLE_SIZE (1<<HASH_BITS)
+#define HASH_TABLE_MASK (HASH_TABLE_SIZE-1)
+int HASH_TABLE = 0;
+
 
 struct var_st;
 typedef struct var_st var_t; 
-
-
 
 struct var_if {
     int    (*put_string) ( var_t *v, char *s, int p );
@@ -124,16 +131,6 @@ struct var_if {
     void   (*destroy) (var_t *v);
 };
 
-struct var_name {
-    uint32_t group;
-    char name[MAX_VARNAME+1]; /* one padding zero */
-};
-
-typedef
-struct var_st {
-    uint8_t var_if;
-    struct var_name;
-} var_t;
 
 void set_error(var_t *v, char *s ) {
 };
@@ -192,7 +189,7 @@ void var_set_callback( int q, varsig_t fn, void *d, int remove )
     sig->fn = fn;
 }
 
-void var_call_callbacks( int q )
+void var_call_callbacks( int q, int s )
 {
     struct var_callback *ent = callback_lookup(q);
     if(! ent->signal ) return;
@@ -204,7 +201,7 @@ void var_call_callbacks( int q )
     int p;
     struct var_signal *sig;
     m_foreach( ent->signal, p, sig ) {
-	if( sig->fn ) sig->fn( sig->d, q );
+	if( sig->fn ) sig->fn( sig->d, q, s );
     }
     ent->locked = 0;
 }
@@ -526,11 +523,13 @@ int vreg_ifnum(char *name)
     return m_lookup_str(VAR_IF,name,1);
 }
 
+// find interface by id
 struct var_if *vreg_getif(uint8_t id)
 {
     return vreg_get(id)->fn;
 }
 
+// find interface by name
 struct var_if *var_register_lookup(char *name)
 {
     int p=vreg_ifnum(name);
@@ -546,93 +545,116 @@ char* mvar_name_of_type( int id )
 
 
 static int MVAR_MEM = 0;
+static int MVAR_FREE = 0;
 
-struct mvar_mem_st {
-    int init;
-    var_t *var;
-};
-
-static inline var_t *mvar_get(int p )
+var_t **mvar_get(int p )
 {
     ASERR(p>0,"var <=0: %d", p);
-    return ((struct mvar_mem_st*)mls(MVAR_MEM,p -1)) -> var;
+    return mls(MVAR_MEM,p -1);
+}
+
+int mvar_alloc( void )
+{
+    if( !MVAR_MEM ) {
+	MVAR_MEM = m_create( 10, sizeof(var_t*) );
+	MVAR_FREE = m_create(10, sizeof(int) );
+    }
+    int *id = m_pop(MVAR_FREE);
+    if(id) return *id;
+    return m_new(MVAR_MEM,1) +1;
+}
+
+void mvar_create_var( int id, int ifnum )
+{
+    ASSERT( id > 0 );
+    var_t **v = mvar_get(id);
+    if( ifnum < 0 ) ERR("interface %d not defined", ifnum );
+    *v = var_create(vreg_getif(ifnum) );
+    (*v)->var_if = ifnum;
+    TRACE(1,"new var %d : %s", id,  mvar_name_of_type(ifnum) );    
 }
 
 /* returns number of var +1, because that garanties 
    that var-number is never zero
    maybe a bad idea 
 */
-int mvar_create( char *type_name )
+int mvar_create( int id )
 {
-    struct mvar_mem_st *v;
-    int ifnum = vreg_ifnum(type_name);
-    if( ifnum < 0 ) ERR("interface %s not defined", type_name);
-    int p = ctx_init(&MVAR_MEM, 10, sizeof(*v) );
-    v = mls(MVAR_MEM,p);
-    v->var = var_create( vreg_getif(ifnum) );
-    v->var->var_if = ifnum;
-    TRACE(1,"new var %d : %s", p+1, type_name );
-    return p +1;
+    int p = mvar_alloc();
+    mvar_create_var( p, id );
+    return p;
 }
 
-void mvar_free_cb( int *ctx, int p )
+/* free mvar 
+   - remove from hash table
+   - remove from mvar_mem 
+   - put id in MVAR_FREE for reuse of this slot
+*/ 
+void mvar_free( int id )
 {
-    struct mvar_mem_st *v = mls(*ctx,p);
-    var_destroy(v->var);
-    v->var=0;
+    var_t **v = mvar_get(id);
+    var5_delete_hash( (*v)->group, (*v)->name  );
+    var_destroy( *v );
+    *v=0;
+    m_put(MVAR_FREE, &id );
 }
 
 void mvar_free_all(void)
 {
-    ctx_destruct( &MVAR_MEM, mvar_free_cb );
-}
-
-void mvar_free(int p)
-{
-    ctx_free( &MVAR_MEM, p-1, mvar_free_cb );
+    m_free(MVAR_FREE);
+    var_t **v; int p;
+    m_foreach( MVAR_MEM,p,v)
+	{
+	    if( *v ) var_destroy(*v);
+	}
+    m_free(MVAR_MEM);
+    MVAR_MEM=0;
+    MVAR_FREE=0;
 }
 
 int mvar_put_string( int id, char *s, int p )
 {
-    return var_put_string( mvar_get(id), s, p );
+    return var_put_string( *mvar_get(id), s, p );
 }
 char* mvar_get_string( int id, int p )
 {
-    return var_get_string( mvar_get(id), p );
+    return var_get_string( *mvar_get(id), p );
 }
 
 int mvar_put_integer( int id, long s, int p )
 {
-    return var_put_integer( mvar_get(id), s, p );
+    return var_put_integer( *mvar_get(id), s, p );
 }
 long mvar_get_integer( int id, int p )
 {
-    return var_get_integer( mvar_get(id), p );
+    return var_get_integer( *mvar_get(id), p );
 }
 int mvar_type(int id)
 {
-    return mvar_get(id)->var_if;
+    return (*mvar_get(id))->var_if;
 }
 int mvar_group(int id)
 {
-    return mvar_get(id)->group;
+    return (*mvar_get(id))->group;
 }
 
 /* dangerous - could be not null terminated */
 char* mvar_name(int id)
 {
-    return mvar_get(id)->name;
+    return (*mvar_get(id))->name;
 }
 
 int mvar_length(int id)
 {
-    return var_length( mvar_get(id) );
+    return var_length( *mvar_get(id) );
 }
 
 int mvar_path(int id, int mp)
 {
-    return s_printf(mp,0,"#%u.%.28s",
-		  mvar_group(id), mvar_name(id) );
+    char *s = mvar_name(id);
+    int g =  mvar_group(id);
+    
+    return s_printf(mp,0,"#%u.%.28s", g,s );
 }
 
 
@@ -663,23 +685,23 @@ static int next_dot(int m, int *p, int w)
     return -1;
 }
 
-int mvar_parse( int mp, char *typ )
+int mvar_parse( int mp, int type_id  )
 {
     int ch = CHAR(mp,0);
-    if( ch != '*' ) return mvar_lookup_path(mp,typ);
+    if( ch != '*' ) return mvar_lookup_path(mp,type_id);
 
     /* multi-point-parser */
     int id    =  0;
     int group =  0;
     int start =  1;
     int w     =  m_create(20,1);
-    char *t   =  "VSET";
+    int t     =  VAR_VSET;
     
     do {
 	m_clear(w);
 	ch = next_dot( mp, &start, w );
 	if( ch < 0 ) ERR("error parsing %s", m_str(mp));
-	if( ch == 0 ) t = typ;  
+	if( ch == 0 ) t = type_id;  
 	group = id;	
 	id = mvar_lookup(group, m_str(w), t);
 
@@ -704,42 +726,15 @@ int mvar_parse( int mp, char *typ )
 
    
 */
-int mvar_lookup( int group, char *name, char *typename )
+int mvar_lookup( int group, char *name, int type_id )
 {
-    /* find a variable with name=(group,name) */
-    int p;
-    struct mvar_mem_st *vm;
-    m_foreach(MVAR_MEM,p,vm) {
-	if(! vm->init ||  ! vm->var ) continue; 
-	var_t *v = vm->var;
-	if( v->group == group && strncmp(v->name,name,sizeof(v->name)) == 0 ) {
-	    return p +1; /* never returns zero */
-	}
-    }
-
-    if( !typename ) return -1;
-    /* if no variable is found and a typename provided */
-    /* create and init a new variable */
-    
-    p = mvar_create(typename);
-    var_t *v = mvar_get(p);
-    strncpy(v->name, name, sizeof(v->name)-1 );
-    v->group=group;    
-
-    /* a group-id equals variable-id, it's a container to for variables */
-    if(group) {
-	if( mvar_type(group) != VAR_VSET ) 
-	    WARN("Var: %d is not a VSET", group);
-	mvar_put_integer(group, p, -1);
-    }
-
-    return p;
+    return var5_lookup( group,name,type_id );    
 }
 
 /* create a new anon-variable, t must be specified */ 
-int mvar_anon( int g, char *t )
+int mvar_anon( int g, int t )
 {
-    ASERR( !is_empty(t), "type must be specified" );
+    ASERR( t>=0, "type must be specified" );
     /* make it easier to create unique names */
     static unsigned long n = 0;
     char buf[29] = { 0 };
@@ -747,17 +742,17 @@ int mvar_anon( int g, char *t )
     do {
 	n++;
 	sprintf(buf, "€%lx", n );
-    } while( mvar_lookup( g, buf, NULL ) > 0 );
+    } while( mvar_lookup( g, buf, -1 ) > 0 );
     
     return mvar_lookup(g,buf,t);
 }
 
 int mvar_vset(void)
 {
-    return mvar_anon(0,"VSET");
+    return mvar_anon(0,VAR_VSET);
 }
 
-int mvar_lookup_path( int mp, char *t )
+int mvar_lookup_path( int mp, int  t )
 {
     int p,g;
     p=mvar_parse_path(mp,&g);
@@ -783,3 +778,142 @@ void mvar_init(void)
     mvar_registry( &VSET_VAR_IF, "VSET", VAR_VSET );
 }
 
+/*        -------------------------------------------------------------------------------------       */
+/* var5 hashmap ------------------------------------------------------------------------------------- */
+// Dedicated to Pippip, the main character in the 'Das Totenschiff'
+// roman, actually the B.Traven himself, his real name was Hermann
+// Albert Otto Maksymilian Feige.  CAUTION: Add 8 more bytes to the
+// buffer being hashed, usually malloc(...+8) - to prevent out of
+// boundary reads!  Many thanks go to Yurii 'Hordi' Hordiienko, he
+// lessened with 3 instructions the original 'Pippip', thus:
+#define _PADr_KAZE(x, n) ( ((x) << (n))>>(n) )
+static uint32_t FNV1A_Pippip_Yurii(const char *str, size_t wrdlen)
+{
+	const uint32_t PRIME = 591798841; uint32_t hash32; uint64_t hash64 = 14695981039346656037UL;
+	size_t Cycles, NDhead;
+	if (wrdlen > 8) {
+		Cycles = ((wrdlen - 1)>>4) + 1; NDhead = wrdlen - (Cycles<<3);
+
+        	for(; Cycles--; str += 8) {
+			hash64 = ( hash64 ^ (*(uint64_t *)(str)) ) * PRIME;
+			hash64 = ( hash64 ^ (*(uint64_t *)(str+NDhead)) ) * PRIME;
+		}
+	} else {
+		hash64 = ( hash64 ^ _PADr_KAZE(*(uint64_t *)(str+0), (8-wrdlen)<<3) ) * PRIME;
+	}
+	hash32 = (uint32_t)(hash64 ^ (hash64>>32));
+	hash32 ^= (hash32 >> 16);
+	return hash32;
+} // Last update: 2019-Oct-30, 14 C lines strong, Kaze.
+
+
+inline static uint32_t simple_hash( void *buf )
+{
+    return  FNV1A_Pippip_Yurii( buf, HASH_SIZE ) & HASH_TABLE_MASK;
+}
+
+/** find or insert variable (buf) in hash-table (hash)
+    hash - list of integer
+    buf  - pointer to buffer with HASH_SIZE bytes
+ */ 
+inline static int hash_lookup( int hash, void *buf,
+		 int (*cmpf)(void *ctx, int pos, void *buf),
+		 int (*newf)(void *ctx, void *a), void *ctx  )
+{
+    int p, *d;
+    int hash_item;
+    uint32_t c = simple_hash(buf);     /* lookup key in hash-table */
+    int *hash_item_list = mls(hash, c); /* list of keys with same hash */
+
+    // new entry
+    if( *hash_item_list == 0 ) {
+	// insert new item-list in hash-table
+	*hash_item_list = m_create(1, sizeof(int) );
+	goto new_item;	
+    }
+
+    // entry found
+    // check if the same is already inside
+    if(cmpf) { 
+	m_foreach( *hash_item_list, p, d ) {
+	    if( cmpf(ctx, *d, buf) == 0 ) return *d;
+	}
+    }
+    
+ new_item:
+    // create new item in item-list in hash-table 
+    if( ! newf ) return -1;
+    hash_item = newf(ctx,buf);    
+    m_put(*hash_item_list, &hash_item);
+    return hash_item;
+}
+
+
+
+
+/** key2 points to the keybuffer that was presented to hash_lookup
+ *  key1 is the index of one already stored element in the hashmap
+ */
+int var5_compare_keys( void *ctx, int key1, void *key2 )
+{
+    var_t *v1 = *mvar_get(key1);
+    var_t *v2 = (var_t*) key2;
+    return
+	( v1->group == v2->group ) &&
+	( strncmp(v1->name,v2->name,MAX_VARNAME)==0 );
+}
+
+/** create a new variable  
+ *
+ * 
+ */
+int var5_create_var( void *ctx, void *keyptr )
+{
+    var_t *key = keyptr;
+    int typeid = (intptr_t)ctx;
+    int p = mvar_create( typeid );
+    var_t *v = *mvar_get(p);
+    memcpy(v->name, key->name, MAX_VARNAME  );
+    v->group=key->group;    
+
+    /* a group-id equals variable-id, it's a container to for variables */
+    if(key->group) {
+	if( mvar_type(v->group) != VAR_VSET ) 
+	    WARN("Var: %d is not a VSET", v->group);
+	mvar_put_integer(v->group, p, -1);
+    }
+    return p;
+}
+
+
+
+int var5_lookup( int group, char *name, int  typeid )
+{
+    if(!HASH_TABLE) {
+	HASH_TABLE=m_create( HASH_TABLE_SIZE, sizeof(int) );
+	m_setlen(HASH_TABLE,HASH_TABLE_SIZE );
+    }
+    
+    var_t v;
+    v.group = group;
+    strncpy( v.name, name, MAX_VARNAME );
+    return hash_lookup( HASH_TABLE, &v,
+			var5_compare_keys,
+			typeid >= 0 ? var5_create_var : NULL,
+			(void*)(intptr_t)typeid );	
+}
+
+void var5_delete_hash( int group, char *name )
+{
+    int p, *d;
+    int hash_item;
+    uint32_t c = simple_hash(buf);     /* lookup key in hash-table */
+    int *hash_item_list = mls(HASH_TABLE, c); /* list of keys with same hash */
+    m_foreach( *hash_item_list, p, d ) {
+	var_t *v1 = *mvar_get(key1);
+	if( v1->group == group && strncmp(v1->name,name, MAX_VARNAME)==0 ) {
+	    m_del( *hash_item_list, p);
+	    return;
+	}	   
+    }  
+}
