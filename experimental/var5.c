@@ -109,12 +109,15 @@
 #include "mls.h"
 #include "ctx.h"
 #include "var5.h"
+#include "m_tool.h"
 
 #define HASH_SIZE (4*8)
 #define HASH_BITS 14
 #define HASH_TABLE_SIZE (1<<HASH_BITS)
 #define HASH_TABLE_MASK (HASH_TABLE_SIZE-1)
 int HASH_TABLE = 0;
+int var5_lookup( int group, char *name, int  typeid );
+void var5_delete_hash( var_t *v );
 
 
 struct var_st;
@@ -593,60 +596,79 @@ int mvar_create( int id )
 void mvar_free( int id )
 {
     var_t **v = mvar_get(id);
-    var5_delete_hash( (*v)->group, (*v)->name  );
+    if( ! *v ) {
+	WARN("double-free Var %d", id);
+	return;
+    }
+    TRACE(2, "FREE %s", (**v).name );
+    var5_delete_hash( *v );
     var_destroy( *v );
     *v=0;
     m_put(MVAR_FREE, &id );
 }
 
-void mvar_free_all(void)
+static void mvar_free_all(void)
 {
+    int p = m_len(MVAR_MEM);
+    while( p ) {
+	if( *mvar_get(p) ) mvar_free(p);
+	p--;
+    }
+	
     m_free(MVAR_FREE);
-    var_t **v; int p;
-    m_foreach( MVAR_MEM,p,v)
-	{
-	    if( *v ) var_destroy(*v);
-	}
     m_free(MVAR_MEM);
     MVAR_MEM=0;
     MVAR_FREE=0;
 }
 
+
 int mvar_put_string( int id, char *s, int p )
 {
-    return var_put_string( *mvar_get(id), s, p );
+    var_t *v =  *mvar_get(id);
+    return ( v == NULL ) ? -1 : var_put_string( v, s, p );
 }
+
 char* mvar_get_string( int id, int p )
 {
-    return var_get_string( *mvar_get(id), p );
+    var_t *v =  *mvar_get(id);
+    return ( v == NULL ) ? "" : var_get_string( v, p );
 }
 
 int mvar_put_integer( int id, long s, int p )
 {
-    return var_put_integer( *mvar_get(id), s, p );
+    var_t *v =  *mvar_get(id);
+    return ( v == NULL ) ? -1 : var_put_integer( v, s, p );
 }
+
 long mvar_get_integer( int id, int p )
 {
-    return var_get_integer( *mvar_get(id), p );
+    var_t *v =  *mvar_get(id);
+    return ( v == NULL ) ? -1 : var_get_integer( v, p );
 }
+
 int mvar_type(int id)
 {
-    return (*mvar_get(id))->var_if;
+    var_t *v =  *mvar_get(id);
+    return ( v == NULL ) ? -1 : v->var_if; 
 }
+
 int mvar_group(int id)
 {
-    return (*mvar_get(id))->group;
+    var_t *v =  *mvar_get(id);
+    return ( v == NULL ) ? -1 : v->group;
 }
 
 /* dangerous - could be not null terminated */
 char* mvar_name(int id)
 {
-    return (*mvar_get(id))->name;
+    var_t *v =  *mvar_get(id);
+    return ( v == NULL ) ? "" : v->name;
 }
 
 int mvar_length(int id)
 {
-    return var_length( *mvar_get(id) );
+    var_t *v =  *mvar_get(id);
+    return  ( v == NULL ) ? -1 : var_length( v );
 }
 
 int mvar_path(int id, int mp)
@@ -685,6 +707,13 @@ static int next_dot(int m, int *p, int w)
     return -1;
 }
 
+
+
+/* specify a variable like a x11 resource
+   start with asterix *
+   each component will get type VSET
+   last component will get given type
+*/
 int mvar_parse( int mp, int type_id  )
 {
     int ch = CHAR(mp,0);
@@ -760,14 +789,12 @@ int mvar_lookup_path( int mp, int  t )
     return mvar_lookup(g, mls(mp,p), t);
 }
 
-
-
-
 void mvar_destruct(void)
 {
     mvar_free_all();
     var_register_destroy();
     var_callback_destroy();
+    m_free_list(HASH_TABLE);
 }
 
 
@@ -836,7 +863,7 @@ inline static int hash_lookup( int hash, void *buf,
     // check if the same is already inside
     if(cmpf) { 
 	m_foreach( *hash_item_list, p, d ) {
-	    if( cmpf(ctx, *d, buf) == 0 ) return *d;
+	    if( cmpf(ctx, *d, buf) ) return *d;
 	}
     }
     
@@ -851,16 +878,26 @@ inline static int hash_lookup( int hash, void *buf,
 
 
 
+inline static char cmp64( void *a, void *b )
+{
+    register uint64_t *u0 = a;
+    register uint64_t *u1 = b;
+    return (u0[0] == u1[0]) && (u0[1] == u1[1]) && (u0[2] == u1[2]) && (u0[3] == u1[3]);
+}
+
 /** key2 points to the keybuffer that was presented to hash_lookup
  *  key1 is the index of one already stored element in the hashmap
+ * returns: 1 if keys match, 0 if keys differ 
  */
 int var5_compare_keys( void *ctx, int key1, void *key2 )
 {
     var_t *v1 = *mvar_get(key1);
     var_t *v2 = (var_t*) key2;
-    return
-	( v1->group == v2->group ) &&
-	( strncmp(v1->name,v2->name,MAX_VARNAME)==0 );
+    return cmp64(v1,v2);
+
+    //    return
+    //	( v1->group == v2->group ) &&
+    //	( strncmp(v1->name,v2->name,MAX_VARNAME)==0 );
 }
 
 /** create a new variable  
@@ -903,17 +940,18 @@ int var5_lookup( int group, char *name, int  typeid )
 			(void*)(intptr_t)typeid );	
 }
 
-void var5_delete_hash( int group, char *name )
+void var5_delete_hash( var_t *v )
 {
     int p, *d;
-    int hash_item;
-    uint32_t c = simple_hash(buf);     /* lookup key in hash-table */
+    uint32_t c = simple_hash(v); /* lookup key in hash-table */
     int *hash_item_list = mls(HASH_TABLE, c); /* list of keys with same hash */
     m_foreach( *hash_item_list, p, d ) {
-	var_t *v1 = *mvar_get(key1);
-	if( v1->group == group && strncmp(v1->name,name, MAX_VARNAME)==0 ) {
+	var_t *v1 = *mvar_get(*d);
+	if( v1->group == v->group && strncmp(v1->name,v->name, MAX_VARNAME)==0 ) {
 	    m_del( *hash_item_list, p);
 	    return;
-	}	   
-    }  
+	}
+    }
 }
+
+

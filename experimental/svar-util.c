@@ -262,7 +262,7 @@ int svar_hash_lookup(int hash, void *buf,
  new_item:
     // create new item in item-list in hash-table 
     ASSERT(newf);
-    hash_item = newf(buf);    
+    hash_item = newf(ctx,buf);    
     m_put(hash_item_list, &hash_item);
     return hash_item;
 }

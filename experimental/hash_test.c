@@ -99,8 +99,10 @@ inline static uint32_t simple_hash( void *buf )
 }
 
 
-/** find or insert variable (buf) in hash-table (hash)    
- */
+/** find or insert variable (buf) in hash-table (hash)
+    hash - list of integer
+    buf  - pointer to buffer with HASH_SIZE bytes
+ */ 
 int hash_lookup( int hash, void *buf,
 		 int (*cmpf)(void *ctx, int pos, void *buf),
 		 int (*newf)(void *ctx, void *a), void *ctx  )
@@ -250,6 +252,9 @@ int lookup_sorted_keys( void *key )
     int pos = m_binsert( SORTED_KEYS, &ent, sk_cmp, 0 );
     return pos;
 }
+
+void  hash_add_mapping( char *(*getname(int id)), int id );
+int   hash_map( char *name );
 
 
 int main()

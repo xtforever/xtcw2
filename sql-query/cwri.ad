@@ -36,6 +36,7 @@ cwri.query: select custid, c.dbservid, a.srvid, concat(nfsserver,':',nfsbasedir)
 *l1.label: Kunde
 *l1.weightx: 1
 
+
 *ed.WcClass: WeditMV
 *ed.gridx: 1
 *ed.fill: Width
@@ -44,7 +45,8 @@ cwri.query: select custid, c.dbservid, a.srvid, concat(nfsserver,':',nfsbasedir)
 *ed.callback: edit_customername
 *ed.translations: #augment <Btn2Down>: insert_selection()
 *ed.cursorColor: #DDBABE
-*ed.background:  #F010E0
+%% *ed.background:  #F010E0
+%% *ed.background:  #1010E0
 %% cwri.vb.edx.ed.background:  #1010E0
 *ed.weightx: 100
 %% --------------------

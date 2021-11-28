@@ -39,6 +39,7 @@ static const char *Version="Version:$Id: mls.c,v 1.1.1.1 2010-02-12 08:04:52 jen
 //            lst_write bug: if m_len(m) and count=0 -> error
 // 2019-03-13 buffer overflow in deb_xxx better use vsnprintf :-)
 // 2021-05-11 m_next do nothing if list==0 
+// 2021-11-22 lst_resize - fill new memory with zero 
 // -----------------------------------------------------------------------------------------------------
 
 struct lst_owner_st {
@@ -141,6 +142,16 @@ int print_stacksize()
   return 0;
 }
 
+void* reallocz(void* pBuffer, size_t oldSize, size_t newSize) {
+  void* pNew = realloc(pBuffer, newSize);
+  if( !pNew ) ERR("could not realloc buffer");
+  if ( newSize > oldSize && pNew ) {
+    size_t diff = newSize - oldSize;
+    void* pStart = ((char*)pNew) + oldSize;
+    memset(pStart, 0, diff);
+  }
+  return pNew;
+}
 
 // returns: ptr to element i
 // R: NULL - index out of bounds
@@ -178,24 +189,23 @@ int lst_new(lst_t *LP, int n)
       max = len + n;
     int new_size = max * (**LP).w + sizeof(struct ls_st);
     int old_size = (**LP).max * (**LP).w + sizeof(struct ls_st);
-    *LP = (lst_t) realloc(*LP, new_size );
-    if( ! *LP ) ERR("Out Of Memory"); // return -1;
-    memset( ((void*)*LP) + old_size, 0, new_size - old_size );
+    *LP = (lst_t) reallocz(*LP, old_size, new_size );
     (**LP).max = max;
   }
   (**LP).l += n;
   return len;
 }
 
-void lst_resize(lst_t *LP, int new_size)
+void lst_resize(lst_t *LP, int new_len)
 {
   int len =  (**LP).l;
-  if( new_size < 0 ) ERR("need new_size>=0. but new_size=%d", new_size );
-
-  *LP = (lst_t) realloc(*LP, new_size * (**LP).w + sizeof(struct ls_st));
-  if( ! *LP ) ERR("Out Of Memory"); // return -1;
-  if( new_size < len ) (**LP).l = new_size;
-  (**LP).max = new_size;
+  if( new_len < 0 ) ERR("need new_size>=0. but new_size=%d", new_len );
+  int new_size = new_len * (**LP).w + sizeof(struct ls_st);
+  int old_size = (**LP).max * (**LP).w + sizeof(struct ls_st); 
+  if( new_size == old_size ) return;
+  *LP = (lst_t) reallocz(*LP, old_size, new_size );
+  (**LP).max = new_len;
+  if( new_len < len ) (**LP).l = new_len;
 }
 
 // append item
@@ -231,14 +241,15 @@ void* lst_ins( lst_t *lp, int p, int n )
   int cnt; void *src, *dst; lst_t l=*lp;
   if( (uint)p > (uint)l->l ) return NULL;
   if( l->l + n > l->max )
-    {    // Optimize resize if we resize by one
-      int new_max = l->l + n;
-      if( new_max - l->max == 1 ) new_max <<= 1;
-      l->max = new_max;
-      l=(lst_t)realloc(l,l->max*l->w+sizeof(struct ls_st));
-      if( !l) ERR("Could not realloc");
-      *lp=l;
-    }
+      {    // Optimize resize if we resize by one
+	int old_size = l->max*l->w+sizeof(struct ls_st);	
+	int new_max = l->l + n;
+	if( new_max - l->max == 1 ) new_max <<= 1;
+	l->max = new_max;
+	int new_size  = l->max*l->w+sizeof(struct ls_st);      
+	l=(lst_t)reallocz(l,old_size,new_size);
+	*lp=l;
+      }
   cnt = (l->l -p ) * l->w;
   l->l += n;
   src = lst(l,p);

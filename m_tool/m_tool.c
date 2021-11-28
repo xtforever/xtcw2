@@ -308,3 +308,11 @@ void m_free_stringlist(int m)
     m_free_user(m,free,0);
 }
 
+
+void m_concat(int a, int b)
+{
+    if(!a || !b) return;
+    int p; void *d;
+    m_foreach( b,p,d )
+	m_put( a,d );
+}

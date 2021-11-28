@@ -24,4 +24,6 @@ void m_clear_list(int m);
 void m_clear_stringlist(int m);
 void m_free_stringlist(int m);
 
+void m_concat(int a, int b);
+
 #endif

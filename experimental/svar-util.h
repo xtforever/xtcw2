@@ -51,15 +51,15 @@ typedef struct svexp_exp_st {
   int indices; // [int]
   int buf;
 } svexp_t;
-
+int svar_hash_lookup(int hash, void *buf,
+		     int (*cmpf)(void *a, void *b),
+		     int (*newf)(void *ctx, void *a), void *ctx
+		     );
 int m_copy(int dest, int destp, int src, int srcp, int src_count  );
 
 int s_strncpy(int dst, int src, int max);
 int s_strdup(int r, const char *str);
-int svar_hash_lookup(int hash, void *buf,
-		       int (*cmpf)(void *svar,void *b),
-		       int (*newf)(void *key)
-		     );
+
 
 int seperate_by_dot(char *dst, int src, int *start, int max);
 int compare_int(const void *a,const void *b);

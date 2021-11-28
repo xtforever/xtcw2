@@ -15,7 +15,7 @@
 
  {  "name" : "value", 
 
-
+*/
 
 
 
@@ -46,7 +46,7 @@ int main()
 	q[i] = create( names[i] );
     }
 
-    int status[4] = { 0 };
+    int status[5] = { 0 };
     for(i=0;i<10000;i++) {
 
 	int val = rand() % 10;

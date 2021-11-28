@@ -116,7 +116,7 @@ void map_test(void)
     col = mt( rec, "userid",VAR_INTEGER );
     col = mt( rec, "name",VAR_STRING );
     col = mt( rec, "age",VAR_INTEGER );
-
+    (void)col;
     char *ent[3] = { "100", "jens", "42" };
     for(int i=0;i<cols;i++) {
 	int var = mvar_get_integer(rec,i);
@@ -186,7 +186,8 @@ void print_g_id(char *s)
 {
     int v_path = s_printf(0,0, s );
     int var_id =  mvar_parse( v_path, -1 );
-    printf("Path=%s, id=%d, Spec=(%s,%d)\n", m_str(v_path), var_id, mvar_name(var_id), mvar_group(var_id) ); 
+    printf("Path=%s, id=%d, Spec=(%s,%d)\n", m_str(v_path), var_id, mvar_name(var_id), mvar_group(var_id) );
+    printf("Var: %s=%ld\n", mvar_name(var_id), mvar_get_integer( var_id, 0 ) );
     m_free(v_path);
 }
 
@@ -194,13 +195,14 @@ void print_g_id(char *s)
 void mvar_free_all();
 void  parsing_test( void )
 {
-    mvar_free_all();
-    /* create some test vars */
-    int q0 = mvar_lookup(0, "vs",VAR_VSET ); 
+        /* create some test vars */
+    int q0 = mvar_lookup(0, "vs",VAR_VSET );
     int q1 = mvar_lookup(0,  "global-1",VAR_INTEGER );
     int q2 = mvar_lookup(q0, "loc-1",VAR_INTEGER );
     int q3 = mvar_lookup(q0, "loc-2",VAR_INTEGER );
 
+    
+    
     /* should be id 1 */
 
     printf("id | name\n");
@@ -275,13 +277,13 @@ void cb2(void *c, int q)
 
 void db1()
 {
-    int q1 = var5_lookup(0,"cb-test1",VAR_VSET);
-    int q2 = var5_lookup(q1,"cb-test2",VAR_INTEGER);
+    int q1 = mvar_lookup(0,"cb-test1",VAR_VSET);
+    int q2 = mvar_lookup(q1,"cb-test2",VAR_INTEGER);
+    int q3 = mvar_lookup(0,"cb-test1",VAR_VSET);    
     var_dump(q1);
     var_dump(q2);
     mvar_free( q1 );
-    mvar_put_integer( );
-    
+    mvar_put_integer( q2, 0, -1 );
 }
 
 
@@ -351,18 +353,36 @@ void check_hash_speed( int seconds, int keys, int (*lookup)(void *)  )
 
 int hash_string_key( void *id )
 {
-    return var5_lookup( 0,id,VAR_STRING );    
+    return mvar_lookup( 0,id,VAR_STRING );    
 }
 
 void speed_test(void)
 {
     int keys = read_keys_from_file( "john.txt" );
     printf("number of keys: %d\n", m_len(keys) );
-    check_hash_speed(10,keys, hash_string_key);
+    check_hash_speed(5,keys, hash_string_key);
     m_free_list(keys);
 }
 
 
+
+
+void clash(void)
+{
+    int keys = read_keys_from_file( "john.txt" );
+    printf("number of keys: %d\n", m_len(keys) );
+    int max = Min(m_len(keys),  m_len(keys) );
+
+    int u=100; while(u--)
+    for(int i=0;i < max; i++ )
+	{
+	    char *s= m_str(INT(keys,i));
+	    int id = mvar_lookup( 0, s, VAR_STRING  );
+	    // printf("Lookup %s id=%d\n", s, id );
+	}
+    
+    m_free_list(keys); 
+}
 
 
 int main()
@@ -370,16 +390,18 @@ int main()
     m_init();
     
     #ifdef MLS_DEBUG 
-    #  define LVL 1
+    #  define LVL 3
     #else
     #  define LVL 0
     #endif
     trace_level=LVL;
     
     mvar_init();
-    db1();
-    // speed_test();
+    // db1();
+    // parsing_test();
+    clash();
+    speed_test();
     mvar_destruct();
-    m_free_list(HASH_TABLE);
+    //
     m_destruct();
 }
