@@ -1,0 +1,115 @@
+%%
+%% set default colors
+%%
+*foreground: #7F8C8D
+*background: #ECF0D1
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #FFFFFF
+*bg_norm: #1ACC9C
+*xftFont: "Source-Code-8"
+%% *borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+
+
+cwri.WcChildren: vb
+cwri.traceLevel: 1
+cwri.option_group: vb.opttest
+
+*vb.WcClass: GridBox
+*vb.WcChildren: ed5
+
+*ed5.WcClass: WeditV5
+*ed5.label: Hello World
+
+*vb.op.WcClass: Vbox
+*op1.WcClass: Woption
+*op2.WcClass: Woption
+*op3.WcClass: Woption
+*op4.WcClass: Woption
+
+*op1.group: vb.opttest
+*op2.group: vb.opttest
+*op2.act: 1
+*op3.group: vb.opttest
+*op4.group: vb.opttest
+*Woption.callback: option_cb
+*Woption.svar: result.options
+
+cwri.svar_result: result.options
+cwri.svar_all_results: result
+
+%% VBOX start
+*op.WcChildren: op1 op2 op3 op4 sw
+*op1.label: opt1
+*op1.value: optval1
+*op2.label: opt2
+*op2.value: optval2
+*op3.label: opt3
+*op3.value: optval3
+*op4.label: opt4
+*op4.value: optval4
+
+*sw.WcClass: Wswitch
+*sw.label_on:  ON
+*sw.label_off: OFF 
+*sw.value_on: set-Opt
+*sw.value_off: clear-opt
+*sw.svar: result.switch
+*sw.act: 1
+%% VBOX end
+
+%% input-verify label
+%% *inpv is used by cwri.c
+%% could this be used with svar?
+*vb.inpv.WcClass: Wlabel
+*vb.inpv.label: -undef-
+*vb.inpv.gridx: 0
+*vb.inpv.gridy: 1
+ 
+
+*ed.WcClass: WeditMV
+*ed.fontName: Noto Serif-14
+*ed.gridx: 1
+
+*ed1.textBuffer: myVariable
+*ed1.WcClass: WeditMV
+*ed1.fontName: Noto Serif-14
+*ed1.gridx: 1
+*ed1.textBuffer: myVariable1
+*ed1.gridy: 1
+*ed1.svar: result.ed1
+
+*dbt.wcClass: Wbutton
+*dbt.label: DUMP RESULTS
+*dbt.callback: result_dump_cb
+*dbt.gridy: 2
+*dbt.gridx: 0
+*dbt.gravity: Center
+*dbt.fill: Both
+*dbt.gridWidth: 2
+*dbt.heightIncreasePercent: 100
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 3
+*bt.gridx: 0
+*bt.gravity: Center
+*bt.fill: Both
+*bt.gridWidth: 2
+
+*ot1.gridy: 4
+*ot1.gridx: 0
+*ot1.WcClass: Radio2
+*ot1.lst: test1,test2,test3
+*ot1.svar: result.radio2
+*ot1.value: test2
+
+*ot2.gridy: 4
+*ot2.gridx: 0
+*ot2.WcClass: Wlabel
+*ot2.label: Hello
+
