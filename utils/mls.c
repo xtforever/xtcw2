@@ -37,9 +37,9 @@ static const char *Version="Version:$Id: mls.c,v 1.1.1.1 2010-02-12 08:04:52 jen
 // 2016-11-27 mstr_to_long
 // 2018-12-28 m_write, lst_write
 //            lst_write bug: if m_len(m) and count=0 -> error
-// 2019-03-13 buffer overflow in deb_xxx better use vsnprintf :-)
+// 2019-03-13 BUG: buffer overflow in deb_xxx better use vsnprintf :-)
 // 2021-05-11 m_next do nothing if list==0 
-// 2021-11-22 lst_resize - fill new memory with zero 
+// 2021-11-22 BUG: lst_resize - fill new memory with zero 
 // -----------------------------------------------------------------------------------------------------
 
 struct lst_owner_st {
@@ -142,7 +142,11 @@ int print_stacksize()
   return 0;
 }
 
-void* reallocz(void* pBuffer, size_t oldSize, size_t newSize) {
+/** this functions calls realloc and fills the newly allocated memory with zeros 
+ * in case realloc returns zero this exits with an error message 
+ */
+void* reallocz(void* pBuffer, size_t oldSize, size_t newSize)
+{
   void* pNew = realloc(pBuffer, newSize);
   if( !pNew ) ERR("could not realloc buffer");
   if ( newSize > oldSize && pNew ) {
