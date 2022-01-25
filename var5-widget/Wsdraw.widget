@@ -1,0 +1,234 @@
+@class Wsdraw(Core)
+@ Simple example for a drawing widget
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+
+@TRANSLATIONS
+@trans   <BtnDown>:     mouse_click()
+
+@ACTIONS
+@proc mouse_click
+{
+	unsigned int y = event->xbutton.y;
+	unsigned int x = event->xbutton.x;	
+
+	if( x < $width && y < $height ) {
+	    $obj.x = x;
+	    $obj.y = y;
+	    xsg_click(x,y);
+	}
+
+
+}
+
+
+@PUBLIC
+
+@var Distance default_width = <String> "130mm"
+@var Distance default_height = <String> "50mm"
+@var int lineWidth     = 1
+@var Pixel foreground  = <String> "White"
+
+
+@PRIVATE
+@def SPEED = 30
+@def BG = 0
+@def FG = 1
+@def CRSR = 2
+@var GC gc[3]
+@var Pixmap pix[2]
+@var int pix_width
+@var int pix_height
+@var XtIntervalId tmr
+@var int current_screen
+@var XRectangle obj
+
+
+@METHODS
+
+@proc initialize
+{
+  $pix_width=0;
+  $tmr=0;
+  $current_screen = 0;
+  create_gc($);
+  $obj.x = 0;
+  $obj.y = 0;
+  $obj.width  = 20;
+  $obj.height = 30;	
+  
+}
+
+
+@proc destroy
+{
+	stop_timer($);
+  	destroy_gc($);
+  	destroy_pixmaps($);
+	xsg_free();
+}
+
+
+@proc expose
+{
+	Display *dpy = XtDisplay($);
+	draw_scene($);
+}
+
+@proc realize
+{
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+  	resize_widget($);
+	start_timer($);
+}
+
+@proc resize
+{
+
+    if (XtIsRealized($)) resize_widget($);
+}
+
+
+@proc query_geometry
+{
+    int w,h;
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    w = reply->width =  $default_width;
+    h = reply->height = $default_height;
+    TRACE(2, "%s: our prefered size is %dx%d", XtName($),
+                  w,h );
+    return XtGeometryAlmost;
+}
+
+@UTILITIES
+
+@proc resize_widget($)
+{
+	create_pixmaps($);
+	xsg_init($);
+}
+
+@proc clear_pixmap($, Pixmap p )
+{
+	XFillRectangle(XtDisplay($),p,
+                       $gc[BG], 0,0, $pix_width, $pix_height );
+}
+
+@proc create_gc($)
+{
+
+  XGCValues     values = {
+  		foreground: $background_pixel,
+  		graphics_exposures: False,
+                line_width: $lineWidth };
+  uint mask = GCForeground | GCGraphicsExposures | GCLineWidth;
+  $gc[BG] = XtGetGC($, mask, &values);
+  values.foreground = $foreground;
+  $gc[FG] = XtGetGC($,mask,&values);
+}
+
+@proc destroy_gc($)
+{
+  XtReleaseGC($,$gc[FG]);
+  XtReleaseGC($,$gc[BG]);	
+}
+
+@proc create_pixmaps($)
+{
+	if( $width  == $pix_width &&
+	    $height == $pix_height ) return;
+
+	destroy_pixmaps($);
+
+	$pix_width = $width;
+	$pix_height = $height;
+	$pix[0] = XtCreatePixmap($,$width,$height);
+	$pix[1] = XtCreatePixmap($,$width,$height);
+	clear_pixmap($, $pix[0] );
+	clear_pixmap($, $pix[1] );	
+}
+
+@proc destroy_pixmaps($)
+{
+	if( $pix_width ) {
+	    XFreePixmap( XtDisplay($), $pix[0] );
+	    XFreePixmap( XtDisplay($), $pix[1] );
+	    $pix_width=0;
+	}
+}
+
+
+@proc start_timer($)
+{
+    if( $tmr ) return;
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000 / SPEED, 
+         (XtTimerCallbackProc)timer_cb, $);
+}
+
+@proc timer_cb($, XtIntervalId *id)
+{
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000 / SPEED, 
+          (XtTimerCallbackProc)timer_cb, $);
+
+    move_objects($);
+    render_scene($);
+
+    Pixmap p = $pix[ $current_screen ];	
+    xsg_render(p);
+
+    draw_scene($);
+}
+
+@proc stop_timer($)
+{
+   if( $tmr ) {
+     XtRemoveTimeOut($tmr);
+     $tmr=0;
+   }
+}
+
+@proc move_objects($)
+{
+
+    if( $obj.x + $obj.width < $width )
+       $obj.x++;
+    else $obj.x=0;
+}
+
+
+@proc render_scene($)
+{
+	$current_screen = ! $current_screen;
+	Pixmap p = $pix[ $current_screen ];
+	// TRACE(1, "drawing on %d", $current_screen );
+	clear_pixmap($,p);
+
+	XFillRectangle(XtDisplay($),p,
+	  $gc[FG], $obj.x, $obj.y, $obj.width, $obj.height );
+}
+
+@proc draw_scene($)
+{
+	// TRACE(1, "copy buffer %d to window", $current_screen );
+	Pixmap p = $pix[ $current_screen ];
+	XCopyArea(XtDisplay($),p, XtWindow($), $gc[BG],
+              0,0, $width, $height, /* source pixmap */
+              0,0 ); /* target window x,y */
+}
+
+@IMPORTS
+@incl <assert.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xaw/XawImP.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "var5.h"
+@incl "font.h"
+@incl "xsgame.h"

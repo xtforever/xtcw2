@@ -35,6 +35,7 @@
 #include "wcreg2.h"
 #include <xtcw/register_wb.h>
 #include "xtcw/WeditV5.h"
+#include "xtcw/Wsdraw.h"
 
 
 Widget TopLevel;
@@ -174,6 +175,7 @@ static void RegisterApplication ( Widget top )
     /* -- Register widget classes and constructors */
     // RCP( top, wbatt );
     RCP( top, weditV5 );
+    RCP( top, wsdraw );
 
     
     /* -- Register application specific actions */

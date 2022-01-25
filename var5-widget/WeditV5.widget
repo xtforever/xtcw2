@@ -65,7 +65,7 @@
 
 @CLASSVARS
 @var Atom XA_UTF8_STRING = 0
-
+ 
 @METHODS
 
 @proc initialize
