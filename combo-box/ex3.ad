@@ -1,0 +1,31 @@
+*xftFont: Sans-12
+*foreground: #ff0080
+*bg_norm: #333333
+*background: #333333
+*fg_sel: #999999
+*weightx: 1
+*weighty: 1
+
+
+ex3.wcChildren: gbx
+*gbx.wcClass: gridbox
+*gbx.wcChildren: ls2 ls t1 
+*gbx.borderWidth: 8
+
+*ls2.wcClass: WlistScroll
+*ls2.gridx: 0
+*ls2.gridy: 0
+*ls2.fill: Both
+*ls2.weightx: 1
+*ls2.weighty: 1
+*ls2.borderWidth: 2
+*ls2.borderColor: Blue
+*ls2.*.tabs: 8 8 8
+*ls2.*.titleBar: feld1~feld2~feld3~feld4
+
+
+*ls.wcClass: Wlabel
+*ls.wcManaged: false
+
+*t1.wcClass: Wlabel
+*t1.wcManaged: false
