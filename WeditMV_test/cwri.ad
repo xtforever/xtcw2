@@ -19,7 +19,7 @@ cwri.traceLevel: 1
 cwri.option_group: vb.opttest
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed op inpv ed1 dbt ot1 bt
+*vb.WcChildren: ed op inpv ed1 dbt ot1 ot2 bt
 *vb.op.WcClass: Vbox
 
 *op1.WcClass: Woption
@@ -105,8 +105,8 @@ cwri.svar_all_results: result
 *ot1.svar: result.radio2
 *ot1.value: test2
 
-*ot2.gridy: 4
+*ot2.gridy: 5
 *ot2.gridx: 0
-*ot2.WcClass: Wlabel
+*ot2.WcClass: Wls 
 *ot2.label: Hello
 

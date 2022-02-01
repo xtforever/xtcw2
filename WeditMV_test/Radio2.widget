@@ -53,6 +53,15 @@
 	    XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, $ );
 	}
 
+
+     XtVaCreateManagedWidget( "hello-world",
+                wlabelWidgetClass, $,
+                "gridy", 1,
+                "label", "hello-World",
+		"gridWidth", 3,
+                NULL );
+
+
 }
 
 @UTILITIES

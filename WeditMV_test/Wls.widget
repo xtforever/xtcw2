@@ -1,0 +1,83 @@
+@class Wls (Gridbox)
+@ listbox mit slider
+
+@PUBLIC
+@var StringMArray lst = <String> "Hello,World,who,are,you,tell,me"
+@var String svar = <String> "dummy"
+@var String value = <String> "dummy"
+@var <Callback> XtCallbackList callback  = NULL
+
+@PRIVATE
+
+
+@METHODS
+@proc initialize
+{
+	XtVaSetValues( $, "defaultDistance", 0,
+	"borderWidth", 0,
+	NULL );
+	
+        do_layout($);
+}
+
+@proc destroy
+{
+        m_free_strings($lst,0);
+}
+
+@UTILITIES
+@proc do_layout($)
+{
+	int act;
+        Widget w;
+        int i;
+        char *grid = "gridx";
+        for( i=0; i<$num_children;i++ )
+             XtDestroyWidget($children[0]);
+
+	XtVaCreateManagedWidget( "hello-world1",
+                wlabelWidgetClass, $,
+                "gridy", 1,
+                "label", "hello-World",
+		"gridWidth", 2,
+                NULL );
+
+	w = XtVaCreateManagedWidget( "hello-world2",
+                wlist4WidgetClass, $,
+                "gridx", 0,
+                "label", "hello-World",
+		"gridWidth", 1,
+		"weightx", 100,
+		"tableStrs", $lst,
+		"height", 120,
+                NULL );
+				
+
+	 w=XtVaCreateManagedWidget( "hello",
+                woptcWidgetClass, $,
+                "gridx", 1,
+                "label", "h",
+		"gridWidth", 1,
+		"weightx", 0,
+                NULL );
+
+	float frac = 0.1;
+	
+
+	
+}
+
+@UTILITIES
+@proc update_cb(Widget dummy, $, void *class_data )
+{
+	XtCallCallbackList( $, $callback, class_data );
+}
+
+@IMPORTS
+
+
+@incl "converters.h"
+@incl "mls.h"
+@incl <xtcw/Wlist4.h>
+@incl <xtcw/Wlabel.h>
+@incl "xtcw/Woptc.h"
