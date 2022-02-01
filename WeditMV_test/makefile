@@ -41,7 +41,7 @@ xtcw/%.h %.c: %.widget
 
 ALL: $(TARGET)
 
-$(TARGET): ClipView.o Woption.o WeditMV.o Wswitch.o Radio2.o opts.o svar2.o $(libdir)/libxtcw.a 
+$(TARGET): Wls.o Woptc.o WlistScroll.o ClipView.o Woption.o WeditMV.o Wswitch.o Radio2.o opts.o svar2.o m_tool.o $(libdir)/libxtcw.a 
 
 clean:
 	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex ClipView.c Wheel.c WeditMV.c Woption.c Radio2.c

@@ -38,6 +38,10 @@
 #include "xtcw/Woption.h"
 #include "xtcw/Wswitch.h"
 #include "xtcw/Radio2.h"
+#include "xtcw/Wls.h"
+#include "xtcw/Woptc.h"
+#include "xtcw/WlistScroll.h"
+
 
 Widget TopLevel;
 int trace_main;
@@ -276,6 +280,9 @@ static void RegisterApplication ( Widget top )
     RCP( top, woption );
     RCP( top, wswitch );
     RCP( top, radio2 );
+    RCP( top, wls );
+    RCP( top, woptc );
+    RCP( top, wlistScroll );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */

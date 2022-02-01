@@ -1,0 +1,98 @@
+@class WlistScroll (Gridbox)
+@ Listbox and Rectangle Slider
+
+@PUBLIC
+@var Distance      slwidth = <String> "3mm" 
+@var StringMArray  lines   = <String> "a1,b2,c3,d4"
+
+@PRIVATE
+@var Widget lb
+@var Widget sl
+@var int selection
+
+@METHODS
+@proc initialize
+{
+	printf("Hello %d\n", trace_level);
+	$sl = XtVaCreateManagedWidget( "button2", wbuttonWidgetClass, $,
+                                  "gridy", 2,
+                                  "gridx", 0,
+                                  "fill", 2,
+                                  "weighty", 1,
+                                  "weightx", 0,
+				  "gridWidth", 1,
+				  "gridHeight", 1,
+				  "width", $slwidth,
+                                  NULL );
+
+         XtAddCallback($sl, "callback",(XtCallbackProc)
+	 slider_cb, $ );
+
+	 $lb = XtVaCreateManagedWidget( "a", wbuttonWidgetClass, $,
+                                  "gridy", 1,
+                                  "gridx", 0,
+                                  "fill", 3,
+                                  "weighty", 1,
+                                  "weightx", 1,
+				  "tableStrs", $lines,
+                                  NULL );
+        XtAddCallback($lb, "notify",(XtCallbackProc) notify_cb, $ );	
+
+
+	 Widget w = XtVaCreateManagedWidget( "HelloWorld", wbuttonWidgetClass, $,
+	 	                  "gridy", 0,
+                                  "gridx", 0,
+                                  "fill", 3,
+                                  "weighty", 0,
+                                  "weightx", 1,
+                                  NULL );
+				  
+        XtAddCallback(w, "callback",(XtCallbackProc) slider_cb, $ );	
+	TRACE(1,"Init");
+}
+
+@proc resize
+{
+	TRACE(1,"");
+}
+	
+
+
+
+
+@UTILITIES
+
+@proc slider_cb(Widget w, $, void *d )
+{
+	TRACE(9,"HELLO");
+}
+
+@ called by Wlist4
+@proc notify_cb(Widget w, $, void *d )
+{
+	TRACE(1,"notify");
+	int lineno = (intptr_t)d;
+	if( lineno >= m_len($lines) ) lineno = 0;
+
+	printf("%d %s\n", lineno, STR($lines,lineno) );
+	if( $selection >= 0 )
+	    wlist4_set_line_state( $lb, $selection, 0 );
+	$selection=lineno;
+        wlist4_set_line_state( $lb, lineno, 1 );
+
+  	 XtCallActionProc($sl, "t1", NULL, NULL, 0 );
+}
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl <X11/Xmu/Converters.h>
+@incl "xtcw/Wlabel.h"
+@incl "xtcw/Wlist4.h"
+@incl "xtcw/Wbutton.h"
+@incl "mls.h"
+@incl "xutil.h"
+@incl <X11/Xaw/Command.h>
