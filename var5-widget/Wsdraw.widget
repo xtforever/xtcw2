@@ -108,7 +108,7 @@
 @proc resize_widget($)
 {
 	create_pixmaps($);
-	xsg_init($);
+	xsg_init($, $width, $height );
 }
 
 @proc clear_pixmap($, Pixmap p )

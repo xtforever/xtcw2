@@ -19,10 +19,18 @@ cwri.traceLevel: 1
 cwri.option_group: vb.opttest
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed5
+*vb.WcChildren: ed5 d1
 
 *ed5.WcClass: WeditV5
 *ed5.label: Hello World
+*ed5.weightx:0
+*ed5.weighty:0
+
+*d1.WcClass: Wsdraw
+*d1.gridx: 1
+*d1.default_width: 100mm
+*d1.default_height: 100mm
+
 
 *vb.op.WcClass: Vbox
 *op1.WcClass: Woption

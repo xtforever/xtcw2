@@ -42,7 +42,7 @@ xtcw/%.h %.c: %.widget
 
 ALL: $(TARGET)
 
-$(TARGET): WeditV5.o var5.o m_tool.o $(libdir)/libxtcw.a 
+$(TARGET): xsgame.o Wsdraw.o WeditV5.o var5.o m_tool.o $(libdir)/libxtcw.a 
 
 clean:
 	-${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex ClipView.c Wheel.c WeditMV.c Woption.c Radio2.c WeditV5.c

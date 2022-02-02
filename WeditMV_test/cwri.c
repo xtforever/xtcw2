@@ -39,6 +39,7 @@
 #include "xtcw/Wswitch.h"
 #include "xtcw/Radio2.h"
 #include "xtcw/Wls.h"
+#include "xtcw/Wlist.h"
 #include "xtcw/Woptc.h"
 #include "xtcw/WlistScroll.h"
 
@@ -281,6 +282,7 @@ static void RegisterApplication ( Widget top )
     RCP( top, wswitch );
     RCP( top, radio2 );
     RCP( top, wls );
+    RCP( top, wlist );
     RCP( top, woptc );
     RCP( top, wlistScroll );
     

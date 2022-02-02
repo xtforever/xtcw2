@@ -26,6 +26,18 @@ void mvar_destruct(void);
 void var_set_callback( int q, varsig_t fn, void *ctx, int remove );
 void var_call_callbacks( int q, int s );
 
+static inline void
+mvar_set_callback(int q, varsig_t fn, void *ctx, int remove )
+{
+    var_set_callback( q, fn, ctx, remove );
+}
+static inline void
+mvar_call_callbacks( int q, int s )
+{
+    var_call_callbacks( q,s);
+}
+
+
 void mvar_free(int p);
 int mvar_put_string( int id, char *s, int p );
 char* mvar_get_string( int id, int p );

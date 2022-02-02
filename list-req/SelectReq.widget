@@ -80,7 +80,7 @@
 				  "height", 500,
 				  "width", 500,
 				  NULL );				  
-        XtAddCallback(w, "notify",(XtCallbackProc) notify_cb, $ );	\
+        XtAddCallback(w, "notify",(XtCallbackProc) notify_cb, $ );	
 
 	TRACE(1, "line count: %d", m_len($lines) );
 }

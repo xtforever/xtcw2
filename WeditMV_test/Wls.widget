@@ -8,6 +8,8 @@
 @var <Callback> XtCallbackList callback  = NULL
 
 @PRIVATE
+@var Widget slider
+@var Widget list
 
 
 @METHODS
@@ -25,7 +27,27 @@
         m_free_strings($lst,0);
 }
 
+@proc expose
+{
+	adjust_slider_size($);	
+}
+
 @UTILITIES
+@proc adjust_slider_size($)
+{
+	int line_max; /* anzahl zeilen */
+	int list_height; /* sichtbarer bereich */
+	int line_height; /* pixel zeile */
+	int first_line; /* erste sichtbare zeile */
+	XtVaGetValues($list,
+		"line_max", &line_max,
+		"list_height", &list_height,
+		"line_height", &line_height,
+		"first_line", &first_line,
+		NULL );
+}
+
+
 @proc do_layout($)
 {
 	int act;
@@ -42,8 +64,8 @@
 		"gridWidth", 2,
                 NULL );
 
-	w = XtVaCreateManagedWidget( "hello-world2",
-                wlist4WidgetClass, $,
+	$list = XtVaCreateManagedWidget( "hello-world2",
+                wlistWidgetClass, $,
                 "gridx", 0,
                 "label", "hello-World",
 		"gridWidth", 1,
@@ -53,18 +75,13 @@
                 NULL );
 				
 
-	 w=XtVaCreateManagedWidget( "hello",
+	 $slider=XtVaCreateManagedWidget( "hello",
                 woptcWidgetClass, $,
                 "gridx", 1,
                 "label", "h",
 		"gridWidth", 1,
 		"weightx", 0,
                 NULL );
-
-	float frac = 0.1;
-	
-
-	
 }
 
 @UTILITIES
@@ -78,6 +95,6 @@
 
 @incl "converters.h"
 @incl "mls.h"
-@incl <xtcw/Wlist4.h>
+@incl "xtcw/Wlist.h"
 @incl <xtcw/Wlabel.h>
 @incl "xtcw/Woptc.h"

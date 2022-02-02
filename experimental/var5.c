@@ -609,7 +609,7 @@ void mvar_free( int id )
 
 static void mvar_free_all(void)
 {
-    int p = m_len(MVAR_MEM);
+    int p = MVAR_MEM ? m_len(MVAR_MEM) : 0;
     while( p ) {
 	if( *mvar_get(p) ) mvar_free(p);
 	p--;
@@ -757,7 +757,11 @@ int mvar_parse( int mp, int type_id  )
 */
 int mvar_lookup( int group, char *name, int type_id )
 {
-    return var5_lookup( group,name,type_id );    
+    int key = var5_lookup( group,name,type_id );
+    if(key < 0 && type_id >= 0) {
+	ERR("INTERNAL ERROR: could not create a var with name: %s and  type: %d", name, type_id );
+    }
+    return key;
 }
 
 /* create a new anon-variable, t must be specified */ 

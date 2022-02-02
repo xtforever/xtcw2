@@ -72,9 +72,18 @@ var compress_motion = True
 
 }
 
+100
+25
 
 
 @UTILITIES
+@proc set_slider_pos($, int vis, int max, int first)
+{
+	$frac = ( vis * 1.0 / max );
+	
+}
+
+
 @proc draw_slider($, int y)
 {
 	if(! XtIsRealized($) ) {
@@ -112,13 +121,10 @@ var compress_motion = True
 @actions
 @proc sl_motion
 {
-	TRACE(9,"Hello");
 	static float p;
 	int y = event->xbutton.y;
-		TRACE(9,"Hello");	
         draw_slider($,y);
-		TRACE(9,"Hello");
-        p = $sly * 1.0 / $height;
+	p = $sly * 1.0 / $height;
         if( p + $frac > 1.0 ) p = 1.0 - $frac;
         if( p < 0 ) p = 0;
         $pos = p;
@@ -129,6 +135,8 @@ var compress_motion = True
 {
 	TRACE(9,"Hello");
 }
+
+
 
 
 @exports

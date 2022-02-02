@@ -7,10 +7,6 @@
 #define  XtRDistance "Distance"
 #endif
 
-#ifndef  XtRStringArray
-#define  XtRStringArray "StringArray"
-#endif
-
 #ifndef  XtRStringMArray
 #define  XtRStringMArray "StringMArray"
 #endif

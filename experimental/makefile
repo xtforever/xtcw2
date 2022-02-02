@@ -1,6 +1,6 @@
 VPATH=../utils
 CFLAGS+=-fms-extensions
-#CC=gcc -I. -I../utils -ggdb -O0 -DMLS_DEBUG -Wall -fsanitize=address -fno-omit-frame-pointer
+CC=gcc -I. -I../utils -ggdb -O0 -DMLS_DEBUG -Wall -fsanitize=address -fno-omit-frame-pointer
 #CC=gcc -I. -I../utils -ggdb -O0 -Wall -fsanitize=address -fno-omit-frame-pointer 
 
 #enable profiler
@@ -8,7 +8,7 @@ CFLAGS+=-fms-extensions
 
 #CC=gcc -Wall -I. -I../utils  -O3 -march=znver2 
 #CC=gcc -Wall -I. -I../utils  -O3 -pg -march=znver2
-CC=gcc -Wall -I. -I../utils  -O3  -fomit-frame-pointer
+#CC=gcc -Wall -I. -I../utils  -O3  -fomit-frame-pointer
 LOADLIBES+=-lm
 
 T=var5-test hash_test geo1
