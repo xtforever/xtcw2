@@ -2,7 +2,7 @@
 @ listbox mit slider
 
 @PUBLIC
-@var StringMArray lst = <String> "Hello,World,who,are,you,tell,me"
+@var StringMArray lst = <String> "Hello,World,who,are,you,tell,me,you,could,speak,or,remain,silent,you,could,also,take,a,flight,to,miami"
 @var String svar = <String> "dummy"
 @var String value = <String> "dummy"
 @var <Callback> XtCallbackList callback  = NULL
@@ -10,13 +10,14 @@
 @PRIVATE
 @var Widget slider
 @var Widget list
-
+@var int list_height
+@var int ignore_cb
 
 @METHODS
 @proc initialize
 {
 	XtVaSetValues( $, "defaultDistance", 0,
-	"borderWidth", 0,
+	/* "borderWidth", 0, */
 	NULL );
 	
         do_layout($);
@@ -43,8 +44,18 @@
 		"line_max", &line_max,
 		"list_height", &list_height,
 		"line_height", &line_height,
-		"first_line", &first_line,
+		"top_y", &first_line,
 		NULL );
+
+	wls_set_slider_pos( $slider,
+	  list_height,
+	  line_max * line_height,
+	  first_line
+	);
+
+	$list_height = line_max * line_height;
+
+	TRACE(9, "%d %d %d %d", line_max, list_height,line_height,first_line  );
 }
 
 
@@ -73,7 +84,8 @@
 		"tableStrs", $lst,
 		"height", 120,
                 NULL );
-				
+		
+	XtAddCallback($list, "updatecb", (XtCallbackProc)list_changed_cb, $ );			
 
 	 $slider=XtVaCreateManagedWidget( "hello",
                 woptcWidgetClass, $,
@@ -82,12 +94,36 @@
 		"gridWidth", 1,
 		"weightx", 0,
                 NULL );
+
+	XtAddCallback($slider, "callback", (XtCallbackProc)slider_changed_cb, $ );
 }
 
 @UTILITIES
 @proc update_cb(Widget dummy, $, void *class_data )
 {
 	XtCallCallbackList( $, $callback, class_data );
+}
+
+@proc slider_changed_cb(Widget sender, $, void *class_data )
+{
+	if( $ignore_cb ) return;
+	float new_pos = *(float *) class_data;
+	TRACE(9, "list pos rel: %f", new_pos );
+
+	new_pos = $list_height * 1.0 * new_pos;
+	$ignore_cb = 1;
+	wlist_gotoxy($list,0, (int) new_pos );
+	$ignore_cb = 0;
+
+}
+
+
+@proc list_changed_cb(Widget sender, $, void *class_data )
+{
+	if( $ignore_cb ) return;
+	$ignore_cb = 1;
+	adjust_slider_size($);
+	$ignore_cb = 0;
 }
 
 @IMPORTS

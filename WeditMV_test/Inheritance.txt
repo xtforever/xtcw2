@@ -1,0 +1,21 @@
+
+These superclass-to-subclass
+ 
+class_part_initialize
+get_values_hook
+initialize
+initialize_hook
+set_values
+set_values_hook
+resources
+
+
+
+resources
+initialize
+set_values
+get_values_hook
+
+
+destroy
+actions

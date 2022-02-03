@@ -54,12 +54,16 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @var <XftColor> XftColor fg = <String> "White"
 @var <Callback> XtCallbackList notify   = NULL
 @var <Callback> XtCallbackList getEntry = NULL
+@var <Callback> XtCallbackList updatecb = NULL
 @var <Int> int line_distance = 2
 @var int top_x = 0
 @var int top_y = 0
 
 @ Die Anzahl Texzeilen pro Feld
         @var int multiline = 1
+
+@ Die Nummer der ersten sichtbaren Zeile 
+        @var int first_line = 0
 
 @ Die Anzahl der anzuzeigenden Zeilen
 
@@ -187,7 +191,7 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
       /* kein drag nur ein click */
       click:
-      XtCallCallbackList($, $notify, lineno );
+      XtCallCallbackList($, $notify, (XtPointer) (intptr_t)lineno );
       // toggle_line_state( $, lineno );
       goto reset_drag;
 
@@ -210,7 +214,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
 @proc select_line
 {
 	int lineno = translate_ypos_to_lineno($,event->xbutton.y );
-	XtCallCallbackList($,$notify,lineno);
+	XtCallCallbackList($,$notify,(XtPointer)(intptr_t)lineno);
 }
 
 
@@ -256,6 +260,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
 {
 	if( x >= 0 ) $top_x = x;
 	if( y >= 0 ) $top_y = y;
+	TRACE(9, "%d %d", $top_x, $top_y );
 	update_list($);
 }
 
@@ -570,6 +575,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   $buf.width  = $line_width;
   $buf.x = 0;
   $buf.y = 0;
+  $first_line=0;
 
   if( $pixmap ) XFreePixmap( $dpy, $pixmap );
   $pixmap = XCreatePixmap($dpy, XtWindow($), $buf.width, $buf.height,
@@ -637,7 +643,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   cur_buf_a = $buf.y / $line_height;	/* erste zeile */
   buf_a = $top_y / $line_height;        /* neue erste zeile */
   buf_d = buf_a - cur_buf_a;		/* abstand in zeilen */
-
+  $first_line = cur_buf_a;  
   if( buf_d == 0 ) goto update_all;
 
   if( buf_d > 0 ) {	/* neue erste zeile > puffer erste zeile */
@@ -674,11 +680,13 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
     	}
 
 	$buf.y = buf_a * $line_height; /* neue startposition setzen */
+	$first_line = buf_a;
 	return;
 	/*-----------------------------------------------------------------*/
 
 	update_all:
 	$buf.y = buf_a * $line_height;
+	$first_line = buf_a;
 	update_pixmap_complete($);
 	/*-----------------------------------------------------------------*/
 }
@@ -920,6 +928,8 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   XCopyArea($dpy,$pixmap,XtWindow($), $gc_copy,
             $top_x, $top_y - $buf.y, $width -2*bx, $height-by,
 	    bx, by );
+
+  XtCallCallbackList( $, $updatecb, NULL );
 }
 
 

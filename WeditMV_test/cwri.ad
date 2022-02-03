@@ -12,6 +12,11 @@
 %% -------------------
 *weightx: 1
 *weighty: 1
+*Woptc.background:   #1ACC9C
+*Woptc.foreground:   #0A9C6C
+*Woptc.borderWidth: 0
+*Wlist.borderWidth: 0
+
 
 
 cwri.WcChildren: vb
@@ -19,7 +24,7 @@ cwri.traceLevel: 1
 cwri.option_group: vb.opttest
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed op inpv ed1 dbt ot1 ot2 bt
+*vb.WcChildren: ed op inpv ed1 dbt ot1 ot2 ot3 bt
 *vb.op.WcClass: Vbox
 
 *op1.WcClass: Woption
@@ -109,4 +114,13 @@ cwri.svar_all_results: result
 *ot2.gridx: 0
 *ot2.WcClass: Wls 
 *ot2.label: Hello
+*ot2.borderColor: Blue
+*ot2.borderWidth: 8
+
+*ot3.gridy: 6
+*ot3.gridx: 0
+*ot3.WcClass: Wcombo 
+*ot3.label: Hello
+*ot3.borderColor: Blue
+*ot3.borderWidth: 8
 

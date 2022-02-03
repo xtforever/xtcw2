@@ -1,0 +1,168 @@
+@class Wcombo (Wlabel)
+@CLASSVARS
+@ The Core variable |compress_exposure| is OR'ed with
+|XtExposeGraphicsExpose|, in order to get graphics expose events delivered
+to the |expose| method.
+var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
+var compress_motion = True
+@var visible_interest = False
+
+
+@PUBLIC
+@var <Callback> XtCallbackList callback  = NULL
+
+@PRIVATE
+@var Widget shell
+@var int entry_mode 
+@var int filter
+
+
+@TRANSLATIONS
+@trans <Btn1Down>:     set_cursor() SetKeyboardFocus()
+@trans <Key>Return:    notify()
+@trans <Key>BackSpace: remove_char()
+@trans <Key>:          insert_char()
+@trans <FocusIn>:      focus_in() 
+@trans <FocusOut>:     focus_out()
+
+
+@METHODS
+@proc initialize
+{
+	TRACE(2, "init" );
+	$shell = 0;
+	$entry_mode=0;
+	$filter = m_create(200,1);
+}
+
+@proc destroy
+{
+	m_free( $filter ); 
+}
+
+
+@UTILITIES
+@proc open_popup($)
+{
+	if( $entry_mode ) return;
+	if( ! $shell ) {
+	    $shell = XtCreatePopupShell ( "combo_shell", overrideShellWidgetClass,
+                                  $, NULL, 0 );
+    	    Widget w = XtVaCreateManagedWidget ( "list", wlsWidgetClass,
+				       $shell,
+				       "lines", 0,
+				       NULL );
+	    XtRealizeWidget($shell);
+	    static Atom wm_delete_window;
+    	    wm_delete_window = XInternAtom(XtDisplay($), "WM_DELETE_WINDOW",
+                                   False);
+    	    (void) XSetWMProtocols (XtDisplay($), XtWindow($shell),
+                            &wm_delete_window, 1);
+	}
+
+	Position root_x, root_y;
+	XtTranslateCoords($, 0, $height + $border_width, &root_x, &root_y);
+	XtVaSetValues($shell, "x", (int) root_x, "y", (int) root_y, NULL );	
+	XtPopup($shell, XtGrabNone);
+	$entry_mode=1;
+	m_clear($filter);
+}
+
+
+@proc update_filter($)
+{
+    fwrite( m_buf($filter), m_len($filter),1,stdout); putchar(10);
+    m_putc($filter,0); m_pop($filter);
+    XtVaSetValues($, "label", m_str($filter), NULL );
+}
+
+@ACTIONS
+
+@ params: ($, XEvent *event _X_UNUSED, String *params _X_UNUSED, Cardinal *num_params _X_UNUSED)
+@proc SetKeyboardFocus
+{
+    TRACE(2,"try to set keyboard focus");
+    Widget shell, parent;
+
+    shell = parent = $;
+    while (parent) {
+        if (XtIsShell(shell = parent))
+            break;
+        parent = XtParent(parent);
+    }
+    
+    XtSetKeyboardFocus(shell, $);
+}
+
+	
+@proc set_cursor
+{
+	if( $entry_mode ) return;
+	TRACE(2,"open");
+	open_popup($);
+}
+
+@proc insert_char
+{
+    if( ! $entry_mode ) return;
+    int len;
+    unsigned char buf[32];
+    KeySym key_sim;
+
+    len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
+    if (len <= 0) return;
+    TRACE(2,"ins %d %d", *buf, len);
+    m_write( $filter, m_len($filter), buf, len );
+    update_filter($);
+    
+}
+
+@proc remove_char
+{
+	if( ! $entry_mode ) return;
+	char ch;
+	TRACE(2,"del");
+	while( m_len($filter) ) {
+	   ch = *(char*)m_pop($filter);
+	   if(  ((ch & 0xC0) != 0xC0)  ) break;
+	} 
+    	update_filter($); 
+
+}
+
+@proc focus_in
+{
+	TRACE(2, "Wcombo %s got focus", XtName($));
+}
+
+@proc focus_out
+{
+	TRACE(2, "Wcombo %s lost focus", XtName($));
+}
+
+@proc notify
+{
+	TRACE(2, "Wcombo %s notify: entry_mode %d", XtName($), $entry_mode );
+	if( ! $entry_mode ) return;
+	XtPopdown($shell);
+	$entry_mode=0;
+	// call callbacks
+
+	
+}
+
+
+@IMPORTS
+@incl "mls.h"
+@incl "converters.h"
+@incl <X11/Shell.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xmu/Converters.h>
+@incl "xutil.h"
+@incl "xtcw/Wls.h"

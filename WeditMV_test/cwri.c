@@ -41,6 +41,7 @@
 #include "xtcw/Wls.h"
 #include "xtcw/Wlist.h"
 #include "xtcw/Woptc.h"
+#include "xtcw/Wcombo.h"
 #include "xtcw/WlistScroll.h"
 
 
@@ -285,6 +286,7 @@ static void RegisterApplication ( Widget top )
     RCP( top, wlist );
     RCP( top, woptc );
     RCP( top, wlistScroll );
+    RCP( top, wcombo );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */

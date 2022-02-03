@@ -8,6 +8,7 @@
 @var float frac = <String> "0.1"
 @var float pos = <String> "0.1"
 @var <Callback> XtCallbackList callback   = NULL
+@var Distance sliderWidth = <String> "4mm"
 
 @PRIVATE
 @var GC gc_background
@@ -24,6 +25,22 @@ to the |expose| method.
 var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
 var compress_motion = True
 @var visible_interest = False
+
+
+
+@exports
+@proc void wls_set_slider_pos(Widget w, int vis, int max, int first )
+{
+  WoptcWidgetClass wc = (WoptcWidgetClass)XtClass(w);
+  if( XtIsSubclass( w, woptcWidgetClass) )
+    {
+       set_slider_pos(w,vis,max,first);
+    }
+}
+
+
+
+
 @METHODS
 @proc initialize
 {
@@ -35,7 +52,7 @@ var compress_motion = True
   $gc_background = XtGetGC($, mask, &values);
   values.foreground = $foreground; 
   $gc_fg = XtGetGC($,mask,&values);
-  if( $width == 0 ) $width=10;
+  if( $width == 0 ) $width=$sliderWidth;
   if( $height == 0 ) $height=10;
   $resize = 1;
   $sly = 0;
@@ -43,17 +60,7 @@ var compress_motion = True
 
 @proc set_values
 {
-  int y;
-  if( $old$pos != $pos ) {
-      if( $pos < 0 ) $pos = 0;
-      if( $pos > 1.0 ) $pos = 1.0;
-      y = $height * $pos;
-      draw_slider($,y);
-  }
-
-  if( $old$frac != $frac ) return True;
-
-  return False;
+  return True; /* redraw */
 }
 
 
@@ -67,49 +74,60 @@ var compress_motion = True
 @proc expose
 {
   XClearWindow( XtDisplay($), XtWindow($) );
-  int y = $sly; $sly=-1;
-  draw_slider($, y );
-
+  $slh=0; /* do not undraw slider */
+  draw_slider($, $pos * $height );
 }
-
-100
-25
 
 
 @UTILITIES
 @proc set_slider_pos($, int vis, int max, int first)
 {
 	$frac = ( vis * 1.0 / max );
+	$pos  = first * 1.0 / max;
+	int y = $height * $pos;
+	draw_slider($,y);
 	
 }
 
-
 @proc draw_slider($, int y)
 {
+
 	if(! XtIsRealized($) ) {
 
 	     TRACE(9, "Widget is gone" );
 	};
 
+	/* compute new slider position (y) and size (h) */ 
+	if( y < 0 ) y = 0;
+        if( $frac <= 0 || $frac > 1 ) $frac = .1;	
 	TRACE(9, "frac:%f y:%d", $frac,y );
 
         int h;
-        if( $frac <= 0 || $frac > 1 ) $frac = .1;
         h = $height * $frac;
-        if( y < 0 ) y = 0;
-        if( h > $height ) h = $height;
-        if( y+h > $height ) y = $height-h;
-        if( $sly >= 0) {
-            if( $sly == y && $slh == h ) return;
-            XFillRectangle(XtDisplay($), XtWindow($),$gc_background,
+        if( y+h > $height ) y = Max(0,$height-h);
+	TRACE(9, "height:%d sl-height:%d top:%d", $height, h, y);
+	if( y == $sly && $slh == h ) return;
+
+
+	
+	/* undraw old slider */
+        if( $sly >= 0 && $slh > 0 ) {
+             XFillRectangle(XtDisplay($), XtWindow($),$gc_background,
                              0,$sly,$width, $slh );
         }
 
+	/* draw slider at Pos: (0,$sly) */
         $sly = y; $slh = h;
+	TRACE(9, "height:%d sl-height:%d top:%d", $height, h, $sly);
         XFillRectangle(XtDisplay($), XtWindow($),$gc_fg,
                              0,$sly,$width, $slh );
 
-	TRACE(9, "%d %d %d", $sly, $width, $slh );
+
+	/* compute relative position 0..1 */		     
+	float p = $sly * 1.0 / $height;
+        if( p + $frac > 1.0 ) p = 1.0 - $frac;
+        if( p < 0 ) p = 0;
+        $pos = p;
 }
 
 @translations
@@ -123,12 +141,10 @@ var compress_motion = True
 {
 	static float p;
 	int y = event->xbutton.y;
+	TRACE(9, "%d", y );
         draw_slider($,y);
-	p = $sly * 1.0 / $height;
-        if( p + $frac > 1.0 ) p = 1.0 - $frac;
-        if( p < 0 ) p = 0;
-        $pos = p;
-        XtCallCallbackList( $, $callback, (XtPointer) & ($pos) );
+        XtCallCallbackList( $, $callback, (XtPointer) & ($pos) );	
+	TRACE(9, "leave cb" );
 }
 
 @proc t1
@@ -137,7 +153,6 @@ var compress_motion = True
 }
 
 
-
-
 @exports
 @incl "mls.h"
+@incl "converters.h"
