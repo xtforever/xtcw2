@@ -25,12 +25,25 @@
 
 @proc destroy
 {
-        m_free_strings($lst,0);
+	/* memleak intentionally */
+	/* m_free_strings($lst,0); */
 }
 
 @proc expose
 {
-	adjust_slider_size($);	
+	adjust_slider_size($);
+}
+
+@proc set_values
+{
+    int n = *num_args;
+    int do_expose = 0;
+    TRACE(2, "Wls widget %s", XtName($) );
+    while( n-- )  {
+	if(strncmp( args[n].name, "lst",3 ) == 0 ) {
+              XtVaSetValues( $list, "tableStrs", $lst, NULL );
+        }
+    }
 }
 
 @UTILITIES
@@ -68,14 +81,14 @@
         for( i=0; i<$num_children;i++ )
              XtDestroyWidget($children[0]);
 
-	XtVaCreateManagedWidget( "hello-world1",
+	XtVaCreateManagedWidget( "combo-label",
                 wlabelWidgetClass, $,
                 "gridy", 1,
                 "label", "hello-World",
 		"gridWidth", 2,
                 NULL );
 
-	$list = XtVaCreateManagedWidget( "hello-world2",
+	$list = XtVaCreateManagedWidget( "combo-list",
                 wlistWidgetClass, $,
                 "gridx", 0,
                 "label", "hello-World",
@@ -85,9 +98,9 @@
 		"height", 120,
                 NULL );
 		
-	XtAddCallback($list, "updatecb", (XtCallbackProc)list_changed_cb, $ );			
+	XtAddCallback($list, "updatecb", (XtCallbackProc)list_changed_cb, $ );			    XtAddCallback($list, "notify", (XtCallbackProc)list_select_cb, $ );
 
-	 $slider=XtVaCreateManagedWidget( "hello",
+	 $slider=XtVaCreateManagedWidget( "combo-slider",
                 woptcWidgetClass, $,
                 "gridx", 1,
                 "label", "h",
@@ -99,8 +112,9 @@
 }
 
 @UTILITIES
-@proc update_cb(Widget dummy, $, void *class_data )
+@proc list_select_cb(Widget dummy, $, void *class_data )
 {
+	TRACE(2,"");
 	XtCallCallbackList( $, $callback, class_data );
 }
 
@@ -114,9 +128,7 @@
 	$ignore_cb = 1;
 	wlist_gotoxy($list,0, (int) new_pos );
 	$ignore_cb = 0;
-
 }
-
 
 @proc list_changed_cb(Widget sender, $, void *class_data )
 {

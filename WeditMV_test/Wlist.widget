@@ -254,7 +254,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
 }
 
 
-@ die |gotoxy| Funktion stellt die Liste ab Pos (x,y) im Fenster dar.
+@ die |gotoxy| Funktion stellt die Liste ab Pixel Pos (x,y) im Fenster dar.
 
 @proc gotoxy( $, int x, int y)
 {
@@ -406,6 +406,9 @@ zusätzlich wird der |notify| Handler aufgerufen.
 @proc set_values
 {
 	int n = *num_args;
+
+
+	TRACE(2, "Wlist Widget %s", XtName($) );
 
 	/* wenn farben, font, zeilen-daten geändert worden sind,
            muss der cache aktualisiert werden

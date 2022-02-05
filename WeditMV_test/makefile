@@ -41,7 +41,9 @@ xtcw/%.h %.c: %.widget
 
 ALL: $(TARGET)
 
-Wls.o: Woptc.c Wlist.c xtcw/Woptc.h
+Wls.o: Woptc.c Wlist.c xtcw/Woptc.h xtcw/Wlist.h
+
+Wcombo.o: Wls.o
 
 $(TARGET): Wls.o Wlist.o Woptc.o Wcombo.o WlistScroll.o ClipView.o Woption.o WeditMV.o Wswitch.o Radio2.o opts.o svar2.o m_tool.o $(libdir)/libxtcw.a 
 

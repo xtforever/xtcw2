@@ -3,19 +3,19 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 937 "Wlist.widget"
-#include <assert.h>
-#line 938 "Wlist.widget"
-#include <math.h>
-#line 939 "Wlist.widget"
-#include <X11/Xft/Xft.h>
 #line 940 "Wlist.widget"
-#include "xutil.h"
+#include <assert.h>
 #line 941 "Wlist.widget"
-#include "Wlist-common.h"
+#include <math.h>
 #line 942 "Wlist.widget"
-#include "mls.h"
+#include <X11/Xft/Xft.h>
 #line 943 "Wlist.widget"
+#include "xutil.h"
+#line 944 "Wlist.widget"
+#include "Wlist-common.h"
+#line 945 "Wlist.widget"
+#include "mls.h"
+#line 946 "Wlist.widget"
 #include "converters.h"
 #include <xtcw/WlistP.h>
 #line 127 "Wlist.widget"
@@ -147,178 +147,178 @@ static Boolean  set_values(
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 443 "Wlist.widget"
+#line 446 "Wlist.widget"
 static void scroll_up_lines(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 457 "Wlist.widget"
+#line 460 "Wlist.widget"
 static void scroll_down_lines(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 470 "Wlist.widget"
+#line 473 "Wlist.widget"
 static String  get_line_intern(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 483 "Wlist.widget"
+#line 486 "Wlist.widget"
 static String  get_line_str(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 498 "Wlist.widget"
+#line 501 "Wlist.widget"
 static void update_line_state(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 505 "Wlist.widget"
+#line 508 "Wlist.widget"
 static void render_multiline(
 #if NeedFunctionPrototypes
 Widget,int ,XftDraw *,XftColor *,XftFont *,int ,int ,char *
 #endif
 );
-#line 522 "Wlist.widget"
+#line 525 "Wlist.widget"
 static void print_pixmap(
 #if NeedFunctionPrototypes
 Widget,int ,int 
 #endif
 );
-#line 560 "Wlist.widget"
+#line 563 "Wlist.widget"
 static void print(
 #if NeedFunctionPrototypes
 Widget,int ,int ,char *
 #endif
 );
-#line 567 "Wlist.widget"
+#line 570 "Wlist.widget"
 static void init_graphics(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 591 "Wlist.widget"
+#line 594 "Wlist.widget"
 static void update_pixmap_complete(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 617 "Wlist.widget"
+#line 620 "Wlist.widget"
 static void update_cache(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 694 "Wlist.widget"
+#line 697 "Wlist.widget"
 static int  translate_ypos_to_lineno(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 703 "Wlist.widget"
+#line 706 "Wlist.widget"
 static void autoscroll_cb(
 #if NeedFunctionPrototypes
 XtPointer ,XtIntervalId *
 #endif
 );
-#line 718 "Wlist.widget"
+#line 721 "Wlist.widget"
 static void  start_autoscroll(
 #if NeedFunctionPrototypes
 Widget,int ,ulong 
 #endif
 );
-#line 732 "Wlist.widget"
+#line 735 "Wlist.widget"
 static void  set_line_state(
 #if NeedFunctionPrototypes
 Widget,int ,wheel_colors 
 #endif
 );
-#line 746 "Wlist.widget"
+#line 749 "Wlist.widget"
 static void  toggle_line_state(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 757 "Wlist.widget"
+#line 760 "Wlist.widget"
 static void update_tabs(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 773 "Wlist.widget"
+#line 776 "Wlist.widget"
 static int  tabbed_str_width(
 #if NeedFunctionPrototypes
 Display *,int ,XftFont *,char *
 #endif
 );
-#line 801 "Wlist.widget"
+#line 804 "Wlist.widget"
 static int  render_substr(
 #if NeedFunctionPrototypes
 Widget,XftDraw *,XftColor *,XftFont *,int ,int ,char *
 #endif
 );
-#line 814 "Wlist.widget"
+#line 817 "Wlist.widget"
 static void render_mstr(
 #if NeedFunctionPrototypes
 Widget,int ,XftDraw *,XftColor *,XftFont *,int ,int ,char *
 #endif
 );
-#line 843 "Wlist.widget"
+#line 846 "Wlist.widget"
 static void update_widget_state(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 850 "Wlist.widget"
+#line 853 "Wlist.widget"
 static void update_titlebar(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 861 "Wlist.widget"
+#line 864 "Wlist.widget"
 static int  is_cached(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 868 "Wlist.widget"
+#line 871 "Wlist.widget"
 static int  redraw_line(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 879 "Wlist.widget"
+#line 882 "Wlist.widget"
 static void update_cursor(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 916 "Wlist.widget"
+#line 919 "Wlist.widget"
 static void clear_selection(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 923 "Wlist.widget"
+#line 926 "Wlist.widget"
 static void update_list(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 443 "Wlist.widget"
+#line 446 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 443 "Wlist.widget"
+#line 446 "Wlist.widget"
 static void scroll_up_lines(Widget self,int  n)
 #else
-#line 443 "Wlist.widget"
+#line 446 "Wlist.widget"
 static void scroll_up_lines(self,n)Widget self;int  n;
 #endif
-#line 444 "Wlist.widget"
+#line 447 "Wlist.widget"
 {
   int dst_y = 0;
   int src_y = n * ((WlistWidget)self)->wlist.line_height;
@@ -329,16 +329,16 @@ static void scroll_up_lines(self,n)Widget self;int  n;
             ((WlistWidget)self)->wlist.line_width, h,
             0, dst_y );
 }
-#line 457 "Wlist.widget"
+#line 460 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 457 "Wlist.widget"
+#line 460 "Wlist.widget"
 static void scroll_down_lines(Widget self,int  n)
 #else
-#line 457 "Wlist.widget"
+#line 460 "Wlist.widget"
 static void scroll_down_lines(self,n)Widget self;int  n;
 #endif
-#line 458 "Wlist.widget"
+#line 461 "Wlist.widget"
 {
   int src_y = 0;
   int dst_y = n * ((WlistWidget)self)->wlist.line_height;
@@ -349,32 +349,32 @@ static void scroll_down_lines(self,n)Widget self;int  n;
             ((WlistWidget)self)->wlist.line_width, h,
             0, dst_y );
 }
-#line 470 "Wlist.widget"
+#line 473 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 470 "Wlist.widget"
+#line 473 "Wlist.widget"
 static String  get_line_intern(Widget self,int  line)
 #else
-#line 470 "Wlist.widget"
+#line 473 "Wlist.widget"
 static String  get_line_intern(self,line)Widget self;int  line;
 #endif
-#line 471 "Wlist.widget"
+#line 474 "Wlist.widget"
 {
       ((WlistWidget)self)->wlist.line_max = m_len(((WlistWidget)self)->wlist.tableStrs);
       m_setlen( ((WlistWidget)self)->wlist.line_state, ((WlistWidget)self)->wlist.line_max );
       if( m_len(((WlistWidget)self)->wlist.tableStrs) <= line ) return "";
       return STR(((WlistWidget)self)->wlist.tableStrs,line);
 }
-#line 483 "Wlist.widget"
+#line 486 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 483 "Wlist.widget"
+#line 486 "Wlist.widget"
 static String  get_line_str(Widget self,int  line)
 #else
-#line 483 "Wlist.widget"
+#line 486 "Wlist.widget"
 static String  get_line_str(self,line)Widget self;int  line;
 #endif
-#line 484 "Wlist.widget"
+#line 487 "Wlist.widget"
 {
   if( ((WlistWidget)self)->wlist.tableStrs ) {
       return get_line_intern( self, line );
@@ -388,29 +388,29 @@ static String  get_line_str(self,line)Widget self;int  line;
   ((WlistWidget)self)->wlist.line_max = m_len(((WlistWidget)self)->wlist.line_state);
   return ent.data;
 }
-#line 498 "Wlist.widget"
+#line 501 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 498 "Wlist.widget"
+#line 501 "Wlist.widget"
 static void update_line_state(Widget self)
 #else
-#line 498 "Wlist.widget"
+#line 501 "Wlist.widget"
 static void update_line_state(self)Widget self;
 #endif
-#line 499 "Wlist.widget"
+#line 502 "Wlist.widget"
 {
   get_line_str(self,0);
 }
-#line 505 "Wlist.widget"
+#line 508 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 505 "Wlist.widget"
+#line 508 "Wlist.widget"
 static void render_multiline(Widget self,int  tabs,XftDraw * draw,XftColor * col,XftFont * font,int  x,int  y,char * s)
 #else
-#line 505 "Wlist.widget"
+#line 508 "Wlist.widget"
 static void render_multiline(self,tabs,draw,col,font,x,y,s)Widget self;int  tabs;XftDraw * draw;XftColor * col;XftFont * font;int  x;int  y;char * s;
 #endif
-#line 506 "Wlist.widget"
+#line 509 "Wlist.widget"
 {
   int subs=m_split(0,s, '\n', 0 );
   int p;
@@ -421,16 +421,16 @@ static void render_multiline(self,tabs,draw,col,font,x,y,s)Widget self;int  tabs
   }
   m_free_strings(subs,0);
 }
-#line 522 "Wlist.widget"
+#line 525 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 522 "Wlist.widget"
+#line 525 "Wlist.widget"
 static void print_pixmap(Widget self,int  line,int  ypos)
 #else
-#line 522 "Wlist.widget"
+#line 525 "Wlist.widget"
 static void print_pixmap(self,line,ypos)Widget self;int  line;int  ypos;
 #endif
-#line 523 "Wlist.widget"
+#line 526 "Wlist.widget"
 {
   uint col;
   char *s = NULL;
@@ -467,30 +467,30 @@ static void print_pixmap(self,line,ypos)Widget self;int  line;int  ypos;
   XDrawLine(((WlistWidget)self)->wlist.dpy, ((WlistWidget)self)->wlist.pixmap, ((WlistWidget)self)->wheel.gc[1], x,y + h -2, w, y+h-2 );
   TRACE(2, "Update Line: %d\n", line );
 }
-#line 560 "Wlist.widget"
+#line 563 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 560 "Wlist.widget"
+#line 563 "Wlist.widget"
 static void print(Widget self,int  x,int  y,char * s)
 #else
-#line 560 "Wlist.widget"
+#line 563 "Wlist.widget"
 static void print(self,x,y,s)Widget self;int  x;int  y;char * s;
 #endif
-#line 561 "Wlist.widget"
+#line 564 "Wlist.widget"
 {
   if( s && *s )
     XftDrawStringUtf8(((WlistWidget)self)->wlist.draw, ((WlistWidget)self)->wheel.xft_col+0, ((WlistWidget)self)->wheel.xftFont, x,y, (FcChar8*)s,strlen(s) );
 }
-#line 567 "Wlist.widget"
+#line 570 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 567 "Wlist.widget"
+#line 570 "Wlist.widget"
 static void init_graphics(Widget self)
 #else
-#line 567 "Wlist.widget"
+#line 570 "Wlist.widget"
 static void init_graphics(self)Widget self;
 #endif
-#line 568 "Wlist.widget"
+#line 571 "Wlist.widget"
 {
   if( ((WlistWidget)self)->wlist.line_width < ((WlistWidget)self)->core.width ) ((WlistWidget)self)->wlist.line_width = ((WlistWidget)self)->core.width;
 
@@ -513,16 +513,16 @@ static void init_graphics(self)Widget self;
 
 		       
 }
-#line 591 "Wlist.widget"
+#line 594 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 591 "Wlist.widget"
+#line 594 "Wlist.widget"
 static void update_pixmap_complete(Widget self)
 #else
-#line 591 "Wlist.widget"
+#line 594 "Wlist.widget"
 static void update_pixmap_complete(self)Widget self;
 #endif
-#line 592 "Wlist.widget"
+#line 595 "Wlist.widget"
 {
 	int i = 0;
 	int line_no = ((WlistWidget)self)->wlist.buf.y / ((WlistWidget)self)->wlist.line_height;
@@ -543,16 +543,16 @@ static void update_pixmap_complete(self)Widget self;
 	       i++;
 	}
 }
-#line 617 "Wlist.widget"
+#line 620 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 617 "Wlist.widget"
+#line 620 "Wlist.widget"
 static void update_cache(Widget self)
 #else
-#line 617 "Wlist.widget"
+#line 620 "Wlist.widget"
 static void update_cache(self)Widget self;
 #endif
-#line 618 "Wlist.widget"
+#line 621 "Wlist.widget"
 {
   int ln_pos, ln_no, buf_a, buf_h, cur_buf_a, buf_d, list_h;
   update_line_state(self); // check line_max
@@ -628,32 +628,32 @@ static void update_cache(self)Widget self;
 	update_pixmap_complete(self);
 	/*-----------------------------------------------------------------*/
 }
-#line 694 "Wlist.widget"
+#line 697 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 694 "Wlist.widget"
+#line 697 "Wlist.widget"
 static int  translate_ypos_to_lineno(Widget self,int  y)
 #else
-#line 694 "Wlist.widget"
+#line 697 "Wlist.widget"
 static int  translate_ypos_to_lineno(self,y)Widget self;int  y;
 #endif
-#line 695 "Wlist.widget"
+#line 698 "Wlist.widget"
 {
   int line_no;
   y -= ((WlistWidget)self)->wlist.titleBarHeight;
   line_no = (((WlistWidget)self)->wlist.top_y + y) / ((WlistWidget)self)->wlist.line_height;
   return line_no;
 }
-#line 703 "Wlist.widget"
+#line 706 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 703 "Wlist.widget"
+#line 706 "Wlist.widget"
 static void autoscroll_cb(XtPointer  client_data,XtIntervalId * id)
 #else
-#line 703 "Wlist.widget"
+#line 706 "Wlist.widget"
 static void autoscroll_cb(client_data,id)XtPointer  client_data;XtIntervalId * id;
 #endif
-#line 704 "Wlist.widget"
+#line 707 "Wlist.widget"
 {
 	Widget self = (Widget) client_data;
 
@@ -667,16 +667,16 @@ static void autoscroll_cb(client_data,id)XtPointer  client_data;XtIntervalId * i
 		gotoxy( self, -1, new_y );
 	}
 }
-#line 718 "Wlist.widget"
+#line 721 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 718 "Wlist.widget"
+#line 721 "Wlist.widget"
 static void  start_autoscroll(Widget self,int  y,ulong  t)
 #else
-#line 718 "Wlist.widget"
+#line 721 "Wlist.widget"
 static void  start_autoscroll(self,y,t)Widget self;int  y;ulong  t;
 #endif
-#line 719 "Wlist.widget"
+#line 722 "Wlist.widget"
 {
 	((WlistWidget)self)->wlist.autoscroll_cnt  =  25;
 	float speed = fabs( (((WlistWidget)self)->wlist.drag_start_y - y) * 1.0 / t );
@@ -689,16 +689,16 @@ static void  start_autoscroll(self,y,t)Widget self;int  y;ulong  t;
 
 	((WlistWidget)self)->wlist.autoscroll_id = XtAppAddTimeOut( XtWidgetToApplicationContext( self ), 40, autoscroll_cb, self );
 }
-#line 732 "Wlist.widget"
+#line 735 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 732 "Wlist.widget"
+#line 735 "Wlist.widget"
 static void  set_line_state(Widget self,int  lineno,wheel_colors  col)
 #else
-#line 732 "Wlist.widget"
+#line 735 "Wlist.widget"
 static void  set_line_state(self,lineno,col)Widget self;int  lineno;wheel_colors  col;
 #endif
-#line 733 "Wlist.widget"
+#line 736 "Wlist.widget"
 {
 	if( lineno < 0 || lineno >= m_len(((WlistWidget)self)->wlist.line_state) ) return;
 
@@ -711,32 +711,32 @@ static void  set_line_state(self,lineno,col)Widget self;int  lineno;wheel_colors
 	    update_list(self);
 	}
 }
-#line 746 "Wlist.widget"
+#line 749 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 746 "Wlist.widget"
+#line 749 "Wlist.widget"
 static void  toggle_line_state(Widget self,int  lineno)
 #else
-#line 746 "Wlist.widget"
+#line 749 "Wlist.widget"
 static void  toggle_line_state(self,lineno)Widget self;int  lineno;
 #endif
-#line 747 "Wlist.widget"
+#line 750 "Wlist.widget"
 {
   if( lineno < 0 || lineno >= m_len(((WlistWidget)self)->wlist.line_state) ) return;
   wheel_colors col = CHAR( ((WlistWidget)self)->wlist.line_state, lineno );
   col = !col;
   set_line_state( self, lineno, col );
 }
-#line 757 "Wlist.widget"
+#line 760 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 757 "Wlist.widget"
+#line 760 "Wlist.widget"
 static void update_tabs(Widget self)
 #else
-#line 757 "Wlist.widget"
+#line 760 "Wlist.widget"
 static void update_tabs(self)Widget self;
 #endif
-#line 758 "Wlist.widget"
+#line 761 "Wlist.widget"
 {
   if( ! ((WlistWidget)self)->wlist.tabs ) return;
   int mult = ((WlistWidget)self)->wlist.unit;
@@ -751,16 +751,16 @@ static void update_tabs(self)Widget self;
     m_put( ((WlistWidget)self)->wlist.tab_pos, &v );
   }
 }
-#line 773 "Wlist.widget"
+#line 776 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 773 "Wlist.widget"
+#line 776 "Wlist.widget"
 static int  tabbed_str_width(Display * dpy,int  tabs,XftFont * font,char * buf)
 #else
-#line 773 "Wlist.widget"
+#line 776 "Wlist.widget"
 static int  tabbed_str_width(dpy,tabs,font,buf)Display * dpy;int  tabs;XftFont * font;char * buf;
 #endif
-#line 774 "Wlist.widget"
+#line 777 "Wlist.widget"
 {
   char **str;
   int p,
@@ -786,16 +786,16 @@ static int  tabbed_str_width(dpy,tabs,font,buf)Display * dpy;int  tabs;XftFont *
   m_free_strings(subs,0);
   return cur_x;
 }
-#line 801 "Wlist.widget"
+#line 804 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 801 "Wlist.widget"
+#line 804 "Wlist.widget"
 static int  render_substr(Widget self,XftDraw * draw,XftColor * col,XftFont * font,int  x,int  y,char * s)
 #else
-#line 801 "Wlist.widget"
+#line 804 "Wlist.widget"
 static int  render_substr(self,draw,col,font,x,y,s)Widget self;XftDraw * draw;XftColor * col;XftFont * font;int  x;int  y;char * s;
 #endif
-#line 802 "Wlist.widget"
+#line 805 "Wlist.widget"
 {
   int xoff;
   if(is_empty(s) ) return 0;
@@ -805,16 +805,16 @@ static int  render_substr(self,draw,col,font,x,y,s)Widget self;XftDraw * draw;Xf
                     x,y, (FcChar8*)s,strlen(s) );
   return xoff;
 }
-#line 814 "Wlist.widget"
+#line 817 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 814 "Wlist.widget"
+#line 817 "Wlist.widget"
 static void render_mstr(Widget self,int  tabs,XftDraw * draw,XftColor * col,XftFont * font,int  pix_x,int  pix_y,char * buf)
 #else
-#line 814 "Wlist.widget"
+#line 817 "Wlist.widget"
 static void render_mstr(self,tabs,draw,col,font,pix_x,pix_y,buf)Widget self;int  tabs;XftDraw * draw;XftColor * col;XftFont * font;int  pix_x;int  pix_y;char * buf;
 #endif
-#line 815 "Wlist.widget"
+#line 818 "Wlist.widget"
 {
   if( is_empty(buf) ) return;
 
@@ -842,31 +842,31 @@ static void render_mstr(self,tabs,draw,col,font,pix_x,pix_y,buf)Widget self;int 
 
   m_free_strings(subs,0);
 }
-#line 843 "Wlist.widget"
+#line 846 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 843 "Wlist.widget"
+#line 846 "Wlist.widget"
 static void update_widget_state(Widget self)
 #else
-#line 843 "Wlist.widget"
+#line 846 "Wlist.widget"
 static void update_widget_state(self)Widget self;
 #endif
-#line 844 "Wlist.widget"
+#line 847 "Wlist.widget"
 {
   if( ((WlistWidget)self)->wheel.state >= STATE_MAX ) ((WlistWidget)self)->wheel.state=0;
   XSetWindowBorder( ((WlistWidget)self)->wlist.dpy, XtWindow(self),
                         ((WlistWidget)self)->wheel.pixel[((WlistWidget)self)->wheel.state + COLOR_FG_MAX] );
 }
-#line 850 "Wlist.widget"
+#line 853 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 850 "Wlist.widget"
+#line 853 "Wlist.widget"
 static void update_titlebar(Widget self)
 #else
-#line 850 "Wlist.widget"
+#line 853 "Wlist.widget"
 static void update_titlebar(self)Widget self;
 #endif
-#line 851 "Wlist.widget"
+#line 854 "Wlist.widget"
 {
 
   uint y = ((WlistWidget)self)->wlist.titleBarHeight;
@@ -875,31 +875,31 @@ static void update_titlebar(self)Widget self;
   render_mstr( self, ((WlistWidget)self)->wlist.tab_pos, ((WlistWidget)self)->wlist.draw_title, ((WlistWidget)self)->wheel.xft_col, ((WlistWidget)self)->wheel.xftFont,
                0, ((WlistWidget)self)->wheel.xftFont->ascent, m_buf(((WlistWidget)self)->wlist.titleBar) );
 }
-#line 861 "Wlist.widget"
+#line 864 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 861 "Wlist.widget"
+#line 864 "Wlist.widget"
 static int  is_cached(Widget self,int  lineno)
 #else
-#line 861 "Wlist.widget"
+#line 864 "Wlist.widget"
 static int  is_cached(self,lineno)Widget self;int  lineno;
 #endif
-#line 862 "Wlist.widget"
+#line 865 "Wlist.widget"
 {
   int first_line = ((WlistWidget)self)->wlist.buf.y / ((WlistWidget)self)->wlist.line_height;
   int last_line = first_line + ((WlistWidget)self)->wlist.buf.height / ((WlistWidget)self)->wlist.line_height;
   return( lineno >= first_line && lineno < last_line );
 }
-#line 868 "Wlist.widget"
+#line 871 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 868 "Wlist.widget"
+#line 871 "Wlist.widget"
 static int  redraw_line(Widget self,int  lineno)
 #else
-#line 868 "Wlist.widget"
+#line 871 "Wlist.widget"
 static int  redraw_line(self,lineno)Widget self;int  lineno;
 #endif
-#line 869 "Wlist.widget"
+#line 872 "Wlist.widget"
 {
   int first_line = ((WlistWidget)self)->wlist.buf.y / ((WlistWidget)self)->wlist.line_height;
   int last_line = first_line + ((WlistWidget)self)->wlist.buf.height / ((WlistWidget)self)->wlist.line_height;
@@ -909,16 +909,16 @@ static int  redraw_line(self,lineno)Widget self;int  lineno;
   }
   return 0;
 }
-#line 879 "Wlist.widget"
+#line 882 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 879 "Wlist.widget"
+#line 882 "Wlist.widget"
 static void update_cursor(Widget self)
 #else
-#line 879 "Wlist.widget"
+#line 882 "Wlist.widget"
 static void update_cursor(self)Widget self;
 #endif
-#line 880 "Wlist.widget"
+#line 883 "Wlist.widget"
 {
   int dirty = 0;
   if( ((WlistWidget)self)->wlist.key_cursor == ((WlistWidget)self)->wlist.key_cursor_drawn ) return;
@@ -954,30 +954,30 @@ static void update_cursor(self)Widget self;
 
   if( dirty ) update_list(self);
 }
-#line 916 "Wlist.widget"
+#line 919 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 916 "Wlist.widget"
+#line 919 "Wlist.widget"
 static void clear_selection(Widget self)
 #else
-#line 916 "Wlist.widget"
+#line 919 "Wlist.widget"
 static void clear_selection(self)Widget self;
 #endif
-#line 917 "Wlist.widget"
+#line 920 "Wlist.widget"
 {
         int len = m_len(((WlistWidget)self)->wlist.line_state);
         while( len-- ) CHAR(((WlistWidget)self)->wlist.line_state,len)=0;
 }
-#line 923 "Wlist.widget"
+#line 926 "Wlist.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 923 "Wlist.widget"
+#line 926 "Wlist.widget"
 static void update_list(Widget self)
 #else
-#line 923 "Wlist.widget"
+#line 926 "Wlist.widget"
 static void update_list(self)Widget self;
 #endif
-#line 924 "Wlist.widget"
+#line 927 "Wlist.widget"
 {
   uint bx = 1;
   uint by = ((WlistWidget)self)->wlist.titleBarHeight;
@@ -1457,6 +1457,9 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 #line 407 "Wlist.widget"
 {
 	int n = *num_args;
+
+
+	TRACE(2, "Wlist Widget %s", XtName(self) );
 
 	/* wenn farben, font, zeilen-daten geändert worden sind,
            muss der cache aktualisiert werden

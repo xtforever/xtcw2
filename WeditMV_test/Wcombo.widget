@@ -10,13 +10,17 @@ var compress_motion = True
 
 @PUBLIC
 @var <Callback> XtCallbackList callback  = NULL
+@var StringMArray lst = <String> "A,B,C"
+@var int selection = -1
 
 @PRIVATE
 @var Widget shell
+@var Widget listbox
 @var int entry_mode 
 @var int filter
+@var int f_lst
 
-
+    
 @TRANSLATIONS
 @trans <Btn1Down>:     set_cursor() SetKeyboardFocus()
 @trans <Key>Return:    notify()
@@ -29,10 +33,11 @@ var compress_motion = True
 @METHODS
 @proc initialize
 {
-	TRACE(2, "init" );
+    TRACE(2, "init %s", XtName($) );
 	$shell = 0;
 	$entry_mode=0;
 	$filter = m_create(200,1);
+	$f_lst = m_create(100,sizeof(char*) );
 }
 
 @proc destroy
@@ -44,28 +49,36 @@ var compress_motion = True
 @UTILITIES
 @proc open_popup($)
 {
-	if( $entry_mode ) return;
-	if( ! $shell ) {
+    static Widget listbox;
+    if( $entry_mode ) return;
+
+    if( ! $shell ) {
 	    $shell = XtCreatePopupShell ( "combo_shell", overrideShellWidgetClass,
                                   $, NULL, 0 );
-    	    Widget w = XtVaCreateManagedWidget ( "list", wlsWidgetClass,
+    	    $listbox = XtVaCreateManagedWidget ( "combo-scrollbox", wlsWidgetClass,
 				       $shell,
-				       "lines", 0,
 				       NULL );
+	    XtAddCallback($listbox, "callback", (XtCallbackProc)item_selected_cb, $ );
+	    
 	    XtRealizeWidget($shell);
 	    static Atom wm_delete_window;
     	    wm_delete_window = XInternAtom(XtDisplay($), "WM_DELETE_WINDOW",
                                    False);
     	    (void) XSetWMProtocols (XtDisplay($), XtWindow($shell),
                             &wm_delete_window, 1);
+	    
 	}
 
 	Position root_x, root_y;
 	XtTranslateCoords($, 0, $height + $border_width, &root_x, &root_y);
-	XtVaSetValues($shell, "x", (int) root_x, "y", (int) root_y, NULL );	
+	XtVaSetValues($shell, "x", (int) root_x, "y", (int) root_y, NULL );
+
+	m_clear($filter);
+	$selection=-1;
+	update_filter($);
+
 	XtPopup($shell, XtGrabNone);
 	$entry_mode=1;
-	m_clear($filter);
 }
 
 
@@ -74,7 +87,42 @@ var compress_motion = True
     fwrite( m_buf($filter), m_len($filter),1,stdout); putchar(10);
     m_putc($filter,0); m_pop($filter);
     XtVaSetValues($, "label", m_str($filter), NULL );
+
+
+    m_clear($f_lst);
+    char **sp;
+    int p;
+    int n = m_len($filter);
+    m_foreach($lst,p,sp) {
+	if( strncasecmp( *sp, m_str($filter), n ) == 0 )
+	    m_put( $f_lst, sp );
+    }
+
+    XtVaSetValues($listbox, "lst", $f_lst, NULL );    
 }
+
+@proc  item_selected_cb(Widget dummy, $, void *class_data )
+{
+        int n = m_len($f_lst);
+	int p = (intptr_t) class_data;
+    	TRACE(2,"p=%d", p);
+
+	if( p >= 0 && p < n ) {
+	    $selection=p;
+	    char *s = STR( $f_lst, p );
+	    XtVaSetValues($, "label", s, NULL );
+	    popdown_shell_notify_client($);
+	}
+}
+
+@proc  popdown_shell_notify_client($)
+{
+	XtPopdown($shell);
+	$entry_mode=0;
+	XtCallCallbackList( $, $callback, (XtPointer) (intptr_t) $selection );
+}
+
+
 
 @ACTIONS
 
@@ -120,11 +168,13 @@ var compress_motion = True
 @proc remove_char
 {
 	if( ! $entry_mode ) return;
-	char ch;
+	unsigned char ch;
 	TRACE(2,"del");
 	while( m_len($filter) ) {
-	   ch = *(char*)m_pop($filter);
-	   if(  ((ch & 0xC0) != 0xC0)  ) break;
+	   ch = *(unsigned char*)m_pop($filter);
+	   TRACE(2,"%x", ch );
+	   if(  ((ch & 0xC0) != 0x80)  ) break;
+	   /* loop while we see utf-8 continuation bytes */
 	} 
     	update_filter($); 
 
@@ -138,16 +188,15 @@ var compress_motion = True
 @proc focus_out
 {
 	TRACE(2, "Wcombo %s lost focus", XtName($));
+	XtPopdown($shell);
+	$entry_mode=0;
 }
 
 @proc notify
 {
 	TRACE(2, "Wcombo %s notify: entry_mode %d", XtName($), $entry_mode );
 	if( ! $entry_mode ) return;
-	XtPopdown($shell);
-	$entry_mode=0;
-	// call callbacks
-
+	
 	
 }
 
