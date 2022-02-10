@@ -593,7 +593,7 @@ static void initialize_core_class_part(FILE *f, Class self, Class part)
 	if (number_of_decls(self->translations))
 		fprintf(f, "/* tm_table      \t*/  defaultTranslations,\n");
 	else
-		fputs("/* tm_table      \t*/  NULL,\n", f);
+		fputs("/* tm_table      \t*/  XtInheritTranslations,\n", f);
 
 	fprintf(f, "/* query_geometry \t*/  %s,\n",
 		has_method(self, QUERY_GEOMETRY) ?
