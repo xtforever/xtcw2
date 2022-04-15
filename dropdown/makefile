@@ -59,6 +59,8 @@ xtcw/%.h %.c: %.widget
 
 
 WIDGET_OBJ=$(patsubst %.widget,%.o,$(wildcard *.widget))
+WIDGET_SRC=$(patsubst %.widget,%.c,$(wildcard *.widget))
+
 
 ALL: $(TARGET)
 
@@ -73,8 +75,8 @@ Wcombo.o: Wls.o
 Wsqlcombo: Wcombo.o
 # .PRECIOUS:  Wsqlcombo.c
 
-$(TARGET): njson_read.o njson_lex.lex.o njson_parse.tab.o var5.o Wls.o Wlist.o Woptc.o  Wsqlcombo.o Wcombo.o WlistScroll.o m_tool.o m_mysql.o $(libdir)/libxtcw.a 
+$(TARGET): njson_read.o njson_lex.lex.o njson_parse.tab.o var5.o $(WIDGET_OBJ) m_tool.o m_mysql.o $(libdir)/libxtcw.a 
 
 clean:
-	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex ClipView.c Wheel.c WeditMV.c Woption.c Radio2.c
+	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex ClipView.c Wheel.c  $(WIDGET_SRC)
 

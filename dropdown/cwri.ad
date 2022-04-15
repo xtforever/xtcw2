@@ -1,0 +1,48 @@
+%%
+%% set default colors
+%%
+*foreground: #7F8C8D
+*background: #ECF0D1
+*Wedit.cursorColor: #FFFF00
+*fg_norm: #FFFFFF
+*bg_norm: #1ACC9C
+*xftFont: "Source-Code-8"
+%% *borderWidth: 0
+%%
+%% -------------------
+*weightx: 1
+*weighty: 1
+*Woptc.background:   #1ACC9C
+*Woptc.foreground:   #0A9C6C
+*Woptc.borderWidth: 0
+*Wlist.borderWidth: 0
+
+
+
+cwri.WcChildren: vb
+
+*vb.WcClass: vBox
+*vb.WcChildren: ot4 bt
+
+
+*ot4.gridy: 0
+*ot4.gridx: 0
+*ot4.WcClass: Wsqlcombo 
+*ot4.label: Hello
+*ot4.borderColor: Blue
+*ot4.borderWidth: 8
+*bt.fill: Both
+
+*bt.wcClass: Wbutton
+*bt.label: Exit
+*bt.callback: quit_cb
+*bt.gridy: 1
+*bt.gridx: 0
+*bt.weighty: 0
+*bt.gravity: Center
+*bt.fill: width
+*bt.gridWidth: 1
+
+
+
+
