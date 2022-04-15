@@ -1,0 +1,157 @@
+@class Wsqlcombo (Wcombo)
+
+    
+@PUBLIC
+@var <Callback> XtCallbackList sqlcombo_cb  = NULL
+@var String sql_query_str  = <String>  "select * from users"
+@var String sql_disp_field = <String>  "$uid - $cn"
+@var String sql_key_field  = <String>  "$uid"
+@var ArrayChar sql_result = <String>  "sql.res"
+@var String sql_host   = <String>  "localhost"
+@var String sql_user   = <String>  "jens"
+@var String sql_pwd    = <String>  "linux"
+@var String sql_db     = <String>  "custsrv"
+
+@PRIVATE
+@var int sqlres
+@var int disp_lst
+@var int key_lst
+@var int var5_res
+
+@METHODS
+@proc initialize
+{
+    TRACE(2, "Wsqlcombo %s", XtName($) );
+    $var5_res=0;
+    $sqlres=0;
+    $disp_lst=m_create(10,sizeof(char*));
+    $key_lst=m_create(10,sizeof(char*));
+    XtAddCallback( $, "combo_cb", (XtCallbackProc) combo_cb, $ );
+    sql_query($);
+    update_listbox($);
+}
+
+@ tricky: we check for values in this widget and call update if one or more have changed
+  chances are good that the underlying widget is calling set_values which would produce an
+  endless loop. so we like to make sure we don't do that with an locked semaphore.
+  
+@proc set_values
+{
+    static int locked = 0;
+    int n = *num_args;
+    int do_expose = 0;
+    TRACE(2, "Wsqlcombo:%s", XtName($) );
+    if( locked ) return false;
+    locked=1;
+    while( n-- )  {
+	if(strncmp( args[n].name, "sql_",4 ) == 0 ) {
+		sql_query($);
+		update_listbox($);
+		do_expose=1;
+		break;
+        }
+    }
+    locked=0;
+    return do_expose;
+}
+
+@proc destroy
+{
+	v_free( $sqlres );
+	m_free_strings($disp_lst,0);
+	m_free_strings($key_lst,0);
+}
+
+@UTILITIES
+@proc combo_cb( Widget dummy, $, void *class_data )
+{
+	char *key;
+	intptr_t selection =   (intptr_t) class_data;
+
+	if( selection >= 0 && selection < m_len($key_lst) ) {
+	    key = STR( $key_lst, selection ); 
+	}
+	else key="";
+
+	TRACE(2,"wsqlcombo:%s - selection %s (num:%d)", XtName($), key, selection );
+	mvar_put_string( $var5_res, key, 0 );
+	TRACE(1,"call callback on var#%d", $var5_res );
+	mvar_call_callbacks( $var5_res, 0 );
+	XtCallCallbackList($, $sqlcombo_cb, key );
+}
+
+@proc show_translation($)
+{
+	TRACE(2, "Wsqlcombo %s", XtName($) );	    
+	WsqlcomboWidgetClass wc = (WsqlcomboWidgetClass)XtClass($);
+	char *s = wc->core_class.tm_table;
+	s=#tm_table;
+	if(!s) s="<empty tm_table>";
+	TRACE(2, "Wsqlcombo %s: Translation:%s", XtName($),s  );	    
+}
+
+
+@proc update_list(int rows, char *pattern, int list, int res_set )
+{
+	m_free_strings(list,1);	/* clear string list */
+	str_exp_t se;	
+	se_init(&se);
+	se_parse(&se, pattern ); /* prepare string expand */
+	for( int i=0; i<rows; i++ ) {
+	     char *s = strdup( se_expand(&se, res_set,i)); /* expand string, using index i */
+	     m_put( list, &s );	     
+	}	
+	se_free(&se);
+}
+
+@proc update_listbox($)
+{	
+	int rows =  row_count($sqlres);
+	update_list( rows, $sql_disp_field, $disp_lst, $sqlres );
+	update_list( rows, $sql_key_field, $key_lst, $sqlres );
+	XtVaSetValues( $, "lst", $disp_lst, NULL );
+}
+
+@proc sql_query($)
+{
+	v_free( $sqlres );
+	$sqlres = v_init();
+	simple_query($sql_host, $sql_db, $sql_user, $sql_pwd, $sqlres, $sql_query_str);
+	if( $sql_result ) {
+	    $var5_res = mvar_lookup_path( $sql_result, VAR_STRING );
+	    m_free($sql_result);
+	    $sql_result=0;
+	}
+}
+
+@proc int simple_query(char *host, char *db, char *user, char *pwd, int res, char *query)
+{
+  MYSQL *sql = m_mysql_connect( host, db, user, pwd );
+  
+  char *real_query = str_expand( res, query );
+  TRACE(1, "query: %s", real_query );
+  int err = m_mysql_query(sql,real_query,res);
+  m_mysql_close(sql);
+  return err;
+}
+
+
+
+
+
+@IMPORTS
+@incl "mls.h"
+@incl "m_mysql.h"
+@incl "var5.h"
+@incl "converters.h"
+@incl <X11/Shell.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xmu/Converters.h>
+@incl "xutil.h"
+@incl "xtcw/Wls.h"
