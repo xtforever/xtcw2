@@ -121,7 +121,7 @@ int m_mysql_query( MYSQL *conn, char *query, int res )
 }
 
 
-/** do not forget to free the returned string
+/** do not free the returned string
  */
 char *str_expand(int vars, char *s)
 {

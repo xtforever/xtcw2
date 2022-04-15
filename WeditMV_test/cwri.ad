@@ -20,11 +20,11 @@
 
 
 cwri.WcChildren: vb
-cwri.traceLevel: 1
+
 cwri.option_group: vb.opttest
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed op inpv ed1 dbt ot1 ot2 ot3 bt
+*vb.WcChildren: ed op inpv ed1 dbt ot1 ot2 ot3 ot4 bt
 *vb.op.WcClass: Vbox
 
 *op1.WcClass: Woption
@@ -123,4 +123,12 @@ cwri.svar_all_results: result
 *ot3.label: Hello
 *ot3.borderColor: Blue
 *ot3.borderWidth: 8
+
+
+*ot4.gridy: 7
+*ot4.gridx: 0
+*ot4.WcClass: Wsqlcombo 
+*ot4.label: Hello
+*ot4.borderColor: Blue
+*ot4.borderWidth: 8
 

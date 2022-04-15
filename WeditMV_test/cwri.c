@@ -9,6 +9,7 @@
 #include "mls.h"
 #include "svar2.h"
 #include "opts.h"
+#include "m_mysql.h"
 
 #include <signal.h>
 #include <stdlib.h>
@@ -33,6 +34,9 @@
 #include <xutil.h>
 #include <micro_vars.h>
 #include "wcreg2.h"
+
+#include "var5.h"
+
 #include <xtcw/register_wb.h>
 #include "xtcw/WeditMV.h"
 #include "xtcw/Woption.h"
@@ -42,6 +46,7 @@
 #include "xtcw/Wlist.h"
 #include "xtcw/Woptc.h"
 #include "xtcw/Wcombo.h"
+#include "xtcw/Wsqlcombo.h"
 #include "xtcw/WlistScroll.h"
 
 
@@ -102,6 +107,61 @@ static XtResource CWRI_CONFIG_RES [] = {
 #undef FLD
 
 struct CWRI_CONFIG CWRI;
+/* --------------------------------------------------------------------------------------------------------------------
+
+                        IMPLEMENTATION
+
+  -------------------------------------------------------------------------------------------------------------------- */
+
+
+int simple_query(int res, char *query)
+{
+  MYSQL *sql = m_mysql_connect( NULL, "custsrv", NULL, "linux" );
+  char *real_query = strdup(str_expand( res, query ));
+  TRACE(1, "query: %s", real_query );
+  int err = m_mysql_query(sql,real_query,res);
+  m_mysql_close(sql);
+  return err;
+}
+
+// mysql test
+void dump_sql(void)
+{
+    char *query="select concat(uid,' - ',cn) as name from users";
+    int res = v_init();
+
+    int err = simple_query(res,query);
+    if( err ) {
+	WARN("sql query error %d: %s", err, query );
+    }
+
+    int cols = field_count(res);
+    for(int x = 0; x < cols; x++ ) {
+	printf("%s\t", field_name(res,x) );
+	
+    }
+    printf("\n");
+    
+    int len = row_count(res);
+    for(int y = 0; y < len; y++ ) {
+	for(int x = 0; x < cols; x++ ) {
+	    printf("%s\t", get_entry(res,x,y) );	
+	}
+	printf("\n");
+    }
+    v_free(res);
+}
+
+
+/* --------------------------------------------------------------------------------------------------------------------
+
+                        UTILS 
+
+  -------------------------------------------------------------------------------------------------------------------- */
+
+
+
+
 
 
 void test_cb( Widget w, void *u, void *c )
@@ -263,6 +323,11 @@ void quit_cb( Widget w, void *u, void *c )
 
 
 
+
+
+
+
+
 /* --------------------------------------------------------------------------------------------------------------------
 
                         IMPLEMENTATION
@@ -287,6 +352,7 @@ static void RegisterApplication ( Widget top )
     RCP( top, woptc );
     RCP( top, wlistScroll );
     RCP( top, wcombo );
+    RCP( top, wsqlcombo );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
@@ -318,7 +384,6 @@ void update_edit_buffer_cb( void *ctx )
 */
 static void InitializeApplication( Widget top )
 {
-    trace_level = CWRI.traceLevel;
     EditBuffer = XrmStringToQuark( EDITBUFFERNAME  );
     TRACE(1, "register %d", EditBuffer );
     mv_onwrite(EditBuffer, update_edit_buffer_cb, 0, 0);
@@ -345,8 +410,10 @@ static void syntax(void)
 
 
 
-
-
+void sql_res_cb (void*ctx,int var,int sig)
+{
+    TRACE(1,"var: %d=%s", var, mvar_get_string(var,0) );
+}
 
 
 /******************************************************************************
@@ -360,6 +427,14 @@ int main ( int argc, char **argv )
     m_init();
     mv_init();
     svar_init();
+    mvar_init();
+
+    int mp = s_printf(0,0,"sql.res" );
+    int vid = mvar_lookup_path(mp,VAR_STRING);
+    TRACE(1,"set callback: %d", vid );
+    mvar_set_callback( vid, sql_res_cb, 0,0 );
+    m_free(mp);
+    
     
     TRACE(2,"test");
     XtSetLanguageProc (NULL, NULL, NULL);
@@ -425,6 +500,8 @@ int main ( int argc, char **argv )
     XtAppMainLoop ( app ); /* use XtAppSetExitFlag */
     XtDestroyWidget(appShell);
 
+
+    mvar_destruct();
     svar_destruct();
     m_destruct();
 

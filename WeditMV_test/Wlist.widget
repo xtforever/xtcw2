@@ -59,6 +59,10 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @var int top_x = 0
 @var int top_y = 0
 
+@var int prefered_width   = 0
+@var int prefered_height  = 0
+@var int visible_lines    = 10
+
 @ Die Anzahl Texzeilen pro Feld
         @var int multiline = 1
 
@@ -219,6 +223,27 @@ zusätzlich wird der |notify| Handler aufgerufen.
 
 
 @methods
+@proc query_geometry
+{
+	calc_geometry($);
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    reply->width =  $prefered_width;
+    reply->height = $prefered_height;
+
+    TRACE(1, "Wlist:%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(1, "Wlist:%s: our prefered size is %dx%d", XtName($),
+                  $prefered_width,
+                  $prefered_height );
+
+    return XtGeometryAlmost;
+}
+
+
+
 @ up, down usw. usf.
 @proc exec_command
 {
@@ -326,6 +351,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
   /* trennlinie ist 2 pixel hoch */
   $line_height = $xftFont->height * $multiline + $line_distance + 2;
   $line_state = m_create(100,1);
+  
 
   update_tabs($);
   if( $titleBar ) {
@@ -339,7 +365,6 @@ zusätzlich wird der |notify| Handler aufgerufen.
 
   if( $width == 0 ) $width = $titleBarWidth;
   $line_width = $width;
-
 
   $key_cursor_drawn = -1;
   $key_cursor = -1;
@@ -383,6 +408,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
         $list_height = $height - $titleBarHeight;
         update_list($);
 }
+
 
 
 @proc class_initialize
@@ -441,6 +467,22 @@ zusätzlich wird der |notify| Handler aufgerufen.
 
 
 @utilities
+@proc calc_geometry($)
+{
+	if( $visible_lines > 0 )
+	{
+		$prefered_height = $visible_lines * $line_height;	
+        }
+
+	if( $titleBarWidth > 0 )
+	{
+		$prefered_width = $titleBarWidth;
+	}
+
+	if( $prefered_height < 10 ) $prefered_height = 200;
+	if( $prefered_width  < 10 ) $prefered_width  = 50;
+}
+
 
 @ den Puffer um |n| Zeilen nach oben kopieren
 @proc scroll_up_lines($, int n)

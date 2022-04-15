@@ -9,9 +9,10 @@ var compress_motion = True
 
 
 @PUBLIC
-@var <Callback> XtCallbackList callback  = NULL
+@var <Callback> XtCallbackList combo_cb = NULL
 @var StringMArray lst = <String> "A,B,C"
 @var int selection = -1
+@var int lines_height = 10
 
 @PRIVATE
 @var Widget shell
@@ -19,6 +20,7 @@ var compress_motion = True
 @var int entry_mode 
 @var int filter
 @var int f_lst
+@var int k_lst
 
     
 @TRANSLATIONS
@@ -31,6 +33,9 @@ var compress_motion = True
 
 
 @METHODS
+
+
+
 @proc initialize
 {
     TRACE(2, "init %s", XtName($) );
@@ -38,26 +43,27 @@ var compress_motion = True
 	$entry_mode=0;
 	$filter = m_create(200,1);
 	$f_lst = m_create(100,sizeof(char*) );
+	$k_lst = m_create(100,sizeof(int) );
 }
 
 @proc destroy
 {
-	m_free( $filter ); 
+	m_free( $filter );
+	m_free( $f_lst  );
+	m_free( $k_lst  ); 
 }
 
 
 @UTILITIES
 @proc open_popup($)
 {
-    static Widget listbox;
     if( $entry_mode ) return;
 
     if( ! $shell ) {
 	    $shell = XtCreatePopupShell ( "combo_shell", overrideShellWidgetClass,
                                   $, NULL, 0 );
     	    $listbox = XtVaCreateManagedWidget ( "combo-scrollbox", wlsWidgetClass,
-				       $shell,
-				       NULL );
+				       $shell, NULL );
 	    XtAddCallback($listbox, "callback", (XtCallbackProc)item_selected_cb, $ );
 	    
 	    XtRealizeWidget($shell);
@@ -72,7 +78,7 @@ var compress_motion = True
 	Position root_x, root_y;
 	XtTranslateCoords($, 0, $height + $border_width, &root_x, &root_y);
 	XtVaSetValues($shell, "x", (int) root_x, "y", (int) root_y, NULL );
-
+	XtResizeWidget($shell, $width, $lines_height * $xftFont->height, 0 );
 	m_clear($filter);
 	$selection=-1;
 	update_filter($);
@@ -88,14 +94,15 @@ var compress_motion = True
     m_putc($filter,0); m_pop($filter);
     XtVaSetValues($, "label", m_str($filter), NULL );
 
-
-    m_clear($f_lst);
+    m_clear($f_lst); m_clear($k_lst);
     char **sp;
     int p;
     int n = m_len($filter);
     m_foreach($lst,p,sp) {
-	if( strncasecmp( *sp, m_str($filter), n ) == 0 )
-	    m_put( $f_lst, sp );
+	if( strncasecmp( *sp, m_str($filter), n ) == 0 ) {
+	    m_put( $f_lst, sp ); /* filtered list */
+	    m_put( $k_lst, &p );  /* indicies */
+	 }
     }
 
     XtVaSetValues($listbox, "lst", $f_lst, NULL );    
@@ -108,20 +115,21 @@ var compress_motion = True
     	TRACE(2,"p=%d", p);
 
 	if( p >= 0 && p < n ) {
-	    $selection=p;
+	    $selection=INT($k_lst,p );
+	    TRACE(2,"Wcombo:%s - sel:%d real_sel:%d", XtName($), p, $selection );
 	    char *s = STR( $f_lst, p );
 	    XtVaSetValues($, "label", s, NULL );
-	    popdown_shell_notify_client($);
 	}
+	else $selection=-1;
+	popdown_shell_notify_client($);
 }
 
 @proc  popdown_shell_notify_client($)
 {
 	XtPopdown($shell);
 	$entry_mode=0;
-	XtCallCallbackList( $, $callback, (XtPointer) (intptr_t) $selection );
+	XtCallCallbackList( $, $combo_cb, (XtPointer) (intptr_t) $selection );
 }
-
 
 
 @ACTIONS
@@ -196,6 +204,7 @@ var compress_motion = True
 {
 	TRACE(2, "Wcombo %s notify: entry_mode %d", XtName($), $entry_mode );
 	if( ! $entry_mode ) return;
+	item_selected_cb(NULL, $, (XtPointer)0 );
 	
 	
 }

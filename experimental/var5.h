@@ -61,6 +61,9 @@ int  mvar_registry( void *funcs, char *name, int id );
 int  mvar_registry_new( void *funcs, char *name );
 char* mvar_name_of_type( int id );
 
+void dump_hash_statistics(void);
+
+
 struct var_name {
     uint32_t group;
     char name[MAX_VARNAME+1]; /* one padding zero */

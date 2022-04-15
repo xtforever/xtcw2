@@ -26,7 +26,7 @@ libexecdir  ?= $(exec_prefix)/libexec
 PKGDATADIR  ?= $(prefix)/etc/xtcw
 
 MKDIR       ?= mkdir
-RSYNC       ?= rsync -ruv 
+RSYNC       ?= rsync -Lruv 
 CP          ?= cp
 CC          ?= gcc
 LN	    ?= gcc
@@ -72,7 +72,7 @@ build_lib: copy_files wbuild_widgets
 
 build_experimental:
 	$(MAKE) -C experimental
-	
+
 clean:
 	${RMDIR} build
 	$(MAKE) -C wbuild clean

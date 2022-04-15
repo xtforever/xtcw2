@@ -284,6 +284,8 @@ void db1()
     var_dump(q2);
     mvar_free( q1 );
     mvar_put_integer( q2, 0, -1 );
+
+    (void) q3;
 }
 
 
@@ -371,19 +373,50 @@ void clash(void)
 {
     int keys = read_keys_from_file( "john.txt" );
     printf("number of keys: %d\n", m_len(keys) );
-    int max = Min(m_len(keys),  m_len(keys) );
 
+    int xid=m_create(10,1);
+    printf("nextid:%d\n", xid);
+    
+    int max = Min(m_len(keys),  m_len(keys) );
+    char *s= m_str(INT(keys,10));
+    int id = mvar_lookup( 0, s, VAR_STRING  );
+    id = mvar_lookup( 0, s, VAR_STRING  );
+
+    s= m_str(INT(keys,12));
+    id = mvar_lookup( 0, s, VAR_STRING  );
+    id = mvar_lookup( 0, s, VAR_STRING  );
+    
     int u=100; while(u--)
     for(int i=0;i < max; i++ )
 	{
-	    char *s= m_str(INT(keys,i));
-	    int id = mvar_lookup( 0, s, VAR_STRING  );
+	    s= m_str(INT(keys,i));
+	    id = mvar_lookup( 0, s, VAR_STRING  );
 	    // printf("Lookup %s id=%d\n", s, id );
 	}
-    
+
+    dump_hash_statistics();
+    printf("id=%d\n", id);
     m_free_list(keys); 
 }
 
+
+
+void app_test(void)
+{
+    int dummy = mvar_lookup(0,"dummy", 0 );
+    printf("dummy-id: %d\n", dummy );
+    trace_level=1;
+    int ms = s_printf(0,0, "kunde1.kuerzel" );
+    int id = mvar_lookup_path( ms, VAR_STRING );
+    char *s;
+    
+
+    mvar_put_string( id, "hello World", 0 );
+    s = mvar_get_string( id, 0);
+    printf("mystring: %s\n", s );
+    m_free(ms);
+    
+}
 
 int main()
 {
@@ -399,8 +432,11 @@ int main()
     mvar_init();
     // db1();
     // parsing_test();
-    clash();
-    speed_test();
+    // clash();
+    //speed_test();
+
+    app_test();
+
     mvar_destruct();
     //
     m_destruct();

@@ -9,6 +9,7 @@
 #include <X11/StringDefs.h>
 #include <X11/CoreP.h>
 #include <X11/Shell.h>
+#include <stdlib.h>
 
 /* I have observed that resource converters can be called before the
    widgets initialize methods have been called.

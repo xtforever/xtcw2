@@ -624,36 +624,42 @@ static void mvar_free_all(void)
 
 int mvar_put_string( int id, char *s, int p )
 {
+    if( id == 0 ) return -1;
     var_t *v =  *mvar_get(id);
     return ( v == NULL ) ? -1 : var_put_string( v, s, p );
 }
 
 char* mvar_get_string( int id, int p )
 {
+    if( id == 0 ) return "";
     var_t *v =  *mvar_get(id);
     return ( v == NULL ) ? "" : var_get_string( v, p );
 }
 
 int mvar_put_integer( int id, long s, int p )
 {
+    if( id == 0 ) return -1;
     var_t *v =  *mvar_get(id);
     return ( v == NULL ) ? -1 : var_put_integer( v, s, p );
 }
 
 long mvar_get_integer( int id, int p )
 {
+    if( id == 0 ) return -1;
     var_t *v =  *mvar_get(id);
     return ( v == NULL ) ? -1 : var_get_integer( v, p );
 }
 
 int mvar_type(int id)
 {
+    if( id == 0 ) return -1;
     var_t *v =  *mvar_get(id);
     return ( v == NULL ) ? -1 : v->var_if; 
 }
 
 int mvar_group(int id)
 {
+    if( id == 0 ) return -1;
     var_t *v =  *mvar_get(id);
     return ( v == NULL ) ? -1 : v->group;
 }
@@ -661,12 +667,14 @@ int mvar_group(int id)
 /* dangerous - could be not null terminated */
 char* mvar_name(int id)
 {
+    if( id == 0 ) return "";
     var_t *v =  *mvar_get(id);
     return ( v == NULL ) ? "" : v->name;
 }
 
 int mvar_length(int id)
 {
+    if( id == 0 ) return -1;
     var_t *v =  *mvar_get(id);
     return  ( v == NULL ) ? -1 : var_length( v );
 }
@@ -674,8 +682,7 @@ int mvar_length(int id)
 int mvar_path(int id, int mp)
 {
     char *s = mvar_name(id);
-    int g =  mvar_group(id);
-    
+    int g =  mvar_group(id);    
     return s_printf(mp,0,"#%u.%.28s", g,s );
 }
 
@@ -937,7 +944,16 @@ int var5_lookup( int group, char *name, int  typeid )
     
     var_t v;
     v.group = group;
-    strncpy( v.name, name, MAX_VARNAME );
+
+    char *src = name;
+    char *dest = v.name;
+    int  max = sizeof(v.name);
+    while( max && *src ) {
+	*dest++ = *src++;
+	max--;
+    }
+    while( max-- ) *dest++ = 0; 
+
     return hash_lookup( HASH_TABLE, &v,
 			var5_compare_keys,
 			typeid >= 0 ? var5_create_var : NULL,
@@ -959,3 +975,24 @@ void var5_delete_hash( var_t *v )
 }
 
 
+
+void dump_hash_statistics(void)
+{
+    int colls = 0;
+    int items = 0;
+    
+    int p;
+    int *hash_item_list;
+
+    m_foreach( HASH_TABLE,p,hash_item_list) {
+	if( *hash_item_list ) {
+	    int c = m_len(*hash_item_list );
+	    items += c;
+	    colls  += c-1;
+	}
+    }
+
+    printf("Number of Keys: %d\n", items );
+    printf("Number of Collisions: %d\n", colls );
+        
+}

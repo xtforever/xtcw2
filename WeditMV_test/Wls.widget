@@ -6,6 +6,8 @@
 @var String svar = <String> "dummy"
 @var String value = <String> "dummy"
 @var <Callback> XtCallbackList callback  = NULL
+@var int forced_width  = 100
+@var int forced_height = 100
 
 @PRIVATE
 @var Widget slider
@@ -32,6 +34,7 @@
 @proc expose
 {
 	adjust_slider_size($);
+	#expose($,NULL,0);
 }
 
 @proc set_values
@@ -45,6 +48,26 @@
         }
     }
 }
+
+@proc query_geometry
+{
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    reply->width  =  $forced_width;
+    reply->height =  $forced_height;	
+
+    TRACE(1, "Wls:%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(1, "Wls:%s: our prefered size is %dx%d", XtName($),
+                  $forced_width,
+                  $forced_height );
+
+    return XtGeometryAlmost;
+}
+
+
 
 @UTILITIES
 @proc adjust_slider_size($)
@@ -81,12 +104,12 @@
         for( i=0; i<$num_children;i++ )
              XtDestroyWidget($children[0]);
 
-	XtVaCreateManagedWidget( "combo-label",
+	/* XtVaCreateManagedWidget( "combo-label",
                 wlabelWidgetClass, $,
                 "gridy", 1,
                 "label", "hello-World",
 		"gridWidth", 2,
-                NULL );
+                NULL ); */
 
 	$list = XtVaCreateManagedWidget( "combo-list",
                 wlistWidgetClass, $,

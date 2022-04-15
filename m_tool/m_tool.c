@@ -218,47 +218,6 @@ int m_mcopy(int dest, int destp, int src, int srcp, int src_count  )
 
 
 
-/** @brief insert *data into sorted list buf
- * @returns: position of new element, or -1 if elem. exists 
- */
-int m_binsert( int buf, const void *data, int (*cmpf) (const void *a,const void *b ), int with_duplicates )
-{
-    int left = 0;
-    int right = m_len(buf)+1;
-    int cur = 1;
-    void *obj;
-    int cmp;
-
-    if( m_len(buf)==0 ) {
-	m_put(buf,data);
-	return 0;
-    }
-    
-    while(1) {
-	cur = (left+right) / 2;
-	obj = mls( buf, cur - 1 );
-	cmp = cmpf( data, obj );
-	if( cmp == 0 ) {
-	    if( ! with_duplicates ) return -1;
-	    break;
-	}
-	if( cmp < 0 ) {
-	    right=cur;
-	    if( left+1 == right ) break;
-	} else {
-	    left  = cur;
-	    if( left+1 == right ) {
-		cur++;
-		break;
-	    }
-	}
-    }
-    
-    cur--;
-    m_ins( buf, cur, 1 );
-    m_write( buf, cur, data, 1 );
-    return cur;
-}
 
 
 int compare_int(const void *a,const void *b)
