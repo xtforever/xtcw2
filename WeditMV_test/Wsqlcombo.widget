@@ -41,7 +41,7 @@
     int n = *num_args;
     int do_expose = 0;
     TRACE(2, "Wsqlcombo:%s", XtName($) );
-    if( locked ) return false;
+    if( locked ) return False;
     locked=1;
     while( n-- )  {
 	if(strncmp( args[n].name, "sql_",4 ) == 0 ) {
