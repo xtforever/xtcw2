@@ -50,6 +50,11 @@ xterm -e './100lines.sh; bash' &
 #include "SelectReq.h"
 #include "script_call.h"
 #include "m_tool.h"
+#include "Wsqlcombo.h"
+#include "Wsqlcombo.h"
+#include "Wcombo.h"
+#include "Wls.h"
+#include "Woptc.h"
 
 
 
@@ -708,6 +713,10 @@ static void RegisterApplication ( Widget top )
     RCB( top, quit_cb );
     RCB( top, test_cb );
     RCB( top, terminal_output_cb );
+    RCP( top, wsqlcombo );
+    RCP( top, wcombo );
+    RCP( top, woptc );
+    RCP( top, wls );
 }
 
 /*  init application functions and structures and widgets
