@@ -118,7 +118,7 @@
 	$sqlres = v_init();
 	simple_query($sql_host, $sql_db, $sql_user, $sql_pwd, $sqlres, $sql_query_str);
 	if( $sql_result ) {
-	    $var5_res = mvar_lookup_path( $sql_result, VAR_STRING );
+	    $var5_res = mvar_parse( $sql_result, VAR_STRING );
 	    m_free($sql_result);
 	    $sql_result=0;
 	}

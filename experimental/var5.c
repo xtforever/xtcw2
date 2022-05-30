@@ -687,6 +687,10 @@ int mvar_path(int id, int mp)
 }
 
 
+// extract group number from  variable names in the form of "#9999.myname" 
+// parse a group number with '#' prefix and trailing '.' (dot)
+// set *group to the parsed number
+// return index of character after trailing dot.
 int mvar_parse_path(int mp, int *group)
 {
     *group=0;
@@ -716,22 +720,28 @@ static int next_dot(int m, int *p, int w)
 
 
 
-/* specify a variable like a x11 resource
-   start with asterix *
+/* multi-parser
+
+   form 1) g1.g2.g3.var
+   form 2) #9999.var
+   
+   specify a variable like a x11 resource
    each component will get type VSET
    last component will get given type
 */
 int mvar_parse( int mp, int type_id  )
 {
     int ch = CHAR(mp,0);
-    if( ch != '*' ) return mvar_lookup_path(mp,type_id);
-
+    if( ch == '#' ) return mvar_lookup_path(mp,type_id);
+    
     /* multi-point-parser */
     int id    =  0;
     int group =  0;
-    int start =  1;
+    int start =  0;
     int w     =  m_create(20,1);
     int t     =  VAR_VSET;
+
+    if( ch == '*' ) start=1; // ignore asterix -- legacy syntax
     
     do {
 	m_clear(w);

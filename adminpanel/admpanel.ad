@@ -19,7 +19,7 @@
 *borderWidth: 0
 
 
-$ disabled
+% disabled
 *Wswitch.bg_norm: 	#bdc3c7
 *Wswitch.fg_norm:	#ecf0f1
 *Wswitch.sizex: 	30pt
@@ -33,7 +33,7 @@ $ disabled
 *Wswitch.fg_hi: 	#95a5a6	
 
 
-$ disabled
+% disabled
 *Woption.bg_norm: 	#bdc3c7
 *Woption.fg_norm:	#ecf0f1
 
@@ -69,7 +69,7 @@ $ disabled
 admpanel.WcChildren: gb1
 
 *gb1.WcClass: gridbox
-*gb1.WcChildren: b1 term gb
+*gb1.WcChildren: b1 term gb ot4
 
 *term.WcClass: Wlist4
 *term.xftFont: Source Code Pro-8 
@@ -96,7 +96,17 @@ admpanel.WcChildren: gb1
 
 
 
-*weightx: 1
-*weighty: 1
+*weightx: 100
+*weighty: 100
 *fill: Both
+
+
+
+*ot4.gridy: 3
+*ot4.gridx: 0
+*ot4.WcClass: Wsqlcombo 
+*ot4.label: Hello
+*ot4.borderColor: Blue
+*ot4.borderWidth: 8
+*bt.fill: Both
 

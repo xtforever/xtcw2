@@ -1,6 +1,14 @@
 /* most important define,
    check APPNAME.ad !
 xterm -e './100lines.sh; bash' &
+
+
+neue widgets hinzufuegen:
+
+- RCP in RegisterApplication()
+
+
+
 */
 #define APP_NAME "admpanel"
 
@@ -55,6 +63,7 @@ xterm -e './100lines.sh; bash' &
 #include "Wcombo.h"
 #include "Wls.h"
 #include "Woptc.h"
+#include "var5.h"
 
 
 
@@ -350,6 +359,23 @@ void input_widget_enter_cb(Widget w, void *u, void *c)
 }
 
 
+// get var5 result and store it in svar2 result with same name
+//
+void userid_changed_cb(void*ctx,int var,int sig)
+{
+    TRACE(2, "");
+    int name  = (int) (intptr_t) ctx;
+    int var5  = mvar_parse( name, 0 );
+    char *id  = mvar_get_string( var5, 0);
+    
+    int svar  = svar_lookup( name, SVAR_MSTRING_ARRAY );
+    int *val  = (int*) svar_value(svar);
+    if( ! *val ) *val=m_create(2,sizeof(int) );
+    if( m_len(*val) == 0 ) m_setlen( *val, 1 );
+    int *ent = (int *) mls(*val,0 );
+    if( ! *ent ) *ent = m_create(20,1);
+    m_write( *ent,0, id, strlen(id)+1 );
+}
 
 static Widget create_input_widget( int task, int var, Widget mgr )
 {
@@ -467,6 +493,47 @@ static Widget create_switch_widget( int task, int var, Widget mgr )
 }
 
 
+static Widget create_userid_widget( int task, int var, Widget mgr )
+{
+    char *section = get_task_name(task);
+    char *name =  STR(var,0); /* we have name=value inside the ini-file */
+
+    // create a svar to store our uid 
+    int result_var = s_printf(0,0, "%s.%s", section, name );
+    TRACE(4, "defining userid-widget for var %s", m_str(result_var) );
+    int var_name = m_dub(result_var);
+    
+    // our manager is a gridbox widget
+    // create a label and input widget inside 
+    Widget w;
+    
+    // create a label to display "name"
+    w = XtVaCreateManagedWidget(name,wlabelWidgetClass, mgr,
+				XtNweightx,1,
+				XtNweighty,0,
+				XtNlabel, name,
+				XtNgridx, GridX,
+				XtNgridy, GridY,
+				NULL );
+
+    w = XtVaCreateManagedWidget( name, wsqlcomboWidgetClass, mgr,
+				 "sql_result", result_var,
+				 // XtVaTypedArg, XtNarrayChar,
+				 // XtRString, optlist, strlen(optlist) + 1,
+				XtNgridx, GridX+1,
+				XtNgridy, GridY,
+				XtNweightx, 100,
+				XtNweighty, 0,
+				NULL);
+    // result_var is now under control from the widget
+    // do not re-use this buffer, do not free this buffer
+    //
+    int var5 = mvar_parse( var_name, VAR_STRING );
+    mvar_set_callback(var5, userid_changed_cb, (void*)(intptr_t)var_name, 0 );
+    // var_name will not be removed - intended memory leak 
+    return w;
+}
+
 
 static Widget create_option_widget( int task, int var, Widget mgr )
 {
@@ -554,13 +621,17 @@ void create_widget_from_var( int task, int var, Widget mgr )
 	{
 	    create_input_widget( task, var, mgr );
 	}
-    if( strncasecmp( type, "option", 6) == 0 )
+    else if( strncasecmp( type, "option", 6) == 0 )
 	{
 	    create_option_widget( task, var, mgr );
 	}
-    if( strncasecmp( type, "switch", 6) == 0 )
+    else if( strncasecmp( type, "switch", 6) == 0 )
 	{
 	    create_switch_widget( task, var, mgr );
+	}
+    else if( strncasecmp( type, "userid", 6) == 0 )
+	{
+	    create_userid_widget( task, var, mgr );
 	}
     else if( strncasecmp( type, "script:", 7) == 0 )
 	{
@@ -671,6 +742,7 @@ static void create_task( Widget mgr, int task )
 				XtNgridy,GridY,
 				XtNlabel, label,
 				XtNfill, 0,
+				XtNweightx, 0, XtNweighty, 0,				
 				XtNgravity, 3,
 				NULL );
     XtAddCallback(w, XtNcallback, task_leave_cb, (XtPointer)0 );
@@ -866,6 +938,7 @@ int main ( int argc, char **argv )
     m_init();
     mv_init();
     svar_init();
+    mvar_init();
     XtSetLanguageProc (NULL, NULL, NULL);
     XawInitializeWidgetSet();
 
@@ -930,6 +1003,8 @@ int main ( int argc, char **argv )
     XtDestroyWidget(appShell);
 
     DestroyApplication();
+
+    mvar_destruct();
     svar_destruct();
     m_destruct();
 
