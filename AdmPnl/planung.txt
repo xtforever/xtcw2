@@ -1,0 +1,24 @@
+
+
+
+
+copy-upload-files
+
+von: [kunde1] zu: [kunde2]
+                  
+
+select source
+1.
+2.
+3.
+
+dest:
+[kunde2.webrooot]
+[kunde2.uid]
+[kunde2.gid]
+
+copy-command:
+[ cmd.line[0]  ]
+[ cmd2.line[1] ]
+
+[XEC CMD]

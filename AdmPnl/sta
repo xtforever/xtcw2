@@ -1,0 +1,48 @@
+Auf Branch master
+Ihr Branch ist auf demselben Stand wie 'origin/master'.
+
+Änderungen, die nicht zum Commit vorgemerkt sind:
+  (benutzen Sie "git add <Datei>...", um die Änderungen zum Commit vorzumerken)
+  (benutzen Sie "git restore <Datei>...", um die Änderungen im Arbeitsverzeichnis zu verwerfen)
+  (committen oder verwerfen Sie den unversionierten oder geänderten Inhalt in den Submodulen)
+	geändert:       ../WeditMV_test/Wsqlcombo.widget
+	geändert:       admpanel.ad
+	geändert:       admpanel.c
+	geändert:       ap.ini
+	geändert:       ../experimental/var5.c
+	geändert:       ../mls (geänderter Inhalt)
+
+Unversionierte Dateien:
+  (benutzen Sie "git add <Datei>...", um die Änderungen zum Commit vorzumerken)
+	../.kdev4/
+	../WeditMV_test/log
+	Radio2.c
+	SelectReq.c
+	Wcombo.c
+	WeditMV.c
+	Wlist.c
+	WlistScroll.c
+	Wls.c
+	Woptc.c
+	Woption.c
+	Wsqlcombo.c
+	Wswitch.c
+	admpanel
+	njson_lex.lex.c
+	njson_lex.lex.h
+	njson_parse.tab.c
+	njson_parse.tab.h
+	planung.txt
+	sta
+	xtcw/
+	../build/
+	../experimental/hash_test
+	../experimental/var5-test
+	../image_view/
+	../njson/
+	../var5-widget/WcomboV5.widget
+	../var5-widget/xtcw/
+	../wbuild/wbuild
+	../xtcw2.kdev4
+
+keine Änderungen zum Commit vorgemerkt (benutzen Sie "git add" und/oder "git commit -a")

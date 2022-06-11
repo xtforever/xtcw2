@@ -15,7 +15,7 @@
 @trans <Ctrl>x:        info()
 @trans <Ctrl>v:        insert_selection()
 @trans <Btn1Down>:     set_cursor() SetKeyboardFocus() 
-@trans <Key>Return:    notify()
+@trans <Key>Return:    CallOnEnter() notify()
 @trans <Key>:          insert_char()
 @trans <FocusIn>:      focus_in() 
 @trans <FocusOut>:     focus_out()
@@ -33,6 +33,13 @@
 @var String label = NULL
 @var QVar textBuffer = <String> "defaultEditBuffer"
 @var String svar = <String> "defaultEditBuffer"
+
+
+@ this could be done with the translation manager
+  but i like this syntax more.
+  
+@var <Callback> XtCallbackList onEnter   = NULL
+
 
 @PRIVATE
 @def BG = 0
@@ -258,6 +265,7 @@
 @ clear the pixmap, draw text on pixmap, draw pixmap on window
 @proc paint($)
 {
+	TRACE(8, "-- %s:%s", XtName($), "WeditMV" );
         clear_pixmap($);
         draw_text_on_pixmap($);
         draw_pixmap_on_window($);
@@ -635,6 +643,13 @@
 @ACTIONS
 
 
+@ call the callbacks defined in the 'onEnter' Class Member
+@proc CallOnEnter
+{
+	XtCallCallbackList( $, $onEnter, NULL );
+}
+
+
 @ params: ($, XEvent *event _X_UNUSED, String *params _X_UNUSED, Cardinal *num_params _X_UNUSED)
 @proc SetKeyboardFocus
 {
@@ -726,9 +741,13 @@
                         NULL, 0 );
 }
 
+
+
+
 @proc notify
 {
-  XtCallCallbackList( $, $callback, event );
+	
+	XtCallCallbackList( $, $callback, event );
 }
 
 

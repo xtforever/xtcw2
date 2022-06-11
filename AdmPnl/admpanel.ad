@@ -1,0 +1,89 @@
+admpanel.WcChildren: gb1
+%%
+%%     INTERNET FREIGABE VON SANDBOXEN  
+%%   
+%%     Kuerzel:    jeh
+%%     Sandbox:    10
+%%     Domain:     arcon
+%%     Loeschen:   [  ]
+%%
+%%    Cmd: ./freigabe.sh -m jeh sandbox10 arcon
+%%
+%%    EXECUTE                                  QUIT
+%%
+*gb1.WcClass: gridbox
+*gb1.WcChildren: header values footer
+
+*header.gridy: 0
+*values.gridy: 1
+*footer.gridy: 2
+
+*WeditMV.foreground:    #008c7c
+*WeditMV.cursorColor:   #95a5a6
+*background:            #ecf0f1
+*WeditMV.fontName: Source Code Pro-12
+
+
+
+*header.wcClass: Wlabel
+*header.label:   INTERNET FREIGABE VON SANDBOXEN
+
+
+*values.wcClass: Gridbox 
+*values.wcChildren: l10 l11 l20 l21 l30 l31
+
+*l10.gridx: 0
+*l11.gridx: 1
+*l10.gridy: 0
+*l11.gridy: 0
+
+*l10.wcClass: Wlabel
+*l10.label  : kuerzel
+
+*l11.wcClass: Weditmv
+*l11.label  : jeh
+*l11.onEnter: SetFocus(*l21)
+*l11.onLostFocus: UpdateTask()
+
+*l20.gridx: 0
+*l21.gridx: 1
+*l20.gridy: 1
+*l21.gridy: 1
+
+*l20.wcClass: Wlabel
+*l20.label  : sandbox 
+
+*l21.wcClass: Weditmv 
+*l21.label  : 10
+*l21.onEnter: SetFocus(*l31)
+*l21.onLostFocus: UpdateTask()
+
+*l30.gridx: 0
+*l31.gridx: 1
+*l30.gridy: 2
+*l31.gridy: 2
+
+*l30.wcClass: Wlabel
+*l30.label  : domain  
+
+*l31.wcClass: Weditmv 
+*l31.label  : 
+*l31.onEnter:  SetFocus(*l11)
+*l31.onLostFocus: UpdateTask()
+
+*footer.wcClass: Gridbox
+*footer.wcChildren: exec quit
+*exec.gridx: 0
+*quit.gridx: 1
+
+
+*exec.wcClass: Wbutton
+*exec.label:   Execute 
+
+*quit.wcClass: Wbutton
+*quit.label: Quit 
+*quit.gravity: east
+*quit.fill: none
+*quit.weightx: 100
+*quit.callback: WcQuit
+
