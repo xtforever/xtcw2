@@ -74,6 +74,8 @@
      int  g = mvar_vset();
 
    find/create a variable
+     int q = mvar_parse( int var_path_string, int type );
+   
      int q =  mvar_lookup( group,sname,stype );			
      int q =  mvar_lookup_path(mp,stype);			
      int offs = mvar_parse_path(mp,&group);
@@ -741,7 +743,9 @@ int mvar_parse( int mp, int type_id  )
     int w     =  m_create(20,1);
     int t     =  VAR_VSET;
 
-    if( ch == '*' ) start=1; // ignore asterix -- legacy syntax
+    if( ch == '*' ) {	       /*  skip asterix and following dot -- legacy syntax  */
+	start = CHAR(mp,1) == '.' ? 2 : 1;
+    }
     
     do {
 	m_clear(w);
@@ -755,6 +759,16 @@ int mvar_parse( int mp, int type_id  )
     m_free(w);
     return id;
 }
+
+
+int mvar_parse_string(const char *s, int type_id )
+{
+    int name = s_printf(0,0, s );
+    int key = mvar_parse( name, type_id );
+    m_free(name);
+    return key;    
+}
+
 
 
 /* suche nach einer variable mit name (group,name)
@@ -1006,3 +1020,224 @@ void dump_hash_statistics(void)
     printf("Number of Collisions: %d\n", colls );
         
 }
+
+
+
+
+void mvar_str_init(  mvar_str_t *se  )
+{
+  memset( se, 0, sizeof *se );
+}
+
+void mvar_str_free(  mvar_str_t *se )
+{
+  m_free_strings( se->splitbuf,0 );
+  m_free( se->values );
+  m_free( se->indices );
+  m_free( se->buf );
+  memset( se,0,sizeof *se);
+}
+
+
+void mvar_str_realloc_buffers( mvar_str_t *se )
+{
+  if( !se->buf ) {
+    se->splitbuf = m_create(10,sizeof(char*));
+    se->values=m_create(10,sizeof(char*));
+    se->indices=m_create(10,sizeof(int));
+    se->buf=m_create(100,1);
+    return;
+  }
+
+  m_free_strings(se->splitbuf,1);
+  m_clear(se->values); m_clear(se->indices);
+  m_clear(se->buf);
+  se->max_row=0;
+}
+
+// tbd
+// returns:
+//  1 ALL
+//  2..n SINGLE
+//  0 ERROR
+//
+static int parse_index(const char **s)
+{
+  int val;
+  const char *p = *s;
+
+  if( *p !='[' ) return 0;
+  p++;
+  if( *p == '*' && p[1] == ']') {
+    *s=p+2;
+    return 1;
+  }
+
+  val=0;
+  while( isdigit(*p) )
+    {
+      val *= 10; val+= *p - '0';
+      p++;
+    }
+  if( *p == ']' ) { *s=p+1; return val+2; }
+
+  return 0;
+}
+
+
+void mvar_str_parse(mvar_str_t *se, const char *frm)
+{
+  ASSERT( frm && se );
+
+  mvar_str_realloc_buffers(se); // alloc, or clear buffer
+
+  int b=se->splitbuf;
+  char *cp,prev; const char *s,*s0;
+
+  prev=0; s = frm; s0=s;
+
+  for(;;) {
+
+    if( *s == 0 || (*s == '$' && prev != '\\') )
+      {
+        // prefix ?
+        if( s0 != s ) {
+          cp = strndup(s0,s-s0); // copy without *s
+          m_put(b,&cp);
+        }
+        if( *s == 0 ) break; // exit
+
+        // cut out varname
+        s0=s; //  token start (with $-prefix)
+        s++; // skip leading $
+
+        if( *s == '\'' ) { s++; } // expand with single quotes
+
+        while( isalnum(*s) || *s=='_' ) s++; // UNTIL DELIMITER FOUND
+        // copy without delimiter
+        cp=strndup(s0,s-s0);
+        m_put(b,&cp); m_put(se->values,&cp);
+
+        int index = parse_index(&s);
+        m_put( se->indices, &index );
+        if( *s == 0 ) break; // exit
+
+        s0=s; // s0 points to delimiter
+	continue;
+      }
+    prev = *s;
+    s++;
+  }
+};
+
+/** @brief erzeugt aus *s einen string mit escape zeichen
+    @param s2 - 0 oder mls liste
+    @param s - ein string der umgewandelt werden soll
+    @param quotes - falls quotes==1 werden einfache anführungszeichen um die variable gesetzt
+    @return gültiger mls string (liste mit breite 1, string ohne Nullbyte)
+ */
+
+static int field_escape(int s2, const char *s, int quotes)
+{
+  // "*s" ist der zu speichernde string
+  // um das sql-kommando zu generieren werden sonderzeichen
+  // "escaped". dies ist ein gutes beispiel warum die "mls"
+  // speicherverwaltung vorteile bietet. der benötigte speicher
+  // von mysql_escape_string muss abgeschätzt und reserviert werden.
+  // die gleiche funktion in mls ist viel einfacher zu verwenden
+  if( quotes ) m_putc( s2, '\'');
+  escape_buf( s2, (char*)s );
+  if( quotes ) m_putc( s2, '\'');
+  return s2;
+}
+
+/**
+    @return einen gültigen string - immer
+ */
+const char* mvar_str_expand( mvar_str_t *se, char *prefix, int row )
+{
+    const char *val;
+    int count,var, index;
+    int p;
+    char **d, *s;
+    int quotes = 0;
+    int varname = m_create(100,1);
+    int vn=0; // number of variables
+    m_clear(se->buf); int buf = se->buf;
+
+
+  // string zusammenfügen
+  // variablen werden durch ihren wert ersetzt
+  // variablen werden durch ein führendes "$" erkannt
+  // folgt dem $ ein "'" wird der eingesetzte wert durch "'" umschlossen
+  //
+  m_foreach( se->splitbuf, p,d ) {
+    s = *d;
+
+    if( *s != '$' ) { // einfacher text-baustein, nur anhängen
+      m_write( buf, m_len(buf), s, strlen(s) );
+    }
+    else  // variable found
+      {
+        if( s[1] == '\'' ) { quotes=1; s++; } else quotes=0;
+	s_printf(varname,0,"%s.%s", prefix, s+1 );
+        var = mvar_parse(varname,0);
+        index = INT(se->indices, vn ); vn++;
+	count = mvar_length(var);
+        // expand var
+	if( index == 1 ) { // erzeuge eine liste von werten
+	    val = mvar_get_string(var,0);
+	    field_escape(buf, val, quotes);
+	    for( index=1; index < count; index++ ) {
+		m_putc(buf, ',' );
+		val = mvar_get_string(var,index);
+		field_escape(buf, val, quotes);
+	    }
+	}
+	else { // index != 1  i.e. not expand all i.e. index != [*]
+	    if( index == 0 ) index=row; // falls kein index angegeben wurde, benutze (row)
+	    else index -= 2;
+
+	    if( index < count ) {
+		val = mvar_get_string(var,index);
+		field_escape(buf, val, quotes);
+	    }
+	    
+	}
+      } // variable expandiert
+  }
+
+  m_putc( buf, 0 );
+  m_free(varname);
+  return   mls( buf, 0 );
+}
+
+/** expandiert den string frm mit den variablen aus vl
+ * @return	einen Zeiger auf den expandierten string
+ *		dieser string wird auch als variable
+ *		unter dem namen se_string in vl gespeichert
+ */
+const char*   mvar_str_string( char *prefix, const char *frm )
+{
+    mvar_str_t se;
+    int var, varname;
+    
+    mvar_str_init( &se );
+    mvar_str_parse( &se, frm );
+    char *s = mvar_str_expand( &se, prefix, 0 );
+
+    /* create a new variable and copy the expanded string into it */ 
+    varname = s_printf(0,0,"%s.se_string", prefix );
+    var = mvar_parse(varname, VAR_STRING);
+    mvar_put_string( var, s, 0 );
+    
+    m_free(varname);
+    mvar_str_free(&se);
+    
+    /* return copied string */
+    return mvar_get_string(var,0);
+}
+
+
+
+
