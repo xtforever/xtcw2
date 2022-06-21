@@ -50,7 +50,7 @@ int njson_find_obj(int opts, char *name)
 {
     struct njson_st *j = njson_find_data(opts,name);
     if(j && j->typ >= NJSON_ARR ) {
- return j->d;
+	return j->d;
     }
     return 0;
 }
@@ -66,52 +66,52 @@ int njson_get_entry(int field, char *name )
 
 char *header_part1=
 " admpanel.WcChildren: gb1                  \n"
-" admpanel.prefix: $PREFIX      \n"
-" *gb1.WcClass: gridbox       \n"
-" *gb1.WcChildren: header values footer     \n"
-" *header.gridy: 0       \n"
-" *values.gridy: 1       \n"
-" *footer.gridy: 2       \n"
-" *WeditMV.foreground:    #008c7c     \n"
-" *WeditMV.cursorColor:   #95a5a6     \n"
-" *background:            #ecf0f1     \n"
-" *WeditMV.fontName: Source Code Pro-12     \n"
-" *header.wcClass: Wlabel      \n"
-" *header.label:   $TITLE      \n"
-" *header.weightx: 100       \n"
-" *header.weighty: 100       \n"
+" admpanel.prefix: $PREFIX		    \n"
+" *gb1.WcClass: gridbox			    \n"
+" *gb1.WcChildren: header values footer	    \n"
+" *header.gridy: 0			    \n"
+" *values.gridy: 1			    \n"
+" *footer.gridy: 2			    \n"
+" *WeditMV.foreground:    #008c7c	    \n"
+" *WeditMV.cursorColor:   #95a5a6	    \n"
+" *background:            #ecf0f1	    \n"
+" *WeditMV.fontName: Source Code Pro-12	    \n"
+" *header.wcClass: Wlabel		    \n"
+" *header.label:   $TITLE		    \n"
+" *header.weightx: 100			    \n"
+" *header.weighty: 100			    \n"
 " *header.fill: Both                        \n"
 "*cmd.wcClass: Wexecgui                                                \n"
 "*cmd.shell_cmd: $SCRIPT                                               \n"
-"*cmd.prefix: $PREFIX             \n"
-"*cmd.bg_norm: Black             \n"
-"*cmd.bg_sel: Black             \n"
-"*cmd.fg_norm: Green             \n"
-"*cmd.fg_sel: Green             \n"
-"               \n"
-"*footer.wcClass: Gridbox            \n"
-"*footer.wcChildren: cmd exec quit           \n"
-"               \n"
-"*exec.gridx: 0              \n"
-"*quit.gridx: 1              \n"
-"*exec.gridy: 1              \n"
-"*quit.gridy: 1              \n"
-"*cmd.gridWidth: 2             \n"
-"               \n"
+"*cmd.prefix: $PREFIX						       \n"
+"*cmd.bg_norm: Black						       \n"
+"*cmd.bg_sel: Black						       \n"
+"*cmd.fg_norm: Green						       \n"
+"*cmd.fg_sel: Green						       \n"
+"								       \n"
+"*footer.wcClass: Gridbox					       \n"
+"*footer.wcChildren: cmd exec quit				       \n"
+"								       \n"
+"*exec.gridx: 0							       \n"
+"*quit.gridx: 1							       \n"
+"*exec.gridy: 1							       \n"
+"*quit.gridy: 1							       \n"
+"*cmd.gridWidth: 2						       \n"
+"								       \n"
 "% if cmd resizes exec end quit will be repositioned in the new grid   \n"
-"*cmd.fill: Both             \n"
-"*cmd.weightx: 100             \n"
-"*cmd.weighty: 100             \n"
-"               \n"
-"               \n"
-"*exec.wcClass: Wbutton             \n"
-"*exec.label:   Execute             \n"
-"                      \n"
-"*quit.wcClass: Wbutton             \n"
-"*quit.label: Quit              \n"
-"*quit.gravity: east             \n"
-"% *quit.fill: none             \n"
-"*quit.callback: WcQuit             \n"
+"*cmd.fill: Both						       \n"
+"*cmd.weightx: 100						       \n"
+"*cmd.weighty: 100						       \n"
+"								       \n"
+"								       \n"
+"*exec.wcClass: Wbutton						       \n"
+"*exec.label:   Execute 					       \n"
+"	       							       \n"
+"*quit.wcClass: Wbutton						       \n"
+"*quit.label: Quit 						       \n"
+"*quit.gravity: east						       \n"
+"% *quit.fill: none						       \n"
+"*quit.callback: WcQuit						       \n"
     "                                                                      \n";
 
 
@@ -124,9 +124,9 @@ struct str_dispatch_st {
 int str_dispatch( int mstr, struct str_dispatch_st *kw, int what, int where, void *fp )
 {
     for( int i=0; i < 1000 && kw[i].name; i++ ) {
- if( mstrcmp(mstr,0,kw[i].name) == 0 ) {
-     return kw[i].func(what,where,fp);
- }
+	if( mstrcmp(mstr,0,kw[i].name) == 0 ) {
+	    return kw[i].func(what,where,fp);
+	}
     }
     return -1;
 }
@@ -145,7 +145,7 @@ void njson_array_to_mvar( int lst, char *mvars )
     struct njson_st *j;
     int p;
     m_foreach( lst, p, j ) {
- mvar_put_string(id, m_str( j->d ), p);
+	mvar_put_string(id, m_str( j->d ), p);
     }
     m_free(mvar);
 }
@@ -163,8 +163,8 @@ int m_slice( int m, int p, int src, int a, int len )
     if( !m ) m=m_create(100,1);
     m_setlen(m,p);
     while( len-- ) {
- void *x = mls(src,a++);
- m_put( m, x );
+	void *x = mls(src,a++);
+	m_put( m, x );
     }
     return m;
 }
@@ -175,16 +175,16 @@ int mvars_assign_mp_va( int m, int p, char *format, va_list ap )
     int mv;
     m = vas_printf( m,p, format, ap );
     m_foreach(m,n,d) {
- if( *d == '=' ) {
-     int var = m_slice( 0,0, m,0, n );
-     m_putc(var,0);
-     mv = mvar_parse(var,VAR_STRING);
-     mvar_put_string(mv, (char*)mls(m,n+1), 0 );
-     m_free(var);
+	if( *d == '=' ) {
+	    int var = m_slice( 0,0, m,0, n );
+	    m_putc(var,0);
+	    mv = mvar_parse(var,VAR_STRING);
+	    mvar_put_string(mv, (char*)mls(m,n+1), 0 );
+	    m_free(var);
 
-     m_free(m);     
-     return mv;
- }
+	    m_free(m);	    
+	    return mv;
+	}
     }
     mv = mvar_parse(m,VAR_STRING);
     m_free(m);
@@ -210,32 +210,60 @@ int mvars_assign_mp( int m, int p, char *format, ... )
     return mv;
 }
 
+static void print_resource( const char *s, FILE *fp )
+{
+    int buf=m_create(100,1);
+    int ch=1; const char *d=s;
+    int p=-1;
 
+    while(ch) {
+	ch = *d++;
+	if( ch == '\t' ) ch=32;
+
+	if( ch == '\n' || ch==0 ) {
+	    fwrite( m_buf(buf), p>=0 ? p : m_len(buf), 1, fp );
+	    fprintf(fp, "\n" );
+	    m_clear(buf);
+	    p=-1;
+	    continue;
+	}
+
+	if( isspace(ch) ) {
+	    if( p < 0 ) p=m_len(buf); // first seen space
+	} else p=-1;
+
+	m_putc(buf, ch);
+    }
+    m_free(buf);
+}
 
 static int print_widget(char *pattern, int opts, int row, void *fp )
 {
-       
+
     int title =  njson_get_entry(opts,"title");
     int var   =  njson_get_entry(opts,"variable");
     mvars_assign( "opt.w0=*l%d0", row );
     mvars_assign( "opt.w1=*l%d1", row );
     mvars_assign( "opt.varname=task1.%s", m_str(var) );
     mvars_assign( "opt.title=%s", m_str(title) );
+
     const char *s = mvar_str_string( "opt", pattern );
-    fputs(  s, fp );
-    return 0; 
+    print_resource(s,fp);
+
+
+    return 0;
 }
 
 static int  print_input( int opts, int row, void *fp )
 {
     char *part=
- "$w0.wcClass: Wlabel    \n"
- "$w0.label  : $title      \n"
- "$w1.wcClass: Weditmv     \n"
- "$w1.label:      \n"
- "$w1.onChanged: CallAction( *cmd UpdateCmd ) \n"
- "$w1.weightx: 1000    \n"
- "$w1.var5: $varname    \n";
+	"$w0.wcClass: Wlabel				\n"
+	"$w0.label  : $title  				\n"
+	"$w1.wcClass: Weditmv 				\n"
+	"$w1.label: 					\n"
+	"$w1.onChanged: CallAction( *cmd UpdateCmd )	\n"
+	"$w1.weightx: 1000				\n"
+	"$w1.var5: $varname				\n";
 
     return print_widget( part, opts, row, fp );
 }
@@ -245,11 +273,11 @@ static int  print_kuerzel( int opts, int row, void *fp )
 {
 
     char *part=
- "$w0.wcClass: Wlabel     \n"
- "$w0.label  : $title     \n"
- "$w1.wcClass: Wsqlcombo     \n"
- "$w1.sqlcombo_cb:  CallAction( *cmd UpdateCmd )  \n"
- "$w1.sql_result: $varname    \n";
+	"$w0.wcClass: Wlabel					\n"
+	"$w0.label  : $title					\n"
+	"$w1.wcClass: Wsqlcombo					\n"
+	"$w1.sqlcombo_cb:  CallAction( *cmd UpdateCmd )		\n"
+	"$w1.sql_result: $varname				\n";
 
     return print_widget( part, opts, row, fp );
 }
@@ -260,10 +288,10 @@ static int  print_option( int opts, int row, void *fp )
 {
     char *part=
     "$w0.wcClass:  Wlabel                         \n"
-    "$w0.label  :  $title              \n"
-    "$w1.wcClass:  radio2             \n"
-    "$w1.lst:      $optlist[*]            \n"
-    "$w1.value:    $optlist[0]            \n"
+    "$w0.label  :  $title  		          \n"
+    "$w1.wcClass:  radio2 		          \n"
+    "$w1.lst:      $optlist[*]		          \n"
+    "$w1.value:    $optlist[0]		          \n"
     "$w1.callback: CallAction( *cmd UpdateCmd )   \n"
     "$w1.var5:     $varname                       \n";
     
@@ -284,7 +312,7 @@ static int  print_option( int opts, int row, void *fp )
     njson_array_to_mvar(val, "opt.optlist" );
     
     const char *s = mvar_str_string( "opt", part );
-    fprintf( fp, "%s", s );
+    print_resource(s,fp);
 
     m_free(vn);
     return 0;
@@ -298,10 +326,10 @@ static void print_field( int field, int row, FILE *fp )
     TRACE(4, "type: %s", m_str(t) );
 
     struct str_dispatch_st kw[4] = {
- { "kuerzel", print_kuerzel },
- { "input", print_input    },
- { "option",  print_option },
- { NULL, NULL } };
+	{ "kuerzel", print_kuerzel },
+	{ "input", print_input    },
+	{ "option",  print_option },
+	{ NULL, NULL } };
 
     str_dispatch( t, kw, field, row, fp );
 
@@ -314,9 +342,9 @@ static void create_layout(int rows, FILE *fp )
     for(int i=0;i<rows;i++) fprintf(fp, "l%d0 l%d1 ", i,i);
     fprintf(fp, "\n*l01.weightx: 1000\n*l00.weightx: 100\n*l01.fill: Width\n" );
     for(int i=0;i<rows;i++) fprintf(fp,
-        "*l%d0.gridx: 0\n*l%d0.gridy: %d\n"
-        "*l%d1.gridx: 1\n*l%d1.gridy: %d\n"
-        "*l%d1.onEnter: SetFocus(*l%d1)\n", i,i,i, i,i,i,    i,i+1);
+				    "*l%d0.gridx: 0\n*l%d0.gridy: %d\n"
+				    "*l%d1.gridx: 1\n*l%d1.gridy: %d\n"
+				    "*l%d1.onEnter: SetFocus(*l%d1)\n", i,i,i, i,i,i,    i,i+1);
 }
 
 
@@ -328,7 +356,7 @@ static void fill_values( int fields, FILE *fp )
     /* 'fields' contains objects with (type,...) */ 
     struct njson_st *j;
     m_foreach(fields,p,j) {
- print_field( j->d, p, fp );
+	print_field( j->d, p, fp );
     }    
 
 }
@@ -345,7 +373,8 @@ static void print_header(int title,int script, FILE *fp)
     s_printf(var,0, "gg.PREFIX=task1" );
     mvar_assign( var );
     const char *s = mvar_str_string( "gg", header_part1 );
-    fprintf( fp, "%s", s );
+    print_resource(s,fp);
+
     m_free(var);
 }
 
