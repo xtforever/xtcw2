@@ -9,6 +9,8 @@
 #include "converters.h"
 #line 77 "Radio2.widget"
 #include "mls.h"
+#line 78 "Radio2.widget"
+#include "var5.h"
 #include <xtcw/Radio2P.h>
 static void _resolve_inheritance(
 #if NeedFunctionPrototypes
@@ -67,20 +69,20 @@ static void do_layout(self)Widget self;
                 "group", ((Radio2Widget)self)->radio2.radioGroup,
                 "value", STR(((Radio2Widget)self)->radio2.lst,i),
 		"label", STR(((Radio2Widget)self)->radio2.lst,i),
-		"svar", ((Radio2Widget)self)->radio2.svar,
+		"var5", ((Radio2Widget)self)->radio2.var5,
 		"act", act,
                 NULL );
 	    XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, self );
 	}
 
 
-     XtVaCreateManagedWidget( "hello-world",
-                wlabelWidgetClass, self,
+     /* XtVaCreateManagedWidget( "hello-world",
+                wlabelWidgetClass, $,
                 "gridy", 1,
                 "label", "hello-World",
 		"gridWidth", 3,
                 NULL );
-
+	*/
 
 }
 #line 68 "Radio2.widget"
@@ -101,7 +103,7 @@ static XtResource resources[] = {
 #line 9 "Radio2.widget"
 {XtNlst,XtCLst,XtRStringMArray,sizeof(((Radio2Rec*)NULL)->radio2.lst),XtOffsetOf(Radio2Rec,radio2.lst),XtRString,(XtPointer)"Hello,World"},
 #line 10 "Radio2.widget"
-{XtNsvar,XtCSvar,XtRString,sizeof(((Radio2Rec*)NULL)->radio2.svar),XtOffsetOf(Radio2Rec,radio2.svar),XtRString,(XtPointer)"dummy"},
+{XtNvar5,XtCVar5,XtRString,sizeof(((Radio2Rec*)NULL)->radio2.var5),XtOffsetOf(Radio2Rec,radio2.var5),XtRString,(XtPointer)"dummy"},
 #line 11 "Radio2.widget"
 {XtNvalue,XtCValue,XtRString,sizeof(((Radio2Rec*)NULL)->radio2.value),XtOffsetOf(Radio2Rec,radio2.value),XtRString,(XtPointer)"dummy"},
 #line 12 "Radio2.widget"

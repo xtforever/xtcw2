@@ -32,6 +32,7 @@ String  sql_host;
 String  sql_user;
 String  sql_pwd;
 String  sql_db;
+XtCallbackList  onEnter;
 /* private state */
 int  sqlres;
 int  disp_lst;

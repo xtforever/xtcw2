@@ -138,16 +138,27 @@ static int  print_dummy( int field, int w, void *fp )
     return 0;
 }
 
+
 void njson_array_to_mvar( int lst, char *mvars )
 {
     int mvar = s_printf(0,0,mvars);
     int id = mvar_parse( mvar, VAR_STRING );
+    m_free(mvar);
+    mvar_clear(id);
+
+    int len = mvar_length( id );
+    TRACE(4,"current length: %d", len );
+
     struct njson_st *j;
     int p;
     m_foreach( lst, p, j ) {
 	mvar_put_string(id, m_str( j->d ), p);
     }
-    m_free(mvar);
+
+
+    len = mvar_length( id );
+    TRACE(4,"current length: %d", len );
+
 }
 
 void mvars_put_string( char *name, char *str, int row )
@@ -250,8 +261,20 @@ static int print_widget(char *pattern, int opts, int row, void *fp )
     const char *s = mvar_str_string( "opt", pattern );
     print_resource(s,fp);
 
-
     return 0;
+}
+
+
+static void print_extra_vars(int opts, int row, void *fp )
+{
+    int lst = njson_find_obj( opts, "extra_vars" );
+    struct njson_st *j;
+    int p;
+    m_foreach( lst, p, j ) {
+	char *name = m_str( j->name );
+	char *val  = m_str( j->d    );
+	fprintf(fp,"*l%d1.%s: %s\n", row, name, val );
+    }
 }
 
 static int  print_input( int opts, int row, void *fp )
@@ -265,6 +288,7 @@ static int  print_input( int opts, int row, void *fp )
 	"$w1.weightx: 1000				\n"
 	"$w1.var5: $varname				\n";
 
+    
     return print_widget( part, opts, row, fp );
 }
    
@@ -332,6 +356,8 @@ static void print_field( int field, int row, FILE *fp )
 	{ NULL, NULL } };
 
     str_dispatch( t, kw, field, row, fp );
+
+    print_extra_vars( field, row, fp );
 
 }
 

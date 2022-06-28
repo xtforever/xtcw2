@@ -37,7 +37,7 @@ mvar_call_callbacks( int q, int s )
     var_call_callbacks( q,s);
 }
 
-
+void mvar_clear( int id );
 void mvar_free(int p);
 int mvar_put_string( int id, char *s, int p );
 char* mvar_get_string( int id, int p );
@@ -51,6 +51,7 @@ int mvar_length(int id);
 int mvar_path(int id, int mp);
 int mvar_parse_path(int mp, int *group);
 int mvar_parse( int mp, int typ );
+int mvar_parse_string( const char *s, int typ );
 int mvar_lookup( int group, char *name, int typename );
 int mvar_vset(void);
 int mvar_lookup_path( int mp, int t );
@@ -76,5 +77,23 @@ struct var_st {
 } var_t;
 
 var_t **mvar_get(int p );
+
+
+
+// expand strings with embedded variables
+typedef struct mvar_str_exp_st {
+  int splitbuf;
+  int max_row;
+  int values; // [char*]
+  int indices; // [int]
+  int buf;
+} mvar_str_t;
+
+void    mvar_str_init(  mvar_str_t *se  );
+void    mvar_str_free(  mvar_str_t *se );
+void    mvar_str_realloc_buffers( mvar_str_t *se );
+void    mvar_str_parse(mvar_str_t *se, const char *frm);
+const char*   mvar_str_expand( mvar_str_t *se, char *p, int row );
+const char*   mvar_str_string( char *p, const char *frm );
 
 #endif

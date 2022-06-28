@@ -1,0 +1,88 @@
+@class Wexecgui (Wbutton)
+@ Label with exec button and shell-script gui
+
+
+@PUBLIC
+@var ArrayChar     shell_cmd   = 0
+@var ArrayChar 	   prefix      = 0
+
+@PRIVATE
+
+
+@METHODS
+@proc initialize
+{
+	$label = $shell_cmd ? m_str($shell_cmd) : "q";
+	XtAddCallback( $, "callback",  exec_script_cb, NULL );
+}
+
+
+@ ARGS: old, request, $, args, num_args_ptr
+@proc set_values
+{
+
+  if ($shell_cmd != $old$shell_cmd) {
+      m_free($old$shell_cmd);
+      $label = $shell_cmd ? m_str($shell_cmd) : "";
+      fprintf(stderr, "new shell cmd:%s\n", m_str($shell_cmd));
+      return 1;
+  }
+  if ($prefix != $old$prefix ) {
+      m_free($old$prefix);
+  }
+
+  return 0;
+}
+
+@proc destroy
+{
+	m_free($shell_cmd);
+	m_free($prefix);	
+}
+
+
+@UTILITIES
+@proc  exec_script_cb($, void *user_data, void *class_data )
+{
+	const char *s = mvar_str_string( m_str($prefix), m_str($shell_cmd));
+	TRACE(8, "Script Execute now: %s",s );
+    	int args;
+    	args = m_str_split( 0, (char*)s, " ", 1 );
+	run_script($, args);
+    	m_free_strings(args,0);
+}
+
+
+
+@ACTIONS
+@ params: ($, XEvent *event _X_UNUSED, String *params _X_UNUSED, Cardinal *num_params _X_UNUSED)
+@proc ExecScriptGUI
+{
+	exec_script_cb($,NULL,NULL);
+}
+
+@proc UpdateCmd
+{
+	const char *s = mvar_str_string( m_str($prefix), m_str($shell_cmd));
+	TRACE(8, "update %s", s);
+	XtVaSetValues( $, "label", s, NULL );
+}
+
+
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl <X11/Xmu/Converters.h>
+@incl "xtcw/Wlabel.h"
+@incl "xtcw/Wlist4.h"
+@incl "xtcw/Wbutton.h"
+@incl "mls.h"
+@incl "xutil.h"
+@incl "var5.h"
+@incl <X11/Xaw/Command.h>
+@incl "script_call.h"
+@incl "m_tool.h"

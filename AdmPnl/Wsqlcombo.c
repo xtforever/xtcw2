@@ -3,106 +3,116 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 143 "Wsqlcombo.widget"
+#line 164 "Wsqlcombo.widget"
 #include "mls.h"
-#line 144 "Wsqlcombo.widget"
+#line 165 "Wsqlcombo.widget"
 #include "m_mysql.h"
-#line 145 "Wsqlcombo.widget"
+#line 166 "Wsqlcombo.widget"
 #include "var5.h"
-#line 146 "Wsqlcombo.widget"
+#line 167 "Wsqlcombo.widget"
 #include "converters.h"
-#line 147 "Wsqlcombo.widget"
+#line 168 "Wsqlcombo.widget"
 #include <X11/Shell.h>
-#line 148 "Wsqlcombo.widget"
+#line 169 "Wsqlcombo.widget"
 #include <X11/Xatom.h>
-#line 149 "Wsqlcombo.widget"
+#line 170 "Wsqlcombo.widget"
 #include <X11/Xft/Xft.h>
-#line 150 "Wsqlcombo.widget"
+#line 171 "Wsqlcombo.widget"
 #include "converters-xft.h"
-#line 151 "Wsqlcombo.widget"
+#line 172 "Wsqlcombo.widget"
 #include <X11/Xmu/Converters.h>
-#line 152 "Wsqlcombo.widget"
+#line 173 "Wsqlcombo.widget"
 #include <X11/Xaw/XawImP.h>
-#line 153 "Wsqlcombo.widget"
+#line 174 "Wsqlcombo.widget"
 #include <X11/Xaw/XawImP.h>
-#line 154 "Wsqlcombo.widget"
+#line 175 "Wsqlcombo.widget"
 #include <X11/Xft/Xft.h>
-#line 155 "Wsqlcombo.widget"
+#line 176 "Wsqlcombo.widget"
 #include <X11/Xmu/Converters.h>
-#line 156 "Wsqlcombo.widget"
+#line 177 "Wsqlcombo.widget"
 #include "xutil.h"
-#line 157 "Wsqlcombo.widget"
+#line 178 "Wsqlcombo.widget"
 #include "xtcw/Wls.h"
 #include <xtcw/WsqlcomboP.h>
+#line 156 "Wsqlcombo.widget"
+static void CallOnEnter(
+#if NeedFunctionPrototypes
+Widget,XEvent*,String*,Cardinal*
+#endif
+);
+
+static XtActionsRec actionsList[] = {
+{"CallOnEnter", CallOnEnter},
+};
 static void _resolve_inheritance(
 #if NeedFunctionPrototypes
 WidgetClass
 #endif
 );
-#line 22 "Wsqlcombo.widget"
+#line 23 "Wsqlcombo.widget"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 38 "Wsqlcombo.widget"
+#line 39 "Wsqlcombo.widget"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 58 "Wsqlcombo.widget"
+#line 59 "Wsqlcombo.widget"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 66 "Wsqlcombo.widget"
+#line 67 "Wsqlcombo.widget"
 static void combo_cb(
 #if NeedFunctionPrototypes
 Widget ,Widget,void *
 #endif
 );
-#line 83 "Wsqlcombo.widget"
+#line 84 "Wsqlcombo.widget"
 static void show_translation(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 94 "Wsqlcombo.widget"
+#line 95 "Wsqlcombo.widget"
 static void update_list(
 #if NeedFunctionPrototypes
 int ,char *,int ,int 
 #endif
 );
-#line 107 "Wsqlcombo.widget"
+#line 108 "Wsqlcombo.widget"
 static void update_listbox(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 115 "Wsqlcombo.widget"
+#line 130 "Wsqlcombo.widget"
 static void sql_query(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 127 "Wsqlcombo.widget"
+#line 142 "Wsqlcombo.widget"
 static int  simple_query(
 #if NeedFunctionPrototypes
 char *,char *,char *,char *,int ,char *
 #endif
 );
-#line 66 "Wsqlcombo.widget"
+#line 67 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 66 "Wsqlcombo.widget"
+#line 67 "Wsqlcombo.widget"
 static void combo_cb(Widget  dummy,Widget self,void * class_data)
 #else
-#line 66 "Wsqlcombo.widget"
+#line 67 "Wsqlcombo.widget"
 static void combo_cb(dummy,self,class_data)Widget  dummy;Widget self;void * class_data;
 #endif
-#line 67 "Wsqlcombo.widget"
+#line 68 "Wsqlcombo.widget"
 {
 	char *key;
 	intptr_t selection =   (intptr_t) class_data;
@@ -118,16 +128,16 @@ static void combo_cb(dummy,self,class_data)Widget  dummy;Widget self;void * clas
 	mvar_call_callbacks( ((WsqlcomboWidget)self)->wsqlcombo.var5_res, 0 );
 	XtCallCallbackList(self, ((WsqlcomboWidget)self)->wsqlcombo.sqlcombo_cb, key );
 }
-#line 83 "Wsqlcombo.widget"
+#line 84 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 83 "Wsqlcombo.widget"
+#line 84 "Wsqlcombo.widget"
 static void show_translation(Widget self)
 #else
-#line 83 "Wsqlcombo.widget"
+#line 84 "Wsqlcombo.widget"
 static void show_translation(self)Widget self;
 #endif
-#line 84 "Wsqlcombo.widget"
+#line 85 "Wsqlcombo.widget"
 {
 	TRACE(2, "Wsqlcombo %s", XtName(self) );	    
 	WsqlcomboWidgetClass wc = (WsqlcomboWidgetClass)XtClass(self);
@@ -136,16 +146,16 @@ static void show_translation(self)Widget self;
 	if(!s) s="<empty tm_table>";
 	TRACE(2, "Wsqlcombo %s: Translation:%s", XtName(self),s  );	    
 }
-#line 94 "Wsqlcombo.widget"
+#line 95 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 94 "Wsqlcombo.widget"
+#line 95 "Wsqlcombo.widget"
 static void update_list(int  rows,char * pattern,int  list,int  res_set)
 #else
-#line 94 "Wsqlcombo.widget"
+#line 95 "Wsqlcombo.widget"
 static void update_list(rows,pattern,list,res_set)int  rows;char * pattern;int  list;int  res_set;
 #endif
-#line 95 "Wsqlcombo.widget"
+#line 96 "Wsqlcombo.widget"
 {
 	m_free_strings(list,1);	/* clear string list */
 	str_exp_t se;	
@@ -157,32 +167,46 @@ static void update_list(rows,pattern,list,res_set)int  rows;char * pattern;int  
 	}	
 	se_free(&se);
 }
-#line 107 "Wsqlcombo.widget"
+#line 108 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 107 "Wsqlcombo.widget"
+#line 108 "Wsqlcombo.widget"
 static void update_listbox(Widget self)
 #else
-#line 107 "Wsqlcombo.widget"
+#line 108 "Wsqlcombo.widget"
 static void update_listbox(self)Widget self;
 #endif
-#line 108 "Wsqlcombo.widget"
-{	
+#line 109 "Wsqlcombo.widget"
+{
+	int default_item = 0;
+	char *default_selection = "";
+
 	int rows =  row_count(((WsqlcomboWidget)self)->wsqlcombo.sqlres);
 	update_list( rows, ((WsqlcomboWidget)self)->wsqlcombo.sql_disp_field, ((WsqlcomboWidget)self)->wsqlcombo.disp_lst, ((WsqlcomboWidget)self)->wsqlcombo.sqlres );
 	update_list( rows, ((WsqlcomboWidget)self)->wsqlcombo.sql_key_field, ((WsqlcomboWidget)self)->wsqlcombo.key_lst, ((WsqlcomboWidget)self)->wsqlcombo.sqlres );
-	XtVaSetValues( self, "lst", ((WsqlcomboWidget)self)->wsqlcombo.disp_lst, NULL );
+	
+	if( m_len(((WsqlcomboWidget)self)->wsqlcombo.disp_lst) > default_item ) {
+	    default_selection = STR( ((WsqlcomboWidget)self)->wsqlcombo.disp_lst,default_item);   
+	}
+	
+	XtVaSetValues( self,
+		       "lst", ((WsqlcomboWidget)self)->wsqlcombo.disp_lst,
+		       "label", default_selection, NULL );
+
+		      
+	combo_cb(0,self, (void*) default_item ); /* select item 0 */
+	
 }
-#line 115 "Wsqlcombo.widget"
+#line 130 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 115 "Wsqlcombo.widget"
+#line 130 "Wsqlcombo.widget"
 static void sql_query(Widget self)
 #else
-#line 115 "Wsqlcombo.widget"
+#line 130 "Wsqlcombo.widget"
 static void sql_query(self)Widget self;
 #endif
-#line 116 "Wsqlcombo.widget"
+#line 131 "Wsqlcombo.widget"
 {
 	v_free( ((WsqlcomboWidget)self)->wsqlcombo.sqlres );
 	((WsqlcomboWidget)self)->wsqlcombo.sqlres = v_init();
@@ -193,16 +217,16 @@ static void sql_query(self)Widget self;
 	    ((WsqlcomboWidget)self)->wsqlcombo.sql_result=0;
 	}
 }
-#line 127 "Wsqlcombo.widget"
+#line 142 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 127 "Wsqlcombo.widget"
+#line 142 "Wsqlcombo.widget"
 static int  simple_query(char * host,char * db,char * user,char * pwd,int  res,char * query)
 #else
-#line 127 "Wsqlcombo.widget"
+#line 142 "Wsqlcombo.widget"
 static int  simple_query(host,db,user,pwd,res,query)char * host;char * db;char * user;char * pwd;int  res;char * query;
 #endif
-#line 128 "Wsqlcombo.widget"
+#line 143 "Wsqlcombo.widget"
 {
   MYSQL *sql = m_mysql_connect( host, db, user, pwd );
   
@@ -232,6 +256,8 @@ static XtResource resources[] = {
 {XtNsql_pwd,XtCSql_pwd,XtRString,sizeof(((WsqlcomboRec*)NULL)->wsqlcombo.sql_pwd),XtOffsetOf(WsqlcomboRec,wsqlcombo.sql_pwd),XtRString,(XtPointer)"linux"},
 #line 13 "Wsqlcombo.widget"
 {XtNsql_db,XtCSql_db,XtRString,sizeof(((WsqlcomboRec*)NULL)->wsqlcombo.sql_db),XtOffsetOf(WsqlcomboRec,wsqlcombo.sql_db),XtRString,(XtPointer)"custsrv"},
+#line 14 "Wsqlcombo.widget"
+{XtNonEnter,XtCOnEnter,XtRCallback,sizeof(((WsqlcomboRec*)NULL)->wsqlcombo.onEnter),XtOffsetOf(WsqlcomboRec,wsqlcombo.onEnter),XtRImmediate,(XtPointer)NULL },
 };
 
 WsqlcomboClassRec wsqlcomboClassRec = {
@@ -245,10 +271,10 @@ WsqlcomboClassRec wsqlcomboClassRec = {
 /* initialize   	*/  initialize,
 /* initialize_hook 	*/  NULL,
 /* realize      	*/  XtInheritRealize,
-/* actions      	*/  NULL,
-/* num_actions  	*/  0,
+/* actions      	*/  actionsList,
+/* num_actions  	*/  1,
 /* resources    	*/  resources,
-/* num_resources 	*/  9,
+/* num_resources 	*/  10,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  False ,
 /* compress_exposure 	*/  TRUE ,
@@ -284,6 +310,14 @@ XtInherit_cache_hit,
 },
 };
 WidgetClass wsqlcomboWidgetClass = (WidgetClass) &wsqlcomboClassRec;
+/*ARGSUSED*/
+#line 156 "Wsqlcombo.widget"
+static void CallOnEnter(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
+{
+	TRACE(8, "onEnter in Wsqlcombo");
+	XtCallCallbackList( self, ((WsqlcomboWidget)self)->wsqlcombo.onEnter, NULL );
+}
+
 static void _resolve_inheritance(class)
 WidgetClass class;
 {
@@ -292,16 +326,16 @@ WidgetClass class;
   if (class == wsqlcomboWidgetClass) return;
   super = (WsqlcomboWidgetClass)class->core_class.superclass;
 }
-#line 22 "Wsqlcombo.widget"
+#line 23 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 22 "Wsqlcombo.widget"
+#line 23 "Wsqlcombo.widget"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 22 "Wsqlcombo.widget"
+#line 23 "Wsqlcombo.widget"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 23 "Wsqlcombo.widget"
+#line 24 "Wsqlcombo.widget"
 {
     TRACE(2, "Wsqlcombo %s", XtName(self) );
     ((WsqlcomboWidget)self)->wsqlcombo.var5_res=0;
@@ -312,16 +346,16 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     sql_query(self);
     update_listbox(self);
 }
-#line 38 "Wsqlcombo.widget"
+#line 39 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 38 "Wsqlcombo.widget"
+#line 39 "Wsqlcombo.widget"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 38 "Wsqlcombo.widget"
+#line 39 "Wsqlcombo.widget"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 39 "Wsqlcombo.widget"
+#line 40 "Wsqlcombo.widget"
 {
     static int locked = 0;
     int n = *num_args;
@@ -340,16 +374,16 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     locked=0;
     return do_expose;
 }
-#line 58 "Wsqlcombo.widget"
+#line 59 "Wsqlcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 58 "Wsqlcombo.widget"
+#line 59 "Wsqlcombo.widget"
 static void destroy(Widget self)
 #else
-#line 58 "Wsqlcombo.widget"
+#line 59 "Wsqlcombo.widget"
 static void destroy(self)Widget self;
 #endif
-#line 59 "Wsqlcombo.widget"
+#line 60 "Wsqlcombo.widget"
 {
 	v_free( ((WsqlcomboWidget)self)->wsqlcombo.sqlres );
 	m_free_strings(((WsqlcomboWidget)self)->wsqlcombo.disp_lst,0);

@@ -1047,7 +1047,7 @@ static XtResource resources[] = {
 #line 63 "Wlist.widget"
 {XtNprefered_height,XtCPrefered_height,XtRInt,sizeof(((WlistRec*)NULL)->wlist.prefered_height),XtOffsetOf(WlistRec,wlist.prefered_height),XtRImmediate,(XtPointer)0 },
 #line 64 "Wlist.widget"
-{XtNvisible_lines,XtCVisible_lines,XtRInt,sizeof(((WlistRec*)NULL)->wlist.visible_lines),XtOffsetOf(WlistRec,wlist.visible_lines),XtRImmediate,(XtPointer)10 },
+{XtNvisible_lines,XtCVisible_lines,XtRInt,sizeof(((WlistRec*)NULL)->wlist.visible_lines),XtOffsetOf(WlistRec,wlist.visible_lines),XtRImmediate,(XtPointer)3 },
 #line 67 "Wlist.widget"
 {XtNmultiline,XtCMultiline,XtRInt,sizeof(((WlistRec*)NULL)->wlist.multiline),XtOffsetOf(WlistRec,wlist.multiline),XtRImmediate,(XtPointer)1 },
 #line 70 "Wlist.widget"

@@ -39,7 +39,9 @@ XtCallbackList  callback;
 String  label;
 QVar  textBuffer;
 String  svar;
+String  var5;
 XtCallbackList  onEnter;
+XtCallbackList  onChanged;
 /* private state */
 XftFont * xftFont;
 pix_info  pix;
@@ -47,6 +49,7 @@ int  str_m;
 int  label_m;
 int  glyph_m;
 int  glyph_xoff_m;
+int  mvar;
 XftDraw * draw;
 GC  gc[3];
 XftColor  xcol[3];

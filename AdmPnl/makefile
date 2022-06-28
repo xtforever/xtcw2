@@ -63,7 +63,9 @@ WIDGET_SRC=$(patsubst %.widget,%.c,$(wildcard *.widget))
 
 
 
-ALL:  $(WIDGET_SRC) $(TARGET) 
+ALL:  $(WIDGET_SRC) $(TARGET) njson-to-wcl
+
+njson-to-wcl: njson_read.o njson_lex.lex.o njson_parse.tab.o m_tool.o var5.o
 
 njson_lex.lex.o: njson_parse.tab.c
 

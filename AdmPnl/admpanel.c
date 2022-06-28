@@ -69,8 +69,10 @@ neue widgets hinzufuegen:
 #include "Wls.h"
 #include "Woptc.h"
 #include "var5.h"
+#include "font.h"
+#include "Graph1.h"
 
-
+#include "Wexecgui.h"
 
 // static inline const char *m_str(const int m) { return m_buf(m); }
 
@@ -174,13 +176,34 @@ void SetFocus( Widget w, void *u, void *c )
 	return;
     }
 
-    XtCallActionProc( w, "focus_out", NULL, NULL, 0 );
-    XtCallActionProc( focus_widget, "focus_in", NULL, NULL, 0 );
+    if( w != focus_widget ) {
+	XtCallActionProc( w, "focus_out", NULL, NULL, 0 );
+	XtCallActionProc( focus_widget, "focus_in", NULL, NULL, 0 );
+    }
+    
     XtCallActionProc( focus_widget, "SetKeyboardFocus", NULL, NULL, 0 );
 }
 
+void CallAction( Widget w, void *u, void *c ) 
+{
+    char buffer[MAX_XRMSTRING];
+    Widget widget;
+	
+    TRACE(8, "Widget called the CallAction callback");
+    if(! u ) {
+	WARN("Callback CallAction invoked without argument i.e. without a widget name to set the focus to");
+	return;
+    }
 
-
+    /* need my own implementation here i.e. snprintf */
+    char *args = WcCleanName( u, buffer );
+    TRACE(8, "Widget Name: %s", buffer );
+    widget=WcFullNameToWidget( w, buffer );    
+    if(! widget ) return;
+    WcCleanName( args, buffer );
+    TRACE(8, "Action Name: %s", buffer );
+    XtCallActionProc( widget, buffer, NULL, NULL, 0 );
+}
 
 
 void test_cb( Widget w, void *u, void *c )
@@ -693,7 +716,7 @@ void create_widget_from_var( int task, int var, Widget mgr )
 	}
 }
 
-
+/*
 static chapter_info_t *create_chapter( int num )
 {
     chapter_info_t *chap = get_chapter_info( num );
@@ -705,7 +728,7 @@ static chapter_info_t *create_chapter( int num )
     TRACE(2, "create chapter %s",  chap->name );
     return chap;
 }
-
+*/
 
 #if 0
 // 
@@ -758,7 +781,7 @@ static void create_chapter0( Widget mgr, int task )
 
 
 */
-
+/*
 static void create_task( Widget mgr, int task )
 {
     char *label; 
@@ -793,7 +816,7 @@ static void create_task( Widget mgr, int task )
 				NULL );
     XtAddCallback(w, XtNcallback, task_leave_cb, (XtPointer)0 );
 }
-
+*/
 
 
 // callback from menu_page`
@@ -806,6 +829,7 @@ void chapter_cb( Widget w, void *u, void *c )
     switch_page( chap + 1);
 }
 
+/*
 static void create_menu_page(Widget mgr)
 {
     char *label;
@@ -842,7 +866,7 @@ static void create_menu_page(Widget mgr)
 	}
     }    
 }
-
+*/
 
 
 
@@ -875,12 +899,15 @@ static void RegisterApplication ( Widget top )
     RCB( top, test_cb );
     RCB( top, terminal_output_cb );
     RCB( top, SetFocus );
+    RCB( top, CallAction );
 
 
     RCP( top, wsqlcombo );
     RCP( top, wcombo );
     RCP( top, woptc );
     RCP( top, wls );
+    RCP( top, wexecgui );
+    RCP( top, graph1 );
 }
 
 /*  init application functions and structures and widgets
@@ -912,9 +939,43 @@ static void syntax(void)
 	"-ListenPort <num>\n" );
 }
 
+/*
+static int m_split_list( const char *s, const char *delm )
+{
+    int ls =  m_create(2,sizeof(int));
+    int w  =  0;
+    int p  =  0;
+    int ch;
+    
+    do {
+	ch = s[p];
+	if(!w) {
+	    w =  m_create( 10,1 );
+	    m_put( ls, &w );
+	}
 
+	if( ch == *delm || ch == 0 ) {
+	    m_putc(w,0); w=0;    
+	} else {
+	    m_putc(w,s[p]);
+	}
+	p++;
+    } while( ch );
+    
+    return ls;
+}
+*/
 
+static void asgn(char *s)
+{
+    int ls =  m_split_list(s, "=" );
+    if( m_len(ls) != 2 ) goto leave;
+    int v = mvar_parse( INT(ls,0), VAR_STRING );
+    mvar_put_string(v, m_str(INT(ls,1)), 0);
 
+ leave:
+    m_free_list(ls);
+}
 
 /******************************************************************************
 *   MAIN function
@@ -930,6 +991,16 @@ int main ( int argc, char **argv )
     svar_init(); // will be removed
     mvar_init();
 
+    /*
+    asgn("task1.t1=hello");
+    asgn("task1.t2=world");
+    const char *s = mvar_str_string( "task1", "form: $t1 und $t2");
+    fprintf(stderr,"%s\n", s );
+    */
+    
+
+
+    
     XtSetLanguageProc (NULL, NULL, NULL);
     XawInitializeWidgetSet();
 
@@ -995,9 +1066,12 @@ int main ( int argc, char **argv )
 
     DestroyApplication();
 
+    font_cache_flush();
+    mv_destroy();
     mvar_destruct();
     svar_destruct();
     m_destruct();
 
+    
     return EXIT_SUCCESS;
 }

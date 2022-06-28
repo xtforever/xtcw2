@@ -24,7 +24,7 @@ typedef struct {
 /* resources */
 String  group;
 String  value;
-String  svar;
+String  var5;
 int  act;
 /* private state */
 int  key_group;

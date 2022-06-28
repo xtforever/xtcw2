@@ -45,21 +45,11 @@ _XFUNCPROTOBEGIN
 #define XtRCallback "Callback"
 #endif
 
-#ifndef XtNforced_width
-#define XtNforced_width "forced_width"
+#ifndef XtNvisible_lines
+#define XtNvisible_lines "visible_lines"
 #endif
-#ifndef XtCForced_width
-#define XtCForced_width "Forced_width"
-#endif
-#ifndef XtRInt
-#define XtRInt "Int"
-#endif
-
-#ifndef XtNforced_height
-#define XtNforced_height "forced_height"
-#endif
-#ifndef XtCForced_height
-#define XtCForced_height "Forced_height"
+#ifndef XtCVisible_lines
+#define XtCVisible_lines "Visible_lines"
 #endif
 #ifndef XtRInt
 #define XtRInt "Int"

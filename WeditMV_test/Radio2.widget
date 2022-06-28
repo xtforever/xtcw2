@@ -7,7 +7,7 @@
 
 @PUBLIC
 @var StringMArray lst = <String> "Hello,World"
-@var String svar = <String> "dummy"
+@var String var5 = <String> "dummy"
 @var String value = <String> "dummy"
 @var <Callback> XtCallbackList callback  = NULL
 
@@ -47,20 +47,20 @@
                 "group", $radioGroup,
                 "value", STR($lst,i),
 		"label", STR($lst,i),
-		"svar", $svar,
+		"var5", $var5,
 		"act", act,
                 NULL );
 	    XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, $ );
 	}
 
 
-     XtVaCreateManagedWidget( "hello-world",
+     /* XtVaCreateManagedWidget( "hello-world",
                 wlabelWidgetClass, $,
                 "gridy", 1,
                 "label", "hello-World",
 		"gridWidth", 3,
                 NULL );
-
+	*/
 
 }
 
@@ -75,3 +75,4 @@
 @incl <xtcw/Woption.h>
 @incl "converters.h"
 @incl "mls.h"
+@incl "var5.h"

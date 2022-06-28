@@ -6,8 +6,8 @@
 @var String svar = <String> "dummy"
 @var String value = <String> "dummy"
 @var <Callback> XtCallbackList callback  = NULL
-@var int forced_width  = 100
-@var int forced_height = 100
+@var int visible_lines = 0
+
 
 @PRIVATE
 @var Widget slider
@@ -47,34 +47,20 @@
               XtVaSetValues( $list, "tableStrs", $lst, NULL );
         }
     }
+    return 1;
 }
 
-@proc query_geometry
-{
-    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
-    reply->x=0; reply->y=0;
-    reply->width  =  $forced_width;
-    reply->height =  $forced_height;	
-
-    TRACE(1, "Wls:%s: parent request is: %dx%d", XtName($),
-             request->width,
-             request->width );
-
-    TRACE(1, "Wls:%s: our prefered size is %dx%d", XtName($),
-                  $forced_width,
-                  $forced_height );
-
-    return XtGeometryAlmost;
-}
 
 
 
 @UTILITIES
 @proc adjust_slider_size($)
 {
+	TRACE(9, "************************* WinHeight: %d", $height );
+
 	int line_max; /* anzahl zeilen */
 	int list_height; /* sichtbarer bereich */
-	int line_height; /* pixel zeile */
+	int line_height; /* zeilenhoehe in pixel */
 	int first_line; /* erste sichtbare zeile */
 	XtVaGetValues($list,
 		"line_max", &line_max,
@@ -83,15 +69,16 @@
 		"top_y", &first_line,
 		NULL );
 
+
+	list_height = line_max * line_height;
+
+	TRACE(9,"Total-List-Size:%d first:line%d", list_height, first_line );
+
+
 	wls_set_slider_pos( $slider,
 	  list_height,
-	  line_max * line_height,
 	  first_line
 	);
-
-	$list_height = line_max * line_height;
-
-	TRACE(9, "%d %d %d %d", line_max, list_height,line_height,first_line  );
 }
 
 
@@ -101,8 +88,8 @@
         Widget w;
         int i;
         char *grid = "gridx";
-        for( i=0; i<$num_children;i++ )
-             XtDestroyWidget($children[0]);
+        // for( i=0; i<$num_children;i++ )
+        //     XtDestroyWidget($children[0]);
 
 	/* XtVaCreateManagedWidget( "combo-label",
                 wlabelWidgetClass, $,
@@ -118,7 +105,9 @@
 		"gridWidth", 1,
 		"weightx", 100,
 		"tableStrs", $lst,
-		"height", 120,
+		"fill", 3,
+		"weighty", 100,
+		"visible_lines", $visible_lines,
                 NULL );
 		
 	XtAddCallback($list, "updatecb", (XtCallbackProc)list_changed_cb, $ );			    XtAddCallback($list, "notify", (XtCallbackProc)list_select_cb, $ );
@@ -144,12 +133,11 @@
 @proc slider_changed_cb(Widget sender, $, void *class_data )
 {
 	if( $ignore_cb ) return;
-	float new_pos = *(float *) class_data;
-	TRACE(9, "list pos rel: %f", new_pos );
+	int new_pos = (intptr_t) class_data;
+	TRACE(9, "list pos(rel): %d", new_pos );
 
-	new_pos = $list_height * 1.0 * new_pos;
 	$ignore_cb = 1;
-	wlist_gotoxy($list,0, (int) new_pos );
+	wlist_gotoxy($list,0, new_pos );
 	$ignore_cb = 0;
 }
 
@@ -169,3 +157,4 @@
 @incl "xtcw/Wlist.h"
 @incl <xtcw/Wlabel.h>
 @incl "xtcw/Woptc.h"
+@incl "GridboxP.h"

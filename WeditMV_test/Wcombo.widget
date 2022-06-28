@@ -25,7 +25,7 @@ var compress_motion = True
     
 @TRANSLATIONS
 @trans <Btn1Down>:     set_cursor() SetKeyboardFocus()
-@trans <Key>Return:    notify()
+@trans <Key>Return:    CallOnEnter() notify()
 @trans <Key>BackSpace: remove_char()
 @trans <Key>:          insert_char()
 @trans <FocusIn>:      focus_in() 
@@ -110,6 +110,7 @@ var compress_motion = True
 
 @proc  item_selected_cb(Widget dummy, $, void *class_data )
 {
+
         int n = m_len($f_lst);
 	int p = (intptr_t) class_data;
     	TRACE(2,"p=%d", p);
@@ -191,22 +192,22 @@ var compress_motion = True
 @proc focus_in
 {
 	TRACE(2, "Wcombo %s got focus", XtName($));
+	set_cursor($, NULL, NULL, NULL );
 }
 
 @proc focus_out
 {
 	TRACE(2, "Wcombo %s lost focus", XtName($));
-	XtPopdown($shell);
-	$entry_mode=0;
+	if( $entry_mode ) {
+	    XtPopdown($shell);
+	    $entry_mode=0;
+	}
 }
 
 @proc notify
 {
 	TRACE(2, "Wcombo %s notify: entry_mode %d", XtName($), $entry_mode );
-	if( ! $entry_mode ) return;
-	item_selected_cb(NULL, $, (XtPointer)0 );
-	
-	
+	item_selected_cb(NULL, $, (XtPointer)0 );	
 }
 
 

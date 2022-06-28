@@ -3,100 +3,102 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 760 "WeditMV.widget"
-#include <assert.h>
-#line 761 "WeditMV.widget"
-#include <X11/Intrinsic.h>
-#line 762 "WeditMV.widget"
-#include <X11/Xatom.h>
-#line 763 "WeditMV.widget"
-#include <X11/Xmu/Converters.h>
-#line 764 "WeditMV.widget"
-#include <X11/Xft/Xft.h>
-#line 765 "WeditMV.widget"
-#include <X11/Xaw/XawImP.h>
-#line 766 "WeditMV.widget"
-#include "converters.h"
-#line 767 "WeditMV.widget"
-#include "xutil.h"
-#line 768 "WeditMV.widget"
-#include "mls.h"
-#line 769 "WeditMV.widget"
-#include "font.h"
-#line 770 "WeditMV.widget"
-#include "micro_vars.h"
-#line 771 "WeditMV.widget"
-#include "svar2.h"
 #line 772 "WeditMV.widget"
+#include <assert.h>
+#line 773 "WeditMV.widget"
+#include <X11/Intrinsic.h>
+#line 774 "WeditMV.widget"
+#include <X11/Xatom.h>
+#line 775 "WeditMV.widget"
+#include <X11/Xmu/Converters.h>
+#line 776 "WeditMV.widget"
+#include <X11/Xft/Xft.h>
+#line 777 "WeditMV.widget"
+#include <X11/Xaw/XawImP.h>
+#line 778 "WeditMV.widget"
+#include "converters.h"
+#line 779 "WeditMV.widget"
+#include "xutil.h"
+#line 780 "WeditMV.widget"
+#include "mls.h"
+#line 781 "WeditMV.widget"
+#include "font.h"
+#line 782 "WeditMV.widget"
+#include "micro_vars.h"
+#line 783 "WeditMV.widget"
+#include "svar2.h"
+#line 784 "WeditMV.widget"
+#include "var5.h"
+#line 785 "WeditMV.widget"
 #include "opts.h"
 #include <xtcw/WeditMVP.h>
-#line 651 "WeditMV.widget"
+#line 665 "WeditMV.widget"
 static void CallOnEnter(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 658 "WeditMV.widget"
+#line 672 "WeditMV.widget"
 static void SetKeyboardFocus(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 673 "WeditMV.widget"
+#line 687 "WeditMV.widget"
 static void focus_in(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 679 "WeditMV.widget"
+#line 693 "WeditMV.widget"
 static void focus_out(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 685 "WeditMV.widget"
+#line 699 "WeditMV.widget"
 static void info(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 690 "WeditMV.widget"
+#line 704 "WeditMV.widget"
 static void backward_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 696 "WeditMV.widget"
+#line 710 "WeditMV.widget"
 static void forward_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 702 "WeditMV.widget"
+#line 716 "WeditMV.widget"
 static void insert_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 716 "WeditMV.widget"
+#line 730 "WeditMV.widget"
 static void remove_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 722 "WeditMV.widget"
+#line 736 "WeditMV.widget"
 static void set_cursor(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 741 "WeditMV.widget"
+#line 755 "WeditMV.widget"
 static void insert_selection(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 751 "WeditMV.widget"
+#line 763 "WeditMV.widget"
 static void notify(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -136,286 +138,292 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 79 "WeditMV.widget"
+#line 82 "WeditMV.widget"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 113 "WeditMV.widget"
+#line 117 "WeditMV.widget"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 123 "WeditMV.widget"
+#line 127 "WeditMV.widget"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 136 "WeditMV.widget"
+#line 140 "WeditMV.widget"
 static void get_values_hook(
 #if NeedFunctionPrototypes
 Widget,ArgList ,Cardinal *
 #endif
 );
-#line 148 "WeditMV.widget"
+#line 152 "WeditMV.widget"
 static void expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 156 "WeditMV.widget"
+#line 160 "WeditMV.widget"
 static void realize(
 #if NeedFunctionPrototypes
 Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
-#line 163 "WeditMV.widget"
+#line 167 "WeditMV.widget"
 static void resize(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 168 "WeditMV.widget"
+#line 172 "WeditMV.widget"
 static Boolean  accept_focus(
 #if NeedFunctionPrototypes
 Widget,Time *
 #endif
 );
-#line 175 "WeditMV.widget"
+#line 179 "WeditMV.widget"
 static XtGeometryResult  query_geometry(
 #if NeedFunctionPrototypes
 Widget,XtWidgetGeometry *,XtWidgetGeometry *
 #endif
 );
-#line 190 "WeditMV.widget"
+#line 194 "WeditMV.widget"
 static void resize_widget(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 217 "WeditMV.widget"
+#line 221 "WeditMV.widget"
 static void clear_pixmap(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 223 "WeditMV.widget"
+#line 227 "WeditMV.widget"
 static void draw_text_on_pixmap(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 229 "WeditMV.widget"
+#line 233 "WeditMV.widget"
 static void draw_pixmap_on_window(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 236 "WeditMV.widget"
+#line 240 "WeditMV.widget"
 static XftGlyphFontSpec * get_glyph_spec(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 242 "WeditMV.widget"
+#line 246 "WeditMV.widget"
 static void draw_cursor(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 256 "WeditMV.widget"
+#line 260 "WeditMV.widget"
 static void dump(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 266 "WeditMV.widget"
+#line 270 "WeditMV.widget"
 static void paint(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 290 "WeditMV.widget"
+#line 296 "WeditMV.widget"
 static void cursor_toggle(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 296 "WeditMV.widget"
+#line 302 "WeditMV.widget"
 static void cursor_undraw(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 301 "WeditMV.widget"
+#line 307 "WeditMV.widget"
 static void cursor_show(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 307 "WeditMV.widget"
+#line 313 "WeditMV.widget"
 static void cursor_xdraw(
 #if NeedFunctionPrototypes
 Widget,XRectangle *
 #endif
 );
-#line 316 "WeditMV.widget"
+#line 322 "WeditMV.widget"
 static void calculate_prefered_size(
 #if NeedFunctionPrototypes
 Widget,int *,int *
 #endif
 );
-#line 323 "WeditMV.widget"
+#line 329 "WeditMV.widget"
 static void calculate_size(
 #if NeedFunctionPrototypes
 Widget,int *,int *
 #endif
 );
-#line 330 "WeditMV.widget"
+#line 336 "WeditMV.widget"
 static void copy_str(
 #if NeedFunctionPrototypes
 Widget,char *
 #endif
 );
-#line 340 "WeditMV.widget"
+#line 346 "WeditMV.widget"
 static void reinit(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 350 "WeditMV.widget"
+#line 356 "WeditMV.widget"
 static void make_resize_request(
 #if NeedFunctionPrototypes
 Widget,int ,int 
 #endif
 );
-#line 358 "WeditMV.widget"
+#line 364 "WeditMV.widget"
 static void alloc_colors(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 385 "WeditMV.widget"
+#line 387 "WeditMV.widget"
 static void free_colors(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 398 "WeditMV.widget"
+#line 400 "WeditMV.widget"
 static void draw_glyphs_spec(
 #if NeedFunctionPrototypes
 Widget,int ,int 
 #endif
 );
-#line 415 "WeditMV.widget"
+#line 417 "WeditMV.widget"
 static void draw_glyphs(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 434 "WeditMV.widget"
+#line 436 "WeditMV.widget"
 static void unicode_to_glyphspec(
 #if NeedFunctionPrototypes
 Widget,uint ,XftGlyphFontSpec *,int *,int *,int *
 #endif
 );
-#line 464 "WeditMV.widget"
+#line 466 "WeditMV.widget"
 static void str_to_glyphlist(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 490 "WeditMV.widget"
+#line 492 "WeditMV.widget"
 static int  char_offset(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 501 "WeditMV.widget"
+#line 503 "WeditMV.widget"
 static void insert_char_at_cursor(
 #if NeedFunctionPrototypes
 Widget,char *,int 
 #endif
 );
-#line 510 "WeditMV.widget"
+#line 512 "WeditMV.widget"
 static void remove_char_at_cursor(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 522 "WeditMV.widget"
+#line 524 "WeditMV.widget"
 static char  scroll_left(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 532 "WeditMV.widget"
+#line 534 "WeditMV.widget"
 static char  scroll_right(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 547 "WeditMV.widget"
+#line 549 "WeditMV.widget"
 static int  px_left_offset(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 555 "WeditMV.widget"
+#line 557 "WeditMV.widget"
 static int  px_char(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 565 "WeditMV.widget"
+#line 567 "WeditMV.widget"
 static int  screen_px(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 577 "WeditMV.widget"
+#line 579 "WeditMV.widget"
 static void cursor_right(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 595 "WeditMV.widget"
+#line 597 "WeditMV.widget"
 static void cursor_left(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 610 "WeditMV.widget"
+#line 612 "WeditMV.widget"
 static void RequestSelection(
 #if NeedFunctionPrototypes
 Widget,XtPointer ,Atom *,Atom *,XtPointer ,unsigned  long *,int *
 #endif
 );
-#line 625 "WeditMV.widget"
+#line 627 "WeditMV.widget"
 static char * get_text_buffer(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 636 "WeditMV.widget"
+#line 638 "WeditMV.widget"
 static void update_svar(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 190 "WeditMV.widget"
+#line 650 "WeditMV.widget"
+static void update_mvar(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+#line 194 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 190 "WeditMV.widget"
+#line 194 "WeditMV.widget"
 static void resize_widget(Widget self)
 #else
-#line 190 "WeditMV.widget"
+#line 194 "WeditMV.widget"
 static void resize_widget(self)Widget self;
 #endif
-#line 191 "WeditMV.widget"
+#line 195 "WeditMV.widget"
 {
         /*
         int w;
@@ -441,72 +449,72 @@ static void resize_widget(self)Widget self;
     ((WeditMVWidget)self)->weditMV.left_char_offset = 0;
     ((WeditMVWidget)self)->weditMV.crsr_pos = 0;
 }
-#line 217 "WeditMV.widget"
+#line 221 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 217 "WeditMV.widget"
+#line 221 "WeditMV.widget"
 static void clear_pixmap(Widget self)
 #else
-#line 217 "WeditMV.widget"
+#line 221 "WeditMV.widget"
 static void clear_pixmap(self)Widget self;
 #endif
-#line 218 "WeditMV.widget"
+#line 222 "WeditMV.widget"
 {
    XFillRectangle(XtDisplay(self),((WeditMVWidget)self)->weditMV.pix.data,
                        ((WeditMVWidget)self)->weditMV.gc[BG], 0,0, ((WeditMVWidget)self)->weditMV.pix.r.width, ((WeditMVWidget)self)->weditMV.pix.r.height );
 }
-#line 223 "WeditMV.widget"
+#line 227 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 223 "WeditMV.widget"
+#line 227 "WeditMV.widget"
 static void draw_text_on_pixmap(Widget self)
 #else
-#line 223 "WeditMV.widget"
+#line 227 "WeditMV.widget"
 static void draw_text_on_pixmap(self)Widget self;
 #endif
-#line 224 "WeditMV.widget"
+#line 228 "WeditMV.widget"
 {
     /* str_to_glyphlist($); */
     draw_glyphs(self);
 }
-#line 229 "WeditMV.widget"
+#line 233 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 229 "WeditMV.widget"
+#line 233 "WeditMV.widget"
 static void draw_pixmap_on_window(Widget self)
 #else
-#line 229 "WeditMV.widget"
+#line 233 "WeditMV.widget"
 static void draw_pixmap_on_window(self)Widget self;
 #endif
-#line 230 "WeditMV.widget"
+#line 234 "WeditMV.widget"
 {
         XtCopyArea(self, ((WeditMVWidget)self)->weditMV.pix.data, XtWindow(self),
                    0,0, ((WeditMVWidget)self)->weditMV.pix.r.width, ((WeditMVWidget)self)->weditMV.pix.r.height, /* src */
                    ((WeditMVWidget)self)->weditMV.pix.r.x, ((WeditMVWidget)self)->weditMV.pix.r.y );             /* dest */
 }
-#line 236 "WeditMV.widget"
+#line 240 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 236 "WeditMV.widget"
+#line 240 "WeditMV.widget"
 static XftGlyphFontSpec * get_glyph_spec(Widget self,int  p)
 #else
-#line 236 "WeditMV.widget"
+#line 240 "WeditMV.widget"
 static XftGlyphFontSpec * get_glyph_spec(self,p)Widget self;int  p;
 #endif
-#line 237 "WeditMV.widget"
+#line 241 "WeditMV.widget"
 {
         return mls(((WeditMVWidget)self)->weditMV.glyph_m, p);
 }
-#line 242 "WeditMV.widget"
+#line 246 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 242 "WeditMV.widget"
+#line 246 "WeditMV.widget"
 static void draw_cursor(Widget self)
 #else
-#line 242 "WeditMV.widget"
+#line 246 "WeditMV.widget"
 static void draw_cursor(self)Widget self;
 #endif
-#line 243 "WeditMV.widget"
+#line 247 "WeditMV.widget"
 {
         XRectangle r;
         if( ((WeditMVWidget)self)->weditMV.crsr_pos >= m_len(((WeditMVWidget)self)->weditMV.glyph_m) )
@@ -518,16 +526,16 @@ static void draw_cursor(self)Widget self;
         r.height = ((WeditMVWidget)self)->weditMV.xftFont->height;
         cursor_xdraw( self, &r );
 }
-#line 256 "WeditMV.widget"
+#line 260 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 256 "WeditMV.widget"
+#line 260 "WeditMV.widget"
 static void dump(Widget self)
 #else
-#line 256 "WeditMV.widget"
+#line 260 "WeditMV.widget"
 static void dump(self)Widget self;
 #endif
-#line 257 "WeditMV.widget"
+#line 261 "WeditMV.widget"
 {
     int i; for(i=0;i< m_len(((WeditMVWidget)self)->weditMV.str_m)-1; i++)
                printf("%x ", (unsigned char) CHAR(((WeditMVWidget)self)->weditMV.str_m, i) );
@@ -535,16 +543,16 @@ static void dump(self)Widget self;
     fwrite( m_buf(((WeditMVWidget)self)->weditMV.str_m), m_len(((WeditMVWidget)self)->weditMV.str_m), 1, stdout );
     printf("Left:%d Crsr:%d\n", ((WeditMVWidget)self)->weditMV.left_char_offset, ((WeditMVWidget)self)->weditMV.crsr_pos );
 }
-#line 266 "WeditMV.widget"
+#line 270 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 266 "WeditMV.widget"
+#line 270 "WeditMV.widget"
 static void paint(Widget self)
 #else
-#line 266 "WeditMV.widget"
+#line 270 "WeditMV.widget"
 static void paint(self)Widget self;
 #endif
-#line 267 "WeditMV.widget"
+#line 271 "WeditMV.widget"
 {
 	TRACE(8, "-- %s:%s", XtName(self), "WeditMV" );
         clear_pixmap(self);
@@ -562,104 +570,106 @@ static void paint(self)Widget self;
 	// copy buffer to svar and call svar write callbacks
 	update_svar(self);
 	svar_write_callbacks(((WeditMVWidget)self)->weditMV.key_svar);
-	
+
+	update_mvar(self);
+	XtCallCallbackList( self, ((WeditMVWidget)self)->weditMV.onChanged, NULL );
 	TRACE(1, "widget %s sent to %d", ((WeditMVWidget)self)->core.name, ((WeditMVWidget)self)->weditMV.textBuffer );
 }
-#line 290 "WeditMV.widget"
+#line 296 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 290 "WeditMV.widget"
+#line 296 "WeditMV.widget"
 static void cursor_toggle(Widget self)
 #else
-#line 290 "WeditMV.widget"
+#line 296 "WeditMV.widget"
 static void cursor_toggle(self)Widget self;
 #endif
-#line 291 "WeditMV.widget"
+#line 297 "WeditMV.widget"
 {
         ((WeditMVWidget)self)->weditMV.crsr_on ^= 1;
         XtFillRectangle(self, ((WeditMVWidget)self)->weditMV.gc[CRSR], & ((WeditMVWidget)self)->weditMV.crsr_rect );
 }
-#line 296 "WeditMV.widget"
+#line 302 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 296 "WeditMV.widget"
+#line 302 "WeditMV.widget"
 static void cursor_undraw(Widget self)
 #else
-#line 296 "WeditMV.widget"
+#line 302 "WeditMV.widget"
 static void cursor_undraw(self)Widget self;
 #endif
-#line 297 "WeditMV.widget"
+#line 303 "WeditMV.widget"
 {
     if( ((WeditMVWidget)self)->weditMV.crsr_on ) cursor_toggle(self);
 }
-#line 301 "WeditMV.widget"
+#line 307 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 301 "WeditMV.widget"
+#line 307 "WeditMV.widget"
 static void cursor_show(Widget self)
 #else
-#line 301 "WeditMV.widget"
+#line 307 "WeditMV.widget"
 static void cursor_show(self)Widget self;
 #endif
-#line 302 "WeditMV.widget"
+#line 308 "WeditMV.widget"
 {
     if(! ((WeditMVWidget)self)->weditMV.crsr_on ) cursor_toggle(self);
 }
-#line 307 "WeditMV.widget"
+#line 313 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 307 "WeditMV.widget"
+#line 313 "WeditMV.widget"
 static void cursor_xdraw(Widget self,XRectangle * r)
 #else
-#line 307 "WeditMV.widget"
+#line 313 "WeditMV.widget"
 static void cursor_xdraw(self,r)Widget self;XRectangle * r;
 #endif
-#line 308 "WeditMV.widget"
+#line 314 "WeditMV.widget"
 {
     cursor_undraw(self);
     ((WeditMVWidget)self)->weditMV.crsr_rect = *r;
     cursor_toggle(self);
 }
-#line 316 "WeditMV.widget"
+#line 322 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 316 "WeditMV.widget"
+#line 322 "WeditMV.widget"
 static void calculate_prefered_size(Widget self,int * w,int * h)
 #else
-#line 316 "WeditMV.widget"
+#line 322 "WeditMV.widget"
 static void calculate_prefered_size(self,w,h)Widget self;int * w;int * h;
 #endif
-#line 317 "WeditMV.widget"
+#line 323 "WeditMV.widget"
 {
   (*h) = ((WeditMVWidget)self)->weditMV.xftFont->height; /* $xftFont->ascent + $xftFont->descent+2; */
   (*w) = ((WeditMVWidget)self)->weditMV.txt.width;
   if( *w == 0 || *w > 18000 ) *w = 50;      
 }
-#line 323 "WeditMV.widget"
+#line 329 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 323 "WeditMV.widget"
+#line 329 "WeditMV.widget"
 static void calculate_size(Widget self,int * w,int * h)
 #else
-#line 323 "WeditMV.widget"
+#line 329 "WeditMV.widget"
 static void calculate_size(self,w,h)Widget self;int * w;int * h;
 #endif
-#line 324 "WeditMV.widget"
+#line 330 "WeditMV.widget"
 {
     *w = ((WeditMVWidget)self)->weditMV.txt.width;
     *h = ((WeditMVWidget)self)->weditMV.txt.height;
     /*    xft_calc_string_size($, $xftFont, $label, w, h ); */
 }
-#line 330 "WeditMV.widget"
+#line 336 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 330 "WeditMV.widget"
+#line 336 "WeditMV.widget"
 static void copy_str(Widget self,char * s)
 #else
-#line 330 "WeditMV.widget"
+#line 336 "WeditMV.widget"
 static void copy_str(self,s)Widget self;char * s;
 #endif
-#line 331 "WeditMV.widget"
+#line 337 "WeditMV.widget"
 {
         m_clear( ((WeditMVWidget)self)->weditMV.str_m );
         m_write( ((WeditMVWidget)self)->weditMV.str_m, 0, s, strlen(s) );
@@ -667,16 +677,16 @@ static void copy_str(self,s)Widget self;char * s;
         str_to_glyphlist(self);
         ((WeditMVWidget)self)->weditMV.dirty = 1;
 }
-#line 340 "WeditMV.widget"
+#line 346 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 340 "WeditMV.widget"
+#line 346 "WeditMV.widget"
 static void reinit(Widget self)
 #else
-#line 340 "WeditMV.widget"
+#line 346 "WeditMV.widget"
 static void reinit(self)Widget self;
 #endif
-#line 341 "WeditMV.widget"
+#line 347 "WeditMV.widget"
 {
         free_colors(self);
         alloc_colors(self);
@@ -685,32 +695,32 @@ static void reinit(self)Widget self;
         calculate_prefered_size(self,&w,&h);
         make_resize_request(self,w,h);
 }
-#line 350 "WeditMV.widget"
+#line 356 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 350 "WeditMV.widget"
+#line 356 "WeditMV.widget"
 static void make_resize_request(Widget self,int  w,int  h)
 #else
-#line 350 "WeditMV.widget"
+#line 356 "WeditMV.widget"
 static void make_resize_request(self,w,h)Widget self;int  w;int  h;
 #endif
-#line 351 "WeditMV.widget"
+#line 357 "WeditMV.widget"
 {
         Dimension w_out, h_out;
         if( ((WeditMVWidget)self)->core.width == w && ((WeditMVWidget)self)->core.height == h ) return;
         if( XtMakeResizeRequest(self,w,h, &w_out, &h_out ) ==
             XtGeometryAlmost ) XtMakeResizeRequest(self,w_out,h_out,NULL,NULL );
 }
-#line 358 "WeditMV.widget"
+#line 364 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 358 "WeditMV.widget"
+#line 364 "WeditMV.widget"
 static void alloc_colors(Widget self)
 #else
-#line 358 "WeditMV.widget"
+#line 364 "WeditMV.widget"
 static void alloc_colors(self)Widget self;
 #endif
-#line 359 "WeditMV.widget"
+#line 365 "WeditMV.widget"
 {
 
   XGCValues     values = {
@@ -731,21 +741,17 @@ static void alloc_colors(self)Widget self;
   xft_color_alloc( self, ((WeditMVWidget)self)->core.background_pixel, ((WeditMVWidget)self)->weditMV.xcol+BG );
   xft_color_alloc( self, ((WeditMVWidget)self)->weditMV.foreground,       ((WeditMVWidget)self)->weditMV.xcol+FG );
   xft_color_alloc( self, ((WeditMVWidget)self)->weditMV.cursorColor,      ((WeditMVWidget)self)->weditMV.xcol+CRSR );
-
-  fprintf( stderr, "colors: %lx %lx %lx\n", ((WeditMVWidget)self)->core.background_pixel,((WeditMVWidget)self)->weditMV.foreground,((WeditMVWidget)self)->weditMV.cursorColor );
-
-
 }
-#line 385 "WeditMV.widget"
+#line 387 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 385 "WeditMV.widget"
+#line 387 "WeditMV.widget"
 static void free_colors(Widget self)
 #else
-#line 385 "WeditMV.widget"
+#line 387 "WeditMV.widget"
 static void free_colors(self)Widget self;
 #endif
-#line 386 "WeditMV.widget"
+#line 388 "WeditMV.widget"
 {
         int i;
         Display *dpy = XtDisplay(self);
@@ -755,16 +761,16 @@ static void free_colors(self)Widget self;
 		 None, ((WeditMVWidget)self)->weditMV.xcol+i);
         }
 }
-#line 398 "WeditMV.widget"
+#line 400 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 398 "WeditMV.widget"
+#line 400 "WeditMV.widget"
 static void draw_glyphs_spec(Widget self,int  start,int  stop)
 #else
-#line 398 "WeditMV.widget"
+#line 400 "WeditMV.widget"
 static void draw_glyphs_spec(self,start,stop)Widget self;int  start;int  stop;
 #endif
-#line 399 "WeditMV.widget"
+#line 401 "WeditMV.widget"
 {
     int i, xa = 0;
     if( start < 0 ) start = 0;
@@ -779,16 +785,16 @@ static void draw_glyphs_spec(self,start,stop)Widget self;int  start;int  stop;
     XftDrawGlyphFontSpec( ((WeditMVWidget)self)->weditMV.draw, ((WeditMVWidget)self)->weditMV.xcol + FG,
                           mls(((WeditMVWidget)self)->weditMV.glyph_m, start), stop-start +1 );
 }
-#line 415 "WeditMV.widget"
+#line 417 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 415 "WeditMV.widget"
+#line 417 "WeditMV.widget"
 static void draw_glyphs(Widget self)
 #else
-#line 415 "WeditMV.widget"
+#line 417 "WeditMV.widget"
 static void draw_glyphs(self)Widget self;
 #endif
-#line 416 "WeditMV.widget"
+#line 418 "WeditMV.widget"
 {
     if( ((WeditMVWidget)self)->weditMV.dirty_str ) str_to_glyphlist(self);
 
@@ -804,16 +810,16 @@ static void draw_glyphs(self)Widget self;
 
     draw_glyphs_spec(self, ((WeditMVWidget)self)->weditMV.left_char_offset, p-1 );
 }
-#line 434 "WeditMV.widget"
+#line 436 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 434 "WeditMV.widget"
+#line 436 "WeditMV.widget"
 static void unicode_to_glyphspec(Widget self,uint  unicode,XftGlyphFontSpec * specs,int * xp,int * yp,int * xOff)
 #else
-#line 434 "WeditMV.widget"
+#line 436 "WeditMV.widget"
 static void unicode_to_glyphspec(self,unicode,specs,xp,yp,xOff)Widget self;uint  unicode;XftGlyphFontSpec * specs;int * xp;int * yp;int * xOff;
 #endif
-#line 435 "WeditMV.widget"
+#line 437 "WeditMV.widget"
 {
     Display *dpy = XtDisplay(self);
     static FT_UInt glyph_fallback = 0;
@@ -838,16 +844,16 @@ static void unicode_to_glyphspec(self,unicode,specs,xp,yp,xOff)Widget self;uint 
     *yp += extents.yOff;
     *xOff = extents.xOff;
 }
-#line 464 "WeditMV.widget"
+#line 466 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 464 "WeditMV.widget"
+#line 466 "WeditMV.widget"
 static void str_to_glyphlist(Widget self)
 #else
-#line 464 "WeditMV.widget"
+#line 466 "WeditMV.widget"
 static void str_to_glyphlist(self)Widget self;
 #endif
-#line 465 "WeditMV.widget"
+#line 467 "WeditMV.widget"
 {
     int unicode;
     int p;
@@ -872,32 +878,32 @@ static void str_to_glyphlist(self)Widget self;
     ((WeditMVWidget)self)->weditMV.dirty = 1;         /* ggf. update der bildschirmausgabe */
     ((WeditMVWidget)self)->weditMV.dirty_str = 0;     /* glyphlist ist aktualisiert */
 }
-#line 490 "WeditMV.widget"
+#line 492 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 490 "WeditMV.widget"
+#line 492 "WeditMV.widget"
 static int  char_offset(Widget self,int  index)
 #else
-#line 490 "WeditMV.widget"
+#line 492 "WeditMV.widget"
 static int  char_offset(self,index)Widget self;int  index;
 #endif
-#line 491 "WeditMV.widget"
+#line 493 "WeditMV.widget"
 {
     int i,p1=0;
     for(i=0;i<index;i++)
         m_utf8char( ((WeditMVWidget)self)->weditMV.str_m, &p1 );
     return p1;
 }
-#line 501 "WeditMV.widget"
+#line 503 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 501 "WeditMV.widget"
+#line 503 "WeditMV.widget"
 static void insert_char_at_cursor(Widget self,char * buf,int  len)
 #else
-#line 501 "WeditMV.widget"
+#line 503 "WeditMV.widget"
 static void insert_char_at_cursor(self,buf,len)Widget self;char * buf;int  len;
 #endif
-#line 502 "WeditMV.widget"
+#line 504 "WeditMV.widget"
 {
     int p = char_offset(self,((WeditMVWidget)self)->weditMV.crsr_pos);
     m_ins( ((WeditMVWidget)self)->weditMV.str_m, p, len );
@@ -905,16 +911,16 @@ static void insert_char_at_cursor(self,buf,len)Widget self;char * buf;int  len;
     str_to_glyphlist(self);
     ((WeditMVWidget)self)->weditMV.dirty = 1;
 }
-#line 510 "WeditMV.widget"
+#line 512 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 510 "WeditMV.widget"
+#line 512 "WeditMV.widget"
 static void remove_char_at_cursor(Widget self)
 #else
-#line 510 "WeditMV.widget"
+#line 512 "WeditMV.widget"
 static void remove_char_at_cursor(self)Widget self;
 #endif
-#line 511 "WeditMV.widget"
+#line 513 "WeditMV.widget"
 {
     int p1=0, p2=0;
     if( ((WeditMVWidget)self)->weditMV.crsr_pos >= m_len(((WeditMVWidget)self)->weditMV.glyph_m)-1 ) return;
@@ -925,16 +931,16 @@ static void remove_char_at_cursor(self)Widget self;
     m_remove( ((WeditMVWidget)self)->weditMV.str_m, p1, p2-p1 );
     ((WeditMVWidget)self)->weditMV.dirty     = 1;
 }
-#line 522 "WeditMV.widget"
+#line 524 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 522 "WeditMV.widget"
+#line 524 "WeditMV.widget"
 static char  scroll_left(Widget self)
 #else
-#line 522 "WeditMV.widget"
+#line 524 "WeditMV.widget"
 static char  scroll_left(self)Widget self;
 #endif
-#line 523 "WeditMV.widget"
+#line 525 "WeditMV.widget"
 {
     if( ((WeditMVWidget)self)->weditMV.left_char_offset < m_len(((WeditMVWidget)self)->weditMV.glyph_m)-1 ) {
         ((WeditMVWidget)self)->weditMV.left_char_offset++;
@@ -943,74 +949,74 @@ static char  scroll_left(self)Widget self;
     }
     return -1;
 }
-#line 532 "WeditMV.widget"
+#line 534 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 532 "WeditMV.widget"
+#line 534 "WeditMV.widget"
 static char  scroll_right(Widget self)
 #else
-#line 532 "WeditMV.widget"
+#line 534 "WeditMV.widget"
 static char  scroll_right(self)Widget self;
 #endif
-#line 533 "WeditMV.widget"
+#line 535 "WeditMV.widget"
 {
     if( ((WeditMVWidget)self)->weditMV.left_char_offset <= 0 ) return -1;
     ((WeditMVWidget)self)->weditMV.left_char_offset--;
     ((WeditMVWidget)self)->weditMV.dirty = 1;
     return 0;
 }
-#line 547 "WeditMV.widget"
+#line 549 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 547 "WeditMV.widget"
+#line 549 "WeditMV.widget"
 static int  px_left_offset(Widget self)
 #else
-#line 547 "WeditMV.widget"
+#line 549 "WeditMV.widget"
 static int  px_left_offset(self)Widget self;
 #endif
-#line 548 "WeditMV.widget"
+#line 550 "WeditMV.widget"
 {
     return px_char(self,((WeditMVWidget)self)->weditMV.left_char_offset);
 }
-#line 555 "WeditMV.widget"
+#line 557 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 555 "WeditMV.widget"
+#line 557 "WeditMV.widget"
 static int  px_char(Widget self,int  index)
 #else
-#line 555 "WeditMV.widget"
+#line 557 "WeditMV.widget"
 static int  px_char(self,index)Widget self;int  index;
 #endif
-#line 556 "WeditMV.widget"
+#line 558 "WeditMV.widget"
 {
     int x=0,i;
     for(i=0;i<index;i++)
         x+= INT(((WeditMVWidget)self)->weditMV.glyph_xoff_m, i);
     return x;
 }
-#line 565 "WeditMV.widget"
+#line 567 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 565 "WeditMV.widget"
+#line 567 "WeditMV.widget"
 static int  screen_px(Widget self,int  index)
 #else
-#line 565 "WeditMV.widget"
+#line 567 "WeditMV.widget"
 static int  screen_px(self,index)Widget self;int  index;
 #endif
-#line 566 "WeditMV.widget"
+#line 568 "WeditMV.widget"
 {
     return px_char(self,index) - px_left_offset(self);
 }
-#line 577 "WeditMV.widget"
+#line 579 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 577 "WeditMV.widget"
+#line 579 "WeditMV.widget"
 static void cursor_right(Widget self)
 #else
-#line 577 "WeditMV.widget"
+#line 579 "WeditMV.widget"
 static void cursor_right(self)Widget self;
 #endif
-#line 578 "WeditMV.widget"
+#line 580 "WeditMV.widget"
 {
     int xa = 0;
     if( ((WeditMVWidget)self)->weditMV.crsr_pos >= m_len( ((WeditMVWidget)self)->weditMV.glyph_m ) -1 ) return;
@@ -1024,16 +1030,16 @@ static void cursor_right(self)Widget self;
         if( scroll_left(self) ) break;
     }
 }
-#line 595 "WeditMV.widget"
+#line 597 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 595 "WeditMV.widget"
+#line 597 "WeditMV.widget"
 static void cursor_left(Widget self)
 #else
-#line 595 "WeditMV.widget"
+#line 597 "WeditMV.widget"
 static void cursor_left(self)Widget self;
 #endif
-#line 596 "WeditMV.widget"
+#line 598 "WeditMV.widget"
 {
     int xa;
     if( ((WeditMVWidget)self)->weditMV.crsr_pos <= 0 ) return;
@@ -1045,16 +1051,16 @@ static void cursor_left(self)Widget self;
       if( scroll_right(self) ) break;
     }
 }
-#line 610 "WeditMV.widget"
+#line 612 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 610 "WeditMV.widget"
+#line 612 "WeditMV.widget"
 static void RequestSelection(Widget self,XtPointer  client,Atom * selection,Atom * type,XtPointer  value,unsigned  long * length,int * format)
 #else
-#line 610 "WeditMV.widget"
+#line 612 "WeditMV.widget"
 static void RequestSelection(self,client,selection,type,value,length,format)Widget self;XtPointer  client;Atom * selection;Atom * type;XtPointer  value;unsigned  long * length;int * format;
 #endif
-#line 611 "WeditMV.widget"
+#line 613 "WeditMV.widget"
 {
     char *s = value;
     int len = *length;
@@ -1063,16 +1069,16 @@ static void RequestSelection(self,client,selection,type,value,length,format)Widg
     while( utf8char(&s) != -1 ) cursor_right(self);
     paint(self);
 }
-#line 625 "WeditMV.widget"
+#line 627 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 625 "WeditMV.widget"
+#line 627 "WeditMV.widget"
 static char * get_text_buffer(Widget self)
 #else
-#line 625 "WeditMV.widget"
+#line 627 "WeditMV.widget"
 static char * get_text_buffer(self)Widget self;
 #endif
-#line 626 "WeditMV.widget"
+#line 628 "WeditMV.widget"
 {
 	int l = m_len(((WeditMVWidget)self)->weditMV.str_m);
         m_write(((WeditMVWidget)self)->weditMV.label_m, 0, m_buf(((WeditMVWidget)self)->weditMV.str_m), l );
@@ -1080,24 +1086,38 @@ static char * get_text_buffer(self)Widget self;
 	m_setlen(((WeditMVWidget)self)->weditMV.label_m,l);
 	return m_buf(((WeditMVWidget)self)->weditMV.label_m);
 }
-#line 636 "WeditMV.widget"
+#line 638 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 636 "WeditMV.widget"
+#line 638 "WeditMV.widget"
 static void update_svar(Widget self)
 #else
-#line 636 "WeditMV.widget"
+#line 638 "WeditMV.widget"
 static void update_svar(self)Widget self;
 #endif
-#line 637 "WeditMV.widget"
+#line 639 "WeditMV.widget"
 {
-
 	int *v = svar_value(((WeditMVWidget)self)->weditMV.key_svar);
 	char *str = get_text_buffer(self);
 	*v = append_mstring_array(*v,0, str, XtName(self),
 	     NULL );
 	TRACE(1, "svar: %d value=%d", ((WeditMVWidget)self)->weditMV.key_svar, *v );
 
+}
+#line 650 "WeditMV.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 650 "WeditMV.widget"
+static void update_mvar(Widget self)
+#else
+#line 650 "WeditMV.widget"
+static void update_mvar(self)Widget self;
+#endif
+#line 651 "WeditMV.widget"
+{
+	char *str = get_text_buffer(self);
+	mvar_put_string( ((WeditMVWidget)self)->weditMV.mvar, str, 0 );
+	// mvar_call_callbacks( v, 0 );
 }
 
 static XtResource resources[] = {
@@ -1113,14 +1133,18 @@ static XtResource resources[] = {
 {XtNcornerRoundPercent,XtCCornerRoundPercent,XtRInt,sizeof(((WeditMVRec*)NULL)->weditMV.cornerRoundPercent),XtOffsetOf(WeditMVRec,weditMV.cornerRoundPercent),XtRImmediate,(XtPointer)20 },
 #line 32 "WeditMV.widget"
 {XtNcallback,XtCCallback,XtRCallback,sizeof(((WeditMVRec*)NULL)->weditMV.callback),XtOffsetOf(WeditMVRec,weditMV.callback),XtRImmediate,(XtPointer)NULL },
-#line 33 "WeditMV.widget"
-{XtNlabel,XtCLabel,XtRString,sizeof(((WeditMVRec*)NULL)->weditMV.label),XtOffsetOf(WeditMVRec,weditMV.label),XtRImmediate,(XtPointer)NULL },
 #line 34 "WeditMV.widget"
-{XtNtextBuffer,XtCTextBuffer,XtRQVar,sizeof(((WeditMVRec*)NULL)->weditMV.textBuffer),XtOffsetOf(WeditMVRec,weditMV.textBuffer),XtRString,(XtPointer)"defaultEditBuffer"},
+{XtNlabel,XtCLabel,XtRString,sizeof(((WeditMVRec*)NULL)->weditMV.label),XtOffsetOf(WeditMVRec,weditMV.label),XtRImmediate,(XtPointer)NULL },
 #line 35 "WeditMV.widget"
+{XtNtextBuffer,XtCTextBuffer,XtRQVar,sizeof(((WeditMVRec*)NULL)->weditMV.textBuffer),XtOffsetOf(WeditMVRec,weditMV.textBuffer),XtRString,(XtPointer)"defaultEditBuffer"},
+#line 36 "WeditMV.widget"
 {XtNsvar,XtCSvar,XtRString,sizeof(((WeditMVRec*)NULL)->weditMV.svar),XtOffsetOf(WeditMVRec,weditMV.svar),XtRString,(XtPointer)"defaultEditBuffer"},
-#line 41 "WeditMV.widget"
+#line 37 "WeditMV.widget"
+{XtNvar5,XtCVar5,XtRString,sizeof(((WeditMVRec*)NULL)->weditMV.var5),XtOffsetOf(WeditMVRec,weditMV.var5),XtRString,(XtPointer)"defaultEditBuffer"},
+#line 43 "WeditMV.widget"
 {XtNonEnter,XtCOnEnter,XtRCallback,sizeof(((WeditMVRec*)NULL)->weditMV.onEnter),XtOffsetOf(WeditMVRec,weditMV.onEnter),XtRImmediate,(XtPointer)NULL },
+#line 44 "WeditMV.widget"
+{XtNonChanged,XtCOnChanged,XtRCallback,sizeof(((WeditMVRec*)NULL)->weditMV.onChanged),XtOffsetOf(WeditMVRec,weditMV.onChanged),XtRImmediate,(XtPointer)NULL },
 };
 
 WeditMVClassRec weditMVClassRec = {
@@ -1137,7 +1161,7 @@ WeditMVClassRec weditMVClassRec = {
 /* actions      	*/  actionsList,
 /* num_actions  	*/  12,
 /* resources    	*/  resources,
-/* num_resources 	*/  10,
+/* num_resources 	*/  12,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  False ,
 /* compress_exposure 	*/  FALSE ,
@@ -1164,14 +1188,14 @@ WeditMVClassRec weditMVClassRec = {
 };
 WidgetClass weditMVWidgetClass = (WidgetClass) &weditMVClassRec;
 /*ARGSUSED*/
-#line 651 "WeditMV.widget"
+#line 665 "WeditMV.widget"
 static void CallOnEnter(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	XtCallCallbackList( self, ((WeditMVWidget)self)->weditMV.onEnter, NULL );
 }
 
 /*ARGSUSED*/
-#line 658 "WeditMV.widget"
+#line 672 "WeditMV.widget"
 static void SetKeyboardFocus(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     TRACE(2,"try to set keyboard focus");
@@ -1188,7 +1212,7 @@ static void SetKeyboardFocus(self,event,params,num_params)Widget self;XEvent*eve
 }
 
 /*ARGSUSED*/
-#line 673 "WeditMV.widget"
+#line 687 "WeditMV.widget"
 static void focus_in(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	TRACE(2, "WeditMV %s got focus", XtName(self));
@@ -1196,7 +1220,7 @@ static void focus_in(self,event,params,num_params)Widget self;XEvent*event;Strin
 }
 
 /*ARGSUSED*/
-#line 679 "WeditMV.widget"
+#line 693 "WeditMV.widget"
 static void focus_out(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	TRACE(2, "WeditMV %s lost focus", XtName(self));
@@ -1204,14 +1228,14 @@ static void focus_out(self,event,params,num_params)Widget self;XEvent*event;Stri
 }
 
 /*ARGSUSED*/
-#line 685 "WeditMV.widget"
+#line 699 "WeditMV.widget"
 static void info(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     dump(self);
 }
 
 /*ARGSUSED*/
-#line 690 "WeditMV.widget"
+#line 704 "WeditMV.widget"
 static void backward_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     cursor_left(self);
@@ -1219,7 +1243,7 @@ static void backward_char(self,event,params,num_params)Widget self;XEvent*event;
 }
 
 /*ARGSUSED*/
-#line 696 "WeditMV.widget"
+#line 710 "WeditMV.widget"
 static void forward_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     cursor_right(self);
@@ -1227,7 +1251,7 @@ static void forward_char(self,event,params,num_params)Widget self;XEvent*event;S
 }
 
 /*ARGSUSED*/
-#line 702 "WeditMV.widget"
+#line 716 "WeditMV.widget"
 static void insert_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     int len;
@@ -1243,7 +1267,7 @@ static void insert_char(self,event,params,num_params)Widget self;XEvent*event;St
 }
 
 /*ARGSUSED*/
-#line 716 "WeditMV.widget"
+#line 730 "WeditMV.widget"
 static void remove_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     remove_char_at_cursor(self);
@@ -1251,7 +1275,7 @@ static void remove_char(self,event,params,num_params)Widget self;XEvent*event;St
 }
 
 /*ARGSUSED*/
-#line 722 "WeditMV.widget"
+#line 736 "WeditMV.widget"
 static void set_cursor(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     int x = event->xbutton.x;
@@ -1270,7 +1294,7 @@ static void set_cursor(self,event,params,num_params)Widget self;XEvent*event;Str
 }
 
 /*ARGSUSED*/
-#line 741 "WeditMV.widget"
+#line 755 "WeditMV.widget"
 static void insert_selection(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     XtGetSelectionValue(self, XA_PRIMARY, ((WeditMVWidgetClass)self->core.widget_class)->weditMV_class.XA_UTF8_STRING,
@@ -1279,7 +1303,7 @@ static void insert_selection(self,event,params,num_params)Widget self;XEvent*eve
 }
 
 /*ARGSUSED*/
-#line 751 "WeditMV.widget"
+#line 763 "WeditMV.widget"
 static void notify(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	
@@ -1294,16 +1318,16 @@ WidgetClass class;
   if (class == weditMVWidgetClass) return;
   super = (WeditMVWidgetClass)class->core_class.superclass;
 }
-#line 79 "WeditMV.widget"
+#line 82 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 79 "WeditMV.widget"
+#line 82 "WeditMV.widget"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 79 "WeditMV.widget"
+#line 82 "WeditMV.widget"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 80 "WeditMV.widget"
+#line 83 "WeditMV.widget"
 {
   Display *dpy = XtDisplay(self);
  /*
@@ -1314,12 +1338,12 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
   ((WeditMVWidget)self)->weditMV.xftFont = font_load(dpy, DefaultScreen(dpy), ((WeditMVWidget)self)->weditMV.fontName );
   int w=10,h=10;
   alloc_colors(self);
-  if(! ((WeditMVWidget)self)->weditMV.label ) ((WeditMVWidget)self)->weditMV.label = ((WeditMVWidget)self)->core.name;
+  if(! ((WeditMVWidget)self)->weditMV.label ) ((WeditMVWidget)self)->weditMV.label = "";
   ((WeditMVWidget)self)->weditMV.glyph_m = m_create( 50, sizeof(XftGlyphFontSpec) );
   ((WeditMVWidget)self)->weditMV.glyph_xoff_m = m_create( 50, sizeof(int) );
   ((WeditMVWidget)self)->weditMV.str_m  = m_create( 50, 1 );
   ((WeditMVWidget)self)->weditMV.label_m = m_create( 50, 1 );
-  char *s = ((WeditMVWidget)self)->weditMV.label; if( is_empty(s) ) s=((WeditMVWidget)self)->core.name;
+  char *s = ((WeditMVWidget)self)->weditMV.label; 
   copy_str( self, s );
   // mv_onwrite( ((WeditMVWidget)self)->weditMV.textBuffer, (void*)do_update, self, 0 );
   TRACE(1,"%s using mvar %d", ((WeditMVWidget)self)->core.name, ((WeditMVWidget)self)->weditMV.textBuffer );
@@ -1334,18 +1358,19 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
      if the widget is redrawn the text is send to the svar
   */
   ((WeditMVWidget)self)->weditMV.key_svar = svar_lookup_str(((WeditMVWidget)self)->weditMV.svar, SVAR_MSTRING_ARRAY );
-  
+  ((WeditMVWidget)self)->weditMV.mvar = mvar_parse_string(((WeditMVWidget)self)->weditMV.var5, VAR_STRING );
+
 }
-#line 113 "WeditMV.widget"
+#line 117 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 113 "WeditMV.widget"
+#line 117 "WeditMV.widget"
 static void destroy(Widget self)
 #else
-#line 113 "WeditMV.widget"
+#line 117 "WeditMV.widget"
 static void destroy(self)Widget self;
 #endif
-#line 114 "WeditMV.widget"
+#line 118 "WeditMV.widget"
 {
         free_colors(self);
         XftDrawDestroy( ((WeditMVWidget)self)->weditMV.draw );
@@ -1354,16 +1379,16 @@ static void destroy(self)Widget self;
         m_free(((WeditMVWidget)self)->weditMV.glyph_xoff_m);
         m_free(((WeditMVWidget)self)->weditMV.label_m);
 }
-#line 123 "WeditMV.widget"
+#line 127 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 123 "WeditMV.widget"
+#line 127 "WeditMV.widget"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 123 "WeditMV.widget"
+#line 127 "WeditMV.widget"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 124 "WeditMV.widget"
+#line 128 "WeditMV.widget"
 {
     int i;
     for(i=0;i<*num_args;i++) {
@@ -1375,16 +1400,16 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
     reinit(self);
     return True; /* call expose() to update widget */
 }
-#line 136 "WeditMV.widget"
+#line 140 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 136 "WeditMV.widget"
+#line 140 "WeditMV.widget"
 static void get_values_hook(Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 136 "WeditMV.widget"
+#line 140 "WeditMV.widget"
 static void get_values_hook(self,args,num_args)Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 137 "WeditMV.widget"
+#line 141 "WeditMV.widget"
 {
     int i;
     for(i=0;i<*num_args;i++) {
@@ -1394,74 +1419,74 @@ static void get_values_hook(self,args,num_args)Widget self;ArgList  args;Cardina
         }
     }
 }
-#line 148 "WeditMV.widget"
+#line 152 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 148 "WeditMV.widget"
+#line 152 "WeditMV.widget"
 static void expose(Widget self,XEvent * event,Region  region)
 #else
-#line 148 "WeditMV.widget"
+#line 152 "WeditMV.widget"
 static void expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 149 "WeditMV.widget"
+#line 153 "WeditMV.widget"
 {
   Display *dpy = XtDisplay(self);
   XClearWindow( dpy, XtWindow(self) );
   ((WeditMVWidget)self)->weditMV.crsr_on = 0; /* cursor not visible */
   paint(self);
 }
-#line 156 "WeditMV.widget"
+#line 160 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 156 "WeditMV.widget"
+#line 160 "WeditMV.widget"
 static void realize(Widget self,XtValueMask * mask,XSetWindowAttributes * attributes)
 #else
-#line 156 "WeditMV.widget"
+#line 160 "WeditMV.widget"
 static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWindowAttributes * attributes;
 #endif
-#line 157 "WeditMV.widget"
+#line 161 "WeditMV.widget"
 {
 	XtCreateWindow(self, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent, *mask, attributes);
   	resize_widget(self);
 }
-#line 163 "WeditMV.widget"
+#line 167 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 163 "WeditMV.widget"
+#line 167 "WeditMV.widget"
 static void resize(Widget self)
 #else
-#line 163 "WeditMV.widget"
+#line 167 "WeditMV.widget"
 static void resize(self)Widget self;
 #endif
-#line 164 "WeditMV.widget"
+#line 168 "WeditMV.widget"
 {
     if (XtIsRealized(self)) resize_widget(self);
 }
-#line 168 "WeditMV.widget"
+#line 172 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 168 "WeditMV.widget"
+#line 172 "WeditMV.widget"
 static Boolean  accept_focus(Widget self,Time * time)
 #else
-#line 168 "WeditMV.widget"
+#line 172 "WeditMV.widget"
 static Boolean  accept_focus(self,time)Widget self;Time * time;
 #endif
-#line 169 "WeditMV.widget"
+#line 173 "WeditMV.widget"
 {
 	TRACE(2,"Class WeditMV: %s: ", XtName(self) );
 	return True;
 }
-#line 175 "WeditMV.widget"
+#line 179 "WeditMV.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 175 "WeditMV.widget"
+#line 179 "WeditMV.widget"
 static XtGeometryResult  query_geometry(Widget self,XtWidgetGeometry * request,XtWidgetGeometry * reply)
 #else
-#line 175 "WeditMV.widget"
+#line 179 "WeditMV.widget"
 static XtGeometryResult  query_geometry(self,request,reply)Widget self;XtWidgetGeometry * request;XtWidgetGeometry * reply;
 #endif
-#line 176 "WeditMV.widget"
+#line 180 "WeditMV.widget"
 {
     int w,h;
     reply->request_mode = CWX | CWY | CWWidth | CWHeight;

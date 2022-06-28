@@ -95,11 +95,31 @@ _XFUNCPROTOBEGIN
 #define XtRString "String"
 #endif
 
+#ifndef XtNvar5
+#define XtNvar5 "var5"
+#endif
+#ifndef XtCVar5
+#define XtCVar5 "Var5"
+#endif
+#ifndef XtRString
+#define XtRString "String"
+#endif
+
 #ifndef XtNonEnter
 #define XtNonEnter "onEnter"
 #endif
 #ifndef XtCOnEnter
 #define XtCOnEnter "OnEnter"
+#endif
+#ifndef XtRCallback
+#define XtRCallback "Callback"
+#endif
+
+#ifndef XtNonChanged
+#define XtNonChanged "onChanged"
+#endif
+#ifndef XtCOnChanged
+#define XtCOnChanged "OnChanged"
 #endif
 #ifndef XtRCallback
 #define XtRCallback "Callback"

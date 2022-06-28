@@ -704,7 +704,7 @@ extern int yylex (void);
 #undef yyTABLES_NAME
 #endif
 
-#line 122 "njson_lex.l"
+#line 153 "njson_lex.l"
 
 
 #line 711 "njson_lex.lex.h"

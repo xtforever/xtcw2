@@ -95,6 +95,16 @@ _XFUNCPROTOBEGIN
 #define XtRString "String"
 #endif
 
+#ifndef XtNonEnter
+#define XtNonEnter "onEnter"
+#endif
+#ifndef XtCOnEnter
+#define XtCOnEnter "OnEnter"
+#endif
+#ifndef XtRCallback
+#define XtRCallback "Callback"
+#endif
+
 typedef struct _WsqlcomboClassRec *WsqlcomboWidgetClass;
 typedef struct _WsqlcomboRec *WsqlcomboWidget;
 externalref WidgetClass wsqlcomboWidgetClass;

@@ -7,7 +7,7 @@
 _XFUNCPROTOBEGIN
 void  wls_set_slider_pos(
 #if NeedFunctionPrototypes
-Widget ,int ,int ,int 
+Widget ,int ,int 
 #endif
 );
 #include "mls.h"
@@ -58,8 +58,18 @@ Widget ,int ,int ,int
 #ifndef XtCPos
 #define XtCPos "Pos"
 #endif
-#ifndef XtRFloat
-#define XtRFloat "Float"
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNlist_height
+#define XtNlist_height "list_height"
+#endif
+#ifndef XtCList_height
+#define XtCList_height "List_height"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
 #endif
 
 #ifndef XtNcallback

@@ -134,6 +134,7 @@ struct var_if {
     int    (*length)  (var_t *v);
     var_t* (*create)  (void);
     void   (*destroy) (var_t *v);
+    void   (*clear) (var_t *v);
 };
 
 
@@ -262,13 +263,15 @@ void  string_impl_destroy(var_t *v);
 char *string_impl_get_string(var_t *v, int p);
 int string_impl_put_string(var_t *v,char *str, int p);
 int string_impl_length(var_t *v);
+void string_impl_clear(var_t *v);
 
 struct string_var_if STRING_VAR_IF = {
     .put_string = string_impl_put_string,
     .get_string = string_impl_get_string,
     .length     = string_impl_length,
     .create = string_impl_create,
-    .destroy = string_impl_destroy
+    .destroy = string_impl_destroy,
+    .clear   = string_impl_clear
 };
 
 int string_impl_length(var_t *v)
@@ -302,6 +305,12 @@ int string_impl_put_string(var_t *v,char *str, int p)
     string_var_t *s = (string_var_t*)v;
     v_kset(s->lst,str,p);
     return 0;
+}
+
+void  string_impl_clear(var_t *v)
+{
+    string_var_t *s = (string_var_t*)v;
+    v_kclr(s->lst);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -459,6 +468,12 @@ var_t *var_create( void *dfn )
 void var_destroy(var_t*v)
 {
     var_getif(v)->destroy(v);
+}
+
+void var_clear( var_t *v )
+{
+    struct var_if *fn = var_getif(v);
+    if( fn->clear ) fn->clear(v);
 }
 
 int var_put_string( var_t *v, char *s, int p )
@@ -621,6 +636,13 @@ static void mvar_free_all(void)
     m_free(MVAR_MEM);
     MVAR_MEM=0;
     MVAR_FREE=0;
+}
+
+void mvar_clear( int id )
+{
+    if( id == 0 ) return;
+    var_t *v =  *mvar_get(id);
+    if( v != NULL ) var_clear( v );
 }
 
 

@@ -418,6 +418,28 @@ void app_test(void)
     
 }
 
+
+static void asgn(char *s)
+{
+    int ls =  m_split_list(s, "=" );
+    if( m_len(ls) != 2 ) goto leave;
+    int v = mvar_parse( INT(ls,0), VAR_STRING );
+    mvar_put_string(v, m_str(INT(ls,1)), 0);
+
+ leave:
+    m_free_list(ls);
+}
+
+void exp_test(void)
+{
+    asgn("task1.t1=hello");
+    asgn("task1.t2=world");
+    const char *s = mvar_str_string( "task1", "form: $t1-$t2");
+    fprintf(stderr,"%s\n", s );
+}
+
+
+
 int main()
 {
     m_init();
@@ -434,8 +456,9 @@ int main()
     // parsing_test();
     // clash();
     //speed_test();
+    // app_test();
 
-    app_test();
+    exp_test();
 
     mvar_destruct();
     //

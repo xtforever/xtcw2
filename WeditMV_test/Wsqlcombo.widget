@@ -11,6 +11,7 @@
 @var String sql_user   = <String>  "jens"
 @var String sql_pwd    = <String>  "linux"
 @var String sql_db     = <String>  "custsrv"
+@var <Callback> XtCallbackList onEnter   = NULL
 
 @PRIVATE
 @var int sqlres
@@ -105,11 +106,25 @@
 }
 
 @proc update_listbox($)
-{	
+{
+	int default_item = 0;
+	char *default_selection = "";
+
 	int rows =  row_count($sqlres);
 	update_list( rows, $sql_disp_field, $disp_lst, $sqlres );
 	update_list( rows, $sql_key_field, $key_lst, $sqlres );
-	XtVaSetValues( $, "lst", $disp_lst, NULL );
+	
+	if( m_len($disp_lst) > default_item ) {
+	    default_selection = STR( $disp_lst,default_item);   
+	}
+	
+	XtVaSetValues( $,
+		       "lst", $disp_lst,
+		       "label", default_selection, NULL );
+
+		      
+	combo_cb(0,$, (void*) default_item ); /* select item 0 */
+	
 }
 
 @proc sql_query($)
@@ -136,7 +151,13 @@
 }
 
 
-
+@ACTIONS
+@ call the callbacks defined in the 'onEnter' Class Member
+@proc CallOnEnter
+{
+	TRACE(8, "onEnter in Wsqlcombo");
+	XtCallCallbackList( $, $onEnter, NULL );
+}
 
 
 @IMPORTS

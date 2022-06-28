@@ -4,7 +4,7 @@
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <xtcw/WoptcP.h>
-#line 140 "Woptc.widget"
+#line 142 "Woptc.widget"
 static void sl_motion(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -33,112 +33,144 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 45 "Woptc.widget"
+#line 44 "Woptc.widget"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 61 "Woptc.widget"
+#line 60 "Woptc.widget"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 67 "Woptc.widget"
+#line 66 "Woptc.widget"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 74 "Woptc.widget"
+#line 73 "Woptc.widget"
 static void expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 83 "Woptc.widget"
-static void set_slider_pos(
+#line 78 "Woptc.widget"
+static void resize(
 #if NeedFunctionPrototypes
-Widget,int ,int ,int 
+Widget
 #endif
 );
-#line 92 "Woptc.widget"
-static void draw_slider(
+#line 86 "Woptc.widget"
+static void move_slider(
 #if NeedFunctionPrototypes
 Widget,int 
 #endif
 );
-#line 83 "Woptc.widget"
+#line 92 "Woptc.widget"
+static void calc_slider(
+#if NeedFunctionPrototypes
+Widget,int ,int 
+#endif
+);
+#line 112 "Woptc.widget"
+static void set_slider_pos(
+#if NeedFunctionPrototypes
+Widget,int ,int 
+#endif
+);
+#line 122 "Woptc.widget"
+static void draw_slider(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+#line 86 "Woptc.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 83 "Woptc.widget"
-static void set_slider_pos(Widget self,int  vis,int  max,int  first)
+#line 86 "Woptc.widget"
+static void move_slider(Widget self,int  y)
 #else
-#line 83 "Woptc.widget"
-static void set_slider_pos(self,vis,max,first)Widget self;int  vis;int  max;int  first;
+#line 86 "Woptc.widget"
+static void move_slider(self,y)Widget self;int  y;
 #endif
-#line 84 "Woptc.widget"
+#line 87 "Woptc.widget"
 {
-	((WoptcWidget)self)->woptc.frac = ( vis * 1.0 / max );
-	((WoptcWidget)self)->woptc.pos  = first * 1.0 / max;
-	int y = ((WoptcWidget)self)->core.height * ((WoptcWidget)self)->woptc.pos;
-	draw_slider(self,y);
-	
+	int first = y / ((WoptcWidget)self)->woptc.frac;
+	set_slider_pos(self, ((WoptcWidget)self)->woptc.list_height, first );
 }
 #line 92 "Woptc.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
 #line 92 "Woptc.widget"
-static void draw_slider(Widget self,int  y)
+static void calc_slider(Widget self,int  total,int  first)
 #else
 #line 92 "Woptc.widget"
-static void draw_slider(self,y)Widget self;int  y;
+static void calc_slider(self,total,first)Widget self;int  total;int  first;
 #endif
 #line 93 "Woptc.widget"
 {
+	((WoptcWidget)self)->woptc.list_height =   total;
+	((WoptcWidget)self)->woptc.frac 	     =   ( ((WoptcWidget)self)->core.height *1.0 / total );
 
+	((WoptcWidget)self)->woptc.sly  =   first * ((WoptcWidget)self)->woptc.frac;
+	((WoptcWidget)self)->woptc.slh  =   ((WoptcWidget)self)->core.height * ((WoptcWidget)self)->woptc.frac;
+
+	if( ((WoptcWidget)self)->woptc.slh < 4 ) ((WoptcWidget)self)->woptc.slh = 4;
+	if( ((WoptcWidget)self)->woptc.slh > ((WoptcWidget)self)->core.height ) ((WoptcWidget)self)->woptc.slh = ((WoptcWidget)self)->core.height;
+	
+	if( ((WoptcWidget)self)->woptc.sly + ((WoptcWidget)self)->woptc.slh > ((WoptcWidget)self)->core.height ) ((WoptcWidget)self)->woptc.sly = ((WoptcWidget)self)->core.height - ((WoptcWidget)self)->woptc.slh;
+	if( ((WoptcWidget)self)->woptc.sly < 0 ) ((WoptcWidget)self)->woptc.sly = 0;
+
+	((WoptcWidget)self)->woptc.pos  =   ((WoptcWidget)self)->woptc.sly  / ((WoptcWidget)self)->woptc.frac;
+	
+	TRACE(9, "Winh:%d, Frac=%f, Total: %d, First: %d, y=%d, h=%d, first_line_in_list_pixel=%d", ((WoptcWidget)self)->core.height, ((WoptcWidget)self)->woptc.frac, total, first, ((WoptcWidget)self)->woptc.sly, ((WoptcWidget)self)->woptc.slh, ((WoptcWidget)self)->woptc.pos );
+}
+#line 112 "Woptc.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 112 "Woptc.widget"
+static void set_slider_pos(Widget self,int  total,int  first)
+#else
+#line 112 "Woptc.widget"
+static void set_slider_pos(self,total,first)Widget self;int  total;int  first;
+#endif
+#line 113 "Woptc.widget"
+{
+	TRACE(9, "Woptc: %s, WinH=%d", XtName(self), ((WoptcWidget)self)->core.height );
+	calc_slider( self, total, first );
+	draw_slider(self);
+
+	TRACE(9, "woptc: callback pos:%d", ((WoptcWidget)self)->woptc.pos);
+	XtCallCallbackList( self, ((WoptcWidget)self)->woptc.callback, (XtPointer) (intptr_t) ((WoptcWidget)self)->woptc.pos ); 	
+}
+#line 122 "Woptc.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 122 "Woptc.widget"
+static void draw_slider(Widget self)
+#else
+#line 122 "Woptc.widget"
+static void draw_slider(self)Widget self;
+#endif
+#line 123 "Woptc.widget"
+{
 	if(! XtIsRealized(self) ) {
-
 	     TRACE(9, "Widget is gone" );
+	     return;
 	};
 
-	/* compute new slider position (y) and size (h) */ 
-	if( y < 0 ) y = 0;
-        if( ((WoptcWidget)self)->woptc.frac <= 0 || ((WoptcWidget)self)->woptc.frac > 1 ) ((WoptcWidget)self)->woptc.frac = .1;	
-	TRACE(9, "frac:%f y:%d", ((WoptcWidget)self)->woptc.frac,y );
 
-        int h;
-        h = ((WoptcWidget)self)->core.height * ((WoptcWidget)self)->woptc.frac;
-        if( y+h > ((WoptcWidget)self)->core.height ) y = Max(0,((WoptcWidget)self)->core.height-h);
-	TRACE(9, "height:%d sl-height:%d top:%d", ((WoptcWidget)self)->core.height, h, y);
-	if( y == ((WoptcWidget)self)->woptc.sly && ((WoptcWidget)self)->woptc.slh == h ) return;
-
-
-	
-	/* undraw old slider */
-        if( ((WoptcWidget)self)->woptc.sly >= 0 && ((WoptcWidget)self)->woptc.slh > 0 ) {
-             XFillRectangle(XtDisplay(self), XtWindow(self),((WoptcWidget)self)->woptc.gc_background,
+	XClearWindow( XtDisplay(self), XtWindow(self) );
+	XFillRectangle(XtDisplay(self), XtWindow(self),((WoptcWidget)self)->woptc.gc_fg,
                              0,((WoptcWidget)self)->woptc.sly,((WoptcWidget)self)->core.width, ((WoptcWidget)self)->woptc.slh );
-        }
-
-	/* draw slider at Pos: (0,$sly) */
-        ((WoptcWidget)self)->woptc.sly = y; ((WoptcWidget)self)->woptc.slh = h;
-	TRACE(9, "height:%d sl-height:%d top:%d", ((WoptcWidget)self)->core.height, h, ((WoptcWidget)self)->woptc.sly);
-        XFillRectangle(XtDisplay(self), XtWindow(self),((WoptcWidget)self)->woptc.gc_fg,
-                             0,((WoptcWidget)self)->woptc.sly,((WoptcWidget)self)->core.width, ((WoptcWidget)self)->woptc.slh );
-
-
-	/* compute relative position 0..1 */		     
-	float p = ((WoptcWidget)self)->woptc.sly * 1.0 / ((WoptcWidget)self)->core.height;
-        if( p + ((WoptcWidget)self)->woptc.frac > 1.0 ) p = 1.0 - ((WoptcWidget)self)->woptc.frac;
-        if( p < 0 ) p = 0;
-        ((WoptcWidget)self)->woptc.pos = p;
 }
 
 static XtResource resources[] = {
 #line 5 "Woptc.widget"
-{XtNforeground,XtCForeground,XtRPixel,sizeof(((WoptcRec*)NULL)->woptc.foreground),XtOffsetOf(WoptcRec,woptc.foreground),XtRImmediate,(XtPointer)XtDefaultForeground },
+{XtNforeground,XtCForeground,XtRPixel,sizeof(((WoptcRec*)NULL)->woptc.foreground),XtOffsetOf(WoptcRec,woptc.foreground),XtRString,(XtPointer)"Green"},
 #line 6 "Woptc.widget"
 {XtNlineWidth,XtCLineWidth,XtRInt,sizeof(((WoptcRec*)NULL)->woptc.lineWidth),XtOffsetOf(WoptcRec,woptc.lineWidth),XtRImmediate,(XtPointer)1 },
 #line 7 "Woptc.widget"
@@ -146,10 +178,12 @@ static XtResource resources[] = {
 #line 8 "Woptc.widget"
 {XtNfrac,XtCFrac,XtRFloat,sizeof(((WoptcRec*)NULL)->woptc.frac),XtOffsetOf(WoptcRec,woptc.frac),XtRString,(XtPointer)"0.1"},
 #line 9 "Woptc.widget"
-{XtNpos,XtCPos,XtRFloat,sizeof(((WoptcRec*)NULL)->woptc.pos),XtOffsetOf(WoptcRec,woptc.pos),XtRString,(XtPointer)"0.1"},
+{XtNpos,XtCPos,XtRInt,sizeof(((WoptcRec*)NULL)->woptc.pos),XtOffsetOf(WoptcRec,woptc.pos),XtRImmediate,(XtPointer)0 },
 #line 10 "Woptc.widget"
-{XtNcallback,XtCCallback,XtRCallback,sizeof(((WoptcRec*)NULL)->woptc.callback),XtOffsetOf(WoptcRec,woptc.callback),XtRImmediate,(XtPointer)NULL },
+{XtNlist_height,XtCList_height,XtRInt,sizeof(((WoptcRec*)NULL)->woptc.list_height),XtOffsetOf(WoptcRec,woptc.list_height),XtRImmediate,(XtPointer)0 },
 #line 11 "Woptc.widget"
+{XtNcallback,XtCCallback,XtRCallback,sizeof(((WoptcRec*)NULL)->woptc.callback),XtOffsetOf(WoptcRec,woptc.callback),XtRImmediate,(XtPointer)NULL },
+#line 12 "Woptc.widget"
 {XtNsliderWidth,XtCSliderWidth,XtRDistance,sizeof(((WoptcRec*)NULL)->woptc.sliderWidth),XtOffsetOf(WoptcRec,woptc.sliderWidth),XtRString,(XtPointer)"4mm"},
 };
 
@@ -167,14 +201,14 @@ WoptcClassRec woptcClassRec = {
 /* actions      	*/  actionsList,
 /* num_actions  	*/  2,
 /* resources    	*/  resources,
-/* num_resources 	*/  7,
+/* num_resources 	*/  8,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  False ,
 /* compress_exposure 	*/  FALSE ,
 /* compress_enterleave 	*/  False ,
 /* visible_interest 	*/  False ,
 /* destroy      	*/  destroy,
-/* resize       	*/  XtInheritResize,
+/* resize       	*/  resize,
 /* expose       	*/  expose,
 /* set_values   	*/  set_values,
 /* set_values_hook 	*/  NULL,
@@ -194,15 +228,13 @@ WoptcClassRec woptcClassRec = {
 };
 WidgetClass woptcWidgetClass = (WidgetClass) &woptcClassRec;
 /*ARGSUSED*/
-#line 140 "Woptc.widget"
+#line 142 "Woptc.widget"
 static void sl_motion(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
-	static float p;
 	int y = event->xbutton.y;
 	TRACE(9, "%d", y );
-        draw_slider(self,y);
-        XtCallCallbackList( self, ((WoptcWidget)self)->woptc.callback, (XtPointer) & (((WoptcWidget)self)->woptc.pos) );	
-	TRACE(9, "leave cb" );
+ 	move_slider(self,y);
+	TRACE(9, "sl_motion: call callback" );
 }
 
 /*ARGSUSED*/
@@ -220,16 +252,16 @@ WidgetClass class;
   if (class == woptcWidgetClass) return;
   super = (WoptcWidgetClass)class->core_class.superclass;
 }
-#line 45 "Woptc.widget"
+#line 44 "Woptc.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 45 "Woptc.widget"
+#line 44 "Woptc.widget"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 45 "Woptc.widget"
+#line 44 "Woptc.widget"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 46 "Woptc.widget"
+#line 45 "Woptc.widget"
 {
   XGCValues     values = {
   		foreground: ((WoptcWidget)self)->core.background_pixel,
@@ -242,66 +274,77 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
   if( ((WoptcWidget)self)->core.width == 0 ) ((WoptcWidget)self)->core.width=((WoptcWidget)self)->woptc.sliderWidth;
   if( ((WoptcWidget)self)->core.height == 0 ) ((WoptcWidget)self)->core.height=10;
   ((WoptcWidget)self)->woptc.resize = 1;
-  ((WoptcWidget)self)->woptc.sly = 0;
+  calc_slider( self, ((WoptcWidget)self)->core.height, 0 );
 }
-#line 61 "Woptc.widget"
+#line 60 "Woptc.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 61 "Woptc.widget"
+#line 60 "Woptc.widget"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 61 "Woptc.widget"
+#line 60 "Woptc.widget"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 62 "Woptc.widget"
+#line 61 "Woptc.widget"
 {
   return True; /* redraw */
 }
-#line 67 "Woptc.widget"
+#line 66 "Woptc.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 67 "Woptc.widget"
+#line 66 "Woptc.widget"
 static void destroy(Widget self)
 #else
-#line 67 "Woptc.widget"
+#line 66 "Woptc.widget"
 static void destroy(self)Widget self;
 #endif
-#line 68 "Woptc.widget"
+#line 67 "Woptc.widget"
 {
   if( ((WoptcWidget)self)->woptc.gc_background ) XtReleaseGC(self,((WoptcWidget)self)->woptc.gc_background);
   if( ((WoptcWidget)self)->woptc.gc_fg ) XtReleaseGC(self,((WoptcWidget)self)->woptc.gc_fg);
   TRACE(9,"destroy");
 }
-#line 74 "Woptc.widget"
+#line 73 "Woptc.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 74 "Woptc.widget"
+#line 73 "Woptc.widget"
 static void expose(Widget self,XEvent * event,Region  region)
 #else
-#line 74 "Woptc.widget"
+#line 73 "Woptc.widget"
 static void expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 75 "Woptc.widget"
+#line 74 "Woptc.widget"
 {
-  XClearWindow( XtDisplay(self), XtWindow(self) );
-  ((WoptcWidget)self)->woptc.slh=0; /* do not undraw slider */
-  draw_slider(self, ((WoptcWidget)self)->woptc.pos * ((WoptcWidget)self)->core.height );
+  draw_slider(self);
+}
+#line 78 "Woptc.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 78 "Woptc.widget"
+static void resize(Widget self)
+#else
+#line 78 "Woptc.widget"
+static void resize(self)Widget self;
+#endif
+#line 79 "Woptc.widget"
+{
+	TRACE(9, "woptc resized: %d %d", ((WoptcWidget)self)->core.height, ((WoptcWidget)self)->core.width );
+
 }
 #line 32 "Woptc.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
 #line 32 "Woptc.widget"
-void  wls_set_slider_pos(Widget  w,int  vis,int  max,int  first)
+void  wls_set_slider_pos(Widget  w,int  total,int  first)
 #else
 #line 32 "Woptc.widget"
-void  wls_set_slider_pos(w,vis,max,first)Widget  w;int  vis;int  max;int  first;
+void  wls_set_slider_pos(w,total,first)Widget  w;int  total;int  first;
 #endif
 #line 33 "Woptc.widget"
 {
-  WoptcWidgetClass wc = (WoptcWidgetClass)XtClass(w);
   if( XtIsSubclass( w, woptcWidgetClass) )
     {
-       set_slider_pos(w,vis,max,first);
+       set_slider_pos(w,total,first);
     }
 }
 #line 157 "Woptc.widget"

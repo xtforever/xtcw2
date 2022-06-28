@@ -15,11 +15,11 @@ _XFUNCPROTOBEGIN
 #define XtRStringMArray "StringMArray"
 #endif
 
-#ifndef XtNsvar
-#define XtNsvar "svar"
+#ifndef XtNvar5
+#define XtNvar5 "var5"
 #endif
-#ifndef XtCSvar
-#define XtCSvar "Svar"
+#ifndef XtCVar5
+#define XtCVar5 "Var5"
 #endif
 #ifndef XtRString
 #define XtRString "String"

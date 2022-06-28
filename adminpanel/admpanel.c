@@ -501,6 +501,10 @@ static Widget create_userid_widget( int task, int var, Widget mgr )
     // create a svar to store our uid 
     int result_var = s_printf(0,0, "%s.%s", section, name );
     TRACE(4, "defining userid-widget for var %s", m_str(result_var) );
+
+
+    // create a var5 to store task and result_var
+    	   
     int var_name = m_dub(result_var);
     
     // our manager is a gridbox widget

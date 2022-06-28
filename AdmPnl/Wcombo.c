@@ -3,70 +3,70 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 214 "Wcombo.widget"
-#include "mls.h"
 #line 215 "Wcombo.widget"
-#include "converters.h"
+#include "mls.h"
 #line 216 "Wcombo.widget"
-#include <X11/Shell.h>
+#include "converters.h"
 #line 217 "Wcombo.widget"
-#include <X11/Xatom.h>
+#include <X11/Shell.h>
 #line 218 "Wcombo.widget"
-#include <X11/Xft/Xft.h>
+#include <X11/Xatom.h>
 #line 219 "Wcombo.widget"
-#include "converters-xft.h"
+#include <X11/Xft/Xft.h>
 #line 220 "Wcombo.widget"
-#include <X11/Xmu/Converters.h>
+#include "converters-xft.h"
 #line 221 "Wcombo.widget"
-#include <X11/Xaw/XawImP.h>
+#include <X11/Xmu/Converters.h>
 #line 222 "Wcombo.widget"
 #include <X11/Xaw/XawImP.h>
 #line 223 "Wcombo.widget"
-#include <X11/Xft/Xft.h>
+#include <X11/Xaw/XawImP.h>
 #line 224 "Wcombo.widget"
-#include <X11/Xmu/Converters.h>
+#include <X11/Xft/Xft.h>
 #line 225 "Wcombo.widget"
-#include "xutil.h"
+#include <X11/Xmu/Converters.h>
 #line 226 "Wcombo.widget"
+#include "xutil.h"
+#line 227 "Wcombo.widget"
 #include "xtcw/Wls.h"
 #include <xtcw/WcomboP.h>
-#line 138 "Wcombo.widget"
+#line 139 "Wcombo.widget"
 static void SetKeyboardFocus(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 154 "Wcombo.widget"
+#line 155 "Wcombo.widget"
 static void set_cursor(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 161 "Wcombo.widget"
+#line 162 "Wcombo.widget"
 static void insert_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 176 "Wcombo.widget"
+#line 177 "Wcombo.widget"
 static void remove_char(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 191 "Wcombo.widget"
+#line 192 "Wcombo.widget"
 static void focus_in(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 196 "Wcombo.widget"
+#line 198 "Wcombo.widget"
 static void focus_out(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 203 "Wcombo.widget"
+#line 207 "Wcombo.widget"
 static void notify(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -85,7 +85,7 @@ static XtActionsRec actionsList[] = {
 
 static char defaultTranslations[] = "\
 <Btn1Down>: set_cursor() SetKeyboardFocus() \n\
-<Key>Return: notify() \n\
+<Key>Return: CallOnEnter() notify() \n\
 <Key>BackSpace: remove_char() \n\
 <Key>: insert_char() \n\
 <FocusIn>: focus_in() \n\
@@ -126,7 +126,7 @@ static void item_selected_cb(
 Widget ,Widget,void *
 #endif
 );
-#line 127 "Wcombo.widget"
+#line 128 "Wcombo.widget"
 static void popdown_shell_notify_client(
 #if NeedFunctionPrototypes
 Widget
@@ -211,6 +211,7 @@ static void item_selected_cb(dummy,self,class_data)Widget  dummy;Widget self;voi
 #endif
 #line 112 "Wcombo.widget"
 {
+
         int n = m_len(((WcomboWidget)self)->wcombo.f_lst);
 	int p = (intptr_t) class_data;
     	TRACE(2,"p=%d", p);
@@ -224,16 +225,16 @@ static void item_selected_cb(dummy,self,class_data)Widget  dummy;Widget self;voi
 	else ((WcomboWidget)self)->wcombo.selection=-1;
 	popdown_shell_notify_client(self);
 }
-#line 127 "Wcombo.widget"
+#line 128 "Wcombo.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 127 "Wcombo.widget"
+#line 128 "Wcombo.widget"
 static void popdown_shell_notify_client(Widget self)
 #else
-#line 127 "Wcombo.widget"
+#line 128 "Wcombo.widget"
 static void popdown_shell_notify_client(self)Widget self;
 #endif
-#line 128 "Wcombo.widget"
+#line 129 "Wcombo.widget"
 {
 	XtPopdown(((WcomboWidget)self)->wcombo.shell);
 	((WcomboWidget)self)->wcombo.entry_mode=0;
@@ -299,7 +300,7 @@ XtInherit_cache_hit,
 };
 WidgetClass wcomboWidgetClass = (WidgetClass) &wcomboClassRec;
 /*ARGSUSED*/
-#line 138 "Wcombo.widget"
+#line 139 "Wcombo.widget"
 static void SetKeyboardFocus(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     TRACE(2,"try to set keyboard focus");
@@ -316,7 +317,7 @@ static void SetKeyboardFocus(self,event,params,num_params)Widget self;XEvent*eve
 }
 
 /*ARGSUSED*/
-#line 154 "Wcombo.widget"
+#line 155 "Wcombo.widget"
 static void set_cursor(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	if( ((WcomboWidget)self)->wcombo.entry_mode ) return;
@@ -325,7 +326,7 @@ static void set_cursor(self,event,params,num_params)Widget self;XEvent*event;Str
 }
 
 /*ARGSUSED*/
-#line 161 "Wcombo.widget"
+#line 162 "Wcombo.widget"
 static void insert_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
     if( ! ((WcomboWidget)self)->wcombo.entry_mode ) return;
@@ -342,7 +343,7 @@ static void insert_char(self,event,params,num_params)Widget self;XEvent*event;St
 }
 
 /*ARGSUSED*/
-#line 176 "Wcombo.widget"
+#line 177 "Wcombo.widget"
 static void remove_char(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	if( ! ((WcomboWidget)self)->wcombo.entry_mode ) return;
@@ -359,30 +360,30 @@ static void remove_char(self,event,params,num_params)Widget self;XEvent*event;St
 }
 
 /*ARGSUSED*/
-#line 191 "Wcombo.widget"
+#line 192 "Wcombo.widget"
 static void focus_in(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	TRACE(2, "Wcombo %s got focus", XtName(self));
+	set_cursor(self, NULL, NULL, NULL );
 }
 
 /*ARGSUSED*/
-#line 196 "Wcombo.widget"
+#line 198 "Wcombo.widget"
 static void focus_out(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	TRACE(2, "Wcombo %s lost focus", XtName(self));
-	XtPopdown(((WcomboWidget)self)->wcombo.shell);
-	((WcomboWidget)self)->wcombo.entry_mode=0;
+	if( ((WcomboWidget)self)->wcombo.entry_mode ) {
+	    XtPopdown(((WcomboWidget)self)->wcombo.shell);
+	    ((WcomboWidget)self)->wcombo.entry_mode=0;
+	}
 }
 
 /*ARGSUSED*/
-#line 203 "Wcombo.widget"
+#line 207 "Wcombo.widget"
 static void notify(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	TRACE(2, "Wcombo %s notify: entry_mode %d", XtName(self), ((WcomboWidget)self)->wcombo.entry_mode );
-	if( ! ((WcomboWidget)self)->wcombo.entry_mode ) return;
-	item_selected_cb(NULL, self, (XtPointer)0 );
-	
-	
+	item_selected_cb(NULL, self, (XtPointer)0 );	
 }
 
 static void _resolve_inheritance(class)

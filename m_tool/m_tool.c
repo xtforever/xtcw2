@@ -80,6 +80,9 @@ static char* dup_word( char **s, char *delim, int trimws )
     return NULL;   
 }
 
+
+/** split string into list of c-strings
+ **/
 int m_str_split(int m, char *s, char* delim, int trimws )
 {
      if(!m) m=m_create(3,sizeof(char*));
@@ -274,4 +277,33 @@ void m_concat(int a, int b)
     int p; void *d;
     m_foreach( b,p,d )
 	m_put( a,d );
+}
+
+
+/** split a string by one character *delm into multiple m-array strings
+ * @returns list of m-arrays  
+ **/
+int m_split_list( const char *s, const char *delm )
+{
+    int ls =  m_create(2,sizeof(int));
+    int w  =  0;
+    int p  =  0;
+    int ch;
+    
+    do {
+	ch = s[p];
+	if(!w) {
+	    w =  m_create( 10,1 );
+	    m_put( ls, &w );
+	}
+
+	if( ch == *delm || ch == 0 ) {
+	    m_putc(w,0); w=0;    
+	} else {
+	    m_putc(w,s[p]);
+	}
+	p++;
+    } while( ch );
+    
+    return ls;
 }

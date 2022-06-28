@@ -5,7 +5,7 @@
 @PUBLIC
 @var String group = <String> "dummy"
 @var String value = <String> "dummy"
-@var String svar  = <String> "dummy"
+@var String var5  = <String> "dummy"
 @var int act = 0
 
 @PRIVATE
@@ -31,7 +31,7 @@
 {
         TRACE(2,"Wbutton:%s focus group: %s", $name, $focus_group );
 	$key_group = register_widget_group( $, $group );	
-	$key_svar  = svar_lookup_str($svar, SVAR_MSTRING_ARRAY );
+	$key_svar  = mvar_parse_string($var5, VAR_STRING );
 
 	 if( $act ) {
 	    TRACE(1,"Set Active: %s", XtName($) );
@@ -97,7 +97,6 @@
 {
 	change_active_widget($,$key_group);
 	init_svar_result($);
-	svar_write_callbacks($key_svar);
 	XtCallCallbackList( $, $callback, event );
 }
 
@@ -106,14 +105,14 @@
 
 @proc void init_svar_result($)
 {
-	int *v = svar_value($key_svar);
-	*v = append_mstring_array(*v,0,
-	       $value, $label, $group, NULL );
+	mvar_put_string($key_svar, $value, 0 );
+	mvar_put_string($key_svar, $label, 1 );
+	mvar_put_string($key_svar, $group, 2 );
 }
 
 @IMPORTS
 @incl "opts.h"
 @incl "mls.h"
-@incl "svar2.h"
+@incl "var5.h"
 @incl <X11/Xft/Xft.h>
 @incl "converters-xft.h"

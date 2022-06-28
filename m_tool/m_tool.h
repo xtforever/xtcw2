@@ -25,5 +25,5 @@ void m_clear_stringlist(int m);
 void m_free_stringlist(int m);
 
 void m_concat(int a, int b);
-
+int m_split_list( const char *s, const char *delm );
 #endif

@@ -1,0 +1,175 @@
+@class Graph1 (Core)
+@ Simple Plotter 
+
+@PUBLIC
+@var Pixel foreground = <String> "Green"
+@var int lineWidth = 1
+@var Boolean filled = False
+@var int prefered_width  = 30
+@var int prefered_height = 40
+
+@PRIVATE
+@var GC  gc_background
+@var GC  gc_fg
+@var int points
+
+@CLASSVARS
+@ The Core variable |compress_exposure| is OR'ed with
+|XtExposeGraphicsExpose|, in order to get graphics expose events delivered
+to the |expose| method.
+var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
+var compress_motion = True
+
+@var visible_interest = False
+
+@exports
+@proc void graph1_set_points(Widget w, int marray )
+{
+  if( XtIsSubclass( w, graph1WidgetClass) )
+    {
+       set_points(w,marray);
+    }
+}
+
+
+
+
+@METHODS
+
+@proc query_geometry
+{
+	
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    reply->width =  $prefered_width;
+    reply->height = $prefered_height;
+
+    TRACE(1, "Graph1:%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(1, "Graph1:%s: our prefered size is %dx%d", XtName($),
+                  $prefered_width,
+                  $prefered_height );
+
+    return XtGeometryAlmost;
+}
+
+
+@proc initialize
+{
+  XGCValues     values = {
+  		foreground: $background_pixel,
+  		graphics_exposures: False,
+                line_width: $lineWidth };
+  uint          mask = GCForeground | GCGraphicsExposures |  GCLineWidth;
+  $gc_background = XtGetGC($, mask, &values);
+  values.foreground = $foreground; 
+  $gc_fg = XtGetGC($,mask,&values);
+  if( $width == 0 ) $width=50;
+  if( $height == 0 ) $height=10;
+  $points = 0;
+
+  demo($);
+}
+
+@proc destroy
+{
+  if( $gc_background ) XtReleaseGC($,$gc_background);
+  if( $gc_fg ) XtReleaseGC($,$gc_fg);
+  m_free( $points ); $points=0; 
+  TRACE(9,"Graph1 destroy");
+}
+
+@proc expose
+{
+	if(! XtIsRealized($) ) {
+	     WARN("Widget is not realized" );
+	     return;
+	};
+
+	draw_graph($);
+}
+
+
+@UTILITIES
+@proc demo($)
+{
+     double a[]={ 100,200,210,500,1000,-100,-200,-300 };
+     $points = m_create(50, sizeof(double) );
+     for( int i=0; i < (sizeof a) / (sizeof *a); i++ )
+     {
+        m_put($points, a+i );
+	
+     }
+     
+}
+
+@proc plot_points( $, int x0, int y0, int v_w, int v_h, int points )
+{
+
+	XDrawRectangle( XtDisplay($), XtWindow($),$gc_fg,
+	x0,y0,x0+v_w, y0+v_h );
+	TRACE(9, "rect: %d %d %d %d", x0, y0, v_w, v_h );
+
+
+
+	int    n             = m_len($points);
+	double max=0, min=0;
+   	
+        double *d;
+	int p;
+	m_foreach( points, p, d ) {
+	      if( *d > max ) max=*d;
+	      if( *d < min ) min=*d;	      
+        }
+	
+	double diff = max - min;
+	double scale = v_h / diff;
+	int w = v_w / n;
+
+	int py0;
+	int px0 = x0;
+	
+
+	m_foreach( points, p, d ) {
+
+             py0 = (*d - min) * scale;
+
+	     XFillRectangle(XtDisplay($), XtWindow($),$gc_fg,
+                             px0, y0+v_h - py0, w, py0 );
+	     px0+=w;		   
+	     
+	}
+
+	
+	py0 = - min * scale;
+	px0 = x0;
+	
+        XFillRectangle(XtDisplay($), XtWindow($),$gc_background,
+                             px0, y0+v_h - py0, v_w, 2 );
+
+}
+
+
+
+@proc set_points($,int marray)
+{
+
+}
+
+@proc draw_graph($)
+{
+	XClearWindow( XtDisplay($), XtWindow($) );
+
+
+        if( $points ) {
+	    
+	   plot_points( $, 20, 20, $width - 25, $height - 25, $points );
+
+	}
+}
+
+@exports
+@incl "mls.h"
+@incl "converters.h"

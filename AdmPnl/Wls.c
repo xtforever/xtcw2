@@ -3,16 +3,18 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 167 "Wls.widget"
+#line 155 "Wls.widget"
 #include "converters.h"
-#line 168 "Wls.widget"
+#line 156 "Wls.widget"
 #include "mls.h"
-#line 169 "Wls.widget"
+#line 157 "Wls.widget"
 #include "xtcw/Wlist.h"
-#line 170 "Wls.widget"
+#line 158 "Wls.widget"
 #include <xtcw/Wlabel.h>
-#line 171 "Wls.widget"
+#line 159 "Wls.widget"
 #include "xtcw/Woptc.h"
+#line 160 "Wls.widget"
+#include "GridboxP.h"
 #include <xtcw/WlsP.h>
 static void _resolve_inheritance(
 #if NeedFunctionPrototypes
@@ -43,56 +45,52 @@ static Boolean  set_values(
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 52 "Wls.widget"
-static XtGeometryResult  query_geometry(
-#if NeedFunctionPrototypes
-Widget,XtWidgetGeometry *,XtWidgetGeometry *
-#endif
-);
-#line 73 "Wls.widget"
+#line 57 "Wls.widget"
 static void adjust_slider_size(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 98 "Wls.widget"
+#line 85 "Wls.widget"
 static void do_layout(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 138 "Wls.widget"
+#line 127 "Wls.widget"
 static void list_select_cb(
 #if NeedFunctionPrototypes
 Widget ,Widget,void *
 #endif
 );
-#line 144 "Wls.widget"
+#line 133 "Wls.widget"
 static void slider_changed_cb(
 #if NeedFunctionPrototypes
 Widget ,Widget,void *
 #endif
 );
-#line 156 "Wls.widget"
+#line 144 "Wls.widget"
 static void list_changed_cb(
 #if NeedFunctionPrototypes
 Widget ,Widget,void *
 #endif
 );
-#line 73 "Wls.widget"
+#line 57 "Wls.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 73 "Wls.widget"
+#line 57 "Wls.widget"
 static void adjust_slider_size(Widget self)
 #else
-#line 73 "Wls.widget"
+#line 57 "Wls.widget"
 static void adjust_slider_size(self)Widget self;
 #endif
-#line 74 "Wls.widget"
+#line 58 "Wls.widget"
 {
+	TRACE(9, "************************* WinHeight: %d", ((WlsWidget)self)->core.height );
+
 	int line_max; /* anzahl zeilen */
 	int list_height; /* sichtbarer bereich */
-	int line_height; /* pixel zeile */
+	int line_height; /* zeilenhoehe in pixel */
 	int first_line; /* erste sichtbare zeile */
 	XtVaGetValues(((WlsWidget)self)->wls.list,
 		"line_max", &line_max,
@@ -101,33 +99,34 @@ static void adjust_slider_size(self)Widget self;
 		"top_y", &first_line,
 		NULL );
 
+
+	list_height = line_max * line_height;
+
+	TRACE(9,"Total-List-Size:%d first:line%d", list_height, first_line );
+
+
 	wls_set_slider_pos( ((WlsWidget)self)->wls.slider,
 	  list_height,
-	  line_max * line_height,
 	  first_line
 	);
-
-	((WlsWidget)self)->wls.list_height = line_max * line_height;
-
-	TRACE(9, "%d %d %d %d", line_max, list_height,line_height,first_line  );
 }
-#line 98 "Wls.widget"
+#line 85 "Wls.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 98 "Wls.widget"
+#line 85 "Wls.widget"
 static void do_layout(Widget self)
 #else
-#line 98 "Wls.widget"
+#line 85 "Wls.widget"
 static void do_layout(self)Widget self;
 #endif
-#line 99 "Wls.widget"
+#line 86 "Wls.widget"
 {
 	int act;
         Widget w;
         int i;
         char *grid = "gridx";
-        for( i=0; i<((WlsWidget)self)->composite.num_children;i++ )
-             XtDestroyWidget(((WlsWidget)self)->composite.children[0]);
+        // for( i=0; i<((WlsWidget)self)->composite.num_children;i++ )
+        //     XtDestroyWidget(((WlsWidget)self)->composite.children[0]);
 
 	/* XtVaCreateManagedWidget( "combo-label",
                 wlabelWidgetClass, $,
@@ -143,7 +142,9 @@ static void do_layout(self)Widget self;
 		"gridWidth", 1,
 		"weightx", 100,
 		"tableStrs", ((WlsWidget)self)->wls.lst,
-		"height", 120,
+		"fill", 3,
+		"weighty", 100,
+		"visible_lines", ((WlsWidget)self)->wls.visible_lines,
                 NULL );
 		
 	XtAddCallback(((WlsWidget)self)->wls.list, "updatecb", (XtCallbackProc)list_changed_cb, self );			    XtAddCallback(((WlsWidget)self)->wls.list, "notify", (XtCallbackProc)list_select_cb, self );
@@ -158,50 +159,49 @@ static void do_layout(self)Widget self;
 
 	XtAddCallback(((WlsWidget)self)->wls.slider, "callback", (XtCallbackProc)slider_changed_cb, self );
 }
-#line 138 "Wls.widget"
+#line 127 "Wls.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 138 "Wls.widget"
+#line 127 "Wls.widget"
 static void list_select_cb(Widget  dummy,Widget self,void * class_data)
 #else
-#line 138 "Wls.widget"
+#line 127 "Wls.widget"
 static void list_select_cb(dummy,self,class_data)Widget  dummy;Widget self;void * class_data;
 #endif
-#line 139 "Wls.widget"
+#line 128 "Wls.widget"
 {
 	TRACE(2,"");
 	XtCallCallbackList( self, ((WlsWidget)self)->wls.callback, class_data );
 }
-#line 144 "Wls.widget"
+#line 133 "Wls.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 144 "Wls.widget"
+#line 133 "Wls.widget"
 static void slider_changed_cb(Widget  sender,Widget self,void * class_data)
 #else
-#line 144 "Wls.widget"
+#line 133 "Wls.widget"
 static void slider_changed_cb(sender,self,class_data)Widget  sender;Widget self;void * class_data;
 #endif
-#line 145 "Wls.widget"
+#line 134 "Wls.widget"
 {
 	if( ((WlsWidget)self)->wls.ignore_cb ) return;
-	float new_pos = *(float *) class_data;
-	TRACE(9, "list pos rel: %f", new_pos );
+	int new_pos = (intptr_t) class_data;
+	TRACE(9, "list pos(rel): %d", new_pos );
 
-	new_pos = ((WlsWidget)self)->wls.list_height * 1.0 * new_pos;
 	((WlsWidget)self)->wls.ignore_cb = 1;
-	wlist_gotoxy(((WlsWidget)self)->wls.list,0, (int) new_pos );
+	wlist_gotoxy(((WlsWidget)self)->wls.list,0, new_pos );
 	((WlsWidget)self)->wls.ignore_cb = 0;
 }
-#line 156 "Wls.widget"
+#line 144 "Wls.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 156 "Wls.widget"
+#line 144 "Wls.widget"
 static void list_changed_cb(Widget  sender,Widget self,void * class_data)
 #else
-#line 156 "Wls.widget"
+#line 144 "Wls.widget"
 static void list_changed_cb(sender,self,class_data)Widget  sender;Widget self;void * class_data;
 #endif
-#line 157 "Wls.widget"
+#line 145 "Wls.widget"
 {
 	if( ((WlsWidget)self)->wls.ignore_cb ) return;
 	((WlsWidget)self)->wls.ignore_cb = 1;
@@ -219,9 +219,7 @@ static XtResource resources[] = {
 #line 8 "Wls.widget"
 {XtNcallback,XtCCallback,XtRCallback,sizeof(((WlsRec*)NULL)->wls.callback),XtOffsetOf(WlsRec,wls.callback),XtRImmediate,(XtPointer)NULL },
 #line 9 "Wls.widget"
-{XtNforced_width,XtCForced_width,XtRInt,sizeof(((WlsRec*)NULL)->wls.forced_width),XtOffsetOf(WlsRec,wls.forced_width),XtRImmediate,(XtPointer)100 },
-#line 10 "Wls.widget"
-{XtNforced_height,XtCForced_height,XtRInt,sizeof(((WlsRec*)NULL)->wls.forced_height),XtOffsetOf(WlsRec,wls.forced_height),XtRImmediate,(XtPointer)100 },
+{XtNvisible_lines,XtCVisible_lines,XtRInt,sizeof(((WlsRec*)NULL)->wls.visible_lines),XtOffsetOf(WlsRec,wls.visible_lines),XtRImmediate,(XtPointer)0 },
 };
 
 WlsClassRec wlsClassRec = {
@@ -238,7 +236,7 @@ WlsClassRec wlsClassRec = {
 /* actions      	*/  NULL,
 /* num_actions  	*/  0,
 /* resources    	*/  resources,
-/* num_resources 	*/  6,
+/* num_resources 	*/  5,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  False ,
 /* compress_exposure 	*/  FALSE ,
@@ -255,7 +253,7 @@ WlsClassRec wlsClassRec = {
 /* version      	*/  XtVersion,
 /* callback_private 	*/  NULL,
 /* tm_table      	*/  XtInheritTranslations,
-/* query_geometry 	*/  query_geometry,
+/* query_geometry 	*/  XtInheritQueryGeometry,
 /* display_acceleator 	*/  XtInheritDisplayAccelerator,
 /* extension    	*/  NULL 
 },
@@ -363,30 +361,5 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
               XtVaSetValues( ((WlsWidget)self)->wls.list, "tableStrs", ((WlsWidget)self)->wls.lst, NULL );
         }
     }
-}
-#line 52 "Wls.widget"
-/*ARGSUSED*/
-#if NeedFunctionPrototypes
-#line 52 "Wls.widget"
-static XtGeometryResult  query_geometry(Widget self,XtWidgetGeometry * request,XtWidgetGeometry * reply)
-#else
-#line 52 "Wls.widget"
-static XtGeometryResult  query_geometry(self,request,reply)Widget self;XtWidgetGeometry * request;XtWidgetGeometry * reply;
-#endif
-#line 53 "Wls.widget"
-{
-    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
-    reply->x=0; reply->y=0;
-    reply->width  =  ((WlsWidget)self)->wls.forced_width;
-    reply->height =  ((WlsWidget)self)->wls.forced_height;	
-
-    TRACE(1, "Wls:%s: parent request is: %dx%d", XtName(self),
-             request->width,
-             request->width );
-
-    TRACE(1, "Wls:%s: our prefered size is %dx%d", XtName(self),
-                  ((WlsWidget)self)->wls.forced_width,
-                  ((WlsWidget)self)->wls.forced_height );
-
-    return XtGeometryAlmost;
+    return 1;
 }

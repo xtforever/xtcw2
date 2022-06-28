@@ -38,8 +38,7 @@ StringMArray  lst;
 String  svar;
 String  value;
 XtCallbackList  callback;
-int  forced_width;
-int  forced_height;
+int  visible_lines;
 /* private state */
 Widget  slider;
 Widget  list;

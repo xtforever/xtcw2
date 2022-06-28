@@ -24,7 +24,8 @@ Pixel  foreground;
 int  lineWidth;
 Boolean  filled;
 float  frac;
-float  pos;
+int  pos;
+int  list_height;
 XtCallbackList  callback;
 Distance  sliderWidth;
 /* private state */

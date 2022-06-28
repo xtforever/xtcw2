@@ -35,7 +35,7 @@ Radio2ClassPart radio2_class;
 typedef struct {
 /* resources */
 StringMArray  lst;
-String  svar;
+String  var5;
 String  value;
 XtCallbackList  callback;
 /* private state */

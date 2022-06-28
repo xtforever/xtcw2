@@ -61,7 +61,7 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
 @var int prefered_width   = 0
 @var int prefered_height  = 0
-@var int visible_lines    = 10
+@var int visible_lines    = 3
 
 @ Die Anzahl Texzeilen pro Feld
         @var int multiline = 1

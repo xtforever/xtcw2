@@ -30,16 +30,18 @@
 @var int lineWidth = 1
 @var int cornerRoundPercent = 20
 @var <Callback> XtCallbackList callback  = NULL
+
 @var String label = NULL
 @var QVar textBuffer = <String> "defaultEditBuffer"
-@var String svar = <String> "defaultEditBuffer"
+@var String svar  = <String> "defaultEditBuffer"
+@var String var5  = <String> "defaultEditBuffer"
 
 
 @ this could be done with the translation manager
   but i like this syntax more.
   
 @var <Callback> XtCallbackList onEnter   = NULL
-
+@var <Callback> XtCallbackList onChanged = NULL
 
 @PRIVATE
 @def BG = 0
@@ -55,6 +57,7 @@
 @var int label_m
 @var int glyph_m
 @var int glyph_xoff_m
+@var int mvar 
 
 
 @var XftDraw *draw
@@ -87,12 +90,12 @@
   $xftFont = font_load(dpy, DefaultScreen(dpy), $fontName );
   int w=10,h=10;
   alloc_colors($);
-  if(! $label ) $label = $name;
+  if(! $label ) $label = "";
   $glyph_m = m_create( 50, sizeof(XftGlyphFontSpec) );
   $glyph_xoff_m = m_create( 50, sizeof(int) );
   $str_m  = m_create( 50, 1 );
   $label_m = m_create( 50, 1 );
-  char *s = $label; if( is_empty(s) ) s=$name;
+  char *s = $label; 
   copy_str( $, s );
   // mv_onwrite( $textBuffer, (void*)do_update, $, 0 );
   TRACE(1,"%s using mvar %d", $name, $textBuffer );
@@ -107,7 +110,8 @@
      if the widget is redrawn the text is send to the svar
   */
   $key_svar = svar_lookup_str($svar, SVAR_MSTRING_ARRAY );
-  
+  $mvar = mvar_parse_string($var5, VAR_STRING );
+
 }
 
 @proc destroy
@@ -281,7 +285,9 @@
 	// copy buffer to svar and call svar write callbacks
 	update_svar($);
 	svar_write_callbacks($key_svar);
-	
+
+	update_mvar($);
+	XtCallCallbackList( $, $onChanged, NULL );
 	TRACE(1, "widget %s sent to %d", $name, $textBuffer );
 }
 
@@ -631,7 +637,6 @@
   should be optimized if used as on key-pressed callback
 @proc update_svar($)
 {
-
 	int *v = svar_value($key_svar);
 	char *str = get_text_buffer($);
 	*v = append_mstring_array(*v,0, str, XtName($),
@@ -639,6 +644,19 @@
 	TRACE(1, "svar: %d value=%d", $key_svar, *v );
 
 }
+
+@ copy current text to svar
+  should be optimized if used as on key-pressed callback
+@proc update_mvar($)
+{
+	char *str = get_text_buffer($);
+	mvar_put_string( $mvar, str, 0 );
+	// mvar_call_callbacks( v, 0 );
+}
+
+
+
+
 
 @ACTIONS
 
@@ -742,8 +760,6 @@
 }
 
 
-
-
 @proc notify
 {
 	
@@ -765,4 +781,5 @@
 @incl "font.h"
 @incl "micro_vars.h"
 @incl "svar2.h"
+@incl "var5.h"
 @incl "opts.h"

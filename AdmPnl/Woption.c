@@ -3,15 +3,15 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 115 "Woption.widget"
+#line 114 "Woption.widget"
 #include "opts.h"
-#line 116 "Woption.widget"
+#line 115 "Woption.widget"
 #include "mls.h"
+#line 116 "Woption.widget"
+#include "var5.h"
 #line 117 "Woption.widget"
-#include "svar2.h"
-#line 118 "Woption.widget"
 #include <X11/Xft/Xft.h>
-#line 119 "Woption.widget"
+#line 118 "Woption.widget"
 #include "converters-xft.h"
 #include <xtcw/WoptionP.h>
 #line 66 "Woption.widget"
@@ -75,26 +75,26 @@ static int  exec_command(
 Widget,int ,int 
 #endif
 );
-#line 107 "Woption.widget"
+#line 106 "Woption.widget"
 static void  init_svar_result(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 107 "Woption.widget"
+#line 106 "Woption.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 107 "Woption.widget"
+#line 106 "Woption.widget"
 static void  init_svar_result(Widget self)
 #else
-#line 107 "Woption.widget"
+#line 106 "Woption.widget"
 static void  init_svar_result(self)Widget self;
 #endif
-#line 108 "Woption.widget"
+#line 107 "Woption.widget"
 {
-	int *v = svar_value(((WoptionWidget)self)->woption.key_svar);
-	*v = append_mstring_array(*v,0,
-	       ((WoptionWidget)self)->woption.value, ((WoptionWidget)self)->wlabel.label, ((WoptionWidget)self)->woption.group, NULL );
+	mvar_put_string(((WoptionWidget)self)->woption.key_svar, ((WoptionWidget)self)->woption.value, 0 );
+	mvar_put_string(((WoptionWidget)self)->woption.key_svar, ((WoptionWidget)self)->wlabel.label, 1 );
+	mvar_put_string(((WoptionWidget)self)->woption.key_svar, ((WoptionWidget)self)->woption.group, 2 );
 }
 
 static XtResource resources[] = {
@@ -103,7 +103,7 @@ static XtResource resources[] = {
 #line 7 "Woption.widget"
 {XtNvalue,XtCValue,XtRString,sizeof(((WoptionRec*)NULL)->woption.value),XtOffsetOf(WoptionRec,woption.value),XtRString,(XtPointer)"dummy"},
 #line 8 "Woption.widget"
-{XtNsvar,XtCSvar,XtRString,sizeof(((WoptionRec*)NULL)->woption.svar),XtOffsetOf(WoptionRec,woption.svar),XtRString,(XtPointer)"dummy"},
+{XtNvar5,XtCVar5,XtRString,sizeof(((WoptionRec*)NULL)->woption.var5),XtOffsetOf(WoptionRec,woption.var5),XtRString,(XtPointer)"dummy"},
 #line 9 "Woption.widget"
 {XtNact,XtCAct,XtRInt,sizeof(((WoptionRec*)NULL)->woption.act),XtOffsetOf(WoptionRec,woption.act),XtRImmediate,(XtPointer)0 },
 };
@@ -199,7 +199,6 @@ static void notify(self,event,params,num_params)Widget self;XEvent*event;String*
 {
 	change_active_widget(self,((WoptionWidget)self)->woption.key_group);
 	init_svar_result(self);
-	svar_write_callbacks(((WoptionWidget)self)->woption.key_svar);
 	XtCallCallbackList( self, ((WoptionWidget)self)->wheel.callback, event );
 }
 
@@ -224,7 +223,7 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
 {
         TRACE(2,"Wbutton:%s focus group: %s", ((WoptionWidget)self)->core.name, ((WoptionWidget)self)->wheel.focus_group );
 	((WoptionWidget)self)->woption.key_group = register_widget_group( self, ((WoptionWidget)self)->woption.group );	
-	((WoptionWidget)self)->woption.key_svar  = svar_lookup_str(((WoptionWidget)self)->woption.svar, SVAR_MSTRING_ARRAY );
+	((WoptionWidget)self)->woption.key_svar  = mvar_parse_string(((WoptionWidget)self)->woption.var5, VAR_STRING );
 
 	 if( ((WoptionWidget)self)->woption.act ) {
 	    TRACE(1,"Set Active: %s", XtName(self) );
