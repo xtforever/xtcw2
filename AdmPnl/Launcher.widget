@@ -1,0 +1,71 @@
+@class Launcher (Ebox)
+
+@PUBLIC
+@var StringMArray lst = <String> "t1=./fire.sh a b c,t2=./heaven.sh,t3=sky.sh,t4=moon.sh"
+
+@METHODS
+@proc initialize
+{
+	create_widget($);
+}
+
+
+@UTILITIES
+@proc create_widget($)
+{
+
+	int i;
+	while($num_children) {
+		XtDestroyWidget($children[0]);	
+	}
+
+	int title=0;
+        for( i=0; i<m_len($lst); i++ ) {
+		char *s = STR($lst,i);
+		title = leftstr(title,0, s,'=');
+		Widget w = XtVaCreateManagedWidget( m_str(title),
+			wbuttonWidgetClass, $,
+			"label", m_str(title),
+                	NULL );
+		 XtAddCallback( w,  XtNcallback, (XtCallbackProc) proc_exec, $ ); 
+	}
+	m_free(title);
+}
+
+@UTILITIES
+@proc proc_exec(Widget btn, $, void *class_data )
+{
+	char *s;
+	int i;
+	
+	for(i=0; i<$num_children; i++ ) {
+		if( $children[i] == btn ) goto find_proc;
+	}
+   	WARN("unknown widget called this handler");
+	return;
+
+find_proc:
+	s = strchr( STR($lst,i), '=' );
+	if( is_empty(s) ) return;
+	
+	if( fork() == 0 ) {	    
+		char *argv[10];
+	    	char *p = strtok(s+1, " ");
+	    	for(i=0;i< ALEN(argv)-1 && p;i++) {
+	       		argv[i]=p;
+			p = strtok(NULL, " ");
+		}
+		argv[i]=NULL;
+		execvp( *argv, argv );
+		WARN("command not found: %s", *argv ? *argv : "<NULL>");
+		_exit(1);
+	}
+}
+
+@IMPORTS
+@incl "converters.h"
+@incl "mls.h"
+@incl "m_tool.h"
+@incl "Wlabel.h"
+@incl "Wbutton.h"
+

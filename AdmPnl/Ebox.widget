@@ -1,0 +1,199 @@
+@class Ebox(Composite)
+
+
+@PUBLIC
+@ the distance between the child widgets
+@var Distance vgap = <String> "2mm"
+
+@PRIVATE
+@var int total_height
+@var int total_width
+@var int ws
+@var int hs
+@def DB = 1
+
+@METHODS
+@proc initialize
+{
+        if( ! $width ) $width=10;
+        if( ! $height ) $height = 10;
+	$ws = m_create(10,sizeof(int) );
+	$hs = m_create(10,sizeof(int) );	
+}
+
+@proc destroy
+{
+	m_free($ws); $ws=0; 
+	m_free($hs); $hs=0; 	
+}
+
+@proc resize
+{
+        TRACE(2, "HBOX %s: %dx%d\n", XtName($),
+                   $width, $height );
+        do_layout($);
+}
+
+@proc change_managed
+{
+        XtWidgetGeometry request, reply;
+        if ($num_children == 0) return;
+
+        calculate_size($);
+        if(DB) printf("%s: %s size prefered: %u %u\n", XtName($), __func__, $total_width, $total_height );
+
+        request.request_mode = CWWidth | CWHeight;
+        request.width =  $total_width;
+        request.height = $total_height;
+        XtMakeGeometryRequest($, &request, &reply);
+        if(DB) printf("%s: %s size granted: %u %u\n", XtName($), __func__, $width, $height );
+        $total_width = $width; $total_height = $height;
+        do_layout($);
+}
+
+@ When our parent asks for this widget's preferred geometry,
+simply return the geometry as indicated by our childs.
+Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return |XtGeometryNo|) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+|XtGeometryYes| should have been given.
+
+It seems that no harm is done by always returning |XtGeometryAlmost| and
+letting Xt figure out what really needs to be changed.
+
+@proc query_geometry
+{
+        /* every proposed geometry is fine */
+    if ($num_children == 0) return XtGeometryYes;
+
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    calculate_size($);
+    reply->x=0; reply->y=0;
+    reply->width =  $total_width;
+    reply->height = $total_height;
+
+    TRACE(2, "%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(2, "%s: our prefered size is %dx%d", XtName($),
+                  $total_width,
+                  $total_height );
+    return XtGeometryAlmost;
+}
+
+
+@ If a child requests to be resized, the request is always granted. We
+ignore stacking order.
+
+@proc geometry_manager
+{
+    /* Widget $ = XtParent(child); automatically inserted by wbuild */
+    Dimension wd, ht, bw;
+    Position x, y;
+
+    /* Get complete geometry, from request or current value */
+    x = request->request_mode & CWX ? request->x : $child$x;
+    y = request->request_mode & CWY ? request->y : $child$y;
+    wd = request->request_mode & CWWidth ? request->width : $child$width;
+    ht = request->request_mode & CWHeight ? request->height : $child$height;
+    bw = request->request_mode & CWBorderWidth ? request->border_width
+	: $child$border_width;
+
+    if(DB) printf("%s: %s Child: %s wanted size: %u %u\n", XtName($), __func__, XtName(child), wd, ht );
+
+    XtConfigureWidget(child, x, y, wd, ht, bw);
+    return XtGeometryDone;
+}
+
+
+@proc expose
+{
+        if(DB) printf("%s: %s size: %u %u\n", XtName($), __func__, $width, $height );
+}
+
+@utilities
+
+@ ask children for their preferred size,
+  then calculate our preffered size
+
+@proc calculate_size($)
+{
+	
+    int i,w,h, max_w, max_h;
+    float tot_w, tot_h;
+    XtWidgetGeometry reply;
+    Widget child;
+
+    max_w = max_h = 0;
+    tot_w = tot_h = 0;
+
+    if( $num_children == 0 ) return;
+
+    for (i = 0; i < $num_children; i++) {
+	child = $children[i];
+	(void) XtQueryGeometry(child, NULL, &reply);
+        w = reply.width + reply.border_width * 2;
+        h = reply.height+ reply.border_width * 2;
+
+        if(DB) printf("%s: %s Child: %s size: %u %u\n", XtName($), __func__, XtName(child), w, h );
+	tot_w += w;
+	tot_h += h;
+        if( max_w < w ) max_w = w;
+        if( max_h < h ) max_h = h;
+    }
+
+    float n = $num_children;
+
+    /* average width and height */
+    tot_w = ceil( tot_w / n );
+    tot_h = ceil( tot_h / n );
+
+    /* container size */
+    int cols = ceil( sqrt(n) );
+    $total_width  = ceil( (tot_w + $vgap) * cols - $vgap );
+    $total_height = ceil( (tot_h + $vgap) * (ceil(n / cols)) - $vgap );
+
+    TRACE(2,"%s: %s %dx%d gap=%d\n",__func__, $name, $total_width, $total_height, $vgap );
+}
+
+@proc do_layout($)
+{
+    int i,b,c;
+    Widget child;
+    Dimension y,x;
+    float height, width;
+    int n =  $num_children;
+
+    if( n == 0 ) return;
+    
+    int cols = ceil( sqrt(n) );
+    int rows = ceil( n * 1.0 / cols );
+    height =  $height - (rows - 1) * $vgap;
+    height /= rows;
+
+    width   =  $width  - (cols - 1) * $vgap;
+    width  /=  cols;
+
+    if(DB) printf("EBOX %s: %s child size: %f x %f\n", XtName($), __func__, width, height);
+
+    y=0; x=0; c=0;
+    for (i = 0; i < $num_children; i++) {
+	child = $children[i];
+        b=$child$border_width;
+	XtConfigureWidget(child, x, y, width - 2 *b,
+			  height - 2*b, b );
+	x+=width + $vgap; c++;
+	if( c >= cols ) {
+	    y += height + $vgap;
+	    x = 0;
+	    c = 0;
+	}
+    }
+}
+
+@IMPORTS
+@incl "converters.h"
+@incl "mls.h"
+@incl "math.h"
