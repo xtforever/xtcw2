@@ -79,8 +79,11 @@ char *header_part1=
 " *header.wcClass: Wlabel		    \n"
 " *header.label:   $TITLE		    \n"
 " *header.weightx: 100			    \n"
-" *header.weighty: 100			    \n"
-" *header.fill: Both                        \n"
+" *header.weighty: 1			    \n"
+" *header.fill: Width                       \n"
+" *values.weightx: 100			    \n"
+" *values.weighty: 100			    \n"
+" *values.fill: Both                        \n"
 "*cmd.wcClass: Wexecgui                                                \n"
 "*cmd.shell_cmd: $SCRIPT                                               \n"
 "*cmd.prefix: $PREFIX						       \n"
@@ -268,6 +271,7 @@ static int print_widget(char *pattern, int opts, int row, void *fp )
 static void print_extra_vars(int opts, int row, void *fp )
 {
     int lst = njson_find_obj( opts, "extra_vars" );
+    if(!lst) return;
     struct njson_st *j;
     int p;
     m_foreach( lst, p, j ) {
@@ -294,6 +298,19 @@ static int  print_input( int opts, int row, void *fp )
    
 
 static int  print_kuerzel( int opts, int row, void *fp )
+{
+
+    char *part=
+	"$w0.wcClass: Wlabel					\n"
+	"$w0.label  : $title					\n"
+	"$w1.wcClass: Wsqlcombo					\n"
+	"$w1.sqlcombo_cb:  CallAction( *cmd UpdateCmd )		\n"
+	"$w1.sql_result: $varname				\n";
+
+    return print_widget( part, opts, row, fp );
+}
+
+static int  print_query( int opts, int row, void *fp )
 {
 
     char *part=
@@ -353,6 +370,7 @@ static void print_field( int field, int row, FILE *fp )
 	{ "kuerzel", print_kuerzel },
 	{ "input", print_input    },
 	{ "option",  print_option },
+	{ "query", print_query    },
 	{ NULL, NULL } };
 
     str_dispatch( t, kw, field, row, fp );

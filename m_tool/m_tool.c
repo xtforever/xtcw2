@@ -307,3 +307,18 @@ int m_split_list( const char *s, const char *delm )
     
     return ls;
 }
+
+int leftstr( int buf, int p, const char *s, int ch )
+{
+    int w;
+    if(buf < 2 ) buf = m_create( 10,1 );
+    m_setlen(buf,p);
+    
+    if(s) while( (w=*s++) ) {
+	if( w == ch || w==0 ) break;
+	m_putc(buf,w);
+    }
+    m_putc(buf,0);
+    return buf; 
+}
+

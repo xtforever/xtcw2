@@ -112,11 +112,8 @@ var compress_motion = True
 	x0,y0,x0+v_w, y0+v_h );
 	TRACE(9, "rect: %d %d %d %d", x0, y0, v_w, v_h );
 
-
-
 	int    n             = m_len($points);
 	double max=0, min=0;
-   	
         double *d;
 	int p;
 	m_foreach( points, p, d ) {
@@ -127,28 +124,19 @@ var compress_motion = True
 	double diff = max - min;
 	double scale = v_h / diff;
 	int w = v_w / n;
-
 	int py0;
 	int px0 = x0;
-	
-
 	m_foreach( points, p, d ) {
-
              py0 = (*d - min) * scale;
-
 	     XFillRectangle(XtDisplay($), XtWindow($),$gc_fg,
                              px0, y0+v_h - py0, w, py0 );
-	     px0+=w;		   
-	     
+	     px0+=w;		   	     
 	}
-
 	
 	py0 = - min * scale;
 	px0 = x0;
-	
         XFillRectangle(XtDisplay($), XtWindow($),$gc_background,
                              px0, y0+v_h - py0, v_w, 2 );
-
 }
 
 
