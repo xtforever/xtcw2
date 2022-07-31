@@ -1,0 +1,295 @@
+@class WcomboV5 (Gridbox)
+@ Combo-Editor-Popup-Select Widget
+  with var5 support
+ 
+
+@TRANSLATIONS
+@trans <FocusIn>:      focus_in() 
+@trans <FocusOut>:     focus_out()
+
+
+
+@PUBLIC
+@var <Callback> XtCallbackList callback  = NULL
+@var String label = NULL
+@var <ArrayChar>     int svar = <String> "defaultEditBuffer"
+@var <StringMArray>  int lst  = <String> "def1,def2,def3"
+
+@PRIVATE
+@var int dummy0
+
+@CLASSVARS
+@var Atom dummy = 0
+
+@METHODS
+@proc initialize
+{
+
+}
+
+@proc destroy
+{
+}
+
+@proc set_values
+{
+    return True; /* call expose() to update widget */
+}
+
+@proc get_values_hook
+{
+}
+
+
+@proc expose
+{
+  Display *dpy = XtDisplay($);
+  XClearWindow( dpy, XtWindow($) );
+}
+
+@proc realize
+ {
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+  	resize_widget($);
+}
+
+@proc resize
+{
+    if (XtIsRealized($)) resize_widget($);
+}
+
+@proc accept_focus
+{
+	TRACE(2,"Class WeditMV: %s: ", XtName($) );
+	return True;
+}
+
+
+@proc query_geometry
+{
+    int w,h;
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    w = reply->width =  $txt.width;
+    h = reply->height = $txt.height;
+    TRACE(2, "%s: our prefered size is %dx%d", XtName($),
+                  w,h );
+    return XtGeometryAlmost;
+}
+
+@UTILITIES
+
+
+@proc resize_widget($)
+{
+}
+
+@proc make_resize_request($,int w, int h)
+{
+        Dimension w_out, h_out;
+        if( $width == w && $height == h ) return;
+        if( XtMakeResizeRequest($,w,h, &w_out, &h_out ) ==
+            XtGeometryAlmost ) XtMakeResizeRequest($,w_out,h_out,NULL,NULL );
+}
+
+
+@ einfügen des übergebenen zeichencodes in den String
+  und neuberechnung der glyphs
+@proc insert_char_at_cursor($, char *buf, int len )
+{
+    int p = char_offset($,$crsr_pos);
+    m_ins( $str_m, p, len );
+    m_write( $str_m, p, buf, len );
+    str_to_glyphlist($);
+    $dirty = 1;
+}
+
+@proc remove_char_at_cursor($)
+{
+    int p1=0, p2=0;
+    if( $crsr_pos >= m_len($glyph_m)-1 ) return;
+    m_del( $glyph_m, $crsr_pos );
+    m_del( $glyph_xoff_m, $crsr_pos );
+    p1 = char_offset($,$crsr_pos);
+    p2=p1; m_utf8char( $str_m, &p2 );
+    m_remove( $str_m, p1, p2-p1 );
+    $dirty     = 1;
+}
+
+@proc char scroll_left($)
+{
+    if( $left_char_offset < m_len($glyph_m)-1 ) {
+        $left_char_offset++;
+        $dirty = 1;
+        return 0;
+    }
+    return -1;
+}
+
+@proc char scroll_right($)
+{
+    if( $left_char_offset <= 0 ) return -1;
+    $left_char_offset--;
+    $dirty = 1;
+    return 0;
+}
+
+@ coordinate transformation functions
+  there are three coordinate systems:
+  Character Index inside Text
+  Character Pixel Position inside visible area
+  Character Pixel Position inside text
+  This function returns the Position of the left offset inside the whole text area
+
+@proc int px_left_offset($)
+{
+    return px_char($,$left_char_offset);
+}
+
+@ this function returns the poosition of the character at |index| inside the whole text area
+  if you subtract the px_left_offset() you get the Position inside the visibile area
+
+@proc int px_char($, int index)
+{
+    int x=0,i;
+    for(i=0;i<index;i++)
+        x+= INT($glyph_xoff_m, i);
+    return x;
+}
+
+@ this function returns the pixel postion relative to the visible area
+
+@proc int screen_px($, int index)
+{
+    return px_char($,index) - px_left_offset($);
+}
+
+
+
+
+@  if cursor is not visible after moving,
+   scroll display to the left
+   to scroll set |left_char_offset|
+
+@proc cursor_right($)
+{
+    int xa = 0;
+    if( $crsr_pos >= m_len( $glyph_m ) -1 ) return;
+
+    $crsr_pos++;
+    /* das zeichen unter dem cursor sollte komplett sichtbar sein */
+    while(1) {
+        xa = screen_px($, $crsr_pos );
+        xa += INT($glyph_xoff_m,$crsr_pos);
+        if( xa <= $pix.r.width ) break;
+        if( scroll_left($) ) break;
+    }
+}
+
+@  if cursor is not visible after moving,
+   scroll display to the right
+
+@proc cursor_left($)
+{
+    int xa;
+    if( $crsr_pos <= 0 ) return;
+
+    $crsr_pos--;
+    while(1) {
+      xa = screen_px($, $crsr_pos );
+      if( xa >= 0 ) break;
+      if( scroll_right($) ) break;
+    }
+}
+
+
+@ callback function, called by XtGetSelectionValue()
+@proc RequestSelection($, XtPointer client, Atom * selection, Atom * type,
+                       XtPointer value, unsigned long *length, int *format)
+{
+    char *s = value;
+    int len = *length;
+    if( is_empty(s) || len <= 0 ) return;
+    insert_char_at_cursor($,s,len);
+    while( utf8char(&s) != -1 ) cursor_right($);
+    paint($);
+}
+
+
+@ copy current text to label_m as an buffer
+  then return pointer to label_m
+  the buffer is zero terminated
+@proc char* get_text_buffer($)
+{
+	int l = m_len($str_m);
+        m_write($label_m, 0, m_buf($str_m), l );
+        CHAR($label_m, l-1)=0;
+	m_setlen($label_m,l);
+	return m_buf($label_m);
+}
+
+
+@ACTIONS
+
+
+@ params: ($, XEvent *event _X_UNUSED, String *params _X_UNUSED, Cardinal *num_params _X_UNUSED)
+@proc SetKeyboardFocus
+{
+    TRACE(2,"try to set keyboard focus");
+    Widget shell, parent;
+
+    shell = parent = $;
+    while (parent) {
+        if (XtIsShell(shell = parent))
+            break;
+        parent = XtParent(parent);
+    }
+    
+    XtSetKeyboardFocus(shell, $);
+}
+
+@proc focus_in
+{
+	TRACE(2, "WeditMV %s got focus", XtName($));
+}
+
+@proc focus_out
+{
+	TRACE(2, "WeditMV %s lost focus", XtName($));
+}
+
+
+@proc notify
+{
+  XtCallCallbackList( $, $callback, event );
+}
+
+
+@ Falls eine variable definiert wurde, kopiere den
+  str_m buffer in die V5 Variable.
+  Da nicht bekannt ist, ob die V5-Var einen bestimmten
+  Typ bekommen soll, kann hier keine erzeugt werden
+
+@proc write_to_var5
+{
+	int key = mvar_parse( $svar, -1 );
+	if( key < 0 ) return;
+	mvar_put_string( key, m_str($str_m), 0 );
+	mvar_call_callbacks(key,0);
+}
+
+
+
+@IMPORTS
+@incl <assert.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xaw/XawImP.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "var5.h"
+@incl "font.h"

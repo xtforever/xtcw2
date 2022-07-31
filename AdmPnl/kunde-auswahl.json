@@ -1,0 +1,12 @@
+(
+    title: 'Kundenauswahl',
+    script: 'auswahl.sh $kk',
+    fields: (
+	( type: 'kuerzel', title: 'Kuerzel', variable: 'kk',
+	  extra_vars: (
+	      sql_query_str: "select * from custdb",
+	      sql_disp_field: "$custid ($dbservid)",
+	      sql_key_field: "$custid" )
+	)
+   )
+)
