@@ -18,16 +18,20 @@
 @var int disp_lst
 @var int key_lst
 @var int var5_res
+@var int var5_sqlquery
+
 
 @METHODS
 @proc initialize
 {
     TRACE(2, "Wsqlcombo %s", XtName($) );
     $var5_res=0;
+    $var5_sqlquery=0;
     $sqlres=0;
     $disp_lst=m_create(10,sizeof(char*));
     $key_lst=m_create(10,sizeof(char*));
     XtAddCallback( $, "combo_cb", (XtCallbackProc) combo_cb, $ );
+    XtAddCallback( $, "refresh_list", (XtCallbackProc) refresh_list_cb, $ );	
     sql_query($);
     update_listbox($);
 }
@@ -44,14 +48,21 @@
     TRACE(2, "Wsqlcombo:%s", XtName($) );
     if( locked ) return False;
     locked=1;
+    int rebuild = 0;
     while( n-- )  {
 	if(strncmp( args[n].name, "sql_",4 ) == 0 ) {
-		sql_query($);
-		update_listbox($);
-		do_expose=1;
-		break;
-        }
+	   rebuild=1;
+	}
     }
+
+    if( rebuild ) {
+    	mvar_free( $var5_sqlquery );
+	$var5_sqlquery = 0;
+    	sql_query($);
+	update_listbox($);
+	do_expose=1;	
+    }
+    
     locked=0;
     return do_expose;
 }
@@ -64,6 +75,16 @@
 }
 
 @UTILITIES
+@proc refresh_list_cb( Widget dummy, $, void *class_data )
+{
+	TRACE(9,"refresh");
+    	mvar_free( $var5_sqlquery );
+	$var5_sqlquery = 0; /* force building new query */
+    	sql_query($);
+	update_listbox($);   
+}
+
+
 @proc combo_cb( Widget dummy, $, void *class_data )
 {
 	char *key;
@@ -81,17 +102,6 @@
 	XtCallCallbackList($, $sqlcombo_cb, key );
 }
 
-@proc show_translation($)
-{
-	TRACE(2, "Wsqlcombo %s", XtName($) );	    
-	WsqlcomboWidgetClass wc = (WsqlcomboWidgetClass)XtClass($);
-	char *s = wc->core_class.tm_table;
-	s=#tm_table;
-	if(!s) s="<empty tm_table>";
-	TRACE(2, "Wsqlcombo %s: Translation:%s", XtName($),s  );	    
-}
-
-
 @proc update_list(int rows, char *pattern, int list, int res_set )
 {
 	m_free_strings(list,1);	/* clear string list */
@@ -103,6 +113,33 @@
 	     m_put( list, &s );	     
 	}	
 	se_free(&se);
+}
+
+@proc sql_query($)
+{
+	v_free( $sqlres );
+	$sqlres = v_init();
+
+	/* variable in der der ausgewaehlte datensatz gespeichert wird */
+	if( $sql_result ) {
+	    mvar_free(  $var5_res );
+	    $var5_res = mvar_parse( $sql_result, VAR_STRING );
+	    m_free($sql_result);
+	    $sql_result=0;
+	}
+
+	/* der sql_query_string muss im context von  $var5_res expandiert werden */
+	if( $var5_sqlquery == 0 ) {
+            $var5_sqlquery = mvar_anon( mvar_group($var5_res), VAR_ESTR );
+	    mvar_put_string( $var5_sqlquery,  $sql_query_str, 0 );
+	}
+
+	int kk = mvar_parse_string( "task1.kk", -1 );	
+	fprintf(stderr, "My Query: %s, kk=%s\n",  $sql_query_str, mvar_get_string(kk,0) );
+	
+
+	char *sql = mvar_get_string($var5_sqlquery, 0);
+	simple_query($sql_host, $sql_db, $sql_user, $sql_pwd, $sqlres, sql );
 }
 
 @proc update_listbox($)
@@ -124,20 +161,8 @@
 
 		      
 	combo_cb(0,$, (void*) default_item ); /* select item 0 */
-	
 }
 
-@proc sql_query($)
-{
-	v_free( $sqlres );
-	$sqlres = v_init();
-	simple_query($sql_host, $sql_db, $sql_user, $sql_pwd, $sqlres, $sql_query_str);
-	if( $sql_result ) {
-	    $var5_res = mvar_parse( $sql_result, VAR_STRING );
-	    m_free($sql_result);
-	    $sql_result=0;
-	}
-}
 
 @proc int simple_query(char *host, char *db, char *user, char *pwd, int res, char *query)
 {

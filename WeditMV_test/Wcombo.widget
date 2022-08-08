@@ -10,6 +10,7 @@ var compress_motion = True
 
 @PUBLIC
 @var <Callback> XtCallbackList combo_cb = NULL
+@var <Callback> XtCallbackList refresh_list  = NULL
 @var StringMArray lst = <String> "A,B,C"
 @var int selection = -1
 @var int lines_height = 10
@@ -156,6 +157,7 @@ var compress_motion = True
 {
 	if( $entry_mode ) return;
 	TRACE(2,"open");
+	XtCallCallbackList( $, $refresh_list, NULL );
 	open_popup($);
 }
 
