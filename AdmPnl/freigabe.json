@@ -1,0 +1,12 @@
+(
+   title: 'freigabe erstellen',
+   script: './freigabe.sh -m $kk $kk$sandbox $srv $domain',
+   fields: (
+      ( type: 'kuerzel', title: 'Kuerzel', variable: 'kk' ),
+      ( type: 'option', title: 'sandbox', variable: 'sandbox', values: ( 1,2,3,4,5,6,7 ) ),
+      ( type: 'option', title: 'server', variable: 'srv', values: ( 'sandbox7','sandbox9','sandbox10' ) ),
+      ( type: 'input', title: 'Domain', variable: 'domain' )
+
+       
+   )
+)

@@ -1,0 +1,43 @@
+ admpanel.WcChildren: gb1
+ admpanel.prefix: task1
+ *gb1.WcClass: gridbox
+ *gb1.WcChildren: header values footer
+ *header.gridy: 0
+ *values.gridy: 1
+ *footer.gridy: 2
+ *WeditMV.foreground:    #008c7c
+ *WeditMV.cursorColor:   #95a5a6
+ *background:            #ecf0f1
+ *header.bg_norm:        #ddddaa
+ *WeditMV.fontName: Source Code Pro-12
+ *header.wcClass: Wlabel
+ *header.label:   Script Launcher
+ *header.weightx: 100
+ *header.weighty: 1
+ *header.fill: Width
+ *values.weightx: 100
+ *values.weighty: 100
+ *values.fill: Both	
+ 
+
+*footer.wcClass: Gridbox
+*footer.wcChildren: quit
+
+
+*quit.wcClass: Wbutton
+*quit.label: Quit
+*quit.gravity: east
+% *quit.fill: none
+*quit.callback: WcQuit
+
+
+*values.WcClass: Launcher
+*values.vgap: 1pt
+*values.*borderWidth: 8
+*values.*borderColor: blue
+*values.borderWidth: 0
+*values*fg_norm: Blue
+
+*values.lst:fire=./admpanel -rf x1.ad,t1=test2,t2=test3,test4=./fire.sh arg test4
+
+
