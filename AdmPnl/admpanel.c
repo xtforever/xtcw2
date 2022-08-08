@@ -31,6 +31,8 @@ neue widgets hinzufuegen:
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>              /* Obtain O_* constant definitions */
+#include <sys/time.h>
+#include <sys/resource.h>
 
 
 #include <X11/Intrinsic.h>
@@ -73,6 +75,8 @@ neue widgets hinzufuegen:
 #include "Graph1.h"
 
 #include "Wexecgui.h"
+#include "Ebox.h"
+#include "Launcher.h"
 
 // static inline const char *m_str(const int m) { return m_buf(m); }
 
@@ -908,6 +912,8 @@ static void RegisterApplication ( Widget top )
     RCP( top, wls );
     RCP( top, wexecgui );
     RCP( top, graph1 );
+    RCP( top, ebox );
+    RCP( top, launcher );
 }
 
 /*  init application functions and structures and widgets
@@ -966,6 +972,7 @@ static int m_split_list( const char *s, const char *delm )
 }
 */
 
+/*
 static void asgn(char *s)
 {
     int ls =  m_split_list(s, "=" );
@@ -976,21 +983,40 @@ static void asgn(char *s)
  leave:
     m_free_list(ls);
 }
+*/
+
+void proc_exit()
+{
+
+		int wstat;
+		pid_t	pid;
+
+		while (TRUE) {
+			pid = wait3 (&wstat, WNOHANG, (struct rusage *)NULL );
+			if (pid == 0)
+				return;
+			else if (pid == -1)
+				return;
+			else
+			    printf ("Return code: %d\n",WEXITSTATUS( wstat ));
+		}
+}
 
 /******************************************************************************
 *   MAIN function
 ******************************************************************************/
 int main ( int argc, char **argv )
 {
+    signal (SIGCHLD, proc_exit);
     trace_main = TRACE_MAIN;
     trace_slog = TRACE_SLOG;
     
     XtAppContext app;
-    m_init();
+    m_init(); trace_level=1;
     mv_init(); // will be removed
     svar_init(); // will be removed
     mvar_init();
-
+    
     /*
     asgn("task1.t1=hello");
     asgn("task1.t2=world");

@@ -26,4 +26,6 @@ void m_free_stringlist(int m);
 
 void m_concat(int a, int b);
 int m_split_list( const char *s, const char *delm );
+
+int leftstr(int buf, int p, const char *s, int ch);
 #endif
