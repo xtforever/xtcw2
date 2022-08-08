@@ -9,6 +9,7 @@
 #define VAR_STRING 1
 #define VAR_VSET 2
 #define VAR_REC 3
+#define VAR_ESTR 4
 
 #define LIST_APPEND (-1)
 
@@ -16,6 +17,7 @@
 #define VAR_S_STRING  "STRING"
 #define VAR_S_VSET    "VSET"
 #define VAR_S_REC     "REC"
+#define VAR_S_ESTR    "ESTR"
 
 
 typedef void (*varsig_t) (void*ctx,int var,int sig);

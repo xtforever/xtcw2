@@ -316,6 +316,148 @@ void  string_impl_clear(var_t *v)
 /*-----------------------------------------------------------------------*/
 
 /* same as var_if */
+struct estr_var_if {
+    struct var_if;
+};
+
+/* same as var_st but with extensions */
+struct estr_var_st {
+    struct var_st;
+    mvar_str_t estr;
+    int watches;
+    char *str_copy;
+};
+
+typedef struct estr_var_st estr_var_t;
+
+var_t *estr_impl_create(void);
+void  estr_impl_destroy(var_t *v);
+char *estr_impl_get_string(var_t *v, int p);
+int estr_impl_put_string(var_t *v,char *str, int p);
+int estr_impl_length(var_t *v);
+void estr_impl_clear(var_t *v);
+
+struct estr_var_if ESTR_VAR_IF = {
+    .put_string = estr_impl_put_string,
+    .get_string = estr_impl_get_string,
+    .length     = estr_impl_length,
+    .create = estr_impl_create,
+    .destroy = estr_impl_destroy,
+    .clear   = estr_impl_clear
+};
+
+int estr_impl_length(var_t *v)
+{
+    estr_var_t *s = (estr_var_t*)v;
+    int len = m_len(s->estr.buf);
+    if( len ) len--; 
+    return len;		  
+}
+
+static void estr_var_changed(void*ctx,int var,int sig)
+{
+    estr_var_t *s = (estr_var_t*)ctx;
+    mvar_str_realloc_buffers( & s->estr );
+}
+
+static void estr_watches_remove( estr_var_t *s )
+{
+    int p,*k;
+    m_foreach( s->watches, p, k ) {
+	mvar_set_callback( *k, estr_var_changed, s, 1 );
+    }
+    m_clear(s->watches);    
+}
+
+
+var_t *estr_impl_create(void)
+{
+    estr_var_t *s = calloc(1, sizeof(estr_var_t) );
+    mvar_str_init(  &s->estr );
+    s->watches=m_create(2,sizeof(int));
+    return (var_t*) s;
+}
+
+void estr_impl_destroy(var_t *v)
+{
+    estr_var_t *s = (estr_var_t*)v;
+    mvar_str_free( & s->estr );
+    free(s->str_copy);
+    estr_watches_remove(s);
+    m_free(s->watches);
+    free(v);
+}
+
+
+static void estr_realloc_watches(  estr_var_t *s )
+{
+    var_t *v = (var_t*) s;
+    int group = v->group;
+    mvar_str_t *se = &s->estr;
+    int p; char **d; 
+
+    estr_watches_remove(s);
+
+    m_foreach( se->splitbuf, p,d ) {
+	char *str = *d;
+	if( *str != '$' ) continue;
+	str++; if( *str == '\'' ) str++;
+	int q = mvar_lookup( group, str, -1 );
+	if(q<0) continue;
+	mvar_set_callback(q,estr_var_changed, s, 0 );
+	m_put(s->watches,&q);
+    }
+    
+}
+
+
+
+static void estr_build( estr_var_t *s )
+{
+    mvar_str_t *se = &s->estr;
+    char *pattern  = s->str_copy;
+    var_t *v = (var_t*) s;
+    int group = v->group;
+    int prefix = s_printf(0,0,"#%d", group );
+    
+    
+    mvar_str_realloc_buffers( se );
+    mvar_str_parse( se, pattern );
+    mvar_str_expand( se, m_str(prefix), 0 );
+    estr_realloc_watches( s );
+    m_free(prefix);    
+}
+
+char *estr_impl_get_string(var_t *v, int p)
+{
+    estr_var_t *s = (estr_var_t*)v;
+    if(! (s->estr.buf && m_len(s->estr.buf)) ) {
+	estr_build(s);	
+    }
+    return m_str(s->estr.buf);
+}
+
+int estr_impl_put_string(var_t *v,char *str, int p)
+{
+    estr_var_t *s = (estr_var_t*)v;
+    mvar_str_realloc_buffers( & s->estr );
+    free( s->str_copy );
+    s->str_copy = strdup(str);
+    return 0;
+}
+
+void  estr_impl_clear(var_t *v)
+{
+    estr_var_t *s = (estr_var_t*)v;
+    free( s->str_copy ); s->str_copy=0;
+    mvar_str_realloc_buffers( & s->estr );
+}
+
+/*-----------------------------------------------------------------------*/
+
+
+
+/* same as var_if */
 struct integer_var_if {
     struct var_if;
     char buffer[100];
@@ -612,6 +754,8 @@ int mvar_create( int id )
 */ 
 void mvar_free( int id )
 {
+    if( id <=0 ) return;
+    
     var_t **v = mvar_get(id);
     if( ! *v ) {
 	WARN("double-free Var %d", id);
@@ -785,7 +929,7 @@ int mvar_parse( int mp, int type_id  )
 
 int mvar_parse_string(const char *s, int type_id )
 {
-    int name = s_printf(0,0, s );
+    int name = s_printf(0,0, (char*)s );
     int key = mvar_parse( name, type_id );
     m_free(name);
     return key;    
@@ -857,6 +1001,7 @@ void mvar_destruct(void)
 
 void mvar_init(void)
 {
+    mvar_registry( &ESTR_VAR_IF, "ESTR", VAR_ESTR );
     mvar_registry( &STRING_VAR_IF, "STRING", VAR_STRING );
     mvar_registry( &INTEGER_VAR_IF, "INTEGER", VAR_INTEGER );
     mvar_registry( &VSET_VAR_IF, "VSET", VAR_VSET );
@@ -1246,12 +1391,12 @@ const char*   mvar_str_string( char *prefix, const char *frm )
     
     mvar_str_init( &se );
     mvar_str_parse( &se, frm );
-    char *s = mvar_str_expand( &se, prefix, 0 );
+    const char *s = mvar_str_expand( &se, prefix, 0 );
 
     /* create a new variable and copy the expanded string into it */ 
     varname = s_printf(0,0,"%s.se_string", prefix );
     var = mvar_parse(varname, VAR_STRING);
-    mvar_put_string( var, s, 0 );
+    mvar_put_string( var, (char*)s, 0 );
     
     m_free(varname);
     mvar_str_free(&se);

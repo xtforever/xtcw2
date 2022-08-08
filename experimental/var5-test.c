@@ -6,6 +6,51 @@
 #include <time.h>
 
 
+
+
+
+
+
+void    mvar_estr_test()
+{
+    puts("estr started");
+
+    int v = mvar_parse_string( "xgroup.xvar", VAR_STRING );
+
+    mvar_put_string( v, "hello world", 0 );
+
+    // something
+
+    puts( mvar_get_string(v,0));
+
+    int g = mvar_group(v);
+
+    int v2 = mvar_lookup( g, "xvar", -1 );
+    int mp = s_printf(0,0, "#%d.xvar", g, "xvar" );
+    int v3 = mvar_parse( mp, -1 );
+	
+    printf("id=%d, g=%d, v2=%d v3=%d\n", v,g,v2, v3 );
+
+    
+
+    /* there is a variable called xvar, now
+       we create a string inside the same group as xvar to test the expand function
+    */
+    int estr = mvar_lookup(g, "pat", VAR_ESTR );
+    mvar_put_string( estr, "my patter is: $'xvar. end of msg.", 0);
+    puts( mvar_get_string( estr ,0) );
+    puts( mvar_get_string( estr ,0) );
+
+    /* now the magic starts, we change xvar and the pattern changes */
+    mvar_put_string( v, "Who are we", 0 );
+    mvar_call_callbacks( v,0 );
+
+    puts( mvar_get_string( estr ,0) );
+    m_free(mp);    
+}
+
+
+
 /*
 
   widget edit -- var x
@@ -457,9 +502,11 @@ int main()
     // clash();
     //speed_test();
     // app_test();
+    // exp_test();
 
-    exp_test();
 
+    mvar_estr_test();
+    
     mvar_destruct();
     //
     m_destruct();
