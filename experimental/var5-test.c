@@ -46,7 +46,26 @@ void    mvar_estr_test()
     mvar_call_callbacks( v,0 );
 
     puts( mvar_get_string( estr ,0) );
-    m_free(mp);    
+    m_free(mp);
+
+
+    /* lets check array expand */
+    int xvar = v3, p=0;
+    mvar_put_string( xvar, "stringexpand", p++ );
+    mvar_put_string( xvar, "integrated", p++ );
+    mvar_put_string( xvar, "in var5", p++ );
+    mvar_put_string( xvar, "is a nice feature", p++ );
+    mvar_call_callbacks( xvar,0 );
+
+    char *word;
+    for( int i=0; *(word=mvar_get_string( estr ,i))  ; i++ )
+	puts(word);
+
+
+    printf("first: %s\n", mvar_get_string( estr ,0) );
+    printf("last: %s\n", mvar_get_string( estr ,-1) );
+    printf("underflow: %s\n", mvar_get_string( estr ,-100) );
+    printf("overflow: %s\n", mvar_get_string( estr , 100) );   
 }
 
 

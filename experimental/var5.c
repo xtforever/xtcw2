@@ -326,6 +326,9 @@ struct estr_var_st {
     mvar_str_t estr;
     int watches;
     char *str_copy;
+    int cache_dirty;
+    int cache_index;
+    int max_index;
 };
 
 typedef struct estr_var_st estr_var_t;
@@ -357,7 +360,7 @@ int estr_impl_length(var_t *v)
 static void estr_var_changed(void*ctx,int var,int sig)
 {
     estr_var_t *s = (estr_var_t*)ctx;
-    mvar_str_realloc_buffers( & s->estr );
+    s->cache_dirty = 1;
 }
 
 static void estr_watches_remove( estr_var_t *s )
@@ -375,6 +378,7 @@ var_t *estr_impl_create(void)
     estr_var_t *s = calloc(1, sizeof(estr_var_t) );
     mvar_str_init(  &s->estr );
     s->watches=m_create(2,sizeof(int));
+    s->cache_dirty = 1;
     return (var_t*) s;
 }
 
@@ -389,6 +393,7 @@ void estr_impl_destroy(var_t *v)
 }
 
 
+/* alloc callbacks and find longest array in used variables */
 static void estr_realloc_watches(  estr_var_t *s )
 {
     var_t *v = (var_t*) s;
@@ -397,7 +402,8 @@ static void estr_realloc_watches(  estr_var_t *s )
     int p; char **d; 
 
     estr_watches_remove(s);
-
+    s->max_index = 0;
+    
     m_foreach( se->splitbuf, p,d ) {
 	char *str = *d;
 	if( *str != '$' ) continue;
@@ -406,13 +412,26 @@ static void estr_realloc_watches(  estr_var_t *s )
 	if(q<0) continue;
 	mvar_set_callback(q,estr_var_changed, s, 0 );
 	m_put(s->watches,&q);
+	int k = mvar_length( q );
+	if( k > s->max_index ) s->max_index = k;
     }
-    
+}
+
+/* only array index has changed, no need to rebuild the parser-buffer */
+static void estr_update_array( estr_var_t *s, int p )
+{
+    mvar_str_t *se = &s->estr;
+    var_t *v = (var_t*) s;
+    int group = v->group;
+    int prefix = s_printf(0,0,"#%d", group );
+    mvar_str_expand( se, m_str(prefix), p );
+    m_free(prefix);
+    s->cache_dirty = 0;
+    s->cache_index = p;   
 }
 
 
-
-static void estr_build( estr_var_t *s )
+static void estr_build( estr_var_t *s, int p )
 {
     mvar_str_t *se = &s->estr;
     char *pattern  = s->str_copy;
@@ -420,20 +439,38 @@ static void estr_build( estr_var_t *s )
     int group = v->group;
     int prefix = s_printf(0,0,"#%d", group );
     
-    
     mvar_str_realloc_buffers( se );
     mvar_str_parse( se, pattern );
-    mvar_str_expand( se, m_str(prefix), 0 );
+    mvar_str_expand( se, m_str(prefix), p );
     estr_realloc_watches( s );
-    m_free(prefix);    
+    m_free(prefix);
+    s->cache_dirty = 0;
+    s->cache_index = p;   
 }
 
 char *estr_impl_get_string(var_t *v, int p)
 {
     estr_var_t *s = (estr_var_t*)v;
-    if(! (s->estr.buf && m_len(s->estr.buf)) ) {
-	estr_build(s);	
+    if( s->cache_dirty ) {
+	estr_build(s, p);	
     }
+
+    /* array handling
+       -1 last element
+       -2 2nd last ...
+       0 first
+       1 2nd ..
+     */
+    if( p ) {
+	if( p >= s->max_index ) return "";
+	if( p < 0 ) p += s->max_index;
+	if( p < 0 ) return "";
+    }
+
+    if( s->cache_index != p ) {
+	estr_update_array(s,p);
+    }
+    
     return m_str(s->estr.buf);
 }
 

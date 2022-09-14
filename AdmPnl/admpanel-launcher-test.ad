@@ -38,6 +38,6 @@
 *values.borderWidth: 0
 *values*fg_norm: Blue
 
-*values.lst:fire=./admpanel -rf x1.ad,t1=test2,t2=test3,test4=./fire.sh arg test4
+*values.lst:fire is the name=./admpanel -rf x1.ad,t1=test2,t2=test3,test4=./fire.sh arg test4
 
 

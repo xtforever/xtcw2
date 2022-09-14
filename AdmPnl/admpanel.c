@@ -77,6 +77,7 @@ neue widgets hinzufuegen:
 #include "Wexecgui.h"
 #include "Ebox.h"
 #include "Launcher.h"
+#include "Dartboard.h"
 
 // static inline const char *m_str(const int m) { return m_buf(m); }
 
@@ -914,6 +915,7 @@ static void RegisterApplication ( Widget top )
     RCP( top, graph1 );
     RCP( top, ebox );
     RCP( top, launcher );
+    RCP( top, dartboard );
 }
 
 /*  init application functions and structures and widgets

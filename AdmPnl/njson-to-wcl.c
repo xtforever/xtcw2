@@ -135,11 +135,11 @@ int str_dispatch( int mstr, struct str_dispatch_st *kw, int what, int where, voi
 }
 
 
-static int  print_dummy( int field, int w, void *fp )
-{
-    puts("dummy");
-    return 0;
-}
+//static int  print_dummy( int field, int w, void *fp )
+//{
+//   puts("dummy");
+//  return 0;
+//}
 
 
 void njson_array_to_mvar( int lst, char *mvars )
@@ -366,7 +366,7 @@ static void print_field( int field, int row, FILE *fp )
 
     TRACE(4, "type: %s", m_str(t) );
 
-    struct str_dispatch_st kw[4] = {
+    struct str_dispatch_st kw[] = {
 	{ "kuerzel", print_kuerzel },
 	{ "input", print_input    },
 	{ "option",  print_option },
@@ -433,9 +433,10 @@ int main(int argc, char **argv)
     m_putc( EMPTY_MSTR, 0 );
     
     TRACE(1,"start");
-    if( argc < 2 ) goto fin;
+    char *fn = "/dev/stdin" ;
+    if( argc > 1 ) fn =  argv[1];
     
-    int opts =   njson_read( argv[1] );
+    int opts =   njson_read( fn );
     int title =  njson_get_entry(opts,"title");
     int script = njson_get_entry(opts,"script");
     int fields = njson_find_obj(opts,"fields");
@@ -443,7 +444,7 @@ int main(int argc, char **argv)
     print_header( title, script, fp );
     fill_values( fields, fp );
     njson_free( opts );
- fin:
+ 
     m_free(EMPTY_MSTR);
     mvar_destruct();
     m_destruct();  return EXIT_SUCCESS;
