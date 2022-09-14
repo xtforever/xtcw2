@@ -1,0 +1,244 @@
+@class Dartboard(Composite)
+
+
+
+@PUBLIC
+@ the distance between the child widgets
+@var Distance vgap = <String> "2mm"
+@var <Callback> XtCallbackList callback  = NULL
+
+
+
+@PRIVATE
+@var int total_height
+@var int total_width
+@var int dig_height
+@var int dig_width
+
+@def DB = 1
+@def NumWids = 24
+
+@METHODS
+@proc initialize
+{
+        if( ! $width ) $width=10;
+        if( ! $height ) $height = 10;
+
+	create_children($);
+}
+
+@proc destroy
+{
+}
+
+@proc resize
+{
+        TRACE(2, "Dartboard %s: %dx%d\n", XtName($),
+                   $width, $height );
+        do_layout($);
+}
+
+@ this function is called when all children (NumWids) are created
+  we need to ask the children how big they are and then do the layout
+@proc change_managed
+{
+	if(DB) printf("%s: %s num_children=%d\n", XtName($), __func__, $num_children );
+        XtWidgetGeometry request, reply;
+        if ($num_children != NumWids) return;
+
+        calculate_size($);
+        if(DB) printf("%s: %s size prefered: %u %u\n", XtName($), __func__, $total_width, $total_height );
+
+        request.request_mode = CWWidth | CWHeight;
+        request.width =  $total_width;
+        request.height = $total_height;
+        XtMakeGeometryRequest($, &request, &reply);
+        if(DB) printf("%s: %s size granted: %u %u\n", XtName($), __func__, $width, $height );
+        $total_width = $width; $total_height = $height;
+        do_layout($);
+}
+
+@ When our parent asks for this widget's preferred geometry,
+simply return the geometry as indicated by our childs.
+Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return |XtGeometryNo|) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+|XtGeometryYes| should have been given.
+
+It seems that no harm is done by always returning |XtGeometryAlmost| and
+letting Xt figure out what really needs to be changed.
+
+@proc query_geometry
+{
+    if(DB) printf("%s: %s\n", XtName($), __func__ );
+        /* every proposed geometry is fine */
+    if ($num_children == 0) return XtGeometryYes;
+
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    calculate_size($);
+    reply->x=0; reply->y=0;
+    reply->width =  $total_width;
+    reply->height = $total_height;
+
+    TRACE(2, "%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(2, "%s: our prefered size is %dx%d", XtName($),
+                  $total_width,
+                  $total_height );
+    return XtGeometryAlmost;
+}
+
+
+@ If a child requests to be resized, the request is always granted. We
+ignore stacking order.
+@proc geometry_manager
+{
+    if(DB) printf("%s: %s\n", XtName($), __func__ );
+/* Widget $ = XtParent(child); automatically inserted by wbuild */
+    Dimension wd, ht, bw;
+    Position x, y;
+
+    /* Get complete geometry, from request or current value */
+    x = request->request_mode & CWX ? request->x : $child$x;
+    y = request->request_mode & CWY ? request->y : $child$y;
+    wd = request->request_mode & CWWidth ? request->width : $child$width;
+    ht = request->request_mode & CWHeight ? request->height : $child$height;
+    bw = request->request_mode & CWBorderWidth ? request->border_width
+	: $child$border_width;
+
+    if(DB) printf("%s: %s Child: %s wanted size: %u %u\n", XtName($), __func__, XtName(child), wd, ht );
+
+    XtConfigureWidget(child, x, y, wd, ht, bw);
+    return XtGeometryDone;
+}
+
+
+@proc expose
+{
+        if(DB) printf("%s: %s size: %u %u\n", XtName($), __func__, $width, $height );
+}
+
+@utilities
+
+@ ask children for their preferred size,
+  then calculate our preffered size
+@proc calculate_size($)
+{	
+    int w,h;
+    XtWidgetGeometry reply;
+    Widget child;
+
+    /* we need all childreen to be ready created */
+    if( $num_children != NumWids ) return;
+
+    /* widget 19 should be the widest */
+    child = $children[19];
+    (void) XtQueryGeometry(child, NULL, &reply);
+    w = reply.width + reply.border_width * 2;
+    h = reply.height+ reply.border_width * 2;
+    
+    if(DB) printf("%s: %s Child: %s size: %u %u\n", XtName($), __func__, XtName(child), w, h );
+
+    $total_width  = w * 5 + 4 * $vgap ;
+    $total_height = h * 5 + 4 * $vgap ;
+    $dig_width = w;
+    $dig_height = h;
+
+    TRACE(2,"%s: %s %dx%d gap=%d\n",__func__, $name, $total_width, $total_height, $vgap );
+}
+
+@proc do_layout($)
+{
+    int i,b,c;
+    Widget child;
+    Dimension y,x;
+    float height, width;
+    int n =  $num_children;
+
+    if( n != NumWids ) return;
+    
+    int cols = 5;
+    int rows = 5;
+
+    /* height of each number-widget */
+    height =  $height - 4 * $vgap;
+    height /= 5;
+
+    /* width of each number-widget */
+    width   =  $width  - 4 * $vgap;
+    width  /=  5;
+
+    if(DB) printf("Dartboard %s: %s child size: %f x %f\n", XtName($), __func__, width, height);
+
+    /* configure 5x4 widgets equal size */
+    y=0; x=0; c=0;
+    for (i = 0; i < $num_children; i++) {
+	child = $children[i];
+        b=$child$border_width;
+	XtConfigureWidget(child, x, y, width - 2 *b,
+			  height - 2*b, b );
+	x+=width + $vgap; c++;
+	if( c >= cols ) {
+	    y += height + $vgap;
+	    x = 0;
+	    c = 0;
+	}
+
+	if( i == 19 )  {     /* make the last 3 widgets fill the row */
+	    width = ($width - 2 * $vgap) / 4;
+	}
+    }
+}
+
+@proc create_children($)
+{
+	Widget w ;
+	char label[20];
+	for(int i=1;i<=20;i++) {
+		sprintf(label, "%d", i);		
+		w=XtVaCreateManagedWidget( "dummy", wbuttonWidgetClass, $,
+		"label", label,
+		NULL );
+		XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, $ );
+	}
+		w=XtVaCreateManagedWidget( "dummy", wbuttonWidgetClass, $,
+		"label", "25",
+		NULL );
+		 XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, $ );
+
+		w=XtVaCreateManagedWidget( "dummy", wbuttonWidgetClass, $,
+		"label", "2x",
+		NULL );
+		 XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, $ );
+
+		w=XtVaCreateManagedWidget( "dummy", wbuttonWidgetClass, $,
+		"label", "3x",
+		NULL );
+		 XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, $ );
+
+		w=XtVaCreateManagedWidget( "dummy", wbuttonWidgetClass, $,
+		"label", "<",
+		NULL );
+		 XtAddCallback( w,  XtNcallback, (XtCallbackProc)update_cb, $ );
+
+}
+
+
+@proc update_cb(Widget dummy, $, void *class_data )
+{
+	char *who;
+	XtVaGetValues( dummy, "label", &who, NULL );
+	if(DB) printf("%s: called by %s\n", __func__, who );	
+        XtCallCallbackList( $, $callback, who );
+}
+
+
+
+@IMPORTS
+@incl "converters.h"
+@incl "mls.h"
+@incl "math.h"
+@incl "Wbutton.h"

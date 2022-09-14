@@ -1,0 +1,78 @@
+ admpanel.WcChildren: gbmain
+ admpanel.prefix: task1
+ *gb1.WcClass: gridbox
+ *gb1.WcChildren: header pl1 
+ *header.gridy: 0
+ *values.gridy: 1
+ *footer.gridy: 2
+ *WeditMV.foreground:    #008c7c
+ *WeditMV.cursorColor:   #95a5a6
+ *background:            #ecf0f1
+ *WeditMV.fontName: Source Code Pro-12
+
+
+*weightx: 100
+*weighty: 100
+*fill: Both
+
+
+
+*gbmain.WcClass: gridbox
+*gbmain.WcChildren: gbstart gb1
+
+
+
+*gbstart.WcClass: gridbox
+*gbstart.WcChildren: plsel plgo
+*plsel.WcClass: Wlabel
+*plgo.WcClass: WButton
+*plgo.callback: WcUnmanage( *gbstart ) WcManage( *gb1 )
+*plgo.gridy: 1
+
+
+*gb1.WcClass: gridbox
+*gb1.WcChildren: header pl1 endgame
+*gb1.WcManaged: false
+
+*header.wcClass: Dartboard
+
+*pl1.wcClass: gridbox
+*pl1.gridx: 1
+*pl1.gridy: 0
+*pl1.fill: Width
+
+*pl1.WcChildren: pl1sum pl1val1 pl1val2 pl1val3
+
+*pl1sum.gridx:  0
+*pl1val1.gridx: 1
+*pl1val2.gridx: 2
+*pl1val3.gridx: 3
+
+*pl1sum.gridy:  0
+*pl1val1.gridy: 0
+*pl1val2.gridy: 0
+*pl1val3.gridy: 0
+
+*pl1sum.xftFont:  Sans-22
+*pl1val1.xftFont: Sans-8
+*pl1val2.xftFont: Sans-8
+*pl1val3.xftFont: Sans-8
+
+*pl1sum.label:  345
+*pl1val1.label: 25
+*pl1val2.label: 1
+*pl1val3.label: 30
+
+*pl1sum.wcClass: Wlabel
+*pl1val1.wcClass: Wlabel
+*pl1val2.wcClass: Wlabel
+*pl1val3.wcClass: Wlabel
+
+
+*endgame.gridy: 1
+*endgame.WcClass: Wbutton
+*endgame.label: ENDE
+*endgame.callback: WcUnmanage( *gb1 ) WcManage( *gbstart )
+*endgame.fill: width
+*endgame.weighty: 0
+
