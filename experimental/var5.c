@@ -1289,6 +1289,50 @@ static int parse_index(const char **s)
 }
 
 
+char *unesc_strndup( const char *s, unsigned n)
+{
+    uint w;
+    int ch, n0;
+    char *s0,*ret;
+    const char *s1;
+    
+    ASSERT(ret = malloc(n+1));
+    s0 = ret;
+    s1=s;
+    n0=n;
+    if(s==NULL || n0==0) { *s0++=0; goto leave; } /* case 1: zero bytes */
+    
+    while( (ch = (*s0++ = *s1++)) ) {
+	/* lookahead */
+	if( ch == '\\' ) { 	/* escape code found, look at next character */
+	    if( *s1 == '\\' ) { /*double escape - skip this char */ 
+		s1++; 
+	    }
+	    else if( *s1 == '$' ) { /* escaped dollar sign, */
+		s0[-1] = '$';	/* overwrite allready stored escape */
+		s1++;	      /* skip dollar */
+	    }	    
+	    /* there is some character we don't know after an escape */
+	    /* better do nothing here */
+	}
+				/* check_if_max_bytes_copied */
+	if( --n0 <= 0) {   /* case 2: max bytes copied without zero */
+	    *s0++=0; /* append zero and exit */
+	    break;
+	}
+    }
+
+ leave:
+    w = s0-ret;
+    if( w != n ) { TRACE(1,"realloc %u", w );
+	ret = realloc(ret,w);
+    }    
+    return ret;
+}
+
+
+
+
 void mvar_str_parse(mvar_str_t *se, const char *frm)
 {
   ASSERT( frm && se );
@@ -1306,8 +1350,9 @@ void mvar_str_parse(mvar_str_t *se, const char *frm)
       {
         // prefix ?
         if( s0 != s ) {
-          cp = strndup(s0,s-s0); // copy without *s
-          m_put(b,&cp);
+	    /* unescape string and copy */
+	    cp = unesc_strndup(s0,s-s0); // copy without *s
+	    m_put(b,&cp);
         }
         if( *s == 0 ) break; // exit
 
