@@ -24,7 +24,9 @@
 
 *gbstart.WcClass: gridbox
 *gbstart.WcChildren: plsel plgo
-*plsel.WcClass: Wlabel
+*plsel.WcClass: Radio2
+*plsel.lst: 1, 2, 3, 4, 5, 6 
+*plsel.var5: numPlayer
 *plgo.WcClass: WButton
 *plgo.callback: WcUnmanage( *gbstart ) WcManage( *gb1 )
 *plgo.gridy: 1

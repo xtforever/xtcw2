@@ -75,6 +75,9 @@ struct var_name {
 typedef
 struct var_st {
     struct var_name;
+    /* callback list and user_data
+       called when variable is change via mvar-interface 
+     */
     uint8_t var_if;
 } var_t;
 

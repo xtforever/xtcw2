@@ -81,9 +81,11 @@ luarunner.WcChildren: gb1
 *term.fg_hi: green
 *term.fg_sel: green 
 *term.gridy: 1
-*term.getEntry: terminal_output_cb 
 *term.weighty: 1
-*term.prefered_lines: 3
+*term.callback: LUA( print("hallo") )
+
+
+
 
 *b1.WcClass: wbutton
 *b1.label: Exit
