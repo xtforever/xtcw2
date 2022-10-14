@@ -82,7 +82,8 @@ luarunner.WcChildren: gb1
 *term.fg_sel: green 
 *term.gridy: 1
 *term.weighty: 1
-*term.callback: LUA( print("hallo") )
+*term.var5: myvarname
+*term.callback: LUA(k=var5[class_data];  print("hallo " .. class_data .. ' ' .. k[0] .. ' ' .. k[1] .. ' ' .. k[2] )  )
 
 
 

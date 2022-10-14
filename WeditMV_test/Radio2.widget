@@ -67,7 +67,7 @@
 @UTILITIES
 @proc update_cb(Widget dummy, $, void *class_data )
 {
-	XtCallCallbackList( $, $callback, class_data );
+	XtCallCallbackList( $, $callback, (XtPointer) $var5 );
 }
 
 @IMPORTS
