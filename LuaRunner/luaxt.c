@@ -1,6 +1,8 @@
 #include "luaxt.h"
 #include "X11/ThreadsI.h"
 #include "X11/Intrinsic.h"
+#include "X11/StringDefs.h"
+
 #include <xtcw/mls.h>
 #include <xtcw/xutil.h>
 #include <WcCreate.h>
@@ -27,18 +29,24 @@ int luaxt_processevent(void)
     return XtAppGetExitFlag(LUAXT_APP);
 }
 
-
-int    luaxt_pushcallback( char *callback_str )
+void m_put_strdup(int m, const char *s1)
 {
-    char *s=strdup(callback_str);
-    m_put(cb_list, &s);
+    char *s=strdup(s1); m_put(m,&s);
+}
+
+void luaxt_pushcallback( char *callback_str, char *class_data )
+{
+    if( is_empty(callback_str) ) return;
+    m_put_strdup(cb_list, class_data   );
+    m_put_strdup(cb_list, callback_str );
 }
 
 char*  luaxt_pullcallback( void )
 {
     free(temp_str); temp_str=0;
-    char **s =  m_pop(cb_list);
-    return s ? temp_str = *s : "";
+    if( m_len(cb_list) == 0 ) return "";
+    temp_str = *(char **)m_pop(cb_list);
+    return temp_str;
 }
 
 Widget luaxt_nametowidget(char *s)
@@ -53,5 +61,6 @@ void   luaxt_setvalue( char *name, char *res, char *val )
 {
     Widget w = luaxt_nametowidget(name);
     if(!w) return;
-    XtVaSetValues( w, res, val, NULL );
+    XtVaSetValues( w, XtVaTypedArg, val, XtRString, val, strlen(val)+1, NULL );
 }
+
