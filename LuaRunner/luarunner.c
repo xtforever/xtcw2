@@ -97,7 +97,7 @@ static XrmOptionDescRec options[] = {
     { "-Socket",	"*socket",	XrmoptionSepArg, NULL },
     { "-TraceLevel",	"*traceLevel",	XrmoptionSepArg, NULL },
     { "-Inifile",	"*inifile",	XrmoptionSepArg, NULL },
-    
+
     WCL_XRM_OPTIONS
 };
 
@@ -106,7 +106,10 @@ typedef struct SIGNAGE_CONFIG {
     int socket;
     char *inifile;
     Widget widget_grid;
-} SIGNAGE_CONFIG ; 
+} SIGNAGE_CONFIG ;
+
+
+
 
 #define FLD(n)  XtOffsetOf(SIGNAGE_CONFIG,n)
 static XtResource SIGNAGE_CONFIG_RES [] = {
@@ -122,7 +125,7 @@ static XtResource SIGNAGE_CONFIG_RES [] = {
   { "inifile", "Inifile", XtRString, sizeof(String),
     FLD(inifile), XtRString, NULL
   },
-  
+
   /*
     { NULL, NULL, XtRWidget, sizeof(Widget),
     FLD(widget_grid), XtRString, "*gb"
@@ -132,7 +135,7 @@ static XtResource SIGNAGE_CONFIG_RES [] = {
     FLD(widget_grid), XtRString, "*gb"
   },
   */
-  
+
 };
 #undef FLD
 
@@ -147,7 +150,7 @@ void SetFocus( Widget w, void *u, void *c )
 {
     char buffer[MAX_XRMSTRING];
     Widget focus_widget;
-	
+
     TRACE(8, "Widget called the setfocus callback");
     if(! u ) {
 	WARN("Callback SetFocus invoked without argument i.e. without a widget name to set the focus to");
@@ -164,19 +167,21 @@ void SetFocus( Widget w, void *u, void *c )
 	return;
     }
 
+
     if( w != focus_widget ) {
 	XtCallActionProc( w, "focus_out", NULL, NULL, 0 );
 	XtCallActionProc( focus_widget, "focus_in", NULL, NULL, 0 );
     }
-    
+
     XtCallActionProc( focus_widget, "SetKeyboardFocus", NULL, NULL, 0 );
+
 }
 
-void CallAction( Widget w, void *u, void *c ) 
+void CallAction( Widget w, void *u, void *c )
 {
     char buffer[MAX_XRMSTRING];
     Widget widget;
-	
+
     TRACE(8, "Widget called the CallAction callback");
     if(! u ) {
 	WARN("Callback CallAction invoked without argument i.e. without a widget name to set the focus to");
@@ -186,7 +191,7 @@ void CallAction( Widget w, void *u, void *c )
     /* need my own implementation here i.e. snprintf */
     char *args = WcCleanName( u, buffer );
     TRACE(8, "Widget Name: %s", buffer );
-    widget=WcFullNameToWidget( w, buffer );    
+    widget=WcFullNameToWidget( w, buffer );
     if(! widget ) return;
     WcCleanName( args, buffer );
     TRACE(8, "Action Name: %s", buffer );
@@ -233,14 +238,14 @@ int CUR_PAGE = 0;
 
 static void
 LUA(Widget w, XtPointer client_data, XtPointer call_data)
-{    
+{
     if( ! client_data ) {
 	WARN("Called without argument");
 	return;
     }
 
     TRACE(1,"hallo");
-    
+
     char *s = call_data ? call_data : "";
     // lua_pushstring( LUA_CTX, s );
     // lua_setglobal(LUA_CTX, "class_data");
@@ -257,12 +262,12 @@ LUA(Widget w, XtPointer client_data, XtPointer call_data)
  **/
 static int
 xtcreate_lua( lua_State *L )
-{    
+{
     int num_args = lua_gettop(L);
     if( num_args < 3 ) return 0;
 
     /* check all arguments */
-    for(int i=1; i<= num_args; i++ ) {       
+    for(int i=1; i<= num_args; i++ ) {
 	char *s = (char *)luastring(L,i);
 	if( s == NULL ) {
 	    WARN("argument %d must be a string", i );
@@ -270,9 +275,9 @@ xtcreate_lua( lua_State *L )
 	}
     }
 
-    char *name = luastring(L,1); 
-    char *class_name = luastring(L,2); 
-    char *path = luastring(L,3); 
+    char *name = luastring(L,1);
+    char *class_name = luastring(L,2);
+    char *path = luastring(L,3);
 
     Widget parent = luaxt_nametowidget( path );
     if( parent == NULL ) {
@@ -287,7 +292,7 @@ xtcreate_lua( lua_State *L )
 	WARN("widget class '%s' not found", class_name );
 	goto fail;
     }
-    
+
     int pairs = (num_args-3) / 2; /* number of resource=value pairs */
     int arg_list = m_create( pairs, sizeof(XtTypedArg) );
     XtTypedArg *arg;
@@ -299,9 +304,9 @@ xtcreate_lua( lua_State *L )
 	 char *s = luastring(L, i++ );
 	 arg->type  = XtRString;
 	 arg->value = (XtArgVal)s;
-	 arg->size  = strlen(s)+1;	
+	 arg->size  = strlen(s)+1;
      }
-     
+
     /* Widget _XtCreateWidget(
        String      name,
        WidgetClass widget_class,
@@ -311,16 +316,16 @@ xtcreate_lua( lua_State *L )
        XtTypedArgList typed_args,
        Cardinal	num_typed_args)
     */
- 
+
      Widget w = _XtCreateWidget(name,class,parent,NULL,0, m_buf(arg_list), m_len(arg_list) );
      m_free(arg_list);
-     XtManageChild(w);    
+     XtManageChild(w);
      lua_pushlightuserdata( L, w );
      return 1;
-     
+
  fail:
      luaL_pushfail(L);
-     return 0;    
+     return 0;
 }
 
 static String XtNxtConvertVarToArgList = "xtConvertVarToArgList";
@@ -430,7 +435,7 @@ TypedArgToArg(
  */
 void TypedArgListToArgList(
     Widget		widget,
-    XtTypedArgList	typed_arg_list,    
+    XtTypedArgList	typed_arg_list,
     int			max_count,
     ArgList		*args_return,
     Cardinal		*num_args_return )
@@ -519,12 +524,13 @@ static void app_arg( int args, const char *key, const char *val )
     arg->name  = (char*)key; /* trust me, i know what i'm doing */
     arg->type  = XtRString;
     arg->value = (XtArgVal)val;
-    arg->size  = strlen(val)+1;	
-}
+    arg->size  = strlen(val)+1;
+
+    }
 
 static void luatable_to_args( int args, lua_State *L, int table_index, int max )
 {
-    
+
     lua_pushnil(L);  /* first key */
     while (lua_next(L, table_index) != 0) {
 	/* uses 'key' (at index -2) and 'value' (at index -1) */
@@ -545,7 +551,7 @@ static int luaarg_to_args( int args,  lua_State *L, int index, int max )
 	    app_arg( args, lua_tostring(L, index ), lua_tostring(L, index+1  ));
 	    return 2;
 	}
-	
+
 	return 0;
 }
 
@@ -554,17 +560,17 @@ static Widget luaarg_to_widget( lua_State *L, int index )
 {
     Widget w;
     char *s;
-    
+
     /* convert lua arg to widget */
     if( lua_isuserdata( L, index ) ) {
-	w = lua_touserdata( L, index );	
+	w = lua_touserdata( L, index );
 	if( w == NULL ) {
 	    WARN("first arg is empty userdata, not a widget" );
 	    luaL_pushfail(L);
 	}
 	return w;
     }
-    
+
     /* try parsing an xrm path */
     s=luastring(L,1);
     if( s==NULL) {
@@ -572,31 +578,31 @@ static Widget luaarg_to_widget( lua_State *L, int index )
 	luaL_pushfail(L);
 	return NULL;
     }
-	
+
     w = luaxt_nametowidget( s );
     if( w == NULL ) {
 	WARN("widget '%s' not found", s );
 	luaL_pushfail(L);
     }
     return w;
-}    
+}
 
 
 /** xtsetvalue( widget, resource-str, value-str )
  */
-static int 
+static int
 xtsetvalue_lua( lua_State *L )
 {
     Widget w =  NULL;
     int nargs = lua_gettop(L);
     int argi = 0;
-    
+
     w = luaarg_to_widget( L, 1 );
     if(!w) return 0; /* error no widget defined */
 
     int pairs = (nargs-1)/2;
     if( pairs < 1 ) return 0; /* error no args given */
-    
+
     int targ_list = m_create( pairs, sizeof(XtTypedArg) );
 
     argi=2;
@@ -636,7 +642,7 @@ xtsetvalue_lua( lua_State *L )
  */
 static void RegisterApplication ( Widget top )
 {
-    
+
     /* -- Register widget classes and constructors */
 
 
@@ -657,6 +663,7 @@ static void InitializeApplication( Widget top )
 {
 
     trace_level = SIGNAGE.traceLevel;
+
 
 }
 
@@ -685,7 +692,7 @@ static int m_split_list( const char *s, const char *delm )
     int w  =  0;
     int p  =  0;
     int ch;
-    
+
     do {
 	ch = s[p];
 	if(!w) {
@@ -694,13 +701,13 @@ static int m_split_list( const char *s, const char *delm )
 	}
 
 	if( ch == *delm || ch == 0 ) {
-	    m_putc(w,0); w=0;    
+	    m_putc(w,0); w=0;
 	} else {
 	    m_putc(w,s[p]);
 	}
 	p++;
     } while( ch );
-    
+
     return ls;
 }
 */
@@ -746,22 +753,22 @@ int main ( int argc, char **argv )
     signal (SIGCHLD, proc_exit);
     trace_main = TRACE_MAIN;
     trace_slog = TRACE_SLOG;
-    
+
     XtAppContext app;
     m_init(); trace_level=1;
     mvar_init();
     svar_create();
-    
+
     /*
     asgn("task1.t1=hello");
     asgn("task1.t2=world");
     const char *s = mvar_str_string( "task1", "form: $t1 und $t2");
     fprintf(stderr,"%s\n", s );
     */
-    
 
 
-    
+
+
     XtSetLanguageProc (NULL, NULL, NULL);
     XawInitializeWidgetSet();
 
@@ -800,7 +807,7 @@ int main ( int argc, char **argv )
     */
     XpRegisterAll ( app );
     widreg(app);
-    
+
     /*  --  Create widget tree below toplevel shell
             using Xrm database
     */
@@ -821,7 +828,7 @@ int main ( int argc, char **argv )
     XtRealizeWidget ( appShell );
 
     grab_window_quit( appShell );
-    
+
 
     luaxt_init();
     LUA_CTX = L = luaL_newstate();
@@ -830,8 +837,8 @@ int main ( int argc, char **argv )
     luaopen_var5( L );
     lua_register(L, "xtcreate", xtcreate_lua );
     lua_register(L, "xtsetvalue", xtsetvalue_lua );
-    
-    char *fn = "ex.lua"; 
+
+    char *fn = "ex.lua";
     int result,status = luaL_loadfile(L, fn );
     if (status) {
         /* If something went wrong, error message is at the top of */
@@ -846,7 +853,7 @@ int main ( int argc, char **argv )
         fprintf(stderr, "Failed to run script: %s\n", luastring(L, -1));
         exit(1);
     }
-    
+
     // XtAppMainLoop ( app ); /* use XtAppSetExitFlag */
 
     XtDestroyWidget(appShell);
@@ -857,6 +864,8 @@ int main ( int argc, char **argv )
     luaxt_destroy();
     m_destruct();
 
-    
+
+
+
     return EXIT_SUCCESS;
 }

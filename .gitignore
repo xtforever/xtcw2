@@ -31,3 +31,7 @@ njson-to-wcl
 *.lex.h
 *.tab.c
 *.tab.h
+GPATH
+GRTAGS
+GTAGS
+TAGS
