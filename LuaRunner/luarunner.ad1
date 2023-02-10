@@ -3,9 +3,9 @@
 %%
 *allowShellResize: true
 
-*foreground: #1cf0f1
+*foreground: #ecf0f1
 *background: #ffffff
-*Gridbox.background:lightblue
+*Gridbox.background: white
 
 *fg_norm: #ecf0f1
 *bg_norm: #27ae60
@@ -16,7 +16,7 @@
 *bg_hi: Green
 *fg_hi: Yellow
 
-
+*borderWidth: 0
 
 
 % disabled
@@ -46,11 +46,11 @@
 *Woption.fg_sel: 	#95a5a6
 
 %% light-green: #1abc9c
-*Wedit.foreground:	#008c7c
-*Wedit.cursorColor:	#95a5a6
-*Wedit.fontName: Source Code Pro-10
+*WeditMV.foreground:	#008c7c
+*WeditMV.cursorColor:	#95a5a6
+*WeditMV.fontName: Source Code Pro-12
 %% *WeditMV.background: #661166
-%% *Wedit.background: #ecf0f1
+*WeditMV.background: #ecf0f1
 
 
 *Wbutton.xftFont:  DejaVu Sans Condensed-12
@@ -65,59 +65,25 @@
 %%
 %% -------------------
 
-
-%%! ONLY FOR TESTING
-*borderColor: Black
-*borderWidth: 2
-
-*background:LIGHTBLUE
-
-
-
-*sc.canvas.translations: #AUGMENT ^<Btn5Down>: LUA("zoomin")\n^<Btn4Down>: LUA("zoomout")\n
-
-
+*weightx: 100
+*weighty: 100
 *fill: Both
 *weightx: 1
 *weighty: 1
 
-luarunner.WcChildren: gb2
-
-*gb2.WcClass: gridbox
-*gb2.WcChildren: zoom sc
-
-*painter1.gridy: 1
-
-
-*zoom.WcClass: Wedit
-*zoom.label: 100
-*zoom.fill: none
-*zoom.gravity: center
-*zoom.weighty: 0
-
-*sc.gridy: 1
-*sc.WcClass: ScrolledCanvas
-*sc.canvas.callback: canvas_draw_cb
-*sc*foreground: BLUE
-*sc.canvas.width: 300
-*sc.canvas.height: 300
+luarunner.WcChildren: gb1
 
 
 
+*gb1.WcClass: gridbox
+*gb1.WcChildren: gb b1 term
 
-
-
-
-
-
-*painter1.WcClass: Canvas
+*gb.gridy: 0
+*gb.WcClass: gridbox
+*gb.WcChildren: painter1 painter2 painter3
+*painter1.WcClass: wbutton
 *painter1.xftFont: Sans-48
 *painter1.weightx: 1000
-*painter1.callback: canvas_draw_cb
-*painter1.width: 500
-*painter1.height: 500
-
-
 *painter2.gridx: 1
 *painter2.WcClass: VSlider
 *painter2.foreground: Black
@@ -125,10 +91,11 @@ luarunner.WcChildren: gb2
 *painter2.weighty: 1000
 
 *painter3.WcClass: HSlider
+*painter3.gridWidth: 2
 *painter3.gridy: 1
 *painter3.foreground: Black
 *painter3.weighty: 0
-*painter3.weightx: 0
+*painter3.weightx: 1000
 
 *term.gridy: 1
 *term.weighty: 1
@@ -164,6 +131,3 @@ luarunner.WcChildren: gb2
 *ot4.borderColor: Blue
 *ot4.borderWidth: 8
 *bt.fill: Both
-
-
-

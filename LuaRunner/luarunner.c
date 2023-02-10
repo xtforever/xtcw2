@@ -76,7 +76,6 @@ extern int trace_slog;
 extern struct RC_DB RC;
 
 
-static int GridY, GridX;
 
 int PAGES;
 int LABELS;
@@ -252,6 +251,21 @@ LUA(Widget w, XtPointer client_data, XtPointer call_data)
     /* can we expand vars inside the lua code? e.g. player=$radio.selection1 */
     /* we need to store additional data besides the lua code e.g. class_data */
     luaxt_pushcallback( client_data, s );
+}
+
+
+/* param s : function name, arg-1,...,arg-n
+   convert to: name( arg1, arg2, ..., argn-n )
+*/
+static void LUA_action(Widget w, XEvent* e, String* s, Cardinal* n)
+{
+  int args = *n;
+  if(! args ) return;
+  int m = s_printf(0,0,"%s(", *s++ );
+  int comma=32; while( --args ) s_printf(m,-1,"%c\"%s\"", comma, *s++ ), comma=',';
+  s_app1(m,")");
+  luaxt_pushcallback( m_str(m), "" );
+  m_free(m);
 }
 
 
@@ -638,6 +652,9 @@ xtsetvalue_lua( lua_State *L )
   -------------------------------------------------------------------------------------------------------------------- */
 
 
+/* ugly hack for testing purposes */
+#include "canvas-draw-cb.c"
+
 /** all widgets callbacks and actions must be registered at this point
  */
 static void RegisterApplication ( Widget top )
@@ -653,6 +670,9 @@ static void RegisterApplication ( Widget top )
     RCB( top, SetFocus );
     RCB( top, CallAction );
     RCB( top, LUA );
+
+    RCB( top, canvas_draw_cb );
+    WcRegisterAction(XtWidgetToApplicationContext(top), "LUA", LUA_action);
 }
 
 /*  init application functions and structures and widgets

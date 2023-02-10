@@ -1,0 +1,129 @@
+@class HSlider (Core)
+@ Rectangle Slider Horizontal
+
+@PUBLIC
+@var Pixel foreground = XtDefaultForeground
+@var int lineWidth = 1
+@var Boolean filled = False
+@ how much of the total space the slider should consume
+@var uint frac =  200000
+@ from zero to (1-frac) where should the slider beeing drawn
+@var uint pos  =  100000
+@ call this functions when the slider changes its position due to the pointer
+@var <Callback> XtCallbackList callback   = NULL
+
+@PRIVATE
+@var GC gc_background
+@var GC gc_fg
+@var int slh
+@var int sly
+
+@ we use fixed point arithmetic, our multiplier is RES
+  number 1 is 1*RES, 0.01 is 0.01 * RES
+
+@def RES = 1000000
+
+@CLASSVARS
+@ The Core variable |compress_exposure| is OR'ed with
+|XtExposeGraphicsExpose|, in order to get graphics expose events delivered
+to the |expose| method.
+var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
+var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+@proc initialize
+{
+  XTFUNC();
+  XGCValues     values = {
+  		foreground: $background_pixel,
+  		graphics_exposures: False,
+                line_width: $lineWidth };
+  uint          mask = GCForeground | GCGraphicsExposures |  GCLineWidth;
+  $gc_background = XtGetGC($, mask, &values);
+  values.foreground = $foreground;
+  $gc_fg = XtGetGC($,mask,&values);
+  TRACE(9, "slider values pos=%u frac=%u", $pos, $frac );
+  if( $width == 0 ) $width=10;
+  if( $height == 0 ) $height=10;
+  $sly = -1;
+}
+
+@proc set_values
+{
+  if( $old$pos != $pos ||
+     $old$frac != $frac ) return True;
+  return False;
+}
+
+@proc destroy
+{
+  if( $gc_background ) XtReleaseGC($,$gc_background);
+  if( $gc_fg ) XtReleaseGC($,$gc_fg);
+}
+
+@proc expose
+{
+  XTFUNC();
+  XClearWindow( XtDisplay($), XtWindow($) );
+  $sly = -1; /* invalidate the cache */
+  draw_slider($);
+}
+
+@UTILITIES
+
+@proc verify_values($)
+{
+    if( $frac < 0 ) $frac = 0;
+    if( $frac > RES ) $frac = RES;
+    if( $pos  < 0 ) $pos  = 0;
+    if( $pos  > RES ) $pos  = RES - $frac;
+    if( $frac + $pos > RES ) $pos = RES - $frac;
+}
+
+
+@proc draw_slider($)
+{
+        int h,y;
+        verify_values($);
+
+        /* calculate pixel */
+        h = $width * $frac / RES;
+        y = $width * $pos / RES;
+        if( y+h > $width ) y = $width-h;
+
+        /* check the cached position, if nothing changed return
+          else overwrite old slider with background pixel
+          */
+        if( $sly >= 0) {
+            if( $sly == y && $slh == h ) return;
+            XFillRectangle(XtDisplay($), XtWindow($),$gc_background,
+                             $sly,0, $slh, $height );
+        }
+
+        /* update the cached slider position and draw a rectangle for the slider
+          using the foreground pixel
+          */
+        $sly = y; $slh = h;
+        XFillRectangle(XtDisplay($), XtWindow($),$gc_fg,
+                             $sly,0, $slh, $height );
+}
+
+@translations
+@trans <Btn1Motion>: sl_motion()
+@trans <Btn1Up>: sl_motion()
+
+@actions
+@proc sl_motion
+{
+	int y = event->xbutton.x;
+    if( y < 0 ) y=0;
+    $pos = (y *RES / $width);
+    draw_slider($);
+    XtCallCallbackList( $, $callback, (XtPointer) (intptr_t) $pos );
+}
+
+
+@exports
+@incl "mls.h"
+@incl "xutil.h"

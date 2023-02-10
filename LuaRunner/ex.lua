@@ -1,14 +1,13 @@
-print ("- lua has started -")
+zoom_percent = 100
+function zoomin()
+  if zoom_percent < 400  then zoom_percent = zoom_percent+ 10 end
+  xtsetvalue( "*zoom", "label", zoom_percent )
+end
 
-label_widget = xtcreate( "NewLabel", "WLabel", "*gb1", "gridy", "0", "label", "hello-world" )
-
-
-tab = { xlabel='hello' , gridy='4' }
-
-
-
-xtsetvalue( label_widget, tab, "label", "hello" )
-
+function zoomout()
+  if zoom_percent > 20 then zoom_percent = zoom_percent- 10 end
+  xtsetvalue( "*zoom", "label", zoom_percent )
+end
 
 
 x=0
@@ -24,7 +23,7 @@ repeat
 	     class_data = luaxt.luaxt_pullcallback()
 
              print("eval=" .. cb .. " class=" ..  class_data )
-	     
+
 	     f = load( cb )
              if f then f() end
           end
@@ -33,4 +32,3 @@ repeat
 until   fin ~= 0
 
 print ("- lua has stopped -")
-

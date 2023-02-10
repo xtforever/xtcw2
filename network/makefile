@@ -1,4 +1,4 @@
-ALL: network
+ALL: network network2
 
 
 debug_enable ?= 1
@@ -23,11 +23,13 @@ ifeq ($(debug_enable),1)
 COMPTAG="\"DEBUG_$(shell date)\""
 CFLAGS+= -g -Wall -DMLS_DEBUG -O0 -DCOMPTAG=$(COMPTAG)
 else
-COMPTAG="\"PROD_$(shell date)\"" 
+COMPTAG="\"PROD_$(shell date)\""
 CFLAGS+= -O3 -DTAG=$(COMPTAG)
 endif
 
 network: nbus.o ../build/lib/libxtcw.a
+network2:  ../build/lib/libxtcw.a m_tool.o
 
-clean: 
+
+clean:
 	-${RM} *.o network

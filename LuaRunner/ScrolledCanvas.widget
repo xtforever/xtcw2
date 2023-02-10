@@ -1,0 +1,114 @@
+@class ScrolledCanvas (Gridbox)
+@ Canvas and Rectangle Slider
+
+@PUBLIC
+@var Distance      slwidth = <String> "3mm"
+@var uint          world_width  = 10000
+@var uint          world_height = 10000
+
+
+@PRIVATE
+@var Widget slv
+@var Widget slh
+@var Widget can
+@var canvas_draw_t *priv
+
+@METHODS
+
+@proc realize
+{
+    XTFUNC();
+    #realize($,mask,attributes);
+    add_widgets($);
+}
+
+
+@UTILITIES
+
+@proc add_widgets($)
+{
+	 $slv = XtVaCreateManagedWidget( "sliderV", vSliderWidgetClass, $,
+                                  "gridy", 0,
+                                  "gridx", 1,
+                                  "fill", 2,
+                                  "weighty", 10,
+                                  "weightx", 0,
+				                  "gridWidth", 1,
+				                  "gridHeight", 1,
+                                  "width", $slwidth,
+                                  NULL );
+
+     XtAddCallback($slv, "callback",(XtCallbackProc) slidery_cb, $ );
+
+     $can = XtVaCreateManagedWidget( "canvas", canvasWidgetClass, $,
+                                  "gridy", 0,
+                                  "gridx", 0,
+                                  "fill", 3,
+                                  "weighty", 10,
+                                  "weightx", 10,
+
+                                  NULL );
+
+     XtAddCallback($can, "callback", (XtCallbackProc) update_slider_cb, $ );
+
+
+	 $slh = XtVaCreateManagedWidget( "sliderH", hSliderWidgetClass, $,
+	 	                  "gridy", 1,
+                          "gridx", 0,
+                          "fill", 1,
+                          "height", $slwidth,
+                                  "weighty", 0,
+                                  "weightx", 0,
+                            NULL );
+
+     XtAddCallback($slh, "callback",(XtCallbackProc) sliderx_cb, $ );
+
+     $priv = canvas_get_priv($can);
+     $priv->world_width  = $world_width;
+     $priv->world_height = $world_height;
+}
+
+
+@   this function is called when the canvas should draw itself.
+    when the canvas is drawn all measurements are available, know we can
+    calculate slider size and update the sliders
+@proc update_slider_cb(Widget w, $, void *d )
+{
+    unsigned frac;
+    frac = $priv->win_height * 1000000UL / $world_height;
+    XtVaSetValues( $slv, "frac", frac, NULL );
+
+    frac =  $priv->win_width * 1000000UL / $world_width;
+    XtVaSetValues( $slh, "frac", frac, NULL );
+}
+
+@proc sliderx_cb(Widget w, $, void *d )
+{
+    XTFUNC();
+    $priv->sl_posx = (intptr_t) d;
+    $=$can;
+    $expose($,NULL,NULL);
+}
+@proc slidery_cb(Widget w, $, void *d )
+{
+    XTFUNC();
+    $priv->sl_posy = (intptr_t) d;
+    $=$can;
+    $expose($,NULL,NULL);
+}
+
+
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"
+@incl "xutil.h"
+@incl <X11/Xaw/Command.h>
+@incl "xtcw/HSlider.h"
+@incl "xtcw/VSlider.h"
+@incl "xtcw/Canvas.h"

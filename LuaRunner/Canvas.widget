@@ -1,0 +1,113 @@
+@class Canvas(Core)
+@ Demo widget: draw something
+
+@PUBLIC
+@var <XftFont> XftFont* xftFont = <String> "Serif-22"
+@var Pixel foreground = XtDefaultForeground
+@var <Callback> XtCallbackList callback = NULL
+
+
+@PRIVATE
+@var canvas_draw_t canv
+
+@def BG   = $canv.xcol
+@def FG   = ($canv.xcol+1)
+@def DRAW = $canv.xdraw
+
+
+@METHODS
+@proc expose
+{
+    XTFUNC();
+	XftDrawRect(DRAW,BG,0,0,$width,$height);
+	paint1($);
+}
+
+@proc initialize
+{
+    XTFUNC();
+	if( $width <=0 ) $width = 20;
+	if( $height <=0 ) $height = 20;
+	init_colors($);
+	DRAW=0;
+}
+
+@proc destroy
+{
+        XTFUNC();
+        if( DRAW ) XftDrawDestroy( DRAW );
+        XtReleaseGC( $, $canv.gc[0] );
+        XtReleaseGC( $, $canv.gc[1] );
+}
+
+@proc resize
+{
+	XTFUNC();
+    $canv.win_width  = $width;
+    $canv.win_height = $height;
+
+}
+
+@proc realize
+ {
+    XTFUNC();
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent,
+			  *mask, attributes);
+    Display *dpy = XtDisplay($);
+  	DRAW = XftDrawCreate(dpy, XtWindow($),
+                 DefaultVisual(dpy, DefaultScreen(dpy)), None);
+
+    $canv.xfont    = $xftFont;
+    $canv.dpy      =  dpy;
+
+    XGCValues     values;
+    values.graphics_exposures = False;
+    values.foreground = $foreground;
+    values.background = $background_pixel;
+
+    $canv.gc[0] = XtGetGC( $,
+      (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
+      &values);
+
+    values.foreground = $background_pixel;
+    $canv.gc[1] = XtGetGC( $,
+      (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
+      &values);
+}
+
+
+
+@UTILITIES
+@proc paint1($)
+{
+    XTFUNC();
+    XtCallCallbackList( $, $callback, (XtPointer) & $canv );
+}
+
+@proc init_colors($)
+{
+	pixel_to_xftcolor( $, $background_pixel, BG );
+ 	pixel_to_xftcolor( $, $foreground,       FG );
+}
+
+@EXPORTS
+@incl "canvas-draw.h"
+@proc canvas_draw_t* canvas_get_priv($)
+{
+    return & $canv;
+}
+
+
+
+@IMPORTS
+@incl <assert.h>
+@incl <stdint.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xregion.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "canvas-draw.h"
