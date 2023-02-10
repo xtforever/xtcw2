@@ -254,18 +254,35 @@ LUA(Widget w, XtPointer client_data, XtPointer call_data)
 }
 
 
+
+int decode_xevent(int m, XEvent* e)
+{
+  char *s;
+  switch (e->type) {
+  case ButtonPress: s="ButtonPress"; break;
+  case ButtonRelease: s="ButtonRelase"; break;
+  case MotionNotify: s="MotionNotify"; break;
+  default: s="none";
+  }
+  return s_printf(m,-1,"{ t=\"%s\", x=%d, y=%d }", s, e->xbutton.x, e->xbutton.y );
+}
+
+
 /* param s : function name, arg-1,...,arg-n
    convert to: name( arg1, arg2, ..., argn-n )
 */
 static void LUA_action(Widget w, XEvent* e, String* s, Cardinal* n)
 {
+  /* first create the lua function call */
   int args = *n;
   if(! args ) return;
   int m = s_printf(0,0,"%s(", *s++ );
   int comma=32; while( --args ) s_printf(m,-1,"%c\"%s\"", comma, *s++ ), comma=',';
   s_app1(m,")");
-  luaxt_pushcallback( m_str(m), "" );
-  m_free(m);
+  /* extract useful information from the xevent and put it in a lua table */
+  int m2 = decode_xevent(0,e);
+  luaxt_pushcallback( m_str(m), m_str(m2) );
+  m_free(m); m_free(m2);
 }
 
 

@@ -101,7 +101,7 @@ luarunner.WcChildren: gb2
 *sc*foreground: BLUE
 *sc.canvas.width: 300
 *sc.canvas.height: 300
-
+*sc.canvas.translations: <Btn1Down>: LUA("paint1")
 
 
 
@@ -164,6 +164,7 @@ luarunner.WcChildren: gb2
 *ot4.borderColor: Blue
 *ot4.borderWidth: 8
 *bt.fill: Both
+
 
 
 

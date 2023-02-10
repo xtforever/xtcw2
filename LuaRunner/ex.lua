@@ -8,6 +8,12 @@ function zoomout()
   if zoom_percent > 20 then zoom_percent = zoom_percent- 10 end
   xtsetvalue( "*zoom", "label", zoom_percent )
 end
+function paint1()
+        print("hallo x=" .. class_data['x'] )
+        print("hallo x=" .. class_data.x )
+
+end
+
 
 
 x=0
@@ -20,13 +26,15 @@ repeat
           cb = luaxt.luaxt_pullcallback()
           if cb ~= "" then
 
-	     class_data = luaxt.luaxt_pullcallback()
+  	      class_data = luaxt.luaxt_pullcallback()
+          if class_data == "" then class_data="nil" end
 
-             print("eval=" .. cb .. " class=" ..  class_data )
+          cb1 = "class_data=" ..  class_data .. "\n" .. cb
+          print("eval:  " ..  cb1 )
 
-	     f = load( cb )
-             if f then f() end
-          end
+ 	      f = load( cb1 )
+          if f then f() end
+         end
         until cb==""
 
 until   fin ~= 0
