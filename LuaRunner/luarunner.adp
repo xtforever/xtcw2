@@ -86,7 +86,7 @@ function zoomout()
 end
 %%END
 
-*sc.canvas.translations: #AUGMENT ^<Btn5Down>: LUA("zoomin")\n^<Btn4Down>: LUA("zoomout")\n
+*sc.canvas.translations: #augment ^<Btn5Down>: LUA("zoomin")\n^<Btn4Down>: LUA("zoomout")\n
 
 
 *fill: Both

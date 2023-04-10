@@ -10,6 +10,7 @@ typedef struct canvas_draw_st {
     XftColor xcol[2];
     XftDraw *xdraw;
     Display *dpy;
+    int screen;
     unsigned win_width,win_height,
         sl_posx, sl_posy,
         world_width, world_height;
