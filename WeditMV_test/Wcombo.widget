@@ -18,18 +18,18 @@ var compress_motion = True
 @PRIVATE
 @var Widget shell
 @var Widget listbox
-@var int entry_mode 
+@var int entry_mode
 @var int filter
 @var int f_lst
 @var int k_lst
 
-    
+
 @TRANSLATIONS
 @trans <Btn1Down>:     set_cursor() SetKeyboardFocus()
 @trans <Key>Return:    CallOnEnter() notify()
 @trans <Key>BackSpace: remove_char()
 @trans <Key>:          insert_char()
-@trans <FocusIn>:      focus_in() 
+@trans <FocusIn>:      focus_in()
 @trans <FocusOut>:     focus_out()
 
 
@@ -39,6 +39,7 @@ var compress_motion = True
 
 @proc initialize
 {
+
     TRACE(2, "init %s", XtName($) );
 	$shell = 0;
 	$entry_mode=0;
@@ -51,7 +52,7 @@ var compress_motion = True
 {
 	m_free( $filter );
 	m_free( $f_lst  );
-	m_free( $k_lst  ); 
+	m_free( $k_lst  );
 }
 
 
@@ -66,14 +67,14 @@ var compress_motion = True
     	    $listbox = XtVaCreateManagedWidget ( "combo-scrollbox", wlsWidgetClass,
 				       $shell, NULL );
 	    XtAddCallback($listbox, "callback", (XtCallbackProc)item_selected_cb, $ );
-	    
+
 	    XtRealizeWidget($shell);
 	    static Atom wm_delete_window;
     	    wm_delete_window = XInternAtom(XtDisplay($), "WM_DELETE_WINDOW",
                                    False);
     	    (void) XSetWMProtocols (XtDisplay($), XtWindow($shell),
                             &wm_delete_window, 1);
-	    
+
 	}
 
 	Position root_x, root_y;
@@ -106,7 +107,7 @@ var compress_motion = True
 	 }
     }
 
-    XtVaSetValues($listbox, "lst", $f_lst, NULL );    
+    XtVaSetValues($listbox, "lst", $f_lst, NULL );
 }
 
 @proc  item_selected_cb(Widget dummy, $, void *class_data )
@@ -148,11 +149,11 @@ var compress_motion = True
             break;
         parent = XtParent(parent);
     }
-    
+
     XtSetKeyboardFocus(shell, $);
 }
 
-	
+
 @proc set_cursor
 {
 	if( $entry_mode ) return;
@@ -173,7 +174,7 @@ var compress_motion = True
     TRACE(2,"ins %d %d", *buf, len);
     m_write( $filter, m_len($filter), buf, len );
     update_filter($);
-    
+
 }
 
 @proc remove_char
@@ -186,8 +187,8 @@ var compress_motion = True
 	   TRACE(2,"%x", ch );
 	   if(  ((ch & 0xC0) != 0x80)  ) break;
 	   /* loop while we see utf-8 continuation bytes */
-	} 
-    	update_filter($); 
+	}
+    	update_filter($);
 
 }
 
@@ -209,7 +210,7 @@ var compress_motion = True
 @proc notify
 {
 	TRACE(2, "Wcombo %s notify: entry_mode %d", XtName($), $entry_mode );
-	item_selected_cb(NULL, $, (XtPointer)0 );	
+	item_selected_cb(NULL, $, (XtPointer)0 );
 }
 
 

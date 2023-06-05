@@ -182,7 +182,6 @@ luarunner.WcChildren: gb2
 function paint1()
         print("hallo x=" .. class_data['x'] )
         print("hallo x=" .. class_data.x )
-
 end
 
 %%END

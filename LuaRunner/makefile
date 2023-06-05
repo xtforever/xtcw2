@@ -32,6 +32,7 @@ LOADLIBES+=~/git/libxt-1.1.5/src/.libs/libXt.a -lICE -lSM
 
 
 
+
 # where to find wbuild and wb.sh
 wb_install=$(PKGDATADIR)
 WBUILD=$(bindir)/wbuild
