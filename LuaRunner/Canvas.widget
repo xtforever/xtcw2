@@ -60,7 +60,8 @@
 
     $canv.xfont    = $xftFont;
     $canv.dpy      =  dpy;
-
+    $canv.screen   = DefaultScreen(dpy);
+    
     XGCValues     values;
     values.graphics_exposures = False;
     values.foreground = $foreground;
