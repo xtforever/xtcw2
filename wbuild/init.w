@@ -82,6 +82,8 @@
 @proc get_values_hook($, ArgList args, Cardinal *num_args) {}
 @proc XtGeometryResult query_geometry($, XtWidgetGeometry *request,
       XtWidgetGeometry *reply) {}
+@proc expose($, XEvent *event, Region region) {}
+
 
 @classvars
 @ pointer to superclass ClassRec	@var WidgetClass superclass = NULL
