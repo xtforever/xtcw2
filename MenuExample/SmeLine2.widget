@@ -1,0 +1,87 @@
+@class SmeLine2(Sme)
+
+@public
+@var Dimension line_width = 1
+@var Pixmap stipple = XtUnspecifiedPixmap
+@var Pixel foreground = 0
+
+@private
+@var GC gc
+
+@exports
+@def XtInherit_highlight=XtInheritHighlight
+@def XtInherit_unhighlight=XtInheritUnhighlight
+@def XtInherit_notify=XtInheritNotify
+
+@methods
+@proc initialize
+{
+   if ($height == 0) $height = $line_width;
+   CreateGC($);
+}
+
+@proc destroy
+{
+    DestroyGC($);
+}
+
+@proc set_values
+{
+    if ($line_width != $old$line_width &&
+        $stipple != $old$stipple) {
+        DestroyGC(old);
+        CreateGC($);
+        return (True);
+    }
+
+    return (False);
+}
+
+@ ($, XEvent *event, Region region)
+@proc expose
+{
+     int y = $y  + ( ((int)$height - $line_width) >> 1 );
+
+        if ($stipple != XtUnspecifiedPixmap)
+                XSetTSOrigin(XtDisplayOfObject($), $gc, 0, y);
+
+        XFillRectangle(XtDisplayOfObject($), XtWindowOfObject($),
+                   $gc, $x, y,
+                   $width, $line_width );
+}
+
+
+@UTILITIES
+@proc DestroyGC($)
+{
+    if ($stipple != XtUnspecifiedPixmap)
+        XFreeGC(XtDisplayOfObject($), $gc);
+    else
+        XtReleaseGC($, $gc);
+}
+
+
+@proc CreateGC($)
+{
+    XGCValues values;
+    XtGCMask mask = GCForeground | GCGraphicsExposures | GCLineWidth;
+
+    values.foreground = $foreground;
+    values.graphics_exposures = False;
+    values.line_width = $line_width;
+
+    if ($stipple != XtUnspecifiedPixmap) {
+        values.stipple = $stipple;
+        values.fill_style = FillStippled;
+        mask |= GCStipple | GCFillStyle;
+
+         $gc = XCreateGC(XtDisplayOfObject($),
+                                      RootWindowOfScreen(XtScreenOfObject($)),
+                                      mask, &values);
+    }
+    else
+        $gc = XtGetGC($, mask, &values);
+}
+
+@IMPORTS
+@incl <X11/Xaw/SmeP.h>

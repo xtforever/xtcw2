@@ -1,0 +1,11 @@
+@class Sme (Core) @nodoc @nocode @file="Xaw/Sme"
+# @nopubinclude
+@public
+@var XtCallbackList callbacks <Callbacks> = NULL
+@var Boolean international = False
+
+@methods
+@proc highlight($) {}
+@proc unhighlight($) {}
+@proc notify($) {}
+
