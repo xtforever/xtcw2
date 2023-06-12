@@ -1,0 +1,209 @@
+@class SmeText(Sme)
+
+@public
+@var Dimension line_width = 1
+@var Pixmap stipple = XtUnspecifiedPixmap
+@var Pixel foreground = 0
+@var String label = <String> "Please give me a name"
+@var String fontname = <String> "Sans-22"
+@var <Callback> XtCallbackList callback   = NULL
+@var <Pixel> Pixel bg_norm = <String>  "lightblue"
+@var <Pixel> Pixel bg_sel   = <String>  "yellow"
+@var <Pixel> Pixel bg_hi    = <String>  "red"
+@var <Pixel> Pixel fg_norm = <String>  "black"
+@var <Pixel> Pixel fg_sel   = <String>  "green"
+@var <Pixel> Pixel fg_hi    = <String>  "white"
+
+@private
+@var int prefered_width
+@var int prefered_height
+@var XftDraw *draw
+@var Pixel pixel[6]
+@var XftColor xft_col[6]
+@var GC gc[3]
+@var int state
+@var XftFont* xftFont 
+
+@exports
+@def XtInherit_highlight=XtInheritHighlight
+@def XtInherit_unhighlight=XtInheritUnhighlight
+@def XtInherit_notify=XtInheritNotify
+@type wheel_colors = enum {
+ COLOR_FG_NORM, COLOR_FG_SEL, COLOR_FG_HI, COLOR_BG_NORM, COLOR_BG_SEL, COLOR_BG_HI }
+
+@methods
+@proc initialize
+{
+   XGlyphInfo extents;
+   $state=0;
+   int w,h;
+   if( ! $label || ! * $label ) $label=XtName($);
+   Widget core = XtParent($);
+   Display *dpy =XtDisplay(core);
+   $xftFont = XftFontOpenName(
+    dpy,DefaultScreen(dpy), $fontname );
+
+    XftTextExtentsUtf8(dpy, $xftFont, (FcChar8*)  $label,
+		       strlen( $label ), &extents);
+    w = extents.xOff;
+    h  = $xftFont->height;
+    $prefered_width  = $width  = w;
+    $prefered_height = $height = h;
+
+   int i;
+   memset( $gc, 0, sizeof( $gc ));
+   memset( $xft_col, 0, sizeof( $xft_col));
+   $pixel[COLOR_FG_NORM]= $fg_norm; 
+   $pixel[COLOR_FG_SEL]= $fg_sel; 
+   $pixel[COLOR_FG_HI]= $fg_hi; 
+   $pixel[COLOR_BG_NORM]= $bg_norm; 
+   $pixel[COLOR_BG_SEL]= $bg_sel; 
+   $pixel[COLOR_BG_HI]= $bg_hi;
+   XGCValues     values;
+
+   for(i=0;i<6;i++) {
+     pixel_to_xftcolor( core, $pixel[i], $xft_col+i );
+   }
+   for(i=3;i<6;i++) {
+     values.foreground = $pixel[i]; /* background color */
+     $gc[i-3] = XtGetGC($, GCForeground, &values);
+   }
+   
+   $state = 0;
+   
+}
+
+@proc query_geometry
+{
+    XtGeometryResult ret_val = XtGeometryYes;
+    XtGeometryMask mode = request->request_mode;
+
+    if (((mode & CWWidth) && request->width != $prefered_width) || !(mode & CWWidth)) {
+        reply->request_mode |= CWWidth;
+        reply->width = $prefered_width;
+        ret_val = XtGeometryAlmost;
+    }
+
+    if (((mode & CWHeight) && request->height != $prefered_height) || !(mode & CWHeight)) {
+        reply->request_mode |= CWHeight;
+        reply->height = $prefered_height;
+        ret_val = XtGeometryAlmost;
+    }
+
+    if (ret_val == XtGeometryAlmost) {
+        mode = reply->request_mode;
+        if (((mode & CWWidth) && $prefered_width == $width) &&
+            ((mode & CWHeight) && $prefered_height == $height) )
+            return (XtGeometryNo);
+    }
+
+    return (ret_val);
+}
+
+
+@proc destroy
+{
+
+}
+
+@ ($, XEvent *event, Region region)
+@proc expose
+{
+    Display *dpy = XtDisplayOfObject($);
+    if( !$draw ) {
+        $draw = XftDrawCreate(dpy, XtWindowOfObject($),
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    }
+
+    XFillRectangle(XtDisplayOfObject($), XtWindowOfObject($),
+                   $gc[$state], $x, $y,
+                   $width, $height );
+    char *s = $label;		 
+    XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
+    			     $x,$y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+		   
+}
+
+@proc highlight
+{ $state = 1; expose($,NULL,0); }
+@proc unhighlight
+{ $state = 0; expose($,NULL,0); }
+@proc notify
+{ XtCallCallbackList($, $callback, NULL ); }
+
+
+@UTILITIES
+
+@proc calculate_label_size($, char *s, int *w, int *h)
+{
+	XGlyphInfo extents;
+  	Display *dpy = XtDisplay($);
+	return;
+    	XftTextExtentsUtf8(dpy, $xftFont, (FcChar8*)  s,
+		       strlen( s ), &extents);
+
+	*w = extents.xOff;
+
+
+    	*h  = $xftFont->height;
+}
+
+
+@proc short
+masklen (unsigned long m)
+{
+    unsigned long y;
+
+    y = (m >> 1) &033333333333;
+    y = m - y - ((y >>1) & 033333333333);
+    return (short) (((y + (y >> 3)) & 030707070707) % 077);
+}
+
+@proc uint get_component( Pixel px, ulong m )
+{
+    ulong p = px;
+    p &= m;
+
+    while( m && !(m&1) ) { m>>=1; p >>=1; }
+    return p;
+}
+
+
+
+@proc pixel_to_xftcolor( Widget w, Pixel px, XftColor *result )
+{
+    Display *dpy = XtDisplay(w);
+    Visual *visual = DefaultVisual(dpy,DefaultScreen(dpy));
+
+    /*
+    int         red_shift, 
+    int         green_shift, green_len;
+    int         blue_shift, blue_len;
+    red_shift = maskbase (visual->red_mask);
+    green_shift = maskbase (visual->green_mask);
+    blue_shift = maskbase (visual->blue_mask);
+    */
+
+    int green_len,blue_len,red_len;
+    red_len = masklen (visual->red_mask);
+    green_len = masklen (visual->green_mask);
+    blue_len = masklen (visual->blue_mask);
+    
+    int r,g,b,a;
+    r = get_component( px, visual->red_mask );
+    g = get_component( px, visual->green_mask );
+    b = get_component( px, visual->blue_mask );
+    a = 0xffff;
+
+    result->pixel = px;
+    result->color.red = r << (16-red_len);
+    result->color.green = g << (16-green_len);
+    result->color.blue = b << (16-blue_len);
+    result->color.alpha = a;
+}
+
+
+@IMPORTS
+@incl <X11/Xaw/SmeP.h>
+@incl <X11/Xft/Xft.h>
+
