@@ -88,7 +88,44 @@ void test_struct(void) {
     dump_struct_fields("server_info", "port,pwd,res", "127.0.0.1" );
 }
 
+void test_hashmap(void)
+{
+    struct server_info *srvp;
+    int SRVI;
+    SRVI = m_create( 10, sizeof(struct server_info ));
 
+    int id = mvar_lookup(0, "server_info_hashmap",VAR_VSET );    
+    char s_name[] = "127.0.0.1";
+    struct server_info si = {
+	.name = "",
+	.port = 3306,
+	.pwd = "mimikatz",
+	.res = "sha1" };
+
+    for(int i=49;i<56;i++) {
+	s_name[8] = i;
+	si.port = 10 * i;
+	int pos = m_put(SRVI, &si );
+
+        int v  = mvar_lookup( id, s_name, VAR_INTEGER );
+	mvar_put_integer(v, pos, 0 );
+    }
+
+    
+    int l = mvar_length(id);
+    printf("length: %d\n", l );
+    printf("content: \n");
+    for(int i=0;i<l;i++) {
+	int x = mvar_get_integer(id,i);
+	int pos = mvar_get_integer( x, 0 );
+	srvp = mls( SRVI, pos );
+	printf( "%s: port %d\n", mvar_name(x),  srvp->port );
+    }
+
+    m_free( SRVI );
+}
+
+    
 
 void    mvar_estr_test()
 {
@@ -606,7 +643,7 @@ int main()
     mvar_estr_test();
 
     test_struct();
-    
+    test_hashmap();
     mvar_destruct();
     //
     m_destruct();
