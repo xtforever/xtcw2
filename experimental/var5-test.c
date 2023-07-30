@@ -6,10 +6,126 @@
 #include <time.h>
 
 
+static int  mvar_assign(int mstr )
+{
+    int ls =  m_split_list( m_str(mstr), "=" );
+    if( m_len(ls) != 2 ) goto leave;
+    int v = mvar_parse( INT(ls,0), VAR_STRING );
+    mvar_put_string(v, m_str(INT(ls,1)), 0);
+
+ leave:
+    m_free_list(ls);
+    return v;
+}
+
+int mvar_set(char *mvar, ...) {
+    va_list ap;
+    va_start(ap,mvar);
+    int m = vas_printf( 0,0, mvar, ap );
+    va_end(ap);
+    int v = mvar_assign( m );
+    m_free(m);
+    return v;
+}
+
+void p_mvar_string(char *mvar, ...) {
+    va_list ap;
+    va_start(ap,mvar);
+    int m = vas_printf( 0,0, mvar, ap );
+    va_end(ap);
+    
+    int v = mvar_parse( m, -1 );
+    puts( mvar_get_string(v,0) );
+
+    m_free(m);
+}
 
 
+struct server_info {
+    char *name;
+    int port;
+    char *pwd;
+    char *res;
+};
+
+void put_server_info(struct server_info *si)
+{
+    mvar_set("server_info.%s.%s=%s", "pwd",  si->name, si->pwd );
+    mvar_set("server_info.%s.%s=%s", "res",  si->name, si->res );
+    mvar_set("server_info.%s.%s=%d", "port", si->name, si->port );
+}
+
+void dump_server_info(char *name)
+{
+    p_mvar_string("server_info.%s.%s", "pwd",  name );
+    p_mvar_string("server_info.%s.%s", "res",  name );
+    p_mvar_string("server_info.%s.%s", "port", name );
+}
+
+void dump_struct_fields(char *type_name, char *list, char *index) {
+    int ls = m_split_list( list, "," );
+
+    int p; int *d;
+    m_foreach( ls, p, d ) {
+	p_mvar_string("%s.%s.%s", type_name, m_str( *d ),  index );
+    }
+    m_free_list(ls);   
+}
 
 
+void test_struct(void) {
+
+    struct server_info si = {
+	.name = "127.0.0.1",
+	.port = 3306,
+	.pwd = "mimikatz",
+	.res = "sha1" };
+
+    /* database: port[name], pwd[name], res[name] */
+
+    put_server_info( & si );
+    dump_server_info( "127.0.0.1" );
+    dump_struct_fields("server_info", "port,pwd,res", "127.0.0.1" );
+}
+
+void test_hashmap(void)
+{
+    struct server_info *srvp;
+    int SRVI;
+    SRVI = m_create( 10, sizeof(struct server_info ));
+
+    int id = mvar_lookup(0, "server_info_hashmap",VAR_VSET );    
+    char s_name[] = "127.0.0.1";
+    struct server_info si = {
+	.name = "",
+	.port = 3306,
+	.pwd = "mimikatz",
+	.res = "sha1" };
+
+    for(int i=49;i<56;i++) {
+	s_name[8] = i;
+	si.port = 10 * i;
+	int pos = m_put(SRVI, &si );
+
+        int v  = mvar_lookup( id, s_name, VAR_INTEGER );
+	mvar_put_integer(v, pos, 0 );
+    }
+
+    
+    int l = mvar_length(id);
+    printf("length: %d\n", l );
+    printf("content: \n");
+    for(int i=0;i<l;i++) {
+	int x = mvar_get_integer(id,i);
+	int pos = mvar_get_integer( x, 0 );
+	srvp = mls( SRVI, pos );
+	printf( "%s: port %d\n", mvar_name(x),  srvp->port );
+    }
+
+    m_free( SRVI );
+}
+
+    
 
 void    mvar_estr_test()
 {
@@ -525,7 +641,9 @@ int main()
 
 
     mvar_estr_test();
-    
+
+    test_struct();
+    test_hashmap();
     mvar_destruct();
     //
     m_destruct();
