@@ -33,7 +33,7 @@ void p_mvar_string(char *mvar, ...) {
     va_start(ap,mvar);
     int m = vas_printf( 0,0, mvar, ap );
     va_end(ap);
-    
+
     int v = mvar_parse( m, -1 );
     puts( mvar_get_string(v,0) );
 
@@ -69,7 +69,7 @@ void dump_struct_fields(char *type_name, char *list, char *index) {
     m_foreach( ls, p, d ) {
 	p_mvar_string("%s.%s.%s", type_name, m_str( *d ),  index );
     }
-    m_free_list(ls);   
+    m_free_list(ls);
 }
 
 
@@ -94,7 +94,7 @@ void test_hashmap(void)
     int SRVI;
     SRVI = m_create( 10, sizeof(struct server_info ));
 
-    int id = mvar_lookup(0, "server_info_hashmap",VAR_VSET );    
+    int id = mvar_lookup(0, "server_info_hashmap",VAR_VSET );
     char s_name[] = "127.0.0.1";
     struct server_info si = {
 	.name = "",
@@ -111,7 +111,7 @@ void test_hashmap(void)
 	mvar_put_integer(v, pos, 0 );
     }
 
-    
+
     int l = mvar_length(id);
     printf("length: %d\n", l );
     printf("content: \n");
@@ -125,7 +125,83 @@ void test_hashmap(void)
     m_free( SRVI );
 }
 
-    
+int SERVER_INFO = 0;
+int SERVER_INFO_G = 0;
+struct server_info SERVER_INFO_ERROR_OBJ = { 0 };
+#define SERVER_INFO_ERROR (&SERVER_INFO_ERROR_OBJ)
+struct server_info *SERVER_INFO_CUR;
+
+
+void server_info_create()
+{
+  SERVER_INFO_G  = mvar_lookup(0, "server_info_hashmap",VAR_VSET );
+  SERVER_INFO =  m_create( 10, sizeof(struct server_info ));
+}
+
+void server_info_destroy()
+{
+   m_free( SERVER_INFO ); SERVER_INFO = 0;
+   mvar_free( SERVER_INFO_G );
+   SERVER_INFO_G = 0;
+}
+
+struct server_info *get_server_info( char *name )
+{
+  int v  = mvar_lookup(SERVER_INFO_G , name, -1 );
+  if( v < 0 ) return SERVER_INFO_ERROR;
+  int ent = mvar_get_integer( v, 0 );
+  return mls( SERVER_INFO, ent );
+}
+
+void update_server_info( char *name, struct server_info *si )
+{
+  int v  = mvar_lookup(SERVER_INFO_G , name, VAR_INTEGER );
+  if(! mvar_length(v) ) {
+    int pos = m_put(SERVER_INFO, si);
+    mvar_put_integer( v, pos, 0 );
+    return;
+  }
+
+  int pos = mvar_get_integer( v, 0 );
+  m_write(SERVER_INFO, pos, si, 1 );
+}
+
+
+
+void test_hashmap2(void)
+{
+  server_info_create();
+      char s_name[] = "127.0.0.1";
+    struct server_info si = {
+	.name = "",
+	.port = 3306,
+	.pwd = "mimikatz",
+	.res = "sha1" };
+
+    for(int i=49;i<56;i++) {
+	s_name[8] = i;
+	si.port = 10 * i;
+        update_server_info(s_name, &si );
+    }
+
+    for(int i=49;i<56;i++) {
+	s_name[8] = i;
+	si.port = 10 * i + 1;
+        update_server_info(s_name, &si );
+    }
+
+    for(int i=49;i<56;i++) {
+	s_name[8] = i;
+        struct server_info *cur = get_server_info(s_name );
+        printf( "%s: port %d\n", s_name,  cur->port );
+    }
+
+    printf( "vars created: %d\n", mvar_length(SERVER_INFO_G) );
+    printf( "structs created: %d\n", m_len( SERVER_INFO ) );
+
+    server_info_destroy();
+}
+
 
 void    mvar_estr_test()
 {
@@ -144,10 +220,10 @@ void    mvar_estr_test()
     int v2 = mvar_lookup( g, "xvar", -1 );
     int mp = s_printf(0,0, "#%d.xvar", g, "xvar" );
     int v3 = mvar_parse( mp, -1 );
-	
+
     printf("id=%d, g=%d, v2=%d v3=%d\n", v,g,v2, v3 );
 
-    
+
 
     /* there is a variable called xvar, now
        we create a string inside the same group as xvar to test the expand function
@@ -181,7 +257,7 @@ void    mvar_estr_test()
     printf("first: %s\n", mvar_get_string( estr ,0) );
     printf("last: %s\n", mvar_get_string( estr ,-1) );
     printf("underflow: %s\n", mvar_get_string( estr ,-100) );
-    printf("overflow: %s\n", mvar_get_string( estr , 100) );   
+    printf("overflow: %s\n", mvar_get_string( estr , 100) );
 }
 
 
@@ -190,14 +266,14 @@ void    mvar_estr_test()
 
   widget edit -- var x
   on action import - read text from var x
-  on enter         - write text to var x 
-                   
+  on enter         - write text to var x
+
 
   widget list_select -- var x
-  on action select write to var x 
+  on action select write to var x
      and call import-action on edit widget
 
-  
+
 
 */
 
@@ -228,7 +304,7 @@ void var_dump(int id)
 	for(int i=0;i<l;i++) {
 	    char *s = mvar_get_string(id,i);
 	    printf("%c%s", ch, s); ch=',';
-	}	
+	}
 	putchar(10);
     }
 
@@ -252,12 +328,12 @@ int  mt( int g, char *s, int t )
 void map_test(void)
 {
 
-    int vs = mvar_vset();    
+    int vs = mvar_vset();
     printf("created vset: %d\n", vs );
 
     int x= mt( vs, "my-int", VAR_INTEGER );
     mt( vs, "my-int", VAR_INTEGER );
-    
+
     mt( 0, "hello", VAR_STRING );
     mt( vs, "hello", VAR_STRING );
     mt( 0, "hello", -1  );
@@ -302,7 +378,7 @@ void map_test(void)
 	int var = mvar_get_integer(rec,i);
 	mvar_put_string( var, ent[i], -1 );
     }
-    
+
     var_dump( rec );
     mvar_free( rec );
 }
@@ -317,7 +393,7 @@ void cb1(void *c, int q, int s)
 
 void callback_test(void)
 {
-    int vs = mvar_vset(); 
+    int vs = mvar_vset();
     int q1 = mvar_lookup(vs,"cb-test1",VAR_INTEGER);
     int q2 = mvar_lookup(vs,"cb-test2",VAR_INTEGER);
     int q3 = mvar_lookup(vs,"cb-test3",VAR_INTEGER);
@@ -325,7 +401,7 @@ void callback_test(void)
     mvar_put_integer( q1, 101, -1 );
     mvar_put_integer( q2, 202, -1 );
     mvar_put_integer( q3, 303, -1 );
-    
+
     var_set_callback( q1, cb1, NULL, 0 );
     var_set_callback( q2, cb1, NULL, 0 );
     var_set_callback( q3, cb1, NULL, 0 );
@@ -344,9 +420,9 @@ void callback_test(void)
 
 
 /*
-  g  =   zvar_group_create();					
+  g  =   zvar_group_create();
   v  =   zvar_create( g, name, STRING );
-  sz =   zvar_get_name(); g[0..3]=  
+  sz =   zvar_get_name(); g[0..3]=
 
 
  */
@@ -381,8 +457,8 @@ void  parsing_test( void )
     int q2 = mvar_lookup(q0, "loc-1",VAR_INTEGER );
     int q3 = mvar_lookup(q0, "loc-2",VAR_INTEGER );
 
-    
-    
+
+
     /* should be id 1 */
 
     printf("id | name\n");
@@ -391,10 +467,10 @@ void  parsing_test( void )
 
     mvar_path(q1, str );
     printf( "%d - %s\n", q1,m_str(str) );
-   
+
     mvar_path(q2, str );
     printf( "%d - %s\n", q2,m_str(str) );
-    
+
     mvar_path(q3, str );
     printf( "%d - %s\n", q3,m_str(str) );
 
@@ -411,9 +487,9 @@ void  parsing_test( void )
     prp( "global-1" );
     prp( "#1.loc-1" );
     prp( "#1.loc-2" );
-    
 
-    int v_path = s_printf(0,0, "*app1.mod1.sub.linewidth" ); 
+
+    int v_path = s_printf(0,0, "*app1.mod1.sub.linewidth" );
     int z = mvar_parse( v_path,VAR_INTEGER );
     mvar_put_integer(z,80,0);
     m_free(v_path);
@@ -421,10 +497,10 @@ void  parsing_test( void )
     print_g_id( "*app1.mod1.sub.linewidth" );
     print_g_id( "*app1.mod1.sub" );
     print_g_id( "*app1.mod1" );
-    print_g_id( "*app1" );    
+    print_g_id( "*app1" );
 }
 
-   
+
 
 void test1()
 {
@@ -459,7 +535,7 @@ void db1()
 {
     int q1 = mvar_lookup(0,"cb-test1",VAR_VSET);
     int q2 = mvar_lookup(q1,"cb-test2",VAR_INTEGER);
-    int q3 = mvar_lookup(0,"cb-test1",VAR_VSET);    
+    int q3 = mvar_lookup(0,"cb-test1",VAR_VSET);
     var_dump(q1);
     var_dump(q2);
     mvar_free( q1 );
@@ -520,14 +596,14 @@ void check_hash_speed( int seconds, int keys, int (*lookup)(void *)  )
 	    int keynum = rand() % m_len(keys);
 	    lookup( m_buf(INT(keys, keynum)) );
 	    clock_gettime(CLOCK_MONOTONIC, &tp1);
-	    timespec_diff(&tp1,&tp0,&tp2);	    
+	    timespec_diff(&tp1,&tp0,&tp2);
 	    if( tp2.tv_sec  >= seconds ) break;
 	}
 
 
-    
+
     long double n = tp2.tv_sec;
-    n = n * 1E6 + (tp2.tv_nsec / 1E3); 
+    n = n * 1E6 + (tp2.tv_nsec / 1E3);
     n = (count * 1.0) / n;
     printf("hash/µsec: %Le, hash: %u,  %lu sec, %lu nsec\n\n", n, count, tp2.tv_sec,tp2.tv_nsec);
 }
@@ -535,7 +611,7 @@ void check_hash_speed( int seconds, int keys, int (*lookup)(void *)  )
 
 int hash_string_key( void *id )
 {
-    return mvar_lookup( 0,id,VAR_STRING );    
+    return mvar_lookup( 0,id,VAR_STRING );
 }
 
 void speed_test(void)
@@ -556,7 +632,7 @@ void clash(void)
 
     int xid=m_create(10,1);
     printf("nextid:%d\n", xid);
-    
+
     int max = Min(m_len(keys),  m_len(keys) );
     char *s= m_str(INT(keys,10));
     int id = mvar_lookup( 0, s, VAR_STRING  );
@@ -565,7 +641,7 @@ void clash(void)
     s= m_str(INT(keys,12));
     id = mvar_lookup( 0, s, VAR_STRING  );
     id = mvar_lookup( 0, s, VAR_STRING  );
-    
+
     int u=100; while(u--)
     for(int i=0;i < max; i++ )
 	{
@@ -576,7 +652,7 @@ void clash(void)
 
     dump_hash_statistics();
     printf("id=%d\n", id);
-    m_free_list(keys); 
+    m_free_list(keys);
 }
 
 
@@ -589,13 +665,13 @@ void app_test(void)
     int ms = s_printf(0,0, "kunde1.kuerzel" );
     int id = mvar_lookup_path( ms, VAR_STRING );
     char *s;
-    
+
 
     mvar_put_string( id, "hello World", 0 );
     s = mvar_get_string( id, 0);
     printf("mystring: %s\n", s );
     m_free(ms);
-    
+
 }
 
 
@@ -623,14 +699,14 @@ void exp_test(void)
 int main()
 {
     m_init();
-    
-    #ifdef MLS_DEBUG 
+
+    #ifdef MLS_DEBUG
     #  define LVL 3
     #else
     #  define LVL 0
     #endif
     trace_level=LVL;
-    
+
     mvar_init();
     // db1();
     // parsing_test();
@@ -644,6 +720,7 @@ int main()
 
     test_struct();
     test_hashmap();
+    test_hashmap2();
     mvar_destruct();
     //
     m_destruct();
