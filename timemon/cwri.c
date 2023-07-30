@@ -32,6 +32,8 @@
 #include "wcreg2.h"
 #include <xtcw/register_wb.h>
 #include "xtcw/Timemon.h"
+#include "var5.h"
+
 
 Widget TopLevel;
 int trace_main;
@@ -102,7 +104,7 @@ static void RegisterApplication ( Widget top )
     /* -- Register widget classes and constructors */
     // RCP( top, wbatt );
     RCP( top, timemon );
-    
+
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
     RCB( top, quit_cb );
@@ -116,6 +118,8 @@ static void RegisterApplication ( Widget top )
 static void InitializeApplication( Widget top )
 {
     trace_level = CWRI.traceLevel;
+
+
 }
 
 /******************************************************************************
@@ -147,6 +151,7 @@ int main ( int argc, char **argv )
     TRACE(2,"test");
     XtSetLanguageProc (NULL, NULL, NULL);
     XawInitializeWidgetSet();
+    mvar_init();
 
     /*  --  Intialize Toolkit creating the application shell
      */
@@ -195,7 +200,7 @@ int main ( int argc, char **argv )
 				CWRI_CONFIG_RES,
 				XtNumber(CWRI_CONFIG_RES),
 				(ArgList)0, 0 );
-
+    TRACE(1,"after get resources");
     trace_level = CWRI.traceLevel;
     InitializeApplication(appShell);
 
@@ -204,9 +209,10 @@ int main ( int argc, char **argv )
     XtRealizeWidget ( appShell );
 
     grab_window_quit( appShell );
-
+    TRACE(1,"after realize");
     XtAppMainLoop ( app ); /* use XtAppSetExitFlag */
     XtDestroyWidget(appShell);
+    mvar_destruct();
     m_destruct();
 
     return EXIT_SUCCESS;

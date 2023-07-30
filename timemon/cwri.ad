@@ -13,27 +13,22 @@
 *weightx: 1
 *weighty: 1
 
-
 cwri.WcChildren: vb
 %% cwri.traceLevel: 0
 
 *vb.WcClass: GridBox
-*vb.WcChildren: ed bt
+*vb.WcChildren: ed1 bt
 
-*l1.WcClass: Wbutton
-*l1.label: Hello
-*l1.callback: WcSetValue( *ed.text: test )
+*ed1.WcClass: Timemon
+*ed1.gridx: 0
+*ed1.xftFont: unifont-14
 
-*ed.WcClass: ClipView 
-*ed.gridx: 1
-*ed.xftFont: unifont-14
 
 *bt.wcClass: Wbutton
 *bt.label: Exit
 *bt.callback: quit_cb
 *bt.gridy: 1
 *bt.gridx: 0
-
 *bt.gravity: Center
-*bt.fill: Both
-*bt.gridWidth: 2
+*bt.fill: Width
+*bt.weighty: 0

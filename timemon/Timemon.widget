@@ -9,7 +9,14 @@
 @var String text = <String> "Hello World How are you?"
 @var int cornerRoundPercent = "20"
 @var int timer = <String> "2000"
-    
+@var int nrow = <String> "20"
+@var int ncol = <String> "20"
+@var int minx = <String> "80"
+@var int miny = <String> "80"
+
+
+
+
 @PRIVATE
 @var XftDraw *draw
 @var Pixmap pixmap
@@ -29,7 +36,7 @@
     $draw = 0;
     $gc_copy =  XtGetGC($, 0,0 );
     if( $width == 0 ) $width = 10;
-    if( $height == 0 ) $height = 10;	
+    if( $height == 0 ) $height = 10;
     calculate_size($);
     if(! $XA_UTF8_STRING )
 	$XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
@@ -43,16 +50,13 @@
         TRACE(1, "Timemon");
         XtCreateWindow($, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent, *mask, attributes);
-  	reshape_widget($);
-
 }
 
 @proc resize
 {
+    TRACE(1, "Timemon %d %d", $width, $height );
     if (XtIsRealized($)) {
        if( $width > 4096 || $height > 4096 ) return;
-       
-       reshape_widget($);
        if( $pixmap ) XFreePixmap(XtDisplay($),$pixmap);
        $pixmap=0;
        alloc_pixmap($);
@@ -72,13 +76,14 @@
 
 @proc set_values
 {
+TRACE(1, "Timemon");
     /* get_selection($); */
       return True;
 }
 
 @proc expose
 {
-	
+
     TRACE(1, "Timemon");
     redraw($);
 }
@@ -126,14 +131,6 @@ letting Xt figure out what really needs to be changed.
 @proc reshape_widget($)
 {
 	int w;
-	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
-	    w = Min($height,$width);
-	    w = w * $cornerRoundPercent / 100;
-	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
-	}
-
-	
-
 }
 
 @ called by update cache if pixmap==0
@@ -161,7 +158,23 @@ letting Xt figure out what really needs to be changed.
    XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
     			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
 }
-					       
+
+@proc draw_rect($, Drawable d, Pixel col, int x, int y, int w, int h )
+{
+    Display *dpy = XtDisplay($);
+    GC gc = DefaultGC(dpy,DefaultScreen(dpy));
+    XSetForeground( dpy, gc, col );
+    XDrawRectangle(dpy,d,gc, x,y, w, h );
+}
+
+@proc fill_rect($, Drawable d, Pixel col, int x, int y, int w, int h )
+{
+    Display *dpy = XtDisplay($);
+    GC gc = DefaultGC(dpy,DefaultScreen(dpy));
+    XSetForeground( dpy, gc, col );
+    XFillRectangle(dpy,d,gc, x,y, w, h );
+}
+
 @ redraws everything on pixmap cache
 @proc update_cache($)
 {
@@ -173,14 +186,48 @@ letting Xt figure out what really needs to be changed.
 
     char *s ="test widget";
     int i, x=15, y=0;
-    
+
     TRACE(1,"Timemon:%s size:%dx%d", $name, $width, $height );
     TRACE(1,"%s draw string: %s (%dx%d)",$name, s,x,y );
 
-    for(int i=0;i<2; i++) {
-	y = $xftFont->height * i;
-	str_print( $, x,y, v_kget($mk_display,i) );
-    }
+    Pixel col = $pixel[1];
+    //
+
+
+    int w = ($width-1) / $ncol;
+    int h = ($height-1) / $nrow;
+    int dw = w * $ncol;
+    int dh = h * $nrow;
+
+    draw_rect($,$pixmap, col, 0,0, dw,dh );
+
+     for( i=1; i< $ncol; i+=2 )
+        draw_rect($,$pixmap, col, w*i, 0, w, dh );
+
+     for( i=1; i< $nrow; i+=2 )
+         draw_rect($,$pixmap, col, 0, h*i, dw, h );
+
+
+     int tx=4,ty=2;
+     int ax0,ay0,aw,ah;
+
+     ax0 = tx * w + 1;
+     aw  = w -1;
+
+     ay0 = ty * h + 1;
+     ah  = h -1;
+
+     fill_rect($, $pixmap, $pixel[2], ax0,ay0,aw,ah );
+
+     aw /=2;
+     ah /=2;
+     ax0 += aw;
+     ay0 += ah;
+
+     fill_rect($, $pixmap, $pixel[4], ax0,ay0,aw,ah );
+
+
+
 }
 
 
@@ -188,7 +235,7 @@ letting Xt figure out what really needs to be changed.
 {
     TRACE(1, "Timemon");
     if( !XtIsRealized($)) return;
-    if( ! $tmr ) start_timer($);
+
     update_cache($);
     XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
               0,0, $width, $height, /* source pixmap */
@@ -198,13 +245,10 @@ letting Xt figure out what really needs to be changed.
 @proc calculate_size($)
 {
 
-	int w,h;
-	xft_calc_string_size( $, $xftFont, $text, &w, &h );
-	
-	$prefered_width = w+4;
 
-	$prefered_height = (h+2) * 2;
-	
+	$prefered_width =  $ncol * $minx;
+	$prefered_height = $nrow * $miny;
+
 }
 
 
@@ -253,14 +297,14 @@ letting Xt figure out what really needs to be changed.
     char *s = value;
 
     TRACE(2,"got row: %d", row );
-    if( is_empty(s) || 
-        (row < 0) || 
-        (row >= 2) )                return;    
+    if( is_empty(s) ||
+        (row < 0) ||
+        (row >= 2) )                return;
 
     /* no more than 100 bytes */
     if( *length > 100 ) s[100]=0;
-    
-    TRACE(2,"value %s",s );    
+
+    TRACE(2,"value %s",s );
     v_kset( $mk_display, s, row );
 }
 
@@ -290,14 +334,14 @@ letting Xt figure out what really needs to be changed.
 
 @proc start_timer($)
 {
-    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, 
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000,
          (XtTimerCallbackProc)timer_cb, $);
 }
 
 @proc timer_cb($, XtIntervalId *id)
 {
     get_selection($);
-    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000, 
+    $tmr = XtAppAddTimeOut( XtWidgetToApplicationContext($), 1000,
           (XtTimerCallbackProc)timer_cb, $);
     redraw($);
 
