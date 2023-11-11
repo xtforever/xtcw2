@@ -196,6 +196,11 @@ void test_hashmap2(void)
         printf( "%s: port %d\n", s_name,  cur->port );
     }
 
+    struct server_info *cur = get_server_info( "unknown" );
+    if( cur == SERVER_INFO_ERROR ) {
+      puts("server info error check ok" );
+    }
+
     printf( "vars created: %d\n", mvar_length(SERVER_INFO_G) );
     printf( "structs created: %d\n", m_len( SERVER_INFO ) );
 

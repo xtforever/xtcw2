@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "xtcw/SmeLine2.h"
+#include "xtcw/SmeBtn.h"
 
 void quitCallback(Widget w, XtPointer client_data, XtPointer call_data)
 {
@@ -28,6 +29,8 @@ int main(int argc, char** argv)
     // create a line
     XtVaCreateManagedWidget("testOption", smeBSBObjectClass, menuPane, XtNlabel, "test", NULL);
     XtVaCreateManagedWidget("sep", smeLine2WidgetClass, menuPane, NULL);
+        XtVaCreateManagedWidget("sep", smeBtnWidgetClass, menuPane, NULL);
+            XtVaCreateManagedWidget("sep", smeLine2WidgetClass, menuPane, NULL);
 
     // Create the Quit option
     quitOption = XtVaCreateManagedWidget("quitOption", smeBSBObjectClass, menuPane, XtNlabel, "Quit", NULL);

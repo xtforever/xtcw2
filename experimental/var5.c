@@ -1,4 +1,4 @@
-/* 
+/*
 
    storage:
 
@@ -6,67 +6,67 @@
 			one per variable
 			primary-key: var-id
 
-   VAR_IF		structs with interface functions 
+   VAR_IF		structs with interface functions
 			one per variable-type
 			primary-key: index
-     
+
    MVAR_MEM		pointer to variables
 			primary-key: (group,name)
 			        key: index (var-id)
 
    Each variable has two attributes, name and group.
    Together they form a unique identifier.
-   
+
    They can be used to form a graph:
    tree: list of (node1,node2)
 
    node1 = group
    node2 = var-id
-   
+
    A leave node is a node with arbitrary type
    A branch starts at a node with type VSET
-  
-   
+
+
             (1:(root,0) )
 
-       (2:(n1,1))     (4:(n3,1))         
+       (2:(n1,1))     (4:(n3,1))
 
-       (3:(n2,2))        
+       (3:(n2,2))
 
-       root,n1 - must have type VSET (or INTEGER) 
+       root,n1 - must have type VSET (or INTEGER)
        n2,n3   - type is arbitrary
 
 
    mvar_parse can be used to create/access the tree.
    example:
-      node = mv_parse( *root.n1.n2, "STRING" )      
+      node = mv_parse( *root.n1.n2, "STRING" )
       - this call will construct three nodes (root,n1,n2)
 
       node = mv_parse( *root.n3, "INTEGER" )
       - this call will construct one node (n3)
-      
+
    The complete tree is accessable with the id of the
-   root-node 
+   root-node
    to query the root id you have multiple possibilities:
    id = mv_lookup( 0, "root", NULL );
    id = mv_lookup_path( "#0.root", NULL );
    id = mv_lookup_path( "root", NULL );
    id = mv_parse( "root", NULL );
    id = mv_parse( "*root", NULL );
-   
-   
 
-   var5 interface 
+
+
+   var5 interface
 
    types:
-     VAR_INTEGER 
-     VAR_STRING 
-     VAR_VSET 
+     VAR_INTEGER
+     VAR_STRING
+     VAR_VSET
 
    init
      mvar_init
 
-   create anon variables:   
+   create anon variables:
      int id = mvar_anon(0, VAR_VSET );
 
 
@@ -75,9 +75,9 @@
 
    find/create a variable
      int q = mvar_parse( int var_path_string, int type );
-   
-     int q =  mvar_lookup( group,sname,stype );			
-     int q =  mvar_lookup_path(mp,stype);			
+
+     int q =  mvar_lookup( group,sname,stype );
+     int q =  mvar_lookup_path(mp,stype);
      int offs = mvar_parse_path(mp,&group);
      mvar_free(q);
 
@@ -97,14 +97,14 @@
      mvar_length(q)
 
    signals
-     var_set_callback( q1, cb1, ctx, 0 )			
+     var_set_callback( q1, cb1, ctx, 0 )
      var_call_callbacks( q1 )
      var_callback_destroyv
 
-     
-     
+
+
  */
-#include <stdio.h> 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -123,13 +123,13 @@ void var5_delete_hash( var_t *v );
 
 
 struct var_st;
-typedef struct var_st var_t; 
+typedef struct var_st var_t;
 
 struct var_if {
     int    (*put_string) ( var_t *v, char *s, int p );
     char*  (*get_string) (var_t *v, int p);
     int    (*put_integer) ( var_t *v, long val, int p );
-    long   (*get_integer) (var_t *v, int p);    
+    long   (*get_integer) (var_t *v, int p);
     int    (*to_string) (var_t *v, int buf, int p);
     int    (*length)  (var_t *v);
     var_t* (*create)  (void);
@@ -163,7 +163,7 @@ int callback_lookup_pos( int q )
     cb = m_add(VAR_CALLBACK);
     cb->var_id = q;
     cb->signal=0; cb->locked=0;
-    return m_len(VAR_CALLBACK)-1;    
+    return m_len(VAR_CALLBACK)-1;
 }
 
 struct var_callback * callback_lookup( int q )
@@ -177,7 +177,7 @@ void var_set_callback( int q, varsig_t fn, void *d, int remove )
     struct var_callback *ent = callback_lookup(q);
     int p;
     struct var_signal *sig;
-    
+
     if(!ent->signal) ent->signal = m_create( 1, sizeof(struct var_signal));
 
     /* finde signal und falls remove==TRUE entfernen */
@@ -203,7 +203,7 @@ void var_call_callbacks( int q, int s )
     /* um rekursion zu verhindern wird signal blockiert */
     if( ent->locked ) return;
     ent->locked = 1;
-    
+
     int p;
     struct var_signal *sig;
     m_foreach( ent->signal, p, sig ) {
@@ -236,13 +236,13 @@ struct string_var_st {
 };
 typedef struct string_var_st string_var_t;
 
-/* later 
+/* later
 char *string_get_string(var_t *v, int p)
 {
     if( v->var_if != VAR_STRING ) {
 	set_error(v, "this isn't a string class");
 	return "";
-    }    
+    }
     string_var_t *s = (string_var_t*)v;
     return s->fn->core.get_string(v,p);
 }
@@ -353,8 +353,8 @@ int estr_impl_length(var_t *v)
 {
     estr_var_t *s = (estr_var_t*)v;
     int len = m_len(s->estr.buf);
-    if( len ) len--; 
-    return len;		  
+    if( len ) len--;
+    return len;
 }
 
 static void estr_var_changed(void*ctx,int var,int sig)
@@ -369,7 +369,7 @@ static void estr_watches_remove( estr_var_t *s )
     m_foreach( s->watches, p, k ) {
 	mvar_set_callback( *k, estr_var_changed, s, 1 );
     }
-    m_clear(s->watches);    
+    m_clear(s->watches);
 }
 
 
@@ -399,11 +399,11 @@ static void estr_realloc_watches(  estr_var_t *s )
     var_t *v = (var_t*) s;
     int group = v->group;
     mvar_str_t *se = &s->estr;
-    int p; char **d; 
+    int p; char **d;
 
     estr_watches_remove(s);
     s->max_index = 0;
-    
+
     m_foreach( se->splitbuf, p,d ) {
 	char *str = *d;
 	if( *str != '$' ) continue;
@@ -427,7 +427,7 @@ static void estr_update_array( estr_var_t *s, int p )
     mvar_str_expand( se, m_str(prefix), p );
     m_free(prefix);
     s->cache_dirty = 0;
-    s->cache_index = p;   
+    s->cache_index = p;
 }
 
 
@@ -438,21 +438,21 @@ static void estr_build( estr_var_t *s, int p )
     var_t *v = (var_t*) s;
     int group = v->group;
     int prefix = s_printf(0,0,"#%d", group );
-    
+
     mvar_str_realloc_buffers( se );
     mvar_str_parse( se, pattern );
     mvar_str_expand( se, m_str(prefix), p );
     estr_realloc_watches( s );
     m_free(prefix);
     s->cache_dirty = 0;
-    s->cache_index = p;   
+    s->cache_index = p;
 }
 
 char *estr_impl_get_string(var_t *v, int p)
 {
     estr_var_t *s = (estr_var_t*)v;
     if( s->cache_dirty ) {
-	estr_build(s, p);	
+	estr_build(s, p);
     }
 
     /* array handling
@@ -470,7 +470,7 @@ char *estr_impl_get_string(var_t *v, int p)
     if( s->cache_index != p ) {
 	estr_update_array(s,p);
     }
-    
+
     return m_str(s->estr.buf);
 }
 
@@ -501,7 +501,7 @@ struct integer_var_if {
 };
 
 /* same as var_st but with extensions */
-typedef 
+typedef
 struct integer_var_st {
     struct var_st;
     int value;
@@ -535,13 +535,13 @@ var_t *integer_impl_create(void)
 int integer_impl_length(var_t *v)
 {
     integer_var_t *s = (integer_var_t*)v;
-    return m_len(s->value); 
+    return m_len(s->value);
 }
 
 void integer_impl_destroy(var_t *v)
 {
     integer_var_t *s = (integer_var_t*)v;
-    m_free(s->value); 
+    m_free(s->value);
     free(s);
 }
 
@@ -551,7 +551,7 @@ char *integer_impl_get_string(var_t *v, int p)
     long val = integer_impl_get_integer(v,p);
     snprintf( buffer, sizeof(buffer),
 	      "%ld", val );
-    return buffer;    
+    return buffer;
 }
 
 int integer_impl_put_string(var_t *v,char *str, int p)
@@ -609,7 +609,7 @@ char *vset_impl_get_string(var_t *v, int p)
 {
     static char buf[100];
     integer_var_t *s = (integer_var_t*)v;
-    if( p >= m_len(s->value) ) return "";  
+    if( p >= m_len(s->value) ) return "";
     int x = *(long *)mls(s->value,p);
     int str = mvar_path(x,0);
     strncpy(buf,m_str(str), sizeof(buf));
@@ -695,8 +695,8 @@ struct var_register_st *vreg_get(int id)
 
 int  mvar_registry( void *funcs, char *name, int id )
 {
-    if( !VAR_IF ) VAR_IF=m_create(10,sizeof(struct var_register_st)); 
-    if( id >= m_len(VAR_IF)) m_setlen(VAR_IF, id+1);    
+    if( !VAR_IF ) VAR_IF=m_create(10,sizeof(struct var_register_st));
+    if( id >= m_len(VAR_IF)) m_setlen(VAR_IF, id+1);
     struct var_register_st *v = vreg_get(id);
     v->name = strdup(name);
     v->fn = funcs;
@@ -714,7 +714,7 @@ void var_register_destroy(void)
 {
     int p; struct var_register_st *v;
     m_foreach(VAR_IF,p,v) { free(v->name); }
-    m_free(VAR_IF);    
+    m_free(VAR_IF);
 }
 
 int vreg_ifnum(char *name)
@@ -770,12 +770,12 @@ void mvar_create_var( int id, int ifnum )
     if( ifnum < 0 ) ERR("interface %d not defined", ifnum );
     *v = var_create(vreg_getif(ifnum) );
     (*v)->var_if = ifnum;
-    TRACE(1,"new var %d : %s", id,  mvar_name_of_type(ifnum) );    
+    TRACE(1,"new var %d : %s", id,  mvar_name_of_type(ifnum) );
 }
 
-/* returns number of var +1, because that garanties 
+/* returns number of var +1, because that garanties
    that var-number is never zero
-   maybe a bad idea 
+   maybe a bad idea
 */
 int mvar_create( int id )
 {
@@ -784,15 +784,15 @@ int mvar_create( int id )
     return p;
 }
 
-/* free mvar 
+/* free mvar
    - remove from hash table
-   - remove from mvar_mem 
+   - remove from mvar_mem
    - put id in MVAR_FREE for reuse of this slot
-*/ 
+*/
 void mvar_free( int id )
 {
     if( id <=0 ) return;
-    
+
     var_t **v = mvar_get(id);
     if( ! *v ) {
 	WARN("double-free Var %d", id);
@@ -812,7 +812,7 @@ static void mvar_free_all(void)
 	if( *mvar_get(p) ) mvar_free(p);
 	p--;
     }
-	
+
     m_free(MVAR_FREE);
     m_free(MVAR_MEM);
     MVAR_MEM=0;
@@ -859,7 +859,7 @@ int mvar_type(int id)
 {
     if( id == 0 ) return -1;
     var_t *v =  *mvar_get(id);
-    return ( v == NULL ) ? -1 : v->var_if; 
+    return ( v == NULL ) ? -1 : v->var_if;
 }
 
 int mvar_group(int id)
@@ -887,12 +887,12 @@ int mvar_length(int id)
 int mvar_path(int id, int mp)
 {
     char *s = mvar_name(id);
-    int g =  mvar_group(id);    
+    int g =  mvar_group(id);
     return s_printf(mp,0,"#%u.%.28s", g,s );
 }
 
 
-// extract group number from  variable names in the form of "#9999.myname" 
+// extract group number from  variable names in the form of "#9999.myname"
 // parse a group number with '#' prefix and trailing '.' (dot)
 // set *group to the parsed number
 // return index of character after trailing dot.
@@ -903,17 +903,17 @@ int mvar_parse_path(int mp, int *group)
     if( CHAR(mp,0) != '#' ) return 0;
     char *endp;
     *group = (int) strtoul(mls(mp,1),&endp,10);
-    if(! endp || *endp != '.' ) return -1;    
+    if(! endp || *endp != '.' ) return -1;
     return ( endp - m_str(mp) + 1 );
 }
 
 
 static int next_dot(int m, int *p, int w)
-{    
+{
     int l = m_len(m);
     while( *p < l ) {
 	int ch =  CHAR(m,*p);
-	(*p)++;	
+	(*p)++;
 	if( !ch || ch  ==  '.' ) {
 	    m_putc(w, 0);
 	    return ch;
@@ -929,7 +929,7 @@ static int next_dot(int m, int *p, int w)
 
    form 1) g1.g2.g3.var
    form 2) #9999.var
-   
+
    specify a variable like a x11 resource
    each component will get type VSET
    last component will get given type
@@ -938,7 +938,7 @@ int mvar_parse( int mp, int type_id  )
 {
     int ch = CHAR(mp,0);
     if( ch == '#' ) return mvar_lookup_path(mp,type_id);
-    
+
     /* multi-point-parser */
     int id    =  0;
     int group =  0;
@@ -949,13 +949,13 @@ int mvar_parse( int mp, int type_id  )
     if( ch == '*' ) {	       /*  skip asterix and following dot -- legacy syntax  */
 	start = CHAR(mp,1) == '.' ? 2 : 1;
     }
-    
+
     do {
 	m_clear(w);
 	ch = next_dot( mp, &start, w );
 	if( ch < 0 ) ERR("error parsing %s", m_str(mp));
-	if( ch == 0 ) t = type_id;  
-	group = id;	
+	if( ch == 0 ) t = type_id;
+	group = id;
 	id = mvar_lookup(group, m_str(w), t);
 
     } while( ch );
@@ -969,17 +969,17 @@ int mvar_parse_string(const char *s, int type_id )
     int name = s_printf(0,0, (char*)s );
     int key = mvar_parse( name, type_id );
     m_free(name);
-    return key;    
+    return key;
 }
 
 
 
 /* suche nach einer variable mit name (group,name)
    wird die variable gefunden wird ihre ID übergeben.
-   wird die variable nicht gefunden und der typename 
+   wird die variable nicht gefunden und der typename
    ist nicht gesetzt wird -1 übergeben
 
-   wird die variable nicht gefunden und der typename 
+   wird die variable nicht gefunden und der typename
    ist gesetzt wird eine neue variable angelegt:
 
    falls group==0 var_create
@@ -987,7 +987,7 @@ int mvar_parse_string(const char *s, int type_id )
    die var mit der der nummer x wird im
    array MVAR_MEM ab position (x-1) gespeichert!
 
-   
+
 */
 int mvar_lookup( int group, char *name, int type_id )
 {
@@ -998,7 +998,7 @@ int mvar_lookup( int group, char *name, int type_id )
     return key;
 }
 
-/* create a new anon-variable, t must be specified */ 
+/* create a new anon-variable, t must be specified */
 int mvar_anon( int g, int t )
 {
     ASERR( t>=0, "type must be specified" );
@@ -1010,7 +1010,7 @@ int mvar_anon( int g, int t )
 	n++;
 	sprintf(buf, "€%lx", n );
     } while( mvar_lookup( g, buf, -1 ) > 0 );
-    
+
     return mvar_lookup(g,buf,t);
 }
 
@@ -1081,7 +1081,7 @@ inline static uint32_t simple_hash( void *buf )
 /** find or insert variable (buf) in hash-table (hash)
     hash - list of integer
     buf  - pointer to buffer with HASH_SIZE bytes
- */ 
+ */
 inline static int hash_lookup( int hash, void *buf,
 		 int (*cmpf)(void *ctx, int pos, void *buf),
 		 int (*newf)(void *ctx, void *a), void *ctx  )
@@ -1095,21 +1095,21 @@ inline static int hash_lookup( int hash, void *buf,
     if( *hash_item_list == 0 ) {
 	// insert new item-list in hash-table
 	*hash_item_list = m_create(1, sizeof(int) );
-	goto new_item;	
+	goto new_item;
     }
 
     // entry found
     // check if the same is already inside
-    if(cmpf) { 
+    if(cmpf) {
 	m_foreach( *hash_item_list, p, d ) {
 	    if( cmpf(ctx, *d, buf) ) return *d;
 	}
     }
-    
+
  new_item:
-    // create new item in item-list in hash-table 
+    // create new item in item-list in hash-table
     if( ! newf ) return -1;
-    hash_item = newf(ctx,buf);    
+    hash_item = newf(ctx,buf);
     m_put(*hash_item_list, &hash_item);
     return hash_item;
 }
@@ -1126,7 +1126,7 @@ inline static char cmp64( void *a, void *b )
 
 /** key2 points to the keybuffer that was presented to hash_lookup
  *  key1 is the index of one already stored element in the hashmap
- * returns: 1 if keys match, 0 if keys differ 
+ * returns: 1 if keys match, 0 if keys differ
  */
 int var5_compare_keys( void *ctx, int key1, void *key2 )
 {
@@ -1139,9 +1139,9 @@ int var5_compare_keys( void *ctx, int key1, void *key2 )
     //	( strncmp(v1->name,v2->name,MAX_VARNAME)==0 );
 }
 
-/** create a new variable  
+/** create a new variable
  *
- * 
+ *
  */
 int var5_create_var( void *ctx, void *keyptr )
 {
@@ -1150,11 +1150,11 @@ int var5_create_var( void *ctx, void *keyptr )
     int p = mvar_create( typeid );
     var_t *v = *mvar_get(p);
     memcpy(v->name, key->name, MAX_VARNAME  );
-    v->group=key->group;    
+    v->group=key->group;
 
     /* a group-id equals variable-id, it's a container to for variables */
     if(key->group) {
-	if( mvar_type(v->group) != VAR_VSET ) 
+	if( mvar_type(v->group) != VAR_VSET )
 	    WARN("Var: %d is not a VSET", v->group);
 	mvar_put_integer(v->group, p, -1);
     }
@@ -1169,7 +1169,7 @@ int var5_lookup( int group, char *name, int  typeid )
 	HASH_TABLE=m_create( HASH_TABLE_SIZE, sizeof(int) );
 	m_setlen(HASH_TABLE,HASH_TABLE_SIZE );
     }
-    
+
     var_t v;
     v.group = group;
 
@@ -1180,12 +1180,12 @@ int var5_lookup( int group, char *name, int  typeid )
 	*dest++ = *src++;
 	max--;
     }
-    while( max-- ) *dest++ = 0; 
+    while( max-- ) *dest++ = 0;
 
     return hash_lookup( HASH_TABLE, &v,
 			var5_compare_keys,
 			typeid >= 0 ? var5_create_var : NULL,
-			(void*)(intptr_t)typeid );	
+			(void*)(intptr_t)typeid );
 }
 
 void var5_delete_hash( var_t *v )
@@ -1208,7 +1208,7 @@ void dump_hash_statistics(void)
 {
     int colls = 0;
     int items = 0;
-    
+
     int p;
     int *hash_item_list;
 
@@ -1222,7 +1222,7 @@ void dump_hash_statistics(void)
 
     printf("Number of Keys: %d\n", items );
     printf("Number of Collisions: %d\n", colls );
-        
+
 }
 
 
@@ -1295,23 +1295,23 @@ char *unesc_strndup( const char *s, unsigned n)
     int ch, n0;
     char *s0,*ret;
     const char *s1;
-    
+
     ASSERT(ret = malloc(n+1));
     s0 = ret;
     s1=s;
     n0=n;
     if(s==NULL || n0==0) { *s0++=0; goto leave; } /* case 1: zero bytes */
-    
+
     while( (ch = (*s0++ = *s1++)) ) {
 	/* lookahead */
 	if( ch == '\\' ) { 	/* escape code found, look at next character */
-	    if( *s1 == '\\' ) { /*double escape - skip this char */ 
-		s1++; 
+	    if( *s1 == '\\' ) { /*double escape - skip this char */
+		s1++;
 	    }
 	    else if( *s1 == '$' ) { /* escaped dollar sign, */
 		s0[-1] = '$';	/* overwrite allready stored escape */
 		s1++;	      /* skip dollar */
-	    }	    
+	    }
 	    /* there is some character we don't know after an escape */
 	    /* better do nothing here */
 	}
@@ -1326,7 +1326,7 @@ char *unesc_strndup( const char *s, unsigned n)
     w = s0-ret;
     if( w != n ) { TRACE(1,"realloc %u", w );
 	ret = realloc(ret,w);
-    }    
+    }
     return ret;
 }
 
@@ -1451,7 +1451,7 @@ const char* mvar_str_expand( mvar_str_t *se, char *prefix, int row )
 		val = mvar_get_string(var,index);
 		field_escape(buf, val, quotes);
 	    }
-	    
+
 	}
       } // variable expandiert
   }
@@ -1470,23 +1470,19 @@ const char*   mvar_str_string( char *prefix, const char *frm )
 {
     mvar_str_t se;
     int var, varname;
-    
+
     mvar_str_init( &se );
     mvar_str_parse( &se, frm );
     const char *s = mvar_str_expand( &se, prefix, 0 );
 
-    /* create a new variable and copy the expanded string into it */ 
+    /* create a new variable and copy the expanded string into it */
     varname = s_printf(0,0,"%s.se_string", prefix );
     var = mvar_parse(varname, VAR_STRING);
     mvar_put_string( var, (char*)s, 0 );
-    
+
     m_free(varname);
     mvar_str_free(&se);
-    
+
     /* return copied string */
     return mvar_get_string(var,0);
 }
-
-
-
-

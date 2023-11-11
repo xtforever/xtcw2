@@ -67,7 +67,8 @@ int njson_get_entry(int field, char *name )
 char *header_part1=
 " admpanel.WcChildren: gb1                  \n"
 " admpanel.prefix: $PREFIX		    \n"
-" *gb1.WcClass: gridbox			    \n"
+" admpanel.initscript: $INITSCRIPT \n"
+  " *gb1.WcClass: gridbox			    \n"
 " *gb1.WcChildren: header values footer	    \n"
 " *header.gridy: 0			    \n"
 " *values.gridy: 1			    \n"
@@ -169,7 +170,7 @@ void mvars_put_string( char *name, char *str, int row )
     int m = s_printf(0,0,"%s", name );
     int v = mvar_parse( m, VAR_STRING );
     mvar_put_string(v, str, row );
-    m_free(m);    
+    m_free(m);
 }
 
 int m_slice( int m, int p, int src, int a, int len )
@@ -196,7 +197,7 @@ int mvars_assign_mp_va( int m, int p, char *format, va_list ap )
 	    mvar_put_string(mv, (char*)mls(m,n+1), 0 );
 	    m_free(var);
 
-	    m_free(m);	    
+	    m_free(m);
 	    return mv;
 	}
     }
@@ -292,10 +293,10 @@ static int  print_input( int opts, int row, void *fp )
 	"$w1.weightx: 1000				\n"
 	"$w1.var5: $varname				\n";
 
-    
+
     return print_widget( part, opts, row, fp );
 }
-   
+
 
 static int  print_kuerzel( int opts, int row, void *fp )
 {
@@ -335,10 +336,10 @@ static int  print_option( int opts, int row, void *fp )
     "$w1.value:    $optlist[0]		          \n"
     "$w1.callback: CallAction( *cmd UpdateCmd )   \n"
     "$w1.var5:     $varname                       \n";
-    
+
     int title =  njson_get_entry(opts,"title");
     int var   =  njson_get_entry(opts,"variable");
-    
+
     int vn;
     vn = s_printf(0,0, "opt.w0=*l%d0", row );
     mvar_assign(vn);
@@ -351,7 +352,7 @@ static int  print_option( int opts, int row, void *fp )
 
     int val = njson_find_obj( opts, "values"  );
     njson_array_to_mvar(val, "opt.optlist" );
-    
+
     const char *s = mvar_str_string( "opt", part );
     print_resource(s,fp);
 
@@ -396,26 +397,31 @@ static void fill_values( int fields, FILE *fp )
 {
     int p;
     create_layout( m_len(fields), fp );
-  
-    /* 'fields' contains objects with (type,...) */ 
+
+    /* 'fields' contains objects with (type,...) */
     struct njson_st *j;
     m_foreach(fields,p,j) {
 	print_field( j->d, p, fp );
-    }    
+    }
 
 }
 
 
 
-static void print_header(int title,int script, FILE *fp)
+static void print_header(int title,int script,int initscript, FILE *fp)
 {
     int var;
+    /* define some variables with prefix gg */
     var = s_printf(0,0, "gg.TITLE=%s", m_str(title) );
     mvar_assign( var );
     s_printf(var,0, "gg.SCRIPT=%s", m_str(script) );
     mvar_assign( var );
     s_printf(var,0, "gg.PREFIX=task1" );
     mvar_assign( var );
+    s_printf(var,0, "gg.INITSCRIPT=%s", m_str(initscript) );
+    mvar_assign( var );
+
+    /* use variables with prefix gg to replace strings in header_part1 */
     const char *s = mvar_str_string( "gg", header_part1 );
     print_resource(s,fp);
 
@@ -431,20 +437,21 @@ int main(int argc, char **argv)
     mvar_init();
     EMPTY_MSTR = m_create(1,1);
     m_putc( EMPTY_MSTR, 0 );
-    
+
     TRACE(1,"start");
     char *fn = "/dev/stdin" ;
     if( argc > 1 ) fn =  argv[1];
-    
+
     int opts =   njson_read( fn );
     int title =  njson_get_entry(opts,"title");
     int script = njson_get_entry(opts,"script");
     int fields = njson_find_obj(opts,"fields");
+    int initscript =  njson_get_entry(opts,"init");
 
-    print_header( title, script, fp );
+    print_header( title, script, initscript, fp );
     fill_values( fields, fp );
     njson_free( opts );
- 
+
     m_free(EMPTY_MSTR);
     mvar_destruct();
     m_destruct();  return EXIT_SUCCESS;

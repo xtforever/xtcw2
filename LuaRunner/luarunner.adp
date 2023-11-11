@@ -96,7 +96,7 @@ end
 luarunner.WcChildren: gb2
 
 *gb2.WcClass: gridbox
-*gb2.WcChildren: zoom sc
+*gb2.WcChildren: zoom sc menu
 
 *painter1.gridy: 1
 
@@ -114,6 +114,10 @@ luarunner.WcChildren: gb2
 *sc.canvas.width: 300
 *sc.canvas.height: 300
 *sc.canvas.translations: <Btn1Down>: LUA("paint1")
+
+*menu.WcClass: WmenuPopup
+*menu.gridy: 2
+*menu.weighty: 0
 
 
 

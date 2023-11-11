@@ -114,7 +114,7 @@ static XrmOptionDescRec options[] = {
     { "-Socket",	"*socket",	XrmoptionSepArg, NULL },
     { "-TraceLevel",	"*traceLevel",	XrmoptionSepArg, NULL },
     { "-Inifile",	"*inifile",	XrmoptionSepArg, NULL },
-    
+
     WCL_XRM_OPTIONS
 };
 
@@ -122,8 +122,9 @@ typedef struct SIGNAGE_CONFIG {
     int traceLevel;
     int socket;
     char *inifile;
+    char *initscript;
     Widget widget_grid;
-} SIGNAGE_CONFIG ; 
+} SIGNAGE_CONFIG ;
 
 #define FLD(n)  XtOffsetOf(SIGNAGE_CONFIG,n)
 static XtResource SIGNAGE_CONFIG_RES [] = {
@@ -139,7 +140,10 @@ static XtResource SIGNAGE_CONFIG_RES [] = {
   { "inifile", "Inifile", XtRString, sizeof(String),
     FLD(inifile), XtRString, NULL
   },
-  
+  { "initscript", "Initscript", XtRString, sizeof(String),
+    FLD(initscript), XtRString, NULL
+  },
+
   /*
     { NULL, NULL, XtRWidget, sizeof(Widget),
     FLD(widget_grid), XtRString, "*gb"
@@ -149,7 +153,7 @@ static XtResource SIGNAGE_CONFIG_RES [] = {
     FLD(widget_grid), XtRString, "*gb"
   },
   */
-  
+
 };
 #undef FLD
 
@@ -164,7 +168,7 @@ void SetFocus( Widget w, void *u, void *c )
 {
     char buffer[MAX_XRMSTRING];
     Widget focus_widget;
-	
+
     TRACE(8, "Widget called the setfocus callback");
     if(! u ) {
 	WARN("Callback SetFocus invoked without argument i.e. without a widget name to set the focus to");
@@ -185,15 +189,15 @@ void SetFocus( Widget w, void *u, void *c )
 	XtCallActionProc( w, "focus_out", NULL, NULL, 0 );
 	XtCallActionProc( focus_widget, "focus_in", NULL, NULL, 0 );
     }
-    
+
     XtCallActionProc( focus_widget, "SetKeyboardFocus", NULL, NULL, 0 );
 }
 
-void CallAction( Widget w, void *u, void *c ) 
+void CallAction( Widget w, void *u, void *c )
 {
     char buffer[MAX_XRMSTRING];
     Widget widget;
-	
+
     TRACE(8, "Widget called the CallAction callback");
     if(! u ) {
 	WARN("Callback CallAction invoked without argument i.e. without a widget name to set the focus to");
@@ -203,7 +207,7 @@ void CallAction( Widget w, void *u, void *c )
     /* need my own implementation here i.e. snprintf */
     char *args = WcCleanName( u, buffer );
     TRACE(8, "Widget Name: %s", buffer );
-    widget=WcFullNameToWidget( w, buffer );    
+    widget=WcFullNameToWidget( w, buffer );
     if(! widget ) return;
     WcCleanName( args, buffer );
     TRACE(8, "Action Name: %s", buffer );
@@ -238,7 +242,7 @@ static int get_section( char *section )
 	WARN("section [%s] not defined in %s", section, SIGNAGE.inifile );
 	return 0;
     }
-    int options = ((rc_ent_t*) mls( RC.db, p ))->chap; 
+    int options = ((rc_ent_t*) mls( RC.db, p ))->chap;
     return options;
 }
 
@@ -255,13 +259,13 @@ static char* get_task_name(int p)
 
 typedef struct chapter_info_st {
     int vset;
-    int opt;		     // all options from ini file 
+    int opt;		     // all options from ini file
     int callback;	     // helper struct for edit widget callback
     char *name;		     // chapter name
     str_exp_t se_script;    /* buffer for script stringexpand */
     Widget w_script;	     /* display script name using "label"  */
     char *script_cmd, *cur_script;
-    
+
 } chapter_info_t;
 int CHAPINFO = -1;
 
@@ -279,7 +283,7 @@ chapter_info_t *get_chapter_info( int p )
     if( p >= m_len( CHAPINFO) ) {
 	m_setlen(CHAPINFO, p+1 );
     }
-    
+
     return mls(CHAPINFO,p);
 }
 
@@ -310,7 +314,7 @@ void switch_page(int page)
 {
     if( page == CUR_PAGE ) return;
     Widget w0 = get_page_widget(CUR_PAGE);
-    Widget w1 = get_page_widget(page);    
+    Widget w1 = get_page_widget(page);
     XtUnmanageChild( w0 );
     XtManageChild(w1);
     CUR_PAGE = page;
@@ -344,7 +348,7 @@ static Widget create_script_widget( int task, int var, Widget mgr )
     char *type = STR( var, 1 );
 
 
-    // create a label "name" 
+    // create a label "name"
     return XtVaCreateManagedWidget(type,wbuttonWidgetClass, mgr,
 				   XtNgridWidth, 2,
 				   XtNgridx, GridX,
@@ -354,23 +358,23 @@ static Widget create_script_widget( int task, int var, Widget mgr )
 				   XtNlabel, type,
 				   XtNfill, 1, /* width */
 				   NULL);
-    
+
 }
 
-// copy buffer to variable and terminate string with zero 
+// copy buffer to variable and terminate string with zero
 char* buffer_to_var( int buf, int len, int var )
 {
     int max = m_len(buf);
     if( len > max || len < 1 ) len=max;
     char **d;
-    
+
     if( m_len(var) > 1 ) {
 	d = mls( var, 1 );
 	if( *d ) free(*d);
     } else {
 	d=m_add(var);
     }
-    
+
     *d = malloc( len +1 );
     m_read( buf, 0, (void**)d, len );
     (*d)[ len ] = 0;
@@ -413,19 +417,19 @@ void input_widget_enter_cb(Widget w, void *u, void *c)
     }
 
     TRACE(3, "current: %p, num:%d", w,i );
-        
+
     i= (i+1) % m_len(chap->callback);
     cb = mls(chap->callback, i);
 
 
     TRACE(3, "next: %p, num:%d", cb->widget,i );
-    
+
     XtCallActionProc( w, "focus_out", NULL, NULL, 0 );
     XtCallActionProc( cb->widget, "focus_in", NULL, NULL, 0 );
     XtCallActionProc( cb->widget, "SetKeyboardFocus", NULL, NULL, 0 );
 
-    
-    // SetKeyboardFocus( cb->widget );    
+
+    // SetKeyboardFocus( cb->widget );
 }
 
 
@@ -437,7 +441,7 @@ void userid_changed_cb(void*ctx,int var,int sig)
     int name  = (int) (intptr_t) ctx;
     int var5  = mvar_parse( name, 0 );
     char *id  = mvar_get_string( var5, 0);
-    
+
     int svar  = svar_lookup( name, SVAR_MSTRING_ARRAY );
     int *val  = (int*) svar_value(svar);
     if( ! *val ) *val=m_create(2,sizeof(int) );
@@ -453,17 +457,17 @@ static Widget create_input_widget( int task, int var, Widget mgr )
     char *section = get_task_name(task);
     char *name = STR(var,0);
 
-    
+
     char *input_var;
     asprintf(&input_var, "%s.%s", section, name );
     TRACE(4, "defining input box for var %s", input_var );
     m_put( var, input_var );
 
-    
+
     // our manager is a gridbox widget
-    // create a label and input widget inside 
+    // create a label and input widget inside
     Widget w;
-    
+
     // create a label to display "name"
     w = XtVaCreateManagedWidget(name,wlabelWidgetClass, mgr,
 				XtNweightx, 1,
@@ -509,7 +513,7 @@ static Widget create_switch_widget( int task, int var, Widget mgr )
     int  input_var;
     char *section = get_task_name(task);
     char *name =  STR(var,0); /* we have name=value inside the ini-file */
-    char *value = v_kget(var,1); 
+    char *value = v_kget(var,1);
 
 
     // parse: switch:test1,test2
@@ -525,15 +529,15 @@ static Widget create_switch_widget( int task, int var, Widget mgr )
     sv->value = m_split(0,optlist,',',1);
     char *str_on = v_kget(sv->value,0);
     char *str_off = v_kget(sv->value,1);
-   
+
     s_printf(input_var,0, "%s.%s", section, name );
     TRACE(4, "defining switch box for var %s, value:%s", m_str(input_var), value );
     k = svar_lookup(input_var, SVAR_MSTRING_ARRAY );
-    
+
     // our manager is a gridbox widget
-    // create a label and input widget inside 
+    // create a label and input widget inside
     Widget w;
-    
+
     // create a label to display "name"
     w = XtVaCreateManagedWidget(name,wlabelWidgetClass, mgr,
 				XtNweightx, 1,
@@ -558,7 +562,7 @@ static Widget create_switch_widget( int task, int var, Widget mgr )
 				NULL);
     XtAddCallback( w, XtNcallback, task_update_cb, (void*)(intptr_t) task );
     m_free(input_var);
-    
+
     return w;
 }
 
@@ -568,19 +572,19 @@ static Widget create_userid_widget( int task, int var, Widget mgr )
     char *section = get_task_name(task);
     char *name =  STR(var,0); /* we have name=value inside the ini-file */
 
-    // create a svar to store our uid 
+    // create a svar to store our uid
     int result_var = s_printf(0,0, "%s.%s", section, name );
     TRACE(4, "defining userid-widget for var %s", m_str(result_var) );
 
 
     // create a var5 to store task and result_var
-    	   
+
     int var_name = m_dub(result_var);
-    
+
     // our manager is a gridbox widget
-    // create a label and input widget inside 
+    // create a label and input widget inside
     Widget w;
-    
+
     // create a label to display "name"
     w = XtVaCreateManagedWidget(name,wlabelWidgetClass, mgr,
 				XtNweightx,1,
@@ -604,7 +608,7 @@ static Widget create_userid_widget( int task, int var, Widget mgr )
     //
     int var5 = mvar_parse( var_name, VAR_STRING );
     mvar_set_callback(var5, userid_changed_cb, (void*)(intptr_t)var_name, 0 );
-    // var_name will not be removed - intended memory leak 
+    // var_name will not be removed - intended memory leak
     return w;
 }
 
@@ -616,7 +620,7 @@ static Widget create_option_widget( int task, int var, Widget mgr )
     const char *input_var;
     char *section = get_task_name(task);
     char *name =  STR(var,0); /* we have name=value inside the ini-file */
-    char *value = v_kget(var,1); 
+    char *value = v_kget(var,1);
 
 
     // parse: switch:test1,test2
@@ -632,11 +636,11 @@ static Widget create_option_widget( int task, int var, Widget mgr )
     sv->value = s_printf(sv->value,0, "%s.%s", section, name );
     TRACE(4, "defining option box for var %s, value:%s", m_str(sv->value), value );
     input_var = m_str(sv->value);
-    
+
     // our manager is a gridbox widget
-    // create a label and input widget inside 
+    // create a label and input widget inside
     Widget w;
-    
+
     // create a label to display "name"
     w = XtVaCreateManagedWidget(name,wlabelWidgetClass, mgr,
 				XtNweightx,1,
@@ -650,15 +654,15 @@ static Widget create_option_widget( int task, int var, Widget mgr )
  				XtVaTypedArg, XtNlst,
 				XtRString, optlist, strlen(optlist) + 1,
 				"svar", input_var,
-				"value", "opt4",				 
+				"value", "opt4",
 				XtNgridx, GridX+1,
 				XtNgridy, GridY,
 				XtNweightx, 100,
 				XtNweighty, 0,
 				NULL);
-    
+
     XtAddCallback( w, XtNcallback, task_update_cb, (void*)(intptr_t) task );
-    
+
     return w;
 }
 
@@ -728,7 +732,7 @@ static chapter_info_t *create_chapter( int num )
     chap->vset = v_init();
     chap->callback = m_create(5, sizeof (struct chap_callback_st ));
     chap->name = get_task_name(num);
-    chap->opt = get_section(chap->name); 
+    chap->opt = get_section(chap->name);
 
     TRACE(2, "create chapter %s",  chap->name );
     return chap;
@@ -736,7 +740,7 @@ static chapter_info_t *create_chapter( int num )
 */
 
 #if 0
-// 
+//
 // unmanage  SIGNAGE.widget_grid
 // manage       chapter[0].widget_grid
 // or create    chapter[0].widget_grid
@@ -744,7 +748,7 @@ static void create_chapter0( Widget mgr, int task )
 {
     Widget w;
 
-    chapter_info_t *chap = create_chapter( task );    
+    chapter_info_t *chap = create_chapter( task );
     int x, y, p; int *d;
     y=0;
     m_foreach( chap->opt, p, d ) {
@@ -755,11 +759,11 @@ static void create_chapter0( Widget mgr, int task )
 				    NULL );
 
 	create_widget_from_var( task, *d, w );
-	y++; 
+	y++;
     }
-    
+
     char *label = "test chapter 0 leave";
-    x=0; 
+    x=0;
 
      // w = XtCreateManagedWidget(label,wlabelWidgetClass, mgr, wargs, n );
     w = XtVaCreateManagedWidget(label,wbuttonWidgetClass, mgr,
@@ -776,12 +780,12 @@ static void create_chapter0( Widget mgr, int task )
 
 
 /* mgr is a empty gridbox
-   task is the current task number 
+   task is the current task number
 
 
    Layout:
 
-   
+
 
 
 
@@ -789,16 +793,16 @@ static void create_chapter0( Widget mgr, int task )
 /*
 static void create_task( Widget mgr, int task )
 {
-    char *label; 
+    char *label;
     Widget w;
-    chapter_info_t *chap = create_chapter( task );    
+    chapter_info_t *chap = create_chapter( task );
 
     if( chap->opt <= 0 ) {
 	WARN("undefined task: %s", chap->name );
 	goto only_return_button;
     }
 
-    
+
     int p; int *d;
     m_foreach( chap->opt, p, d ) {
 	GridX=0;
@@ -806,7 +810,7 @@ static void create_task( Widget mgr, int task )
 	GridY++;
     }
 
-    
+
  only_return_button:
     label = "return";
 
@@ -816,7 +820,7 @@ static void create_task( Widget mgr, int task )
 				XtNgridy,GridY,
 				XtNlabel, label,
 				XtNfill, 0,
-				XtNweightx, 0, XtNweighty, 0,				
+				XtNweightx, 0, XtNweighty, 0,
 				XtNgravity, 3,
 				NULL );
     XtAddCallback(w, XtNcallback, task_leave_cb, (XtPointer)0 );
@@ -846,7 +850,7 @@ static void create_menu_page(Widget mgr)
     int xmax,ymax;
     LABELS=m_create(max,sizeof(Widget));
     double a = ceil(sqrt(max));
-    
+
 
     xmax = a;
     ymax = (max / a)+1;
@@ -869,7 +873,7 @@ static void create_menu_page(Widget mgr)
 	    m_put(LABELS, &w);
 	    MAX_LABELS++;
 	}
-    }    
+    }
 }
 */
 
@@ -954,7 +958,7 @@ static int m_split_list( const char *s, const char *delm )
     int w  =  0;
     int p  =  0;
     int ch;
-    
+
     do {
 	ch = s[p];
 	if(!w) {
@@ -963,13 +967,13 @@ static int m_split_list( const char *s, const char *delm )
 	}
 
 	if( ch == *delm || ch == 0 ) {
-	    m_putc(w,0); w=0;    
+	    m_putc(w,0); w=0;
 	} else {
 	    m_putc(w,s[p]);
 	}
 	p++;
     } while( ch );
-    
+
     return ls;
 }
 */
@@ -1004,6 +1008,13 @@ void proc_exit()
 		}
 }
 
+void run_shell_command( char *cmd )
+{
+  TRACE(TRACE_MAIN, "cmd: %s ", cmd );
+  if(! is_empty(cmd) ) system(cmd); else WARN("expecting command to execute but got null");
+}
+
+
 /******************************************************************************
 *   MAIN function
 ******************************************************************************/
@@ -1012,23 +1023,23 @@ int main ( int argc, char **argv )
     signal (SIGCHLD, proc_exit);
     trace_main = TRACE_MAIN;
     trace_slog = TRACE_SLOG;
-    
+
     XtAppContext app;
     m_init(); trace_level=1;
     mv_init(); // will be removed
     svar_init(); // will be removed
     mvar_init();
-    
+
     /*
     asgn("task1.t1=hello");
     asgn("task1.t2=world");
     const char *s = mvar_str_string( "task1", "form: $t1 und $t2");
     fprintf(stderr,"%s\n", s );
     */
-    
 
 
-    
+
+
     XtSetLanguageProc (NULL, NULL, NULL);
     XawInitializeWidgetSet();
 
@@ -1080,6 +1091,10 @@ int main ( int argc, char **argv )
 				XtNumber(SIGNAGE_CONFIG_RES),
 				(ArgList)0, 0 );
 
+
+    run_shell_command( SIGNAGE.initscript );
+
+
     InitializeApplication(appShell);
 
     /*  --  Realize the widget tree and enter
@@ -1100,6 +1115,6 @@ int main ( int argc, char **argv )
     svar_destruct();
     m_destruct();
 
-    
+
     return EXIT_SUCCESS;
 }

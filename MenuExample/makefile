@@ -22,10 +22,10 @@ LOADLIBES=-lXaw -lXt -lX11
 xtcw/%.h %.c: %.widget
 	wb_search=$(srcdir) $(WBWRAP) $^ $(WBUILD) $(WFLAGS)
 
-ALL: SmeLine2.c menu-xaw
+ALL: SmeLine2.c SmeBtn.c menu-xaw
 
-menu-xaw: menu-xaw.c SmeLine2.o
+menu-xaw: menu-xaw.c SmeLine2.o SmeBtn.o
 
 clean:
 	-${RM} SmeLine2.c menu-xaw *.o xtcw/* *.tex *.3
-
+	-rmdir xtcw
