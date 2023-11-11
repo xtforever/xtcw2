@@ -1,0 +1,154 @@
+@class WmenuPopup(Wlabel)
+@CLASSVARS
+@ The Core variable |compress_exposure| is OR'ed with
+|XtExposeGraphicsExpose|, in order to get graphics expose events delivered
+to the |expose| method.
+var compress_exposure = XtExposeCompressMultiple OR XtExposeGraphicsExpose
+var compress_motion = True
+@var visible_interest = False
+
+
+@PUBLIC
+@var <Callback> XtCallbackList combo_cb = NULL
+@var StringMArray lst = <String> "A,B,C"
+
+
+@PRIVATE
+@var Widget shell
+@var Widget listbox
+@var int entry_mode
+@var int filter
+@var int f_lst
+@var int k_lst
+@var int lines_height
+@var int selection
+
+@TRANSLATIONS
+@trans <Btn1Down>: SetKeyboardFocus() menu_open()
+
+
+
+@METHODS
+
+@proc initialize
+{
+
+    TRACE(2, "init %s", XtName($) );
+	$shell = 0;
+	$entry_mode=0;
+	$filter = m_create(200,1);
+	$f_lst = m_create(100,sizeof(char*) );
+	$k_lst = m_create(100,sizeof(int) );
+    $lines_height = 20;
+}
+
+@proc destroy
+{
+	m_free( $filter );
+	m_free( $f_lst  );
+	m_free( $k_lst  );
+}
+
+
+@UTILITIES
+@proc open_popup($)
+{
+    if( $entry_mode ) return;
+
+    if( ! $shell ) {
+	    $shell = XtCreatePopupShell ( "combo_shell", overrideShellWidgetClass,
+                                  $, NULL, 0 );
+    	    $listbox = XtVaCreateManagedWidget ( "combo-scrollbox", wlsWidgetClass,
+				       $shell, NULL );
+	    /* XtAddCallback($listbox, "callback", (XtCallbackProc)item_selected_cb, $ ); */
+
+	    XtRealizeWidget($shell);
+	    static Atom wm_delete_window;
+    	    wm_delete_window = XInternAtom(XtDisplay($), "WM_DELETE_WINDOW",
+                                   False);
+    	    (void) XSetWMProtocols (XtDisplay($), XtWindow($shell),
+                            &wm_delete_window, 1);
+
+        XtAugmentTranslations( $shell, XtParseTranslationTable( "<LeaveWindow>: XtMenuPopdown() menu_popdown()"));
+	}
+
+	Position root_x, root_y;
+	XtTranslateCoords($, 0, $height + $border_width, &root_x, &root_y);
+	XtVaSetValues($shell, "x", (int) root_x, "y", (int) root_y, NULL );
+	XtResizeWidget($shell, $width, $lines_height * $xftFont->height, 0 );
+
+	XtPopup($shell, XtGrabNone);
+	$entry_mode=1;
+}
+
+
+@proc  popdown_shell_notify_client($)
+{
+	XtPopdown($shell);
+	$entry_mode=0;
+	XtCallCallbackList( $, $combo_cb, (XtPointer) (intptr_t) $selection );
+}
+
+
+@ACTIONS
+
+@ params: ($, XEvent *event _X_UNUSED, String *params _X_UNUSED, Cardinal *num_params _X_UNUSED)
+@proc SetKeyboardFocus
+{
+    TRACE(2,"try to set keyboard focus");
+    Widget shell, parent;
+
+    shell = parent = $;
+    while (parent) {
+        if (XtIsShell(shell = parent))
+            break;
+        parent = XtParent(parent);
+    }
+
+    XtSetKeyboardFocus(shell, $);
+}
+@proc print_info
+{
+	TRACE(2, "info %s", XtName($));
+}
+
+@proc menu_popdown
+{
+	TRACE(2, "WmenuPopup %s menu_popdown", XtName($));
+     $entry_mode=0;
+    if( $entry_mode ) {
+	    // XtPopdown($shell);
+
+       // XtMenuPopdown($shell);
+	    $entry_mode=0;
+	}
+}
+
+@proc menu_open
+{
+	TRACE(2, "WmenuPopup %s menu_open", XtName($));
+    open_popup($);
+
+}
+
+@proc notify
+{
+	TRACE(2, "WmenuPopup  %s notify: entry_mode %d", XtName($), $entry_mode );
+	/* item_selected_cb(NULL, $, (XtPointer)0 ); */
+}
+
+
+@IMPORTS
+@incl "mls.h"
+@incl "converters.h"
+@incl <X11/Shell.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xmu/Converters.h>
+@incl "xutil.h"
+@incl "xtcw/Wls.h"
