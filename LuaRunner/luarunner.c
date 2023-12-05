@@ -57,7 +57,7 @@ extern int luaopen_luaxt(lua_State* L);
 #include "m_tool.h"
 #include "var5.h"
 #include "font.h"
-
+#include "canvas-draw.h"
 
 
 // static inline const char *m_str(const int m) { return m_buf(m); }
@@ -669,8 +669,7 @@ xtsetvalue_lua( lua_State *L )
   -------------------------------------------------------------------------------------------------------------------- */
 
 
-/* ugly hack for testing purposes */
-#include "canvas-draw-cb.c"
+
 
 /** all widgets callbacks and actions must be registered at this point
  */

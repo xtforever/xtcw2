@@ -17,4 +17,6 @@ typedef struct canvas_draw_st {
 
 } canvas_draw_t;
 
+void canvas_draw_cb( Widget w, XtPointer user, XtPointer class );
+
 #endif
