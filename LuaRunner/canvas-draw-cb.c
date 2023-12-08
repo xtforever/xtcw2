@@ -6,9 +6,9 @@
 
 
 #define NANOSVG_IMPLEMENTATION
-#include "nanosvg/src/nanosvg.h"
+#include "nanosvg.h"
 #define NANOSVGRAST_IMPLEMENTATION
-#include "nanosvg/src/nanosvgrast.h"
+#include "nanosvgrast.h"
 
 
 /*
