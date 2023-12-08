@@ -103,13 +103,15 @@ int xim2_create_ximage(  XImage2 *im, Display *dpy, Visual *vis, Drawable d )
   return 0;
 }
 
-int xim2_put_image(  XImage2 *im, int clip_x, int clip_y, int src_x, int src_y, int dest_x, int dest_y )
+int xim2_put_image(  XImage2 *im, int clip_x, int clip_y,
+		     int src_x, int src_y,
+		     int dest_x, int dest_y, int dest_w, int dest_h )
 {
   
   GC gc = XDefaultGC(im->dpy,XDefaultScreen(im->dpy));
   XSetClipMask (im->dpy, gc, im->mask);
   XSetClipOrigin (im->dpy, gc, clip_x, clip_y );  
-  XPutImage(im->dpy, im->d, gc, im->image, src_x,src_y,   dest_x, dest_y, im->width, im->height );
+  XPutImage(im->dpy, im->d, gc, im->image, src_x,src_y,   dest_x, dest_y, dest_w, dest_h );
   XSetClipMask (im->dpy, gc, None);
   return 0;
 }
@@ -339,11 +341,15 @@ void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
     dst_y = 0;
   }
   
-
-
+  int dst_w = img2.width;
+  int dst_h = img2.height;
+  if( dst_w + dst_x > c->win_width ) dst_w = c->win_width - dst_x;
+  if( dst_h + dst_y > c->win_height) dst_h = c->win_height- dst_y;
+  
+   
     
-  xim2_put_image( &img2, logo_x, logo_y, src_x, src_y,  dst_x, dst_y );
-  printf("%lu x %lu\n",  img2.width, img2.height );
+  xim2_put_image( &img2, logo_x, logo_y, src_x, src_y,  dst_x, dst_y, dst_w, dst_h );
+  printf("draw %lu x %lu\n",   dst_w, dst_h );
 }
 
 typedef struct draw2_st {
