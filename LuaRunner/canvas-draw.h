@@ -6,6 +6,7 @@
 
 typedef struct canvas_draw_st {
     GC gc[2];
+    XtAppContext app_context;
     XftFont* xfont;
     XftColor xcol[2];
     XftDraw *xdraw;

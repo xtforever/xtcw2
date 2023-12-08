@@ -75,6 +75,8 @@
     $canv.gc[1] = XtGetGC( $,
       (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
       &values);
+
+     $canv.app_context = XtWidgetToApplicationContext( $ );
 }
 
 

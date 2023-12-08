@@ -3,25 +3,25 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 105 "Canvas.widget"
-#include <assert.h>
-#line 106 "Canvas.widget"
-#include <stdint.h>
 #line 107 "Canvas.widget"
-#include <X11/Intrinsic.h>
+#include <assert.h>
 #line 108 "Canvas.widget"
-#include <X11/Xmu/Converters.h>
+#include <stdint.h>
 #line 109 "Canvas.widget"
-#include <X11/Xft/Xft.h>
+#include <X11/Intrinsic.h>
 #line 110 "Canvas.widget"
-#include <X11/Xregion.h>
+#include <X11/Xmu/Converters.h>
 #line 111 "Canvas.widget"
-#include "converters.h"
+#include <X11/Xft/Xft.h>
 #line 112 "Canvas.widget"
-#include "xutil.h"
+#include <X11/Xregion.h>
 #line 113 "Canvas.widget"
-#include "mls.h"
+#include "converters.h"
 #line 114 "Canvas.widget"
+#include "xutil.h"
+#line 115 "Canvas.widget"
+#include "mls.h"
+#line 116 "Canvas.widget"
 #include "canvas-draw.h"
 #include <xtcw/CanvasP.h>
 static void _resolve_inheritance(
@@ -59,42 +59,42 @@ static void realize(
 Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
-#line 83 "Canvas.widget"
+#line 85 "Canvas.widget"
 static void paint1(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 89 "Canvas.widget"
+#line 91 "Canvas.widget"
 static void init_colors(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 83 "Canvas.widget"
+#line 85 "Canvas.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 83 "Canvas.widget"
+#line 85 "Canvas.widget"
 static void paint1(Widget self)
 #else
-#line 83 "Canvas.widget"
+#line 85 "Canvas.widget"
 static void paint1(self)Widget self;
 #endif
-#line 84 "Canvas.widget"
+#line 86 "Canvas.widget"
 {
     XTFUNC();
     XtCallCallbackList( self, ((CanvasWidget)self)->canvas.callback, (XtPointer) & ((CanvasWidget)self)->canvas.canv );
 }
-#line 89 "Canvas.widget"
+#line 91 "Canvas.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 89 "Canvas.widget"
+#line 91 "Canvas.widget"
 static void init_colors(Widget self)
 #else
-#line 89 "Canvas.widget"
+#line 91 "Canvas.widget"
 static void init_colors(self)Widget self;
 #endif
-#line 90 "Canvas.widget"
+#line 92 "Canvas.widget"
 {
 	pixel_to_xftcolor( self, ((CanvasWidget)self)->core.background_pixel, BG );
  	pixel_to_xftcolor( self, ((CanvasWidget)self)->canvas.foreground,       FG );
@@ -257,18 +257,20 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
     ((CanvasWidget)self)->canvas.canv.gc[1] = XtGetGC( self,
       (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
       &values);
+
+     ((CanvasWidget)self)->canvas.canv.app_context = XtWidgetToApplicationContext( self );
 }
-#line 96 "Canvas.widget"
-#line 97 "Canvas.widget"
+#line 98 "Canvas.widget"
+#line 99 "Canvas.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 97 "Canvas.widget"
+#line 99 "Canvas.widget"
 canvas_draw_t * canvas_get_priv(Widget self)
 #else
-#line 97 "Canvas.widget"
+#line 99 "Canvas.widget"
 canvas_draw_t * canvas_get_priv(self)Widget self;
 #endif
-#line 98 "Canvas.widget"
+#line 100 "Canvas.widget"
 {
     return & ((CanvasWidget)self)->canvas.canv;
 }

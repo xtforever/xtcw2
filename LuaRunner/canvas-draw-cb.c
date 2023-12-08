@@ -3,6 +3,8 @@
 #include "font.h"
 #include <X11/Xft/Xft.h>
 #include <stdint.h>
+#include "timer.h"
+
 
 
 #define NANOSVG_IMPLEMENTATION
@@ -270,6 +272,16 @@ XImage *make_bitmap ( Display *dpy, Visual *win_vis, uint32_t *img, int width, i
   return ximage;
 }
 
+static XtIntervalId expose_id = 0;
+
+void delayed_expose(XtPointer client_data, XtIntervalId *id)
+{
+  expose_id = 0;
+  printf("delayed_expose execute\n");
+  canvas_draw_cb( 0,0, client_data );
+}
+
+
 
 void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
 {
@@ -280,8 +292,6 @@ void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
   Visual *visual = XDefaultVisual(dpy,screenno);
   static XImage2 img2 = {0};
     
-  XDrawLine( c->dpy, d, c->gc[0], 0,0, c->win_width, c->win_height );
-  TRACE(3,"%u,%u ", c->sl_posx, c->sl_posy );
 
 
   if(! img2.loaded ) {
@@ -297,6 +307,26 @@ void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
     img2.last_x = -1;
     img2.loaded=1;
   }
+
+  /* delayed draw:
+     if we receive a call in less than 300ms we wait for another 300ms before drawing
+     if we receive another call, while we are waiting, we reset the counter
+  */
+
+  static int last_call = 0;
+  int cur = timer_get_ms();
+  int diff = cur - last_call;
+  last_call = cur;
+  if( diff < 300 ) {
+    if( expose_id ) 
+      XtRemoveTimeOut(expose_id);
+    expose_id = XtAppAddTimeOut(c->app_context, 300, delayed_expose, class );
+    printf("expose is delayed\n");
+    return;
+  }
+  
+  XDrawLine( c->dpy, d, c->gc[0], 0,0, c->win_width, c->win_height );
+  TRACE(3,"%u,%u ", c->sl_posx, c->sl_posy );
   
   
   int slx =  c->sl_posx / 100;
