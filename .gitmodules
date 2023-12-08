@@ -4,3 +4,6 @@
 [submodule "LuaRunner/nanosvg"]
 	path = LuaRunner/nanosvg
 	url = https://github.com/memononen/nanosvg.git
+[submodule "swig"]
+	path = swig
+	url = https://github.com/swig/swig.git
