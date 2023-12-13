@@ -64,7 +64,7 @@ endif
 
 DEPS=m_tool.o opts.o svar2.o widreg.o
 DEPS+=njson_read.o njson_lex.lex.o njson_parse.tab.o var5.o m_mysql.o
-DEPS+=luaxt_wrap.o luaxt.o lua-var5.o canvas-draw-cb.o
+DEPS+=luaxt_wrap.o luaxt.o lua-var5.o canvas-draw-cb.o msg_box.o
 
 WIDGET_OBJ=$(patsubst %.widget,%.o,$(wildcard *.widget))
 WIDGET_SRC=$(patsubst %.widget,%.c,$(wildcard *.widget))

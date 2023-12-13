@@ -96,7 +96,7 @@ end
 luarunner.WcChildren: gb2
 
 *gb2.WcClass: gridbox
-*gb2.WcChildren: zoom sc menu
+*gb2.WcChildren: zoom sc t1 menu
 
 *painter1.gridy: 1
 
@@ -109,14 +109,22 @@ luarunner.WcChildren: gb2
 
 *sc.gridy: 1
 *sc.WcClass: ScrolledCanvas
-*sc.canvas.callback: canvas_draw_cb
+*sc.canvas.callback: canvas_draw_cb    
 *sc*foreground: BLUE
 *sc.canvas.width: 300
 *sc.canvas.height: 300
 *sc.canvas.translations: <Btn1Down>: LUA("paint1")
 
+*t1.WcClass: WButton
+*t1.label: warn
+*t1.fill: none
+*t1.gravity: center
+*t1.weighty: 0
+*t1.gridy: 2
+*t1.callback: MessageBox(WARN, "Hello World")
+
 *menu.WcClass: WmenuPopup
-*menu.gridy: 2
+*menu.gridy: 3
 *menu.weighty: 0
 
 

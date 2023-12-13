@@ -272,72 +272,9 @@ XImage *make_bitmap ( Display *dpy, Visual *win_vis, uint32_t *img, int width, i
   return ximage;
 }
 
-static XtIntervalId expose_id = 0;
-
-void delayed_expose(XtPointer client_data, XtIntervalId *id)
-{
-  expose_id = 0;
-  printf("delayed_expose execute\n");
-  canvas_draw_cb( 0,0, client_data );
-}
 
 
-
-#define XTPTR(x) ((XtPointer)(intptr_t)(x)) 
-
-int compress_redraw_list = 0;
-
-struct compress_redraw_st {
-  void (*func) (void *);
-  void *class;
-  int last_call;
-  XtIntervalId id;  
-};
-
-
-
-void compress_redraw_cb(XtPointer client_data, XtIntervalId *)
-{
-  int p = (intptr_t)  client_data;
-  struct compress_redraw_st *n = mls(compress_redraw_list,p);
-  n->id = 0;
-  n->last_call = timer_get_ms();
-  if( n->func ) n->func( n->class );
-}
-
-void compress_redraw(XtAppContext CTX, void (*func) (void *), void *class, int timeout )
-{
-  if(! compress_redraw_list )
-    compress_redraw_list = m_create(10,
-				    sizeof(struct compress_redraw_st));    
-  int p = m_lookup_obj( compress_redraw_list, &func, sizeof(void*) );
-  struct compress_redraw_st *n = mls(compress_redraw_list,p);
-
-  int cur = timer_get_ms();
-  int diff = cur - n->last_call;
-  
-  /* timer vorhanden, dann loeschen und neu start */
-  if( n->id ) {
-    XtRemoveTimeOut(n->id);
-    n->id=XtAppAddTimeOut(CTX, timeout, compress_redraw_cb, XTPTR(p) );
-    return;
-  }
-  n->func = func;
-  n->class = class;
-
-
-  /* kein timer aktiv, also entweder
-     in die warteschlange oder sofort bearbeitem */
-  if( n->last_call == 0 || diff > timeout ) {
-    compress_redraw_cb(  XTPTR(p), NULL );
-  } else {
-  n->id=XtAppAddTimeOut(CTX, timeout, compress_redraw_cb, XTPTR(p) );
-  }
-}
-
-
-
-void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
+void draw_svg( XtPointer class )
 {
   canvas_draw_t *c = class;
   Drawable d = XftDrawDrawable( c->xdraw );
@@ -346,7 +283,6 @@ void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
   Visual *visual = XDefaultVisual(dpy,screenno);
   static XImage2 img2 = {0};
     
-
 
   if(! img2.loaded ) {
     char *s = "nanosvg/example/23.svg";
@@ -367,21 +303,6 @@ void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
      if we receive another call, while we are waiting, we reset the counter
   */
 
-  static int last_call = 0;
-  int cur = timer_get_ms();
-  int diff = cur - last_call;
-  last_call = cur;
-  if( diff < 300 ) {
-    if( expose_id ) {
-      printf("expose is delayed\n");
-      return;
-      XtRemoveTimeOut(expose_id);
-    }
-    
-    expose_id = XtAppAddTimeOut(c->app_context, 300, delayed_expose, class );
-    printf("expose is delayed\n");
-    return;
-  }
   
   XFillRectangle(  c->dpy, d, c->gc[1], 0,0, c->win_width, c->win_height ); 
   XDrawLine( c->dpy, d, c->gc[0], 0,0, c->win_width, c->win_height );
@@ -440,6 +361,65 @@ void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
   xim2_put_image( &img2, logo_x, logo_y, src_x, src_y,  dst_x, dst_y, dst_w, dst_h );
   printf("draw %u x %u\n",   dst_w, dst_h );
 }
+
+
+
+#define XTPTR(x) ((XtPointer)(intptr_t)(x)) 
+
+int compress_redraw_list = 0;
+
+struct compress_redraw_st {
+  void (*func) (void *);
+  void *class;
+  int last_call;
+  XtIntervalId id;  
+};
+
+
+void compress_redraw_cb(XtPointer client_data, XtIntervalId *)
+{
+  int p = (intptr_t)  client_data;
+  struct compress_redraw_st *n = mls(compress_redraw_list,p);
+  n->id = 0;
+  n->last_call = timer_get_ms();
+  if( n->func ) n->func( n->class );
+}
+
+void compress_redraw(XtAppContext CTX, void (*func) (void *), void *class, int timeout )
+{
+  if(! compress_redraw_list )
+    compress_redraw_list = m_create(10,
+				    sizeof(struct compress_redraw_st));    
+  int p = m_lookup_obj( compress_redraw_list, &func, sizeof(void*) );
+  struct compress_redraw_st *n = mls(compress_redraw_list,p);
+
+  /* timer vorhanden, dann expose ignorieren */
+  if( n->id ) return;
+  
+  int cur = timer_get_ms();
+  int diff = cur - n->last_call;
+  n->func = func;
+  n->class = class;
+
+  /* kein timer aktiv, also entweder
+     in die warteschlange oder sofort ausfuehren */
+  if( diff < timeout ) {
+    n->id=XtAppAddTimeOut(CTX, timeout, compress_redraw_cb, XTPTR(p) );
+    return;
+  }
+  
+  compress_redraw_cb(  XTPTR(p), NULL );
+}
+
+void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
+{
+  compress_redraw(
+		  XtWidgetToApplicationContext(w),
+		  draw_svg,
+		  class,
+		  300 );
+}
+
 
 typedef struct draw2_st {
     int init;

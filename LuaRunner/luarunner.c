@@ -58,12 +58,13 @@ extern int luaopen_luaxt(lua_State* L);
 #include "var5.h"
 #include "font.h"
 #include "canvas-draw.h"
-
+#include "msg_box.h"
 
 // static inline const char *m_str(const int m) { return m_buf(m); }
 
 static lua_State *LUA_CTX;
 XtAppContext LUAXT_APP;
+
 Widget TopLevel;
 int trace_main;
 extern int trace_slog;
@@ -689,6 +690,8 @@ static void RegisterApplication ( Widget top )
 
     RCB( top, canvas_draw_cb );
     WcRegisterAction(XtWidgetToApplicationContext(top), "LUA", LUA_action);
+
+    msgbox_init(top);
 }
 
 /*  init application functions and structures and widgets

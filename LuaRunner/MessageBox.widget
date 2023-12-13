@@ -1,0 +1,84 @@
+@class MessageBox(Gridbox)
+
+@CLASSVARS
+
+@PUBLIC
+@var <Callback> XtCallbackList callback   = NULL
+
+@PRIVATE
+
+@METHODS
+
+
+@proc realize
+{
+    XTFUNC();
+    #realize($,mask,attributes);
+    add_widgets($);
+}
+
+@UTILITIES
+
+
+@proc add_widgets($)
+{
+  XTFUNC();
+
+  Widget btn;
+  btn = XtVaCreateManagedWidget( "Button", wbuttonWidgetClass, $,
+                                  "gridy", 0,
+                                  "gridx", 1,
+                                  "fill", 3,
+                                  "weighty", 10,
+                                  "weightx", 70,
+				                  "gridWidth", 1,
+				                  "gridHeight", 1,
+				  "label", "Hello World",
+                                  NULL );
+
+  XtAddCallback(btn, "callback",(XtCallbackProc) btn_close_cb, $ );
+
+
+  btn = XtVaCreateManagedWidget( "Button", wbuttonWidgetClass, $,
+                                  "gridy", 0,
+                                  "gridx", 0,
+                                  "fill", 3,
+                                  "weighty", 10,
+                                  "weightx", 30,
+				                  "gridWidth", 1,
+				                  "gridHeight", 1,
+				  "label", "Hello World",
+                                  NULL );
+
+
+  btn = XtVaCreateManagedWidget( "Button", wbuttonWidgetClass, $,
+                                  "gridy", 1,
+                                  "gridx", 0,
+                                  "fill", 1,
+                                  "weighty", 0,
+                                  "weightx", 1,
+				                  "gridWidth", 2,
+				                  "gridHeight", 1,
+				  "label", "Hello World",
+                                  NULL );
+
+}
+
+
+@proc btn_close_cb(Widget w, $, void *d )
+{
+    XTFUNC();
+    XtCallCallbackList( $, $callback, NULL );
+}
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"
+@incl "xutil.h"
+@incl <X11/Xaw/Command.h>
+@incl "xtcw/Wbutton.h"
