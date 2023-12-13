@@ -174,7 +174,9 @@ static void sl_motion(self,event,params,num_params)Widget self;XEvent*event;Stri
 {
 	int y = event->xbutton.x;
     if( y < 0 ) y=0;
-    ((HSliderWidget)self)->hSlider.pos = (y *RES / ((HSliderWidget)self)->core.width);
+    int p =  (y *RES / ((HSliderWidget)self)->core.width);
+    if( ((HSliderWidget)self)->hSlider.pos == p ) return;
+    ((HSliderWidget)self)->hSlider.pos = p;
     draw_slider(self);
     XtCallCallbackList( self, ((HSliderWidget)self)->hSlider.callback, (XtPointer) (intptr_t) ((HSliderWidget)self)->hSlider.pos );
 }
@@ -257,5 +259,5 @@ static void expose(self,event,region)Widget self;XEvent * event;Region  region;
   ((HSliderWidget)self)->hSlider.sly = -1; /* invalidate the cache */
   draw_slider(self);
 }
-#line 128 "HSlider.widget"
-#line 129 "HSlider.widget"
+#line 130 "HSlider.widget"
+#line 131 "HSlider.widget"

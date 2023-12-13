@@ -118,7 +118,9 @@ var compress_motion = True
 {
 	int y = event->xbutton.x;
     if( y < 0 ) y=0;
-    $pos = (y *RES / $width);
+    int p =  (y *RES / $width);
+    if( $pos == p ) return;
+    $pos = p;
     draw_slider($);
     XtCallCallbackList( $, $callback, (XtPointer) (intptr_t) $pos );
 }

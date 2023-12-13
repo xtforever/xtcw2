@@ -87,8 +87,9 @@
     XTFUNC();
     $priv->sl_posx = (intptr_t) d;
     $=$can;
-    $expose($,NULL,NULL);
+    $expose($,NULL,NULL); 
 }
+
 @proc slidery_cb(Widget w, $, void *d )
 {
     XTFUNC();

@@ -1,6 +1,11 @@
 @class Canvas(Core)
 @ Demo widget: draw something
 
+@classvars
+        @var compress_motion = True
+        @var compress_exposure = XtExposeCompressMultiple
+        @var compress_enterleave = True
+
 @PUBLIC
 @var <XftFont> XftFont* xftFont = <String> "Serif-22"
 @var Pixel foreground = XtDefaultForeground
@@ -19,8 +24,8 @@
 @proc expose
 {
     XTFUNC();
-	XftDrawRect(DRAW,BG,0,0,$width,$height);
-	paint1($);
+    /* XftDrawRect(DRAW,BG,0,0,$width,$height); */
+    paint1($);
 }
 
 @proc initialize
@@ -78,7 +83,6 @@
 
      $canv.app_context = XtWidgetToApplicationContext( $ );
 }
-
 
 
 @UTILITIES

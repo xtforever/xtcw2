@@ -3,27 +3,27 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 104 "ScrolledCanvas.widget"
-#include <X11/Xatom.h>
 #line 105 "ScrolledCanvas.widget"
-#include <X11/Xft/Xft.h>
+#include <X11/Xatom.h>
 #line 106 "ScrolledCanvas.widget"
-#include "converters-xft.h"
+#include <X11/Xft/Xft.h>
 #line 107 "ScrolledCanvas.widget"
-#include "converters.h"
+#include "converters-xft.h"
 #line 108 "ScrolledCanvas.widget"
-#include <X11/Xmu/Converters.h>
+#include "converters.h"
 #line 109 "ScrolledCanvas.widget"
-#include "mls.h"
+#include <X11/Xmu/Converters.h>
 #line 110 "ScrolledCanvas.widget"
-#include "xutil.h"
+#include "mls.h"
 #line 111 "ScrolledCanvas.widget"
-#include <X11/Xaw/Command.h>
+#include "xutil.h"
 #line 112 "ScrolledCanvas.widget"
-#include "xtcw/HSlider.h"
+#include <X11/Xaw/Command.h>
 #line 113 "ScrolledCanvas.widget"
-#include "xtcw/VSlider.h"
+#include "xtcw/HSlider.h"
 #line 114 "ScrolledCanvas.widget"
+#include "xtcw/VSlider.h"
+#line 115 "ScrolledCanvas.widget"
 #include "xtcw/Canvas.h"
 #include <xtcw/ScrolledCanvasP.h>
 static void _resolve_inheritance(
@@ -55,7 +55,7 @@ static void sliderx_cb(
 Widget ,Widget,void *
 #endif
 );
-#line 92 "ScrolledCanvas.widget"
+#line 93 "ScrolledCanvas.widget"
 static void slidery_cb(
 #if NeedFunctionPrototypes
 Widget ,Widget,void *
@@ -144,18 +144,18 @@ static void sliderx_cb(w,self,d)Widget  w;Widget self;void * d;
     XTFUNC();
     ((ScrolledCanvasWidget)self)->scrolledCanvas.priv->sl_posx = (intptr_t) d;
     self=((ScrolledCanvasWidget)self)->scrolledCanvas.can;
-    ((ScrolledCanvasWidgetClass)self->core.widget_class)->core_class.expose(self,NULL,NULL);
+    ((ScrolledCanvasWidgetClass)self->core.widget_class)->core_class.expose(self,NULL,NULL); 
 }
-#line 92 "ScrolledCanvas.widget"
+#line 93 "ScrolledCanvas.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 92 "ScrolledCanvas.widget"
+#line 93 "ScrolledCanvas.widget"
 static void slidery_cb(Widget  w,Widget self,void * d)
 #else
-#line 92 "ScrolledCanvas.widget"
+#line 93 "ScrolledCanvas.widget"
 static void slidery_cb(w,self,d)Widget  w;Widget self;void * d;
 #endif
-#line 93 "ScrolledCanvas.widget"
+#line 94 "ScrolledCanvas.widget"
 {
     XTFUNC();
     ((ScrolledCanvasWidget)self)->scrolledCanvas.priv->sl_posy = (intptr_t) d;
