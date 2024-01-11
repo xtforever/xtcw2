@@ -1,9 +1,11 @@
 #include "canvas-draw.h"
+#include "xtcw/Canvas.h"
 #include "mls.h"
 #include "font.h"
 #include <X11/Xft/Xft.h>
 #include <stdint.h>
 #include "timer.h"
+#include "wcreg2.h"
 
 
 
@@ -13,49 +15,65 @@
 #include "nanosvgrast.h"
 
 
-/*
-XSetFunction(dpy, gc, GXandInverted);
-XSetBackground(dpy, gc, 0UL);
-XSetForeground(dpy, gc, ~0UL);
-XCopyPlane(dpy, mask, win, gc, ..., 1UL);
-XSetFunction(dpy, gc, GXor);
-XCopyArea(dpy, image, win, gc, ...);
-*/
+#include "ximage2.h"
 
 
-typedef unsigned char u8;
-typedef uint32_t img_pixel_t;
+
+int  xim2_load_svg( XImage2 *im, const char *filename );
+void xim2_render( XImage2 *im, Display *dpy, Visual *vis, Drawable d, float scale, int w0 );
+int xim2_put_image(  XImage2 *im, int clip_x, int clip_y,
+		     int src_x, int src_y,
+		     int dest_x, int dest_y, int dest_w, int dest_h );
 
 XImage *make_bitmap ( Display *dpy, Visual *win_vis, uint32_t *img, int width, int height );
+int xim2_rasterize( XImage2 *im, float scale, int w0, int h0 );
+int xim2_create_ximage(  XImage2 *im );
 
-typedef struct _Ximage2 {
-  XImage* image;
-  Pixmap mask;
-  size_t width,height, orig_w, orig_h;
-  NSVGimage *nsvg;
-  NSVGrasterizer *rast;
-  uint32_t *rgba_data;
-  Display *dpy; Visual *vis; Drawable d; 
-  int loaded;
-  int last_x,last_y;
-} XImage2;
+
+void xim2_init(  Widget top )
+{
+     RCB( top, canvas_draw_cb );
+}
+
 
 
 int  xim2_load_svg( XImage2 *im, const char *filename )
 {
-  NSVGimage *image = NULL;
+
+  if(im->nsvg) {
+    nsvgDelete(im->nsvg);
+    im->nsvg=NULL;
+  }
+  
   // const char* filename = "nanosvg/example/23.svg";
   // const char* filename = "SVG/warning-sign-9743.svg";
   TRACE(3,"parsing %s\n", filename);
-  image = nsvgParseFromFile(filename, "px", 96.0f);
+  NSVGimage *image = nsvgParseFromFile(filename, "px", 96.0f);
   if (image == NULL) {
     WARN("Could not open SVG image\n");
     return 1;
   }
+
   im->orig_w =  (int)image->width;
   im->orig_h = (int)image->height;
   im->nsvg = image;
   return 0;
+}
+
+void xim2_render( XImage2 *xim, Display *dpy, Visual *vis, Drawable d, float scale, int w0 )
+{  
+  if(!xim || ! xim->nsvg ) return;
+
+  xim->dpy=dpy;
+  xim->vis=vis;
+  xim->d=d;
+  
+  if( w0 != 0 ) 
+     scale = w0 * 1.0 / xim->orig_w;
+  
+  if(  xim2_rasterize(  xim, scale,  xim->orig_w * scale,  xim->orig_h * scale )) return;
+  
+  xim2_create_ximage( xim );
 }
 
 int xim2_rasterize( XImage2 *im, float scale, int w0, int h0 )
@@ -65,29 +83,31 @@ int xim2_rasterize( XImage2 *im, float scale, int w0, int h0 )
     WARN("Could not init rasterizer.\n");
     return 1;
   }
+
+  free( im->rgba_data ); im->rgba_data=NULL;
   
   uint32_t *img = malloc(w0*h0*4);
   if (img == NULL) {
-    printf("Could not alloc image buffer.\n");
-    return 1;
+    ERR("Could not alloc image buffer.\n");
+    exit(1);
   }
+
   im->rgba_data = img;
   printf("rasterizing image %d x %d\n", w0, h0);
   im->width = w0;
   im->height = h0;
   nsvgRasterize( im->rast, im->nsvg, 0,0,scale, (u8*)img, w0, h0, w0*4);
   nsvgDeleteRasterizer(im->rast); im->rast=NULL;
-  nsvgDelete(im->nsvg); im->nsvg=NULL;
   return 0;
 }
 
-int xim2_create_ximage(  XImage2 *im, Display *dpy, Visual *vis, Drawable d )
+int xim2_create_ximage(  XImage2 *im )
 {
 
-  im->dpy=dpy;
-  im->vis=vis;
-  im->d=d;
-  
+  Display *dpy=im->dpy;
+  Visual *vis=im->vis;
+  Drawable d = im->d;
+    
   XImage *mask_image = make_bitmap( dpy, vis, im->rgba_data, im->width, im->height );
   XImage *image = XCreateImage(dpy, vis, DefaultDepth(dpy, DefaultScreen(dpy)),
 			       ZPixmap, 0, (char *)im->rgba_data, im->width, im->height, 32, 0);
@@ -141,72 +161,10 @@ int xim2_delete( XImage2 *im )
 
   free( im->rgba_data );
   im->rgba_data = NULL;
+  im->loaded = 0;
   return 0;
 }
 
-  /* color-coding: siehe NSVG_RGB macro in nanosvg.h */
-
-  /* uint32_t *g = (uint32_t *)img; */
-  /* for(int i=0;i<w0*h0;i++) { */
-  /*   char *x=(char *)(g+i); */
-  /*   if( g[i] == 0 ) x[3] = 0xff; */
-  /* } */
-  /* FILE *fp = fopen("dump.bmp", "wb" ); */
-  /* fwrite( img, 1, w0*h0*4, fp ); */
-  /* fclose(fp); */
-
-
-
-/* int load2( canvas_draw_t *c, XImage2 *ret_image ) */
-/* { */
-
-/*   if(ret_image->loaded ) return 0; */
-    
-/*   Display *dpy = c->dpy; */
-/*   int screenno = XDefaultScreen(dpy); */
-/*   Visual *visual = XDefaultVisual(dpy,screenno); */
-/*   GC gc = XDefaultGC(dpy,screenno); */
-/*   Drawable d = XftDrawDrawable( c->xdraw ); */
-  
-/*   int width,height; */
-/*   char *rgba_data = load1( &width, &height ); */
-/*   if( ! rgba_data ) return NULL; */
-
-  
-/*   XImage *mask_image = make_bitmap( dpy, visual, rgba_data, width, height ); */
-  
-/*   XImage *image = XCreateImage(dpy, visual, DefaultDepth(dpy, DefaultScreen(dpy)), */
-/*                                  ZPixmap, 0, (char *)rgba_data, width, height, 32, 0); */
-
-/*   if (image == NULL) { */
-/*     fprintf(stderr, "Failed to create XImage.\n"); */
-/*     exit(EXIT_FAILURE); */
-/*   } */
-
-
-/*   // Create the mask pixmap and copy the silhouette onto it. */
-/*   Pixmap mask = XCreatePixmap (dpy, d, width, height, 1); */
-/*   GC mask_gc = XCreateGC (dpy, mask, 0, 0); */
-/*   XSetBackground (dpy, mask_gc, 0); */
-/*   XSetForeground (dpy, mask_gc, 1); */
-/*   XPutImage (dpy, mask, mask_gc, mask_image, 0, 0, 0, 0, width, height); */
-/*   XFreeGC (dpy, mask_gc); */
-/*   XDestroyImage (mask_image); */
-  
-/*   ret_image-> image = image; */
-/*   ret_image-> mask = mask; */
-/*   ret_image-> width = width; */
-/*   ret_image-> height = height; */
-/*   ret_image->loaded = 1; */
-/*   return 0; */
-/* } */
-
-/* from: yadex
- *	Sticker_priv::make_bitmap - create 1-bpp XImage from Img
- *
- *	Return pointer on XImage on success, null pointer on
- *	failure.
- */
 XImage *make_bitmap ( Display *dpy, Visual *win_vis, uint32_t *img, int width, int height )
 {
 
@@ -274,41 +232,32 @@ XImage *make_bitmap ( Display *dpy, Visual *win_vis, uint32_t *img, int width, i
 
 
 
-void draw_svg( XtPointer class )
+void draw_svg( Widget w, XtPointer class )
 {
-  canvas_draw_t *c = class;
+  canvas_draw_t *c = canvas_get_priv(w);
+  if(!c)return;
+
   Drawable d = XftDrawDrawable( c->xdraw );
   Display *dpy = c->dpy;
   int screenno = XDefaultScreen(dpy);
   Visual *visual = XDefaultVisual(dpy,screenno);
-  static XImage2 img2 = {0};
-    
 
-  if(! img2.loaded ) {
-    char *s = "nanosvg/example/23.svg";
-    // char *s2 = "SVG/warning-sign-9743.svg"; 
-    if( xim2_load_svg( &img2, s) ) return;
-    int w0=1800;
-    float scale = w0 * 1.0 / img2.orig_w;
-    
-    if(  xim2_rasterize(  &img2, scale,  img2.orig_w * scale,  img2.orig_h * scale )) return;
-    if( xim2_create_ximage( &img2, dpy, visual, d ) ) return; 
-      
-    img2.last_x = -1;
-    img2.loaded=1;
+
+  if( !c->priv_data ) {
+    c->priv_data = calloc( 1, sizeof( XImage2 ));
   }
-
-  /* delayed draw:
-     if we receive a call in less than 300ms we wait for another 300ms before drawing
-     if we receive another call, while we are waiting, we reset the counter
-  */
+  XImage2 *xim = c->priv_data;
+  if(! xim->loaded ) {
+    xim2_load_svg( xim, "nanosvg/example/23.svg" );
+    xim2_render( xim, dpy, visual, d, 1.0, 0 );
+    xim->loaded=1;
+  }
 
   
   XFillRectangle(  c->dpy, d, c->gc[1], 0,0, c->win_width, c->win_height ); 
   XDrawLine( c->dpy, d, c->gc[0], 0,0, c->win_width, c->win_height );
   TRACE(3,"%u,%u ", c->sl_posx, c->sl_posy );
-  
-  
+    
   int slx =  c->sl_posx / 100;
   int sly =  c->sl_posy / 100; 
   // int slx1 = slx + c->win_width;
@@ -317,8 +266,8 @@ void draw_svg( XtPointer class )
 
   int logo_x = 800;
   int logo_y = 400;
-  int logo_w = img2.width;
-  int logo_h = img2.height;
+  int logo_w = xim->width;
+  int logo_h = xim->height;
   int logo_x1 = logo_x + logo_w;
   int logo_y1 = logo_y + logo_h;
 
@@ -351,14 +300,12 @@ void draw_svg( XtPointer class )
     dst_y = 0;
   }
   
-  int dst_w = img2.width;
-  int dst_h = img2.height;
+  int dst_w = xim->width;
+  int dst_h = xim->height;
   if( dst_w + dst_x > c->win_width ) dst_w = c->win_width - dst_x;
   if( dst_h + dst_y > c->win_height) dst_h = c->win_height- dst_y;
   
-   
-    
-  xim2_put_image( &img2, logo_x, logo_y, src_x, src_y,  dst_x, dst_y, dst_w, dst_h );
+  xim2_put_image( xim, logo_x, logo_y, src_x, src_y,  dst_x, dst_y, dst_w, dst_h );
   printf("draw %u x %u\n",   dst_w, dst_h );
 }
 
@@ -369,8 +316,9 @@ void draw_svg( XtPointer class )
 int compress_redraw_list = 0;
 
 struct compress_redraw_st {
-  void (*func) (void *);
+  void (*func) (Widget,void *);
   void *class;
+  Widget widget;
   int last_call;
   XtIntervalId id;  
 };
@@ -382,25 +330,33 @@ void compress_redraw_cb(XtPointer client_data, XtIntervalId *)
   struct compress_redraw_st *n = mls(compress_redraw_list,p);
   n->id = 0;
   n->last_call = timer_get_ms();
-  if( n->func ) n->func( n->class );
+  if( n->func ) n->func( n->widget, n->class );
 }
 
-void compress_redraw(XtAppContext CTX, void (*func) (void *), void *class, int timeout )
+/* TODO! der pkey sollte widget+func sein */
+void compress_redraw(Widget w, void (*func) (Widget,void *), void *class, int timeout )
 {
+  XtAppContext  CTX = XtWidgetToApplicationContext(w);
+
   if(! compress_redraw_list )
     compress_redraw_list = m_create(10,
 				    sizeof(struct compress_redraw_st));    
   int p = m_lookup_obj( compress_redraw_list, &func, sizeof(void*) );
   struct compress_redraw_st *n = mls(compress_redraw_list,p);
 
-  /* timer vorhanden, dann expose ignorieren */
+  /* timer vorhanden, dann expose ignorieren aber
+     class aktualisieren damit der letzte expose den richtigen context hat.
+     ist bei zoom interessant
+  */
+  n->class = class;
   if( n->id ) return;
+
+  
   
   int cur = timer_get_ms();
   int diff = cur - n->last_call;
   n->func = func;
-  n->class = class;
-
+  n->widget = w;
   /* kein timer aktiv, also entweder
      in die warteschlange oder sofort ausfuehren */
   if( diff < timeout ) {
@@ -413,12 +369,76 @@ void compress_redraw(XtAppContext CTX, void (*func) (void *), void *class, int t
 
 void canvas_draw_cb( Widget w, XtPointer user, XtPointer class )
 {
-  compress_redraw(
-		  XtWidgetToApplicationContext(w),
-		  draw_svg,
-		  class,
-		  300 );
+  compress_redraw(w,draw_svg,class,300);
 }
+
+void canvas_zoom( Widget w, canvas_draw_t *c, float scale )
+{
+  TRACE(3,"zoom to %f", scale );
+  XImage2 *xim = c->priv_data;
+  Drawable d = XftDrawDrawable( c->xdraw );
+  Display *dpy = c->dpy;
+  int screenno = XDefaultScreen(dpy);
+  Visual *visual = XDefaultVisual(dpy,screenno);
+  xim2_render( xim, dpy,visual, d, scale, 0 );
+  canvas_draw_cb( w,NULL,c);
+}
+
+void mod_zoom(int n);
+
+typedef struct modif_st {
+  char *name;
+  void *context;
+  Widget widget;
+  int args;
+  void (*func) (int pos);
+} modif_t;
+
+int MODIF = 0;
+
+modif_t* modif_get(int n)
+{
+  if( ! MODIF || n >= m_len(MODIF) ) {
+    ERR( "modif num %d does not exists", n);
+  }
+  return mls(MODIF,n);
+}
+
+
+void modif_destruct(void)
+{
+    m_free_strings(MODIF, 0);
+}
+
+void modif_add( char *name, void (*func)(int) )
+{
+    int p = m_lookup_str(MODIF, name, 0 );
+    struct modif_st *cp = mls(MODIF, p);
+    cp->func = func;
+}
+
+void modif_init(void)
+{
+    MODIF = m_create( 10, sizeof(struct modif_st));
+    modif_add( "zoom", mod_zoom );
+}
+
+
+void modif_call1( char *name, Widget w, int args )
+{
+  int p = m_lookup_str(MODIF, name, 1 );
+  if( p < 0 ) {
+    WARN("function %s not found", name );
+  }
+      
+  struct modif_st *cp = mls(MODIF, p);
+  cp->widget = w;
+  cp->args = args;
+  cp->func(p);  
+}
+
+
+    
 
 
 typedef struct draw2_st {
@@ -434,3 +454,82 @@ void draw_row(canvas_draw_t *c) {
     }
         
 }
+
+
+/*
+   export_functions
+
+   typedef struct mod_if_st {
+   char *name;
+   void *context;
+   Widget w;
+   int args;
+   void (*func) (int pos)
+   } mod_if;
+
+
+   callF( "name", Widget w, String *args, Cardinal num_args )
+   
+   callback load_picture
+      fn = xtgetvalue( "*filename", "label" )
+      callF( "load_pict", 0, { name:fn, target:"*display_widget"  } )
+
+
+   load_pict( int p )
+   
+      char *s = arg_get(args,  "name", 0 );
+      if( !s ) return;
+      Widget w = arg_get_widget( args, "target", 0 );
+      if( !w ) return;
+      canvas_draw( w, s, 1.0, 0 );
+*/
+
+
+
+
+float arg_get_float(int args, char *name, float def_return )
+{
+  int p;
+  char **key,**value;
+
+  for( p=-1; m_next(args, &p, &key ) && m_next(args, &p, &value );  ) {
+    if( strcmp( *key, name ) == 0 ) {
+      return strtof(*value,NULL);      
+    }
+  }
+  return def_return;
+}
+
+
+
+void canvas_xim2_zoom( Widget w, void *class )
+{
+  float scale = ((intptr_t)class) / 1000.0;
+  canvas_draw_t *c = canvas_get_priv(w);
+  if(!c || !c->priv_data ) return;
+  XImage2 *xim = c->priv_data; 
+  Drawable d = XftDrawDrawable( c->xdraw );
+  Display *dpy = c->dpy;
+  int screenno = XDefaultScreen(dpy);
+  Visual *visual = XDefaultVisual(dpy,screenno);
+  xim2_render( xim, dpy,visual, d, scale, 0 );
+  canvas_draw_cb( w, NULL, c);
+}
+
+      
+/* 1. create a wrapper for your code */
+void mod_zoom(int n)
+{
+  modif_t *mod = modif_get(n);
+  TRACE(1,"MODIF %d", n );
+
+  canvas_draw_t* c = canvas_get_priv( mod->widget );
+  if(!c) return;
+
+  float scale = arg_get_float( mod->args, "scale", 1 );
+  TRACE(3,"zoom to %f", scale );
+  scale *= 1000;
+  
+  compress_redraw( mod->widget, canvas_xim2_zoom, XTPTR(scale), 300 );
+}
+

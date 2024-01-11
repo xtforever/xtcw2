@@ -12,6 +12,7 @@
 @ call this functions when the slider changes its position due to the pointer
 @var <Callback> XtCallbackList callback   = NULL
 
+
 @PRIVATE
 @var GC gc_background
 @var GC gc_fg
@@ -51,6 +52,8 @@ var compress_motion = True
 
 @proc set_values
 {
+  	
+
   if( $old$pos != $pos ||
      $old$frac != $frac ) return True;
   return False;
@@ -114,12 +117,26 @@ var compress_motion = True
 @trans <Btn1Up>: sl_motion()
 
 @actions
+
+@  Slider
+   pos
+   event->xbutton.x
+   frac
+
+   slider_len  = $width * $frac / RES;
+   yclicked    = event->xbutton.x;
+   new_top     =  yclicked - (slider_len / 2) 
+   
 @proc sl_motion
 {
-	int y = event->xbutton.x;
+    int y = event->xbutton.x;
+    int slider_len  = $width * $frac / RES;
+    y = y - (slider_len /2);
     if( y < 0 ) y=0;
+    
     int p =  (y *RES / $width);
-    if( $pos == p ) return;
+    if( $pos == p ) return; /* caching */
+    
     $pos = p;
     draw_slider($);
     XtCallCallbackList( $, $callback, (XtPointer) (intptr_t) $pos );

@@ -41,6 +41,36 @@ Widget
 #define XtRCallback "Callback"
 #endif
 
+#ifndef XtNtopx
+#define XtNtopx "topx"
+#endif
+#ifndef XtCTopx
+#define XtCTopx "Topx"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNtopy
+#define XtNtopy "topy"
+#endif
+#ifndef XtCTopy
+#define XtCTopy "Topy"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNzoom_thousandth
+#define XtNzoom_thousandth "zoom_thousandth"
+#endif
+#ifndef XtCZoom_thousandth
+#define XtCZoom_thousandth "Zoom_thousandth"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
 typedef struct _CanvasClassRec *CanvasWidgetClass;
 typedef struct _CanvasRec *CanvasWidget;
 externalref WidgetClass canvasWidgetClass;

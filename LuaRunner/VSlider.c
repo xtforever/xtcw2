@@ -176,7 +176,9 @@ WidgetClass vSliderWidgetClass = (WidgetClass) &vSliderClassRec;
 static void sl_motion(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 
-	int y = event->xbutton.y;
+    int y = event->xbutton.y;
+    int slider_len  = ((VSliderWidget)self)->core.height * ((VSliderWidget)self)->vSlider.frac / RES;
+    y = y - (slider_len /2);
     if( y < 0 ) y=0;
     ((VSliderWidget)self)->vSlider.pos = (y *RES / ((VSliderWidget)self)->core.height);
     draw_slider(self);
@@ -259,4 +261,4 @@ static void expose(self,event,region)Widget self;XEvent * event;Region  region;
   ((VSliderWidget)self)->vSlider.sly = -1; /* invalidate the cache */
   draw_slider(self);
 }
-#line 130 "VSlider.widget"
+#line 133 "VSlider.widget"

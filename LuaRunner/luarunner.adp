@@ -78,15 +78,20 @@ zoom_percent = 100
 function zoomin()
   if zoom_percent < 400  then zoom_percent = zoom_percent+ 10 end
   xtsetvalue( "*zoom", "label", zoom_percent )
+  -- xtaction( "*sc", "zoom", { scale=zoom_percent/100 } )
+  callF( "zoom", "*sc.canvas",  { scale=zoom_percent/100 } )
 end
 
 function zoomout()
   if zoom_percent > 20 then zoom_percent = zoom_percent- 10 end
   xtsetvalue( "*zoom", "label", zoom_percent )
+  -- xtaction( "*sc", "zoom", { scale=zoom_percent/100 } )
+  callF( "zoom", "*sc.canvas",  { scale=zoom_percent/100 } )
+  
 end
 %%END
 
-*sc.canvas.translations: #augment ^<Btn5Down>: LUA("zoomin")\n^<Btn4Down>: LUA("zoomout")\n
+*sc.*.translations: #augment ^<Btn5Down>: LUA("zoomin")\n^<Btn4Down>: LUA("zoomout")\n
 
 
 *fill: Both
@@ -113,7 +118,7 @@ luarunner.WcChildren: gb2
 *sc*foreground: BLUE
 *sc.canvas.width: 300
 *sc.canvas.height: 300
-*sc.canvas.translations: <Btn1Down>: LUA("paint1")
+%% *sc.canvas.translations: <Btn1Down>: LUA("paint1")
 
 *t1.WcClass: WButton
 *t1.label: warn

@@ -1,1 +1,1 @@
-make && ./adpconvert.lua && ./luarunner -geometry 500x500
+make && ./adpconvert.lua && ./luarunner -TraceLevel 1 -geometry 500x500

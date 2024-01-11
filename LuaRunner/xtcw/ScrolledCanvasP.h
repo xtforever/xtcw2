@@ -37,6 +37,9 @@ typedef struct {
 Distance  slwidth;
 uint  world_width;
 uint  world_height;
+int  drag_last_x;
+int  drag_last_y;
+ulong  drag_time;
 /* private state */
 Widget  slv;
 Widget  slh;

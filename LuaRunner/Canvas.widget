@@ -10,7 +10,9 @@
 @var <XftFont> XftFont* xftFont = <String> "Serif-22"
 @var Pixel foreground = XtDefaultForeground
 @var <Callback> XtCallbackList callback = NULL
-
+@var int topx = 0
+@var int topy = 0
+@var int zoom_thousandth  = 1000
 
 @PRIVATE
 @var canvas_draw_t canv
@@ -30,7 +32,10 @@
 
 @proc initialize
 {
+
     XTFUNC();
+    memset(& $canv, 0, sizeof ($canv));
+
 	if( $width <=0 ) $width = 20;
 	if( $height <=0 ) $height = 20;
 	init_colors($);
@@ -84,6 +89,13 @@
      $canv.app_context = XtWidgetToApplicationContext( $ );
 }
 
+@ check: zoom__thousandth
+
+@proc set_values
+{
+	return True; /* yes we want a redraw */	
+}
+
 
 @UTILITIES
 @proc paint1($)
@@ -98,12 +110,45 @@
  	pixel_to_xftcolor( $, $foreground,       FG );
 }
 
+
+@ACTIONS
+@ Widget self;XEvent*event;String*params;Cardinal*num_params
+@proc zoom
+{
+	XTFUNC();
+	float scale;
+	int parse = 0;
+	for( int i=0;i<*num_params;i++)
+	{
+		char *s = params[i];
+		TRACE(1,"PARSE: %s", s );
+		switch( parse ) {
+			//---- key
+			case 0: if( strcasecmp(s, "scale") == 0 ) parse=2;
+			        break;
+			//---- value
+			case 2: TRACE(1,"PARSE");
+				scale=strtof(s,NULL);
+			        canvas_zoom( $, & $canv, scale );
+				parse=0;
+				break;
+			default: WARN("uknown parameter: %s", s );
+		}
+	}
+}
+
+
 @EXPORTS
 @incl "canvas-draw.h"
 @proc canvas_draw_t* canvas_get_priv($)
 {
-    return & $canv;
+    if( XtIsSubclass( $,canvasWidgetClass ) )
+      return & $canv;
+    XtWarning( "Widget is not subclass of canvas" );
+    return NULL;
 }
+
+
 
 
 

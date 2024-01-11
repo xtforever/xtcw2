@@ -60,6 +60,7 @@ extern int luaopen_luaxt(lua_State* L);
 #include "canvas-draw.h"
 #include "msg_box.h"
 
+
 // static inline const char *m_str(const int m) { return m_buf(m); }
 
 static lua_State *LUA_CTX;
@@ -89,6 +90,7 @@ char *fallback_resources[] = {
     "*traceLevel: 2",
     "*socket: 18000",
     "*inifile: ap.ini",
+    "*luafile: ex.lua",
     NULL };
 
 /* All Wcl applications should provide at least these Wcl options:
@@ -97,14 +99,14 @@ static XrmOptionDescRec options[] = {
     { "-Socket",	"*socket",	XrmoptionSepArg, NULL },
     { "-TraceLevel",	"*traceLevel",	XrmoptionSepArg, NULL },
     { "-Inifile",	"*inifile",	XrmoptionSepArg, NULL },
-
+    { "-Luafile",	"*luafile",	XrmoptionSepArg, NULL },
     WCL_XRM_OPTIONS
 };
 
 typedef struct SIGNAGE_CONFIG {
     int traceLevel;
     int socket;
-    char *inifile;
+    char *inifile, *luafile;
     Widget widget_grid;
 } SIGNAGE_CONFIG ;
 
@@ -126,6 +128,10 @@ static XtResource SIGNAGE_CONFIG_RES [] = {
     FLD(inifile), XtRString, NULL
   },
 
+    { "luafile", "Luafile", XtRString, sizeof(String),
+    FLD(luafile), XtRString, NULL
+  },
+
   /*
     { NULL, NULL, XtRWidget, sizeof(Widget),
     FLD(widget_grid), XtRString, "*gb"
@@ -140,7 +146,7 @@ static XtResource SIGNAGE_CONFIG_RES [] = {
 #undef FLD
 
 struct SIGNAGE_CONFIG SIGNAGE = { 0 };
-
+static Widget luaarg_to_widget( lua_State *L, int index );
 
 
 /** set the keyboard focus to a named widget and call the focus_in function
@@ -197,6 +203,9 @@ void CallAction( Widget w, void *u, void *c )
     TRACE(8, "Action Name: %s", buffer );
     XtCallActionProc( widget, buffer, NULL, NULL, 0 );
 }
+
+
+
 
 
 void test_cb( Widget w, void *u, void *c )
@@ -275,6 +284,7 @@ int decode_xevent(int m, XEvent* e)
 static void LUA_action(Widget w, XEvent* e, String* s, Cardinal* n)
 {
   /* first create the lua function call */
+  TRACE(1, "XtName: %s", XtName(w) );
   int args = *n;
   if(! args ) return;
   int m = s_printf(0,0,"%s(", *s++ );
@@ -287,7 +297,109 @@ static void LUA_action(Widget w, XEvent* e, String* s, Cardinal* n)
 }
 
 
+/* synatx: Focus(Widget_Name) 
+*/
+static void FocusACT(Widget w, XEvent* e, String* s, Cardinal*n)
+{
+  TRACE(1, "Received FocusACT XtName: %s", XtName(w) );
+  int args = *n;
+  if( !args ) return;
+  SetKeyboardFocus( luaxt_nametowidget( *s ) );
+}
+/* synatx: Focus(Widget_Name) 
+*/
+static void FocusCB( Widget w, void *u, void *c )
+{
+  TRACE(1, "Received FocusCB XtName: %s", XtName(w) );
+  SetKeyboardFocus( luaxt_nametowidget( (char*)u ) );
+}
+
+
+
 #define luastring(L,i) (char*)lua_tostring(L,i)
+
+void luatable_to_strings(lua_State *L, int index, int max, int ret_str)
+{
+  char *s;
+  lua_pushnil(L);  /* first key */
+  while (lua_next(L, index) != 0) {
+    s = luastring(L,-2);
+    m_put(ret_str, & s );
+    s = luastring(L,-1);
+    m_put(ret_str, & s );
+    lua_pop(L, 1);
+  }
+}
+
+		    
+int app_arg_lua(lua_State *L, int index, int max, int ret_str)
+{
+  if( index > max ) return 0;
+  
+  if( lua_istable(L,index) ) {
+    luatable_to_strings( L, index, max, ret_str );
+  }
+  else if( lua_isstring(L,index) ) {
+    char *s = luastring(L,index);
+    m_put(ret_str, & s );
+  }
+
+  return index+1; // skip unknown type
+}
+
+/* XtAction(WidgetName, ActionName, arg1, ..., arg-n ) */
+static int
+xtaction_lua( lua_State *L )
+{
+    Widget w =  NULL;
+    int nargs = lua_gettop(L);    
+    int str = m_create(10,sizeof(char*));
+
+    if( nargs < 2 || !(w = luaarg_to_widget( L, 1 )) ){
+      WARN("Syntax Error: xtaction(widget,action,args,...)");
+      luaL_pushfail(L);
+      goto fail;
+    }
+    
+    const char *action = luastring(L, 2 );
+
+    int i=3;
+    while( (i=app_arg_lua(L,i,nargs,str)) );
+    XtCallActionProc( w, action, NULL, m_buf(str), m_len(str) );
+
+ fail:
+    m_free(str);
+    return 0;
+}
+
+/* callF( "name", widget, dict ) */
+static int
+callF_lua( lua_State *L )
+{
+    Widget w =  NULL;
+    int nargs = lua_gettop(L);    
+    int str = m_create(10,sizeof(char*));
+
+    if( nargs < 2 || !(w = luaarg_to_widget( L, 2 )) ) {
+      WARN("Syntax Error: xtaction(widget,action,args,...)");
+      luaL_pushfail(L);
+      goto fail;
+    }
+    
+    char *action = luastring(L, 1 );
+
+    int i=3;
+    while( (i=app_arg_lua(L,i,nargs,str)) );
+
+    modif_call1( action, w, str );
+
+ fail:
+    m_free(str);
+    return 0;
+}
+
+
+
 
 
 /** XtCreate(WidgetName, WidgetClass, ParentWidgetPath,  Resource, Value, ... )
@@ -558,7 +670,7 @@ static void app_arg( int args, const char *key, const char *val )
     arg->value = (XtArgVal)val;
     arg->size  = strlen(val)+1;
 
-    }
+}
 
 static void luatable_to_args( int args, lua_State *L, int table_index, int max )
 {
@@ -604,17 +716,17 @@ static Widget luaarg_to_widget( lua_State *L, int index )
     }
 
     /* try parsing an xrm path */
-    s=luastring(L,1);
+    s=luastring(L,index);
     if( s==NULL) {
-	WARN("first arg must be string or userdata");
-	luaL_pushfail(L);
-	return NULL;
+      WARN("arg %d must be string or userdata", index );
+      luaL_pushfail(L);
+      return NULL;
     }
 
     w = luaxt_nametowidget( s );
     if( w == NULL ) {
-	WARN("widget '%s' not found", s );
-	luaL_pushfail(L);
+      WARN("widget '%s' not found", s );
+      luaL_pushfail(L);
     }
     return w;
 }
@@ -688,9 +800,15 @@ static void RegisterApplication ( Widget top )
     RCB( top, CallAction );
     RCB( top, LUA );
 
-    RCB( top, canvas_draw_cb );
-    WcRegisterAction(XtWidgetToApplicationContext(top), "LUA", LUA_action);
+ 
+    wcreg_action(top, "LUA",  LUA_action);
 
+    wcreg_action  (top,  "Focus", FocusACT );
+    wcreg_callback(top, FocusCB,  "Focus" );
+    
+    
+    modif_init();
+    xim2_init(top);
     msgbox_init(top);
 }
 
@@ -876,8 +994,12 @@ int main ( int argc, char **argv )
     luaopen_var5( L );
     lua_register(L, "xtcreate", xtcreate_lua );
     lua_register(L, "xtsetvalue", xtsetvalue_lua );
+    lua_register(L, "xtaction", xtaction_lua );
+    lua_register(L, "callF", callF_lua );
+    
 
-    char *fn = "ex.lua";
+    
+    char *fn = SIGNAGE.luafile;
     int result,status = luaL_loadfile(L, fn );
     if (status) {
         /* If something went wrong, error message is at the top of */

@@ -118,12 +118,15 @@ var compress_motion = True
 @proc sl_motion
 {
 
-	int y = event->xbutton.y;
+    int y = event->xbutton.y;
+    int slider_len  = $height * $frac / RES;
+    y = y - (slider_len /2);
     if( y < 0 ) y=0;
     $pos = (y *RES / $height);
     draw_slider($);
     XtCallCallbackList( $, $callback, (XtPointer) (intptr_t) $pos );
 }
+
 
 
 @exports

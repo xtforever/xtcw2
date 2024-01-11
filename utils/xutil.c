@@ -321,6 +321,7 @@ void grab_window_quit(Widget top)
 
     /* http://www.lemoda.net/c/xlib-wmclose/ */
     static Atom wm_delete_window;
+
     wm_delete_window = XInternAtom(XtDisplay(top), "WM_DELETE_WINDOW",
 				   False);
     (void) XSetWMProtocols (XtDisplay(top), XtWindow(top),

@@ -4,7 +4,7 @@
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <xtcw/HSliderP.h>
-#line 117 "HSlider.widget"
+#line 130 "HSlider.widget"
 static void sl_motion(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -24,52 +24,52 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 35 "HSlider.widget"
+#line 36 "HSlider.widget"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 52 "HSlider.widget"
+#line 53 "HSlider.widget"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 59 "HSlider.widget"
+#line 62 "HSlider.widget"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 65 "HSlider.widget"
+#line 68 "HSlider.widget"
 static void expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 75 "HSlider.widget"
+#line 78 "HSlider.widget"
 static void verify_values(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 85 "HSlider.widget"
+#line 88 "HSlider.widget"
 static void draw_slider(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 75 "HSlider.widget"
+#line 78 "HSlider.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 75 "HSlider.widget"
+#line 78 "HSlider.widget"
 static void verify_values(Widget self)
 #else
-#line 75 "HSlider.widget"
+#line 78 "HSlider.widget"
 static void verify_values(self)Widget self;
 #endif
-#line 76 "HSlider.widget"
+#line 79 "HSlider.widget"
 {
     if( ((HSliderWidget)self)->hSlider.frac < 0 ) ((HSliderWidget)self)->hSlider.frac = 0;
     if( ((HSliderWidget)self)->hSlider.frac > RES ) ((HSliderWidget)self)->hSlider.frac = RES;
@@ -77,16 +77,16 @@ static void verify_values(self)Widget self;
     if( ((HSliderWidget)self)->hSlider.pos  > RES ) ((HSliderWidget)self)->hSlider.pos  = RES - ((HSliderWidget)self)->hSlider.frac;
     if( ((HSliderWidget)self)->hSlider.frac + ((HSliderWidget)self)->hSlider.pos > RES ) ((HSliderWidget)self)->hSlider.pos = RES - ((HSliderWidget)self)->hSlider.frac;
 }
-#line 85 "HSlider.widget"
+#line 88 "HSlider.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 85 "HSlider.widget"
+#line 88 "HSlider.widget"
 static void draw_slider(Widget self)
 #else
-#line 85 "HSlider.widget"
+#line 88 "HSlider.widget"
 static void draw_slider(self)Widget self;
 #endif
-#line 86 "HSlider.widget"
+#line 89 "HSlider.widget"
 {
         int h,y;
         verify_values(self);
@@ -169,13 +169,17 @@ HSliderClassRec hSliderClassRec = {
 };
 WidgetClass hSliderWidgetClass = (WidgetClass) &hSliderClassRec;
 /*ARGSUSED*/
-#line 117 "HSlider.widget"
+#line 130 "HSlider.widget"
 static void sl_motion(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
-	int y = event->xbutton.x;
+    int y = event->xbutton.x;
+    int slider_len  = ((HSliderWidget)self)->core.width * ((HSliderWidget)self)->hSlider.frac / RES;
+    y = y - (slider_len /2);
     if( y < 0 ) y=0;
+    
     int p =  (y *RES / ((HSliderWidget)self)->core.width);
-    if( ((HSliderWidget)self)->hSlider.pos == p ) return;
+    if( ((HSliderWidget)self)->hSlider.pos == p ) return; /* caching */
+    
     ((HSliderWidget)self)->hSlider.pos = p;
     draw_slider(self);
     XtCallCallbackList( self, ((HSliderWidget)self)->hSlider.callback, (XtPointer) (intptr_t) ((HSliderWidget)self)->hSlider.pos );
@@ -189,16 +193,16 @@ WidgetClass class;
   if (class == hSliderWidgetClass) return;
   super = (HSliderWidgetClass)class->core_class.superclass;
 }
-#line 35 "HSlider.widget"
+#line 36 "HSlider.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 35 "HSlider.widget"
+#line 36 "HSlider.widget"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 35 "HSlider.widget"
+#line 36 "HSlider.widget"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 36 "HSlider.widget"
+#line 37 "HSlider.widget"
 {
   XTFUNC();
   XGCValues     values = {
@@ -214,50 +218,52 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
   if( ((HSliderWidget)self)->core.height == 0 ) ((HSliderWidget)self)->core.height=10;
   ((HSliderWidget)self)->hSlider.sly = -1;
 }
-#line 52 "HSlider.widget"
+#line 53 "HSlider.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 52 "HSlider.widget"
+#line 53 "HSlider.widget"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 52 "HSlider.widget"
+#line 53 "HSlider.widget"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 53 "HSlider.widget"
+#line 54 "HSlider.widget"
 {
+  	
+
   if( ((HSliderWidget)old)->hSlider.pos != ((HSliderWidget)self)->hSlider.pos ||
      ((HSliderWidget)old)->hSlider.frac != ((HSliderWidget)self)->hSlider.frac ) return True;
   return False;
 }
-#line 59 "HSlider.widget"
+#line 62 "HSlider.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 59 "HSlider.widget"
+#line 62 "HSlider.widget"
 static void destroy(Widget self)
 #else
-#line 59 "HSlider.widget"
+#line 62 "HSlider.widget"
 static void destroy(self)Widget self;
 #endif
-#line 60 "HSlider.widget"
+#line 63 "HSlider.widget"
 {
   if( ((HSliderWidget)self)->hSlider.gc_background ) XtReleaseGC(self,((HSliderWidget)self)->hSlider.gc_background);
   if( ((HSliderWidget)self)->hSlider.gc_fg ) XtReleaseGC(self,((HSliderWidget)self)->hSlider.gc_fg);
 }
-#line 65 "HSlider.widget"
+#line 68 "HSlider.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 65 "HSlider.widget"
+#line 68 "HSlider.widget"
 static void expose(Widget self,XEvent * event,Region  region)
 #else
-#line 65 "HSlider.widget"
+#line 68 "HSlider.widget"
 static void expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 66 "HSlider.widget"
+#line 69 "HSlider.widget"
 {
   XTFUNC();
   XClearWindow( XtDisplay(self), XtWindow(self) );
   ((HSliderWidget)self)->hSlider.sly = -1; /* invalidate the cache */
   draw_slider(self);
 }
-#line 130 "HSlider.widget"
-#line 131 "HSlider.widget"
+#line 147 "HSlider.widget"
+#line 148 "HSlider.widget"

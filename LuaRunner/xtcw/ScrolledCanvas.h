@@ -35,6 +35,36 @@ _XFUNCPROTOBEGIN
 #define XtRUint "Uint"
 #endif
 
+#ifndef XtNdrag_last_x
+#define XtNdrag_last_x "drag_last_x"
+#endif
+#ifndef XtCDrag_last_x
+#define XtCDrag_last_x "Drag_last_x"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNdrag_last_y
+#define XtNdrag_last_y "drag_last_y"
+#endif
+#ifndef XtCDrag_last_y
+#define XtCDrag_last_y "Drag_last_y"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNdrag_time
+#define XtNdrag_time "drag_time"
+#endif
+#ifndef XtCDrag_time
+#define XtCDrag_time "Drag_time"
+#endif
+#ifndef XtRUlong
+#define XtRUlong "Ulong"
+#endif
+
 typedef struct _ScrolledCanvasClassRec *ScrolledCanvasWidgetClass;
 typedef struct _ScrolledCanvasRec *ScrolledCanvasWidget;
 externalref WidgetClass scrolledCanvasWidgetClass;

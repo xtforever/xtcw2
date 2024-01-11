@@ -1,0 +1,116 @@
+@class IconSVG(Core)
+@ Demo SVG widget: draw some SVG 
+
+@classvars
+        @var compress_motion = True
+        @var compress_exposure = XtExposeCompressMultiple
+        @var compress_enterleave = True
+
+@PUBLIC
+@var Pixel foreground = XtDefaultForeground
+@var <Callback> XtCallbackList callback = NULL
+@var String filename = ""
+
+@PRIVATE
+@var  XImage2 *img
+@var int prefered_width
+@var int prefered_height
+@var  XImage2 img_buf
+
+@METHODS
+@proc expose
+{
+    XTFUNC();
+    xim2_put_image($img,0,0, 0,0, 0,0, $width, $height );
+}
+
+@proc initialize
+{
+
+    XTFUNC();
+    	if( $width <=0 ) $width = 20;
+	if( $height <=0 ) $height = 20;
+
+    $img = & $img_buf;
+
+    xim2_load_svg( $img, $filename );
+    $prefered_width =  $img->orig_w;
+    $prefered_height=  $img->orig_h;
+}
+
+@proc destroy
+{
+        XTFUNC();
+	xim2_delete( $img );
+}
+
+@proc resize
+{
+	TRACE(1, "IconSVG:%s: resize request is: %dx%d", XtName($),
+		 $width,$height );
+}
+
+@proc realize
+ {
+    XTFUNC();
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent,
+			  *mask, attributes);
+
+     Display *dpy = XtDisplay($);
+     Visual *vis = DefaultVisual(dpy, DefaultScreen(dpy));
+
+     double scale = 1.0;
+      
+     /* shrink, if widget is too small */
+     if( $width < $prefered_width || $height < $prefered_height ) {
+     	 double scale1 = $width * 1.0  / $prefered_width;
+	 double scale2 = $height * 1.0 / $prefered_height;
+	 scale = Min(scale1,scale2);
+     }
+
+     xim2_render( $img, dpy, vis, XtWindow($), scale, 0 );
+}
+
+
+@proc set_values
+{
+	return True; /* yes we want a redraw */	
+}
+
+
+@proc query_geometry
+{
+
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    reply->x=0; reply->y=0;
+    reply->width =  $prefered_width;
+    reply->height = $prefered_height;
+
+    TRACE(1, "IconSVG:%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(1, "IconSVG:%s: our prefered size is %dx%d", XtName($),
+                  $prefered_width,
+                  $prefered_height );
+
+    return XtGeometryAlmost;
+}
+
+
+@UTILITIES
+
+
+@IMPORTS
+@incl <assert.h>
+@incl <stdint.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xregion.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "canvas-draw.h"
+@incl "ximage2.h"

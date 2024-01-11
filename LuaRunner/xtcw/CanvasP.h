@@ -32,6 +32,9 @@ typedef struct {
 XftFont * xftFont;
 Pixel  foreground;
 XtCallbackList  callback;
+int  topx;
+int  topy;
+int  zoom_thousandth;
 /* private state */
 canvas_draw_t  canv;
 } CanvasPart;

@@ -2,11 +2,16 @@ zoom_percent = 100
 function zoomin()
   if zoom_percent < 400  then zoom_percent = zoom_percent+ 10 end
   xtsetvalue( "*zoom", "label", zoom_percent )
+  -- xtaction( "*sc", "zoom", { scale=zoom_percent/100 } )
+  callF( "zoom", "*sc.canvas",  { scale=zoom_percent/100 } )
 end
 
 function zoomout()
   if zoom_percent > 20 then zoom_percent = zoom_percent- 10 end
   xtsetvalue( "*zoom", "label", zoom_percent )
+  -- xtaction( "*sc", "zoom", { scale=zoom_percent/100 } )
+  callF( "zoom", "*sc.canvas",  { scale=zoom_percent/100 } )
+  
 end
 function paint1()
         print("hallo x=" .. class_data['x'] )
