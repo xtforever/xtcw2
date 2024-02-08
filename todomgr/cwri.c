@@ -141,12 +141,23 @@ void save_todo(void)
 }
 
 
+/* add a copy of the string s to the todo list
+   if the first char of s is not in (.+-) prepend the
+   copied string with '+'
+*/
 void append_todo(char *s)
 {
-    char *str = strdup(s);
-    m_ins(TODO_LIST,0,1);
-    m_write(TODO_LIST,0, &str,1 );
-    wlist5_update_all(CWRI.todo);
+		char *str;
+		int ch=s[0];
+		int offs = 1;		
+		if(!( ch=='.' || ch=='+' || ch=='-' )) {
+				offs=0;
+				ch='+';
+		}
+	    asprintf(&str, "%c%s", ch, s+offs );	   
+		m_ins(TODO_LIST,0,1);
+		m_write(TODO_LIST,0, &str,1 );
+		wlist5_update_all(CWRI.todo);
 }
 
 
@@ -161,7 +172,7 @@ void edit_cb( Widget w, void *u, void *c )
     char *s;
     XtVaGetValues(w, "label", &s, NULL );
     if( is_empty(s) ) return;
-    printf("Label: %s\n", s );
+    printf("Label: '%s'\n", s );
     append_todo(s);
 }
 

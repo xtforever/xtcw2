@@ -14,7 +14,7 @@ PKGDATADIR  ?= $(prefix)/etc/xtcw
 
 CC = gcc
 
-
+CFLAGS += -D_GNU_SOURCE
 CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I.
 XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm
 LOADLIBES +=  $(XORGLIB)
