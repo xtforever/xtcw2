@@ -157,7 +157,7 @@ WheelClassRec wheelClassRec = {
 /* accept_focus 	*/  XtInheritAcceptFocus,
 /* version      	*/  XtVersion,
 /* callback_private 	*/  NULL,
-/* tm_table      	*/  NULL,
+/* tm_table      	*/  XtInheritTranslations,
 /* query_geometry 	*/  XtInheritQueryGeometry,
 /* display_acceleator 	*/  XtInheritDisplayAccelerator,
 /* extension    	*/  NULL 

@@ -1,0 +1,335 @@
+@class Gauge2(  Wheel  )
+
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+@var Atom XA_UTF8_STRING = 0
+
+@PUBLIC
+
+@var int cornerRoundPercent = "20"
+@var int timer = <String> "2000"
+@var QVar qpercent = "zero"
+@var Distance gauge_width = <String> "15mm"
+@var Distance hh = <String> "6mm"
+@var int percent0 = 50
+@var int percent1 = 75
+@var <Pixel> Pixel color0 = <String> "#00ff00"
+@var <Pixel> Pixel color1 = <String> "#807313"
+@var <Pixel> Pixel color2 = <String> "#ff0000"
+@var String sensor = <String> "" 
+
+@ <range>,<part1>:color,...<part-n>:color
+      100,red:30,yellow:20,green:10,white:0
+@var String graph = <String> "100,red:30,yellow:20,green:10,white"
+@var String label = <String> "mem,cache,swap,free"
+@var String front = <String> "Test"
+@var Distance padleft = 0
+@var Distance prefered_width  = 0
+@var Distance prefered_height = 0
+
+
+
+@PRIVATE
+@var XftDraw *draw
+@var Pixmap pixmap
+@var GC gc_copy
+@var XtIntervalId tmr
+@var String fromResource 
+@var Widget TopLevel
+@var int gcolor
+@var int glabel
+@var int gsize
+@var int range
+@var XftColor bg
+
+@METHODS
+
+@proc initialize
+{
+    TRACE(1, "Gauge2");
+    $glabel=$gsize=$range=0;
+    $pixmap = 0;
+    $draw = 0;
+    $gc_copy =  XtGetGC($, 0,0 );
+    if( $width == 0 ) $width = 10;
+    if( $height == 0 ) $height = 10;	
+    calculate_size($);
+    if(! $XA_UTF8_STRING )
+	$XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+    $tmr=0;
+    
+    Widget w;
+    $TopLevel = $;
+    w = $;
+
+    while( ! XtIsShell(w) ) {
+      w = XtParent(w);
+      if( w ) $TopLevel = w; else break;
+    }
+
+    pixel_to_xftcolor($,$background_pixel,& $bg);
+    parse_graph_spec($,$graph);
+    parse_label($,$label);
+    sensor_register_c($,$sensor);
+}
+
+@proc realize
+ {
+        TRACE(1, "Gauge");
+        XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+  	reshape_widget($);
+
+}
+
+@proc resize
+{
+        TRACE(1, "Gauge2");
+        if (XtIsRealized($)) {
+            if( $width > 4096 || $height > 4096 ) return;
+       
+            reshape_widget($);
+            if( $pixmap ) XFreePixmap(XtDisplay($),$pixmap);
+            $pixmap=0;
+            alloc_pixmap($);
+         }
+}
+
+
+@proc destroy
+{
+
+    TRACE(1, "Gauge2");
+    if( $draw) XftDrawDestroy( $draw );    
+    XtReleaseGC($,$gc_copy);
+    XFreePixmap(XtDisplay($),$pixmap);
+    m_free($gcolor);
+    m_free($glabel);	
+    m_free($gsize);
+    
+    
+}
+
+@proc set_values
+{
+	parse_label($,$label);
+	parse_graph_spec($,$graph);
+	/* get_selection($); */
+       return True;
+}
+
+@proc expose
+{
+	TRACE(1, "Gauge2");	
+    	redraw($);
+}
+
+@ parameter list ($, int cmd, int val)
+@proc int exec_command
+{
+  return 0;
+}
+
+
+@ When our parent asks for this widget's preferred geometry,
+simply return the geometry as wanted
+Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return |XtGeometryNo|) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+|XtGeometryYes| should have been given.
+
+It seems that no harm is done by always returning |XtGeometryAlmost| and
+letting Xt figure out what really needs to be changed.
+
+@proc query_geometry
+{
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+
+    reply->x=0; reply->y=0;
+    reply->width =  $prefered_width;
+    reply->height = $prefered_height;
+
+    TRACE(1, "Gauge:%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(1, "Gauge:%s: our prefered size is %dx%d", XtName($),
+                  $prefered_width,
+                  $prefered_height );
+
+    return XtGeometryAlmost;
+}
+
+
+@UTILITIES
+
+@proc reshape_widget($)
+{
+	int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = Min($height,$width);
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+}
+
+@ called by update cache if pixmap==0
+@proc alloc_pixmap($)
+{
+    TRACE(1, "Gauge");
+    Display *dpy = XtDisplay($);
+
+    TRACE(2,"Gauge:%s size:%dx%d", XtName($),  $width, $height );
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+    if( $draw ) {
+        XftDrawChange($draw, $pixmap );
+    }
+    else {
+        $draw = XftDrawCreate(dpy, $pixmap,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    }
+}
+
+@ outputs a simple string on the window cache pixmap
+@proc str_print($, int x, int y, char *s, int color )
+{
+   if( is_empty(s) ) return;
+   XftDrawStringUtf8($draw, (XftColor*)mls($gcolor,color), $xftFont,
+    			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+}
+					       
+@ redraws everything on pixmap cache
+@proc update_cache($)
+{
+    int p;
+
+    TRACE(1, "Gauge2");
+    if( $pixmap == 0 ) alloc_pixmap($);
+
+    /* clear background */
+    XftDrawRect($draw, & $bg, 0,0,$width,$height );    
+
+
+    /* draw label in front of bar */
+    if( ! is_empty($front) ) {
+       str_print($,0,0,$front,0); 	
+    }
+    
+    /* Position of BAR */
+    int y0 = 0;
+    int x0 = $padleft;
+
+    /* draw label on top of bar */
+    if( $glabel && m_len($glabel) ) { 
+      char *sep = " | ";
+      int space = xft_textwidth( XtDisplay($), $xftFont, sep );
+      char **s;    
+      m_foreach( $glabel, p, s ) {
+         if( p ) { str_print( $,x0,y0,sep,0 ); x0+=space; }
+         str_print($,x0,y0,*s,p);
+	 x0 +=  xft_textwidth( XtDisplay($), $xftFont, *s );  
+      }
+      /* Move bar under the Label */
+      y0 = $xftFont->ascent +  $xftFont->descent;
+      x0 = $padleft;
+    }
+
+    /* draw bars */
+    float e = $width * 1.0 / $range;
+    int h = $height-y0;
+    XftColor *col;
+    m_foreach( $gcolor, p, col ) {
+        int w = INT($gsize,p);
+	w *= e;
+	XftDrawRect($draw,col,x0,y0,w,h );
+	x0 += w;
+    }
+}
+
+
+@proc redraw($)
+{
+    TRACE(1, "Gauge");
+    if( !XtIsRealized($)) return;
+    update_cache($);
+    XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
+              0,0, $width, $height, /* source pixmap */
+              0,0 ); /* target window x,y */
+}
+
+@proc calculate_size($)
+{
+
+	int w,h;
+	xft_calc_string_size( $, $xftFont, $label, &w, &h );
+	
+	if( $prefered_width < w+4 ) $prefered_width=w+4;
+	if( $prefered_height < (h+2) * 2 )
+	    $prefered_height = (h+2) * 2;	    
+}
+
+@proc add_qpercent_cb($)
+{
+/*	mv_onwrite($qpercent, (void*)redraw, $, 0);	*/
+}
+
+
+
+@proc parse_graph_spec($, char *s)
+{
+	XColor xc;
+	char name[20];
+	if( $gcolor ) m_clear($gcolor); else $gcolor=m_create(10,sizeof(XftColor));
+	if( $gsize ) m_clear($gsize); else $gsize=m_create(10,sizeof(int));
+	
+	int part;
+	get_num(&s, & $range);
+	TRACE(4,"range %d", $range );	
+	char p;
+	int sum=0;
+	while( *s == ',' ) {
+	   s++;
+           TRACE(4,"pos: %s", s );
+	   p = get_colorname(&s, name, 20); 
+	   if( p==':' ) {
+	      s++;
+	      p=get_num(&s, &part);	   
+	   } else {
+	      p=0;
+              part = $range - sum;
+	   }
+	   sum += part;
+	   if( XAllocNamedColor( XtDisplay($), $colormap, name, &xc, &xc ) == 0 ) {
+	       WARN("can not convert color name %d %s\n", part, name);
+	   } else {
+	       pixel_to_xftcolor($,xc.pixel, m_add($gcolor) );
+	       m_puti( $gsize, part );
+	   }	   
+	};
+}
+
+@proc parse_label($, char *s)
+{
+	if( is_empty(s) ) {
+	    m_free_strings($glabel,0);
+	    $glabel=0;
+	    return;
+	} 
+	$glabel = m_split($glabel,s,',',1);
+}
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"
+@incl "xutil.h"
+@incl "micro_vars.h"
+@incl "parsertool.h"
+@incl "sensorreg.h"

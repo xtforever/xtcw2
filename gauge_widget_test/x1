@@ -1,0 +1,14 @@
+# Nmap 7.80 scan initiated Wed Oct 16 09:12:17 2024 as: nmap -sn -oG x1 192.168.0.0/24
+Host: 192.168.0.1 ()	Status: Up
+Host: 192.168.0.7 ()	Status: Up
+Host: 192.168.0.10 ()	Status: Up
+Host: 192.168.0.12 ()	Status: Up
+Host: 192.168.0.16 ()	Status: Up
+Host: 192.168.0.20 ()	Status: Up
+Host: 192.168.0.77 ()	Status: Up
+Host: 192.168.0.127 ()	Status: Up
+Host: 192.168.0.171 ()	Status: Up
+Host: 192.168.0.210 ()	Status: Up
+Host: 192.168.0.228 ()	Status: Up
+Host: 192.168.0.243 ()	Status: Up
+# Nmap done at Wed Oct 16 09:12:20 2024 -- 256 IP addresses (12 hosts up) scanned in 2.96 seconds

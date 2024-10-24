@@ -51,6 +51,7 @@ make_dirs:
 copy_files: make_dirs 
 	$(RSYNC)  XPM $(incdir)/xtcw/
 	$(RSYNC)  utils/ $(srcdir)/
+	$(RSYNC)  utils/*.h $(incdir)/
 	$(RSYNC)  wcl/*.c $(srcdir)/
 	$(RSYNC)  wcl/*.h $(incdir)/
 	$(RSYNC)  plainc_widgets/ $(srcdir)/

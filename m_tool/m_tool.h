@@ -1,6 +1,7 @@
 #ifndef M_TOOL_H
 #define M_TOOL_H
 
+#include "mls.h"
 #include <stdarg.h>
 
 /* experimental tools */
@@ -28,4 +29,15 @@ void m_concat(int a, int b);
 int m_split_list( const char *s, const char *delm );
 
 int leftstr(int buf, int p, const char *s, int ch);
+
+int cmp_int( const void *a0, const void *b0 );
+int lookup_int(int m, int key);
+int m_slice(int dest, int offs, int m, int a, int b );
+int s_slice(int dest, int offs, int m, int a, int b );
+int s_replace(int dest, int src, int pattern, int replace, int count );
+void s_puts(int m);
+int s_strstr(int m, int offs, int pattern );
+int s_strncmp(int m,int offs,int pattern, int n);
+void s_write(int m,int n);
+
 #endif

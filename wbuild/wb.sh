@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 wb_search=${wb_search:-./}
 
 get-superclass()
@@ -38,4 +37,5 @@ done
 
 
 shift
+
 eval "$@ $superclass_list"

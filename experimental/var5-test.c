@@ -263,7 +263,17 @@ void    mvar_estr_test()
     printf("last: %s\n", mvar_get_string( estr ,-1) );
     printf("underflow: %s\n", mvar_get_string( estr ,-100) );
     printf("overflow: %s\n", mvar_get_string( estr , 100) );
-}
+
+
+    mvar_put_string( estr, "my patter is: $'xvar[2].", 0);
+    printf("estr index test [2]: %s\n", mvar_get_string( estr ,0) );
+
+    int g1    = mvar_group(v);
+    int pref1 = s_printf(0,0, "#%d", g1 );
+    const char *s1  =  mvar_str_string( m_str(pref1),  "my patter is: $'xvar[2]." );
+    printf("mavr str index test [2]: %s\n", s1 );
+    m_free(pref1);
+}  
 
 
 
@@ -700,6 +710,89 @@ void exp_test(void)
 }
 
 
+/* extract path, index and value */
+int mvar_assign2( int buf )
+{
+	int id = -1;
+	int typ = VAR_STRING;
+	int ls = m_split_list( (const char*) mls(buf,0), "=" );
+	if( m_len(ls) != 2 ) goto cleanup;
+
+	int index = 0;
+	int var = INT(ls,0);
+	int len = m_len(var)-1;
+	int ch;
+	int mult=1;
+	if( len < 1 ) goto cleanup;
+	if( CHAR(var,len-1) == ']' ) {
+		while( 1 ) {
+			len--;
+			if( len <= 2 )  goto cleanup;
+			ch =  CHAR(var, len-1 );
+			if( ch == '[' ) break;
+			if( index < 0 ) goto cleanup;
+			if( isdigit(ch) ) {
+				index += (ch-'0') * mult;
+				mult *= 10;
+				continue;
+			}
+			if( ch == '-' ) {
+				index=-index;
+				continue;
+			}
+			goto cleanup;
+		}
+		CHAR(var,len-1)=0;
+		m_setlen(var,len);
+	}
+	id = mvar_parse( var, typ );
+	if( id >= 0 ) mvar_put_string(id, m_str(INT(ls,1)), index );
+cleanup:
+	m_free_list(ls);
+	return id;
+}
+
+
+int mvar_set2(char *mvar, ...) {
+    va_list ap;
+    va_start(ap,mvar);
+    int m = vas_printf( 0,0, mvar, ap );
+    va_end(ap);
+    int v = mvar_assign2( m );
+    m_free(m);
+    return v;
+}
+
+int mvar_assign_c(const char *s)
+{
+	int buf = s_printf(0,0, "%s", s );
+	int x = mvar_assign2( buf );
+	m_free(buf);
+	return x;
+}
+
+
+void test_array_assign(void)
+{
+	/* syntax:
+	   a.b.c[1]=hello
+	*/
+
+	int id = mvar_assign_c("root.group.set[5]=first");
+	ASSERT( id == mvar_assign_c("root.group.set[5]=second") );
+	ASSERT( id == mvar_assign_c("root.group.set[-1]=third") );
+	ASSERT( id == mvar_assign_c("root.group.set[1]=second-override") );
+	if( id < 0 ) {
+		fprintf(stderr,"%s\n", "error" );
+		return;
+	}
+	
+	var_dump( id );
+
+
+	
+
+}
 
 int main()
 {
@@ -726,6 +819,9 @@ int main()
     test_struct();
     test_hashmap();
     test_hashmap2();
+
+    test_array_assign();
+    
     mvar_destruct();
     //
     m_destruct();

@@ -10,6 +10,11 @@
 @var Pixel foreground = XtDefaultForeground
 @var <Callback> XtCallbackList callback = NULL
 @var String filename = ""
+@var Distance  forced_width = 0
+@var Distance  forced_height = 0
+
+
+
 
 @PRIVATE
 @var  XImage2 *img
@@ -28,6 +33,10 @@
 {
 
     XTFUNC();
+    TRACE(1, "IconSVG:%s: init size is: %dx%d", XtName($),
+		 $width,$height );
+
+
     	if( $width <=0 ) $width = 20;
 	if( $height <=0 ) $height = 20;
 
@@ -61,11 +70,19 @@
      Visual *vis = DefaultVisual(dpy, DefaultScreen(dpy));
 
      double scale = 1.0;
-      
-     /* shrink, if widget is too small */
-     if( $width < $prefered_width || $height < $prefered_height ) {
-     	 double scale1 = $width * 1.0  / $prefered_width;
-	 double scale2 = $height * 1.0 / $prefered_height;
+     int w = $width;
+     int h = $height;
+
+     /* apply forced size constrained only if appropriate */ 
+     if($forced_width && $forced_width < w && $forced_height <= h ) {
+     	 w = $forced_width;
+	 h = $forced_height;
+     }
+     
+     /* shrink image, if widget is too small */
+     if( w < $prefered_width || h < $prefered_height ) {
+     	 double scale1 = w * 1.0  / $prefered_width;
+	 double scale2 = h * 1.0 / $prefered_height;
 	 scale = Min(scale1,scale2);
      }
 
@@ -84,9 +101,18 @@
 
     reply->request_mode = CWX | CWY | CWWidth | CWHeight;
     reply->x=0; reply->y=0;
-    reply->width =  $prefered_width;
-    reply->height = $prefered_height;
 
+    TRACE(1,"forced size: %d x %d", $forced_width,  $forced_height );
+
+    if( $forced_width ) {
+       	 reply->width =  $forced_width;
+    	 reply->height = $forced_height;
+    }
+    else {
+    	 reply->width =  $prefered_width;
+    	 reply->height = $prefered_height;
+    }
+    
     TRACE(1, "IconSVG:%s: parent request is: %dx%d", XtName($),
              request->width,
              request->width );

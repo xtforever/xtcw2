@@ -310,7 +310,7 @@ int string_impl_put_string(var_t *v,char *str, int p)
 void  string_impl_clear(var_t *v)
 {
     string_var_t *s = (string_var_t*)v;
-    v_kclr(s->lst);
+    m_free_strings( s->lst, 1);
 }
 
 /*-----------------------------------------------------------------------*/

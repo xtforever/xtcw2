@@ -1,3 +1,19 @@
+% ------------------------------------------------------------------------------------
+% -- to demonstrate, we can define some constants or functions 
+% -- which can be used later in the precompiler sections 
+% ------------------------------------------------------------------------------------
+<?LUA
+
+-- generate lua code to be parsed in the 2nd parser stage 
+function lua_var_export(key,val)
+	print( "%%LUA\n " .. key .. "= \"" .. val .. "\" \n%%END" )
+end
+
+num_edit_widgets=8
+
+lua_var_export("num_edit_widgets", num_edit_widgets)
+
+?>
 
 
 %%
@@ -78,9 +94,24 @@
 
 luarunner.WcChildren: gb2
 
-*gb2.WcClass: gridbox
-*gb2.WcChildren: sq t1 menu icnBox
 
+%%LUA
+function on_create_gui(a)
+   label_widget = xtcreate( "NewLabel", "WLabel", "*icnBox", "label", a, "gridx", "3", "weightx", "100", "fill","Both")
+end
+%%END
+
+
+%%LUA
+  -- this lua function will be execute before entering the
+  -- main loop
+  xtsetvalue( "*NewLabel", "label", "test-set-value" )
+%%END
+*gb2.WcClass: gridbox
+*gb2.WcChildren: sq3 t1 menu icnBox
+
+% execute a lua function with an argument after creating *gb2 
+*gb2.WcCallback: LUA( on_create_gui("hello world") )
 
 *icnBox.WcClass: HBox
 *icnBox.gridy: 0
@@ -89,6 +120,9 @@ luarunner.WcChildren: gb2
 *icn1.WcClass: IconSVG
 *icn1.gridx: 0
 *icn1.filename: alert.svg
+*icn1.forced_width: 1cm
+*icn1.forced_height: 1cm
+
 
 *icn2.WcClass: IconSVG
 *icn2.gridx: 1
@@ -97,6 +131,46 @@ luarunner.WcChildren: gb2
 
 
 
+%%------------- container for toolbar box and edit box ---
+*sq3.WcClass: gridbox
+*sq3.gridy: 4
+*sq3.weightx: 1
+*sq3.weighty: 1
+*sq3.fill: Both
+*sq3.WcChildren: tb sq
+
+*sq3.tb.gridy: 0
+*sq3.tb.weighty : 0
+
+*sq3.sq.gridy: 1
+*sq3.tb.weighty: 100
+*sq3.tb.weightx: 100
+
+
+%%------------- toolbar box ----------------
+*tb.WcClass: HBox
+
+<?LUA
+childs=""
+
+function button(parent,name,label)
+   w = "*" .. parent .. "." .. name .. "."
+   print( w .. "WcClass: Wbutton" )
+   print( w .. "label:" .. label )
+   childs = childs .. " " .. name
+end
+
+button('tb','left',"left")
+button('tb','reset',"reset")
+button('tb','right',"right")
+
+print( "*tb.WcChildren:" .. childs )
+
+?>
+
+
+
+%%------------- edit box ----------------
 *sq.WcClass: gridbox
 *sq.gridy: 4
 *sq.weightx: 1
@@ -105,27 +179,36 @@ luarunner.WcChildren: gb2
 
 
 <?LUA
-
 child=""
-for i=1,5 do
+for i=1,num_edit_widgets  do
    child=child .. " line" .. i
    w="*sq.line" .. i
-   print( w .. ".WcClass: Wedit" )
+
+   print( w .. ".WcClass: WeditMV" )
+   print( w .. ".foreground: RED" )
+   print( w .. ".cursorColor: BLUE" )	
    print( w .. ".gridy:" .. i )
    print( w .. ".weightx: 1" )
    print( w .. ".fill: Width" )
    if i < 5 then
-     print( w .. ".callback: Focus( *sq.line" .. (i+1) .. ")" )
-     print( w .. ".translations: #override <Btn1Down>: set_cursor() Focus(*sq.line" .. i .. ")\\n<Key>Tab: Focus(*sq.line" .. (i+1) .. ")" )
-     
-
-
+     --- print( w .. ".callback: Focus( *sq.line" .. (i+1) .. ")" )
+     ---
+     print( w .. ".translations: #override <Key>Tab: Focus(*sq.line" .. (i+1) .. ")" )
    end
    print( "*sq.WcChildren:" .. child )
 end
-
 ?>
 
+
+% ------------------------------------------------------------------------------------
+% -- to demonstrate, we can export values from the pre-compiler to the runtime code --
+% ------------------------------------------------------------------------------------
+<?LUA
+
+lua_var_export( 'edit_widgets', child )
+lua_var_export( 'edit_container', "*sq" ) 
+
+?>
 
 
 *painter1.gridy: 1

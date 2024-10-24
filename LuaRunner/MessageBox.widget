@@ -13,6 +13,7 @@
 @proc realize
 {
     XTFUNC();
+    XtVaSetValues( $, "borderWidth", 0, NULL );
     #realize($,mask,attributes);
     add_widgets($);
 }
@@ -25,29 +26,33 @@
   XTFUNC();
 
   Widget btn;
-  btn = XtVaCreateManagedWidget( "Button", wbuttonWidgetClass, $,
+  btn = XtVaCreateManagedWidget( "txt", wtextWidgetClass, $,
                                   "gridy", 0,
                                   "gridx", 1,
                                   "fill", 3,
                                   "weighty", 10,
                                   "weightx", 70,
-				                  "gridWidth", 1,
-				                  "gridHeight", 1,
-				  "label", "Hello World",
+				  "gridWidth", 1,
+				  "gridHeight", 1,
+				  "label", "@s;Hello World",
+				   "borderWidth", 0,
+				   "gravity", CenterGravity,
                                   NULL );
 
-  XtAddCallback(btn, "callback",(XtCallbackProc) btn_close_cb, $ );
 
 
-  btn = XtVaCreateManagedWidget( "Button", wbuttonWidgetClass, $,
+  btn = XtVaCreateManagedWidget( "icon", iconSVGWidgetClass, $,
                                   "gridy", 0,
                                   "gridx", 0,
-                                  "fill", 3,
-                                  "weighty", 10,
-                                  "weightx", 30,
-				                  "gridWidth", 1,
-				                  "gridHeight", 1,
-				  "label", "Hello World",
+                                  "fill", 0,
+                                  "weighty", 1,
+                                  "weightx", 1,
+				  "gridWidth", 1,
+				  "gridHeight", 1,
+				  "filename", "question.svg",
+				  "borderWidth", 0,
+	XtVaTypedArg, "forced_width", XtRString, "1cm", 4,
+	XtVaTypedArg, "forced_height", XtRString, "1cm", 4,	
                                   NULL );
 
 
@@ -61,6 +66,9 @@
 				                  "gridHeight", 1,
 				  "label", "Hello World",
                                   NULL );
+
+   XtAddCallback(btn, "callback",(XtCallbackProc) btn_close_cb, $ );
+
 
 }
 
@@ -82,3 +90,5 @@
 @incl "xutil.h"
 @incl <X11/Xaw/Command.h>
 @incl "xtcw/Wbutton.h"
+@incl "xtcw/IconSVG.h"
+@incl "xtcw/Wtext.h"

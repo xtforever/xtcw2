@@ -5,11 +5,35 @@
 
 /* speed of gauge update */
 #define GAUGE_TIMER_MS 2000
+#define SENSOR_TIMER_MS 2000
 /*
  */
 
+
+
+/*
+  gui - x resource
+
+
+  *p.wcClass: gauge3
+  *p.sensor:  diskstats
+  *p.label:   device[0]
+  *p.value:   read[0] write[0]
+  *p.graph:   
+
+  
+
+ */
+
+
+
+
 #include "mls.h"
 #include "micro_vars.h"
+#include "sensorreg.h"
+#include "conststr.h"
+#include "var5.h"
+
 
 #include <signal.h>
 #include <stdlib.h>
@@ -38,12 +62,15 @@
 #include "wcreg2.h"
 #include <xtcw/register_wb.h>
 #include "nbus.h"
+#include "subshell.h"
+#include "m_tool.h"
 
 #include "xtcw/Gauge.h"
+#include "xtcw/Gauge2.h"
 
 Widget TopLevel;
 int trace_main;
-#define TRACE_MAIN 2
+#define TRACE_MAIN 4
 static XtAppContext APPCTX;
 
 char *fallback_resources[] = {
@@ -86,6 +113,9 @@ static XtResource CWRI_CONFIG_RES [] = {
 #undef FLD
 #undef WID
 
+
+static int SPROC;
+static XtInputId sprocid[2];
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++***/
 
@@ -133,16 +163,225 @@ static void gauge_timer(XtPointer data, XtIntervalId *id )
     /* update gauge widget with: mv_onwrite(...) */
     int p = rand() % 100;
     mv_write(qvar, p );
+    TRACE(4,"update values");
+
+    struct sensor_reg *d;
+    m_foreach( SENSOR_LIST, p, d ) {
+	    if( d->gather ) {
+		    d->gather(d);
+	    }	    
+    }
+}
+
+
+/* extract path, index and value */
+int mvar_assign2( int buf )
+{
+	int id = -1;
+	int typ = VAR_STRING;
+	int ls = m_split_list( (const char*) mls(buf,0), "=" );
+	if( m_len(ls) != 2 ) goto cleanup;
+
+	int index = 0;
+	int var = INT(ls,0);
+	int len = m_len(var)-1;
+	int ch;
+	int mult=1;
+	if( len < 1 ) goto cleanup;
+	if( CHAR(var,len-1) == ']' ) {
+		while( 1 ) {
+			len--;
+			if( len <= 2 )  goto cleanup;
+			ch =  CHAR(var, len-1 );
+			if( ch == '[' ) break;
+			if( index < 0 ) goto cleanup;
+			if( isdigit(ch) ) {
+				index += (ch-'0') * mult;
+				mult *= 10;
+				continue;
+			}
+			if( ch == '-' ) {
+				index=-index;
+				continue;
+			}
+			goto cleanup;
+		}
+		CHAR(var,len-1)=0;
+		m_setlen(var,len);
+	}
+	id = mvar_parse( var, typ );
+	if( id >= 0 ) mvar_put_string(id, m_str(INT(ls,1)), index );
+cleanup:
+	m_free_list(ls);
+	return id;
+}
+
+
+int mvar_set2(char *mvar, ...) {
+    va_list ap;
+    va_start(ap,mvar);
+    int m = vas_printf( 0,0, mvar, ap );
+    va_end(ap);
+    int v = mvar_assign2( m );
+    m_free(m);
+    return v;
+}
+
+int mvar_assign_c(const char *s)
+{
+	int buf = s_printf(0,0, "%s", s );
+	int x = mvar_assign2( buf );
+	m_free(buf);
+	return x;
+}
+
+static void sproc_parse( int sensorid )
+{
+    int n=0; // only stdout supported
+    TRACE(1, "" );
+    int err;
+    int buf = m_create(100,1);
+    
+	    
+    // new line of data available if err==1 
+    while( (err=shell_getline( SPROC, n, buf)) == 1 ) {
+	    int sens_var = s_printf(0,0, "diskstats.%s", m_str(buf) );
+	    TRACE(TRACE_MAIN,"%s", m_str(sens_var));
+	    mvar_assign2(sens_var);
+	    m_free(sens_var);
+	    m_clear(buf);
+    }
+
+    
+    /* error handling - could loose data on stderr, but i dont care */
+    if( err < 0 ) {
+	    TRACE(TRACE_MAIN,"error reading stdout, closing subshell" );
+	    XtRemoveInput(sprocid[n]);
+	    sprocid[n]=0; 
+	    shell_close(SPROC);
+	    SPROC=0;
+    }
+
+    m_free(buf);
+    TRACE(1, "leave" );
+    return;
+}
+
+static void sproc_stdout_cb( XtPointer p, int *n, XtInputId *id )
+{
+	int sensor_num = (intptr_t) n;
+	TRACE(TRACE_MAIN,"");
+	sproc_parse(sensor_num);
+}
+
+int run_script(Widget top, int args )
+{
+    TopLevel=top;
+    XtAppContext app = XtWidgetToApplicationContext(top);
+
+    if( SPROC ) {
+	WARN("script already running");
+	return -1;
+    }
+    
+    SPROC = shell_create( args );
+    if( SPROC < 0 ) {
+	return -1;
+    }
+    signal(SIGCHLD, shell_signal_cb);
+    
+    sprocid[0]=
+	XtAppAddInput(app,
+		      shell_fd(SPROC,  CHILD_STDOUT_RD), (XtPointer)  (XtInputReadMask),
+		      sproc_stdout_cb, (void*) (intptr_t) SPROC );
+    /* sprocid[1] = */
+    /* 	XtAppAddInput(app, */
+    /* 		      shell_fd(SPROC, CHILD_STDERR_RD), (XtPointer)  (XtInputReadMask), */
+    /* 		      sproc_stderr_cb, NULL ); */
+    
+
+    return 0;
 }
 
 
 
+static int TASK_CNT = 0,
+	TASK_MAX = 3,
+	TASK_LAST = 0;
 
+struct task_reg {
+	int sensor_name; /* must be the first entry */
+	int shell;
+	int run;
+};
+
+int TASK_REG = 0;
+
+static void task_cb(XtPointer p, int *n, XtInputId *id )
+{	
+	int task_num = (intptr_t) p;
+	struct task_reg *r = mls(TASK_REG,task_num);
+	int shell = r->shell;
+	// cp sensor name w/o trailing zero and append a dot  
+	int prefix = m_slice(0,0, r->sensor_name, 0, -2 );
+	m_putc(prefix,'.');
+	int prefix_len = m_len(prefix);	       	    
+
+	int stream = 0; // only stdout supported
+	int err;
+	int buf = m_create(100,1);
+	// new line of data available if err==1 
+	while( (err=shell_getline( shell, stream, buf)) == 1 ) {
+		m_slice( prefix, prefix_len, buf, 0, -1 );
+		TRACE(TRACE_MAIN,"%s", m_str(prefix) );
+		mvar_assign2(prefix);
+		m_clear(buf);
+	}
+	m_free(prefix);
+	m_free(buf);
+	
+	/* error handling - could loose data on stderr, but i dont care */
+	if( err < 0 ) {
+	    TRACE(TRACE_MAIN,"error reading stdout, closing subshell" );
+	    XtRemoveInput(*id);
+	    shell_close(shell);
+	    r->run=0; r->shell=0;
+	    TASK_CNT--;
+	}
+}
+
+static void sensor_timer(XtPointer data, XtIntervalId *id )
+{
+    /* XT timer stuff */
+    XtAppContext app = data;
+    XtAppAddTimeOut(app,SENSOR_TIMER_MS, sensor_timer, APPCTX );
+    TRACE(TRACE_MAIN,"");
+
+    // find not running task and start it
+    int len =  m_len( TASK_REG );
+    for( int i=0; i<len && TASK_CNT < TASK_MAX;i++ ) {
+	    if( ++TASK_LAST  >= len ) TASK_LAST = 0;
+	    struct task_reg *r = mls(TASK_REG,TASK_LAST);
+	    if( r->run ) continue;
+	    int filename = s_printf(0,0, "./%s", m_str(r->sensor_name) ); 
+	    r->shell=shell_create1( filename  );
+	    m_free(filename);
+	    if( r->shell < 0 ) continue;
+	    r->run=1;
+	    TASK_CNT++;
+	    XtAppAddInput(app,
+		      shell_fd(r->shell,  CHILD_STDOUT_RD), (XtPointer)  (XtInputReadMask),
+			  task_cb, (void*) (intptr_t) TASK_LAST );
+    }
+}
+
+    
 static void RegisterApplication ( Widget top )
 {
     /* -- Register widget classes and constructors */
     // RCP( top, wbatt );
     RCP( top, gauge );
+    RCP( top, gauge2 );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
@@ -233,6 +472,15 @@ void gauge_server( XtPointer p, int *n, XtInputId *id )
 }
 
 
+/* Exported variables:
+   
+     NAME                       |  TYPE        | RANGE
+     ---------------------------+--------------+-------
+      sensor.wlanstat.interface |   string[]   |
+      sensor.wlanstat.quality   |   integer[]  |  0-100
+
+*/
+
 /*  init application functions and structures and widgets
     All widgets are created, but not visible.
     functions can now communicate with widgets
@@ -241,13 +489,33 @@ static void InitializeApplication( Widget top )
 {
     trace_level = CWRI.traceLevel;
 
-    gauge_timer(APPCTX,NULL);
+    /* init sensors */
+    /* well known identifier to connect data-source and gauge2 */
+    int p;
 
-    NBUS = nbus_create( CWRI.listenPort );
-    int fd = nbus_get_socket(NBUS);
-    if( fd < 0 ) ERR("could not open port 7788");
-    XtAppAddInput(APPCTX,fd, (XtPointer) XtInputReadMask,
-		  gauge_server, (void*)(intptr_t)-1);
+    struct task_reg *task;
+    TASK_REG = m_create(10, sizeof(*task));
+    struct sensor_reg *d;
+    m_foreach( SENSOR_LIST, p, d ) {
+	    TRACE(TRACE_MAIN, "check sensor %s", CHARP(d->name) );
+	    lookup_int(TASK_REG, d->name );	    
+    }
+
+
+    gauge_timer(APPCTX,NULL);
+    sensor_timer(APPCTX,NULL);
+
+    // NBUS = nbus_create( CWRI.listenPort );
+    // int fd = nbus_get_socket(NBUS);
+    // if( fd < 0 ) ERR("could not open port 7788");
+    // XtAppAddInput(APPCTX,fd, (XtPointer) XtInputReadMask,
+    // gauge_server, (void*)(intptr_t)-1);
+
+    int args = m_create(10,sizeof(char*));
+    char *prog = "./diskstats";
+    m_put( args, &prog );
+    run_script( top, args );
+    m_free(args);
 }
 
 /******************************************************************************
@@ -277,6 +545,9 @@ int main ( int argc, char **argv )
     XtAppContext app;
     m_init();
     mv_init();
+    conststr_init();
+    mvar_init();
+
     srand(time(NULL));
     TRACE(2,"test");
     XtSetLanguageProc (NULL, NULL, NULL);

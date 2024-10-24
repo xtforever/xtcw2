@@ -426,6 +426,21 @@ int  shell_create( int args )
     return h;
 }
 
+/** execute (mstr) filename 
+ * @returns -1 for error
+ */
+int  shell_create1( int filename )
+{
+    int h = ctx_init( &SUBSHELL, 2, sizeof(struct  fork2_info));
+    struct fork2_info *sh = shell_ctx(h);
+    int args = m_create(1,sizeof(char*));
+    char *buf = m_str(filename);
+    m_put(args, & buf );
+    fork2_open3(sh, args );
+    m_free(args);
+    return h;
+}
+
 
 /** 
  * solange noch daten im puffer sind, diese ausgeben

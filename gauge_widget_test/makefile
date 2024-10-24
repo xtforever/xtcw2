@@ -16,13 +16,14 @@ CC = gcc
 
 
 CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I.
+CFLAGS += -D_GNU_SOURCE -fms-extensions -Wall -fsanitize=address -fno-omit-frame-pointer
 XORGLIB=-lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lXaw
 LOADLIBES +=  $(XORGLIB)
 
 
 ifeq ($(debug_enable),1)
 TAG="\"DEBUG_$(shell date)\""
-CFLAGS+= -g -DMLS_DEBUG -O0 -DTAG=$(TAG)
+CFLAGS+= -ggdb -DMLS_DEBUG -O0 -DTAG=$(TAG)
 else
 TAG="\"PROD_$(shell date)\"" 
 CFLAGS+= -O3 -DTAG=$(TAG)
@@ -39,9 +40,18 @@ xtcw/%.h %.c: %.widget
 	wb_search=$(srcdir) $(WBWRAP) $^ $(WBUILD) $(WFLAGS)
 
 
-ALL: $(TARGET)
+ALL: $(TARGET) sentest wlanstat cpustats
 
-$(TARGET): nbus.o Gauge.o $(libdir)/libxtcw.a
+wlanstat: CFLAGS+=-DWITH_WLANSTAT_MAIN 
+
+
+sentest:  sensorreg.o conststr.o mls.o
+
+Gauge2.c: Gauge2.widget
+
+$(TARGET): nbus.o Gauge.o $(libdir)/libxtcw.a Gauge2.o parsertool.o sensorreg.o conststr.o var5.o m_tool.o  subshell.o
 
 clean:
-	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex Gauge.c Wheel.c 
+	${RM} -rf $(TARGET) *.o  Gauge2.c xtcw *~ *.3 *.tex Gauge.c Wheel.c 
+
+extra: clean ALL

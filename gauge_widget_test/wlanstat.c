@@ -7,13 +7,16 @@
 #include <linux/wireless.h>
 #include <unistd.h>
 #include <errno.h>
-#include "sensorreg.h"
-#include "mls.h"
-#include "var5.h"
+
+
+/* exported variables:
+  sensor.wlanstat.interface   string[]
+  sensor.wlanstat.quality     integer[]  0-100
+*/
 
 // Function to print the wireless statistics for a given interface
-void print_wireless_stats(int sockfd, const char* ifname) {
-    int sockfd;
+static void print_wireless_stats(int sockfd, const char* ifname, int num ) {
+
     struct iw_statistics stats;
     struct iwreq req;
 
@@ -23,40 +26,29 @@ void print_wireless_stats(int sockfd, const char* ifname) {
     req.u.data.length = sizeof(struct iw_statistics);
     req.u.data.flags = 1;  // Required flag for wireless statistics
 
-    // Create a socket for communication with the network interface
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-        perror("Could not create socket");
-        return;
-    }
 
     // Perform the ioctl call to get the wireless statistics
     if (ioctl(sockfd, SIOCGIWSTATS, &req) == -1) {
-        if (errno == EOPNOTSUPP) {
-            // Not a wireless interface
-            close(sockfd);
-            return;
-        } else {
             perror("Error performing SIOCGIWSTATS");
-            close(sockfd);
-            return;
-        }
+	    return;	
     }
 
     // Print the statistics
-    printf("Interface: %s\n", ifname);
-    printf("Link Quality: %d/%d\n", stats.qual.qual, 100);  // Max quality is usually 100
-    printf("Signal Level: %d dBm\n", (signed char)stats.qual.level);
-    printf("Noise Level: %d dBm\n", (signed char)stats.qual.noise);
-    printf("Updated: %d\n\n", stats.qual.updated);
+    printf("interface[%d]=%s\n", num, ifname);
+    printf("linkquality[%d]=%d\n", num, stats.qual.qual );  // Max quality is usually 100
 
-    
-    
-    // Close the socket
-    close(sockfd);
+    int n;
+    n = 100 + (signed char)stats.qual.level;
+    if( n > 100 ) n=100; else if(n < 0 ) n=0;    
+    printf("signallevel[%d]=%d\n", num, n);
+
+    n = 100 + (signed char)stats.qual.noise;
+    if( n > 100 ) n=100; else if(n < 0 ) n=0;    
+    printf("noiselevel[%d]=[%d]\n", num, n );
 }
 
 // Function to get all interfaces and print wireless statistics
-void get_all_interfaces() {
+static void get_all_interfaces() {
     struct ifreq ifr;
     struct ifconf ifc;
     char buf[1024];
@@ -80,13 +72,14 @@ void get_all_interfaces() {
     // Loop through all interfaces
     struct ifreq* it = ifc.ifc_req;
     int n_interfaces = ifc.ifc_len / sizeof(struct ifreq);
+    int num=0;
     for (i = 0; i < n_interfaces; i++) {
         strncpy(ifr.ifr_name, it[i].ifr_name, IFNAMSIZ);
 
         // Check if this is a wireless interface using SIOCGIWNAME
         if (ioctl(sockfd, SIOCGIWNAME, &ifr) != -1) {
             // If it's a wireless interface, print the statistics
-            print_wireless_stats(it[i].ifr_name);
+		print_wireless_stats(sockfd, it[i].ifr_name, num++ );
         } 
     }
 
@@ -94,12 +87,19 @@ void get_all_interfaces() {
     close(sockfd);
 }
 
-int main() {
-	m_init();
-	mvar_init();
-	get_all_interfaces();
 
-	mvar_destruct();
-	m_destruct();
+void wlanstat_run( void )
+{
+	get_all_interfaces();	
+}
+
+
+#ifdef WITH_WLANSTAT_MAIN
+
+int main()
+{
+	get_all_interfaces();
 	return 0;
 }
+
+#endif

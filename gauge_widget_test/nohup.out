@@ -9,3 +9,5 @@ Fontconfig warning: "/home/jens/.fonts.conf", line 630: saw number, expected mat
 Fontconfig warning: "/home/jens/.fonts.conf", line 1312: Having multiple values in <test> isn't supported and may not work as expected
 Fontconfig warning: "/home/jens/.fonts.conf", line 1443: Having multiple values in <test> isn't supported and may not work as expected
 Fontconfig warning: "/home/jens/.fonts.conf", line 1521: Having multiple values in <test> isn't supported and may not work as expected
+SSH_AUTH_SOCK=/home/jens/.ssh/ssh-agent.NB-11572.sock; export SSH_AUTH_SOCK;
+echo Agent pid 10756;

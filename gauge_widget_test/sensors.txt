@@ -1,0 +1,36 @@
+
+
+sensors:
+
+   name: CPUTemp
+   type: bar
+   max:  100
+   min:  0
+   cur:  26
+   unit: celsius
+   
+  name:   RAM
+  type:   multibar
+  cur:    20,30,10
+  desc:   swap,ram,cache 
+  max:    100
+  min:    0
+  unit:   percent
+
+
+  name:   IOWAIT
+  type:   bar
+  max:    100
+  min:    0
+  unit:   percent
+  cur:    4
+  desc:   wait
+
+
+
+
+forkpty()
+    -- read data
+    -- write to variable 
+
+

@@ -1,5 +1,5 @@
 #include "m_tool.h"
-#include "xtcw/mls.h"
+#include "mls.h"
 
 
 int m_str_va_app(int m, va_list ap)
@@ -308,6 +308,7 @@ int m_split_list( const char *s, const char *delm )
     return ls;
 }
 
+/* copy from s to buf[p] until *s == ch */
 int leftstr( int buf, int p, const char *s, int ch )
 {
     int w;
@@ -322,3 +323,167 @@ int leftstr( int buf, int p, const char *s, int ch )
     return buf; 
 }
 
+
+
+int cmp_int( const void *a0, const void *b0 )
+{
+        const int *a = a0;
+        const int *b = b0;
+        return (*a) - (*b);
+}
+
+/* einfuegen von key in das array m falls key noch nicht
+   existiert
+   return: pos von key
+*/
+int lookup_int(int m, int key)
+{
+	void *obj = calloc(1,m_width(m));  
+	memcpy(obj, &key, sizeof(key) );              	    
+        int p = m_binsert( m, obj, cmp_int, 0 );
+	free(obj);
+        if( p < 0 ) {
+                return (-p)-1;
+        }
+        TRACE(1,"ADD pos:%d key:%d", p, key );
+        return p;
+}
+
+/**
+ * @brief Copies a portion of the list `m` starting at index `a` and ending at index `b` to a new list at position `offs`, and returns the new list.
+ *
+ * - If `dest` is zero, a new destination list is created.
+ * - Indices can be positive or negative:
+ *   - Negative indices count from the end to the start of the list.
+ *   - The first element is 0, and the last element is -1.
+ *
+ * Example:
+ * @code
+ *   m:    0    1    2    3    4
+ *       -5   -4   -3   -2   -1
+ * @endcode
+ *
+ * @param dest The destination list where the portion is copied. If set to 0, a new list is created.
+ * @param offs The offset position in the destination list where the copied portion is placed.
+ * @param m The source list from which the portion is copied.
+ * @param a The starting index of the portion to be copied.
+ * @param b The ending index of the portion to be copied.
+ * @return The new list with the copied portion.
+ */
+int m_slice(int dest, int offs, int m, int a, int b )
+{
+	int len = m ? m_len(m) : 0;
+	if( b < 0 ) { b+= len; }
+	if( a < 0 ) { a+= len; }
+	if( b >= len ) b = len -1;
+	if( a >= len ) a = len -1;
+	if( a < 0 ) a=0;
+	int cnt = b-a +1;
+	if( cnt < 0 ) cnt=1;
+	if( dest <= 0 ) dest = m_create(cnt+offs, m_width(m));
+	m_setlen(dest,offs);
+
+	for( int i = a; i <= b; i++ ) m_put(dest, mls(m,i) );
+	return dest;
+}
+
+/* slice for strings: add a zero byte to the end */
+int s_slice(int dest, int offs, int m, int a, int b )
+{
+	int ret = m_slice(dest,offs,m,a,b);
+	if( m_len(ret) > 0 && CHAR( ret, m_len(ret)-1 ) != 0 ) m_putc(ret,0);
+	return ret;
+}
+
+
+
+int s_warn(int m)
+{
+	if( m ) {
+		if( m_width(m)!=1 ) WARN("mstring %d to width: %d bytes", m, m_width(m));
+		if( m_len(m) && CHAR(m,m_len(m)-1) != 0 )  WARN("mstring %d not zero terminated", m );
+	}
+	return 0;
+}
+
+/* verify that m is a not zero-length zero terminated string */
+int s_isempty(int m)
+{
+	return ( m == 0 || m_len(m) == 0 || CHAR(m,0) == 0 || m_width(m) != 1 || CHAR(m, m_len(m)-1 ) != 0 ); 
+}
+
+void s_write(int m,int n)
+{
+	if( s_isempty(m) ) return;
+	char *d; int p;
+	m_foreach(m,p,d) {		
+		if( n <= 0 || *d == 0 ) return;
+		putchar(*d);
+		n--;
+	}
+}
+
+void s_puts(int m)
+{
+	if(! s_isempty(m) ) {
+		s_write(m,m_len(m));
+	}
+	putchar(10);
+	return;	
+}
+
+int s_strncmp(int m,int offs,int pattern, int n)
+{
+	if( s_isempty(pattern) || n<=0 ) return 0;
+	if( s_isempty(m) || offs >= m_len(m) ) return -1;
+	
+	int p;
+	char *d;
+	int diff;
+	m_foreach( pattern, p, d ) {
+		if( n-- <= 0 ) return 0;
+		if( offs >= m_len(m) ) return -1;
+		diff = *d - CHAR(m,offs);
+		if( diff ) return diff;
+	}
+	return 0;
+}
+
+int s_strstr(int m, int offs, int pattern )
+{
+	if(  s_isempty(m) || s_isempty(pattern) || offs < 0 ) return -1;
+	int plen = m_len(pattern);
+	int max = m_len(m) - plen;
+	for( ;  offs <= max; offs++ ) {
+		if( s_strncmp(m,offs,pattern,plen-1) == 0 ) return offs; 
+	}
+	return -1;
+}
+
+
+
+int s_replace(int dest, int src, int pattern, int replace, int count )	
+{
+	if(dest==0) dest=m_create(20,1); else m_clear(dest);
+	if( s_isempty(src) ||  s_isempty(pattern) ) return dest;
+	int offs = 0;	
+	int replace_last = s_strlen(replace) -1;
+	int pattern_len  = s_strlen(pattern);
+	for(;;) {
+		int pos = s_strstr(src, offs, pattern );
+		if( pos < 0 ) break;
+		m_slice(dest, m_len(dest), src, offs, pos -1 );
+		m_slice(dest, m_len(dest), replace,0,replace_last);
+		offs = pos + pattern_len;
+		if( --count == 0 ) break;
+	}
+	m_slice( dest, m_len(dest), src, offs, -1 ); 
+	return dest;
+}
+
+void m_map( int m, int (*fn) ( int m, int p, void *ctx ), void *ctx  )
+{
+	if( m == 0 || fn == 0  ) return;
+	int n=m_len(m);	
+	for(int i=0; i<n; i++ ) fn( m,i,ctx);
+}

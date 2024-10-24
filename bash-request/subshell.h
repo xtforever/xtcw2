@@ -44,6 +44,7 @@ void fork2_open3( struct fork2_info *child, int args );
 void fork2_close3( struct fork2_info *child );
 
 int  shell_create( int args );
+int  shell_create1( int filename );
 void shell_close( int n );
 int  shell_getline(int h, int p, int buf);
 int  shell_signal(int pid, int exit_value);

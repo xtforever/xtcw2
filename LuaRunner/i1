@@ -1,0 +1,28 @@
+gen-rule: ( "link-all Luarunner: $DEPS" ),
+
+(
+
+nodes: (
+
+     ( REC: "icompile",
+       OUT: ( "luaxt_wrap.c" ),
+       IN: ( "luaxt.i" ),
+       DEP: ( "luaxt.c" )
+     ),
+
+      ( REC: "lcompile",
+       OUT: ( "njson_lex.lex.c" ),
+       IN: ( "njson_lex.l" )
+      ),
+
+      ( REC: "ycompile",
+       OUT: ( "njson_parse.tab.c" ),
+       IN: ( "njson_parse.y" ),
+       DEP: ( "njson_lex.lex.c" )
+      ),
+
+      ( REC: "widreg",
+        OUT: ( "widreg.c", "widreg.h" ),
+	DEP: ( *widget )
+      )
+ ) )
