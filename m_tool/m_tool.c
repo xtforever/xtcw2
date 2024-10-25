@@ -382,8 +382,11 @@ int m_slice(int dest, int offs, int m, int a, int b )
 	if( cnt < 0 ) cnt=1;
 	if( dest <= 0 ) dest = m_create(cnt+offs, m_width(m));
 	m_setlen(dest,offs);
-
-	for( int i = a; i <= b; i++ ) m_put(dest, mls(m,i) );
+	ASSERT( m_width(dest) == m_width(m) );
+	for( int i = a; i <= b; i++ ) {
+		void*d = m_peek(m,i);
+		m_put(dest,d);
+	}
 	return dest;
 }
 
@@ -391,7 +394,7 @@ int m_slice(int dest, int offs, int m, int a, int b )
 int s_slice(int dest, int offs, int m, int a, int b )
 {
 	int ret = m_slice(dest,offs,m,a,b);
-	if( m_len(ret) > 0 && CHAR( ret, m_len(ret)-1 ) != 0 ) m_putc(ret,0);
+	if( m_len(ret) == 0 || CHAR( ret, m_len(ret)-1 ) != 0 ) m_putc(ret,0);
 	return ret;
 }
 
@@ -432,19 +435,39 @@ void s_puts(int m)
 	return;	
 }
 
+
+/**
+ * Compares the 'pattern' with the m-array 'm' starting at the offset 'offs'.
+ * <p>
+ * If 'n' is zero, the comparison could include the trailing zero in 'pattern'
+ * if 'pattern' is in C-string style. If 'n' is non-zero, up to 'n' characters
+ * will be compared. This function returns 0 if 'pattern' matches 'm' or the
+ * difference between the values of the last two compared characters.
+ * </p>
+ *
+ * @param m the m-array to be compared against
+ * @param offs the offset in 'm' where comparison begins
+ * @param pattern the pattern to compare with
+ * @param n the maximum number of characters to compare; if zero, may include trailing null
+ * @return 0 if 'pattern' matches 'm', or the difference between the values of the last two
+ *         compared characters if they don't match
+ */
 int s_strncmp(int m,int offs,int pattern, int n)
 {
+	/* empty pattern matches every char */
 	if( s_isempty(pattern) || n<=0 ) return 0;
-	if( s_isempty(m) || offs >= m_len(m) ) return -1;
+	/* empty source does not match */
+	if( s_isempty(m) ) return -1;
 	
 	int p;
 	char *d;
 	int diff;
 	m_foreach( pattern, p, d ) {
-		if( n-- <= 0 ) return 0;
-		if( offs >= m_len(m) ) return -1;
-		diff = *d - CHAR(m,offs);
+		if( offs+p >= m_len(m) ) return -1;
+		diff = CHAR(m,offs+p) - *d; 
 		if( diff ) return diff;
+		n--; /* when <0 after first match, ignore n */ 
+		if( n == 0 ) return 0;
 	}
 	return 0;
 }
@@ -465,6 +488,7 @@ int s_strstr(int m, int offs, int pattern )
 int s_replace(int dest, int src, int pattern, int replace, int count )	
 {
 	if(dest==0) dest=m_create(20,1); else m_clear(dest);
+	ASSERT( m_width(dest) == 1 );
 	if( s_isempty(src) ||  s_isempty(pattern) ) return dest;
 	int offs = 0;	
 	int replace_last = s_strlen(replace) -1;
@@ -477,13 +501,63 @@ int s_replace(int dest, int src, int pattern, int replace, int count )
 		offs = pos + pattern_len;
 		if( --count == 0 ) break;
 	}
-	m_slice( dest, m_len(dest), src, offs, -1 ); 
+	m_slice( dest, m_len(dest), src, offs, -1 );
 	return dest;
 }
+
+int s_msplit(int dest, int src, int pattern )	
+{
+	if(dest==0) dest=m_create(10,sizeof(int)); else m_clear(dest);
+	if( s_isempty(src) ||  s_isempty(pattern) ) return dest;
+	int offs = 0;	
+	int pattern_len  = s_strlen(pattern);
+	int substr ;
+	for(;;) {
+		int pos = s_strstr(src, offs, pattern );
+		if( pos < 0 ) break;
+		substr = s_slice(0,0, src, offs, pos -1 );
+		m_puti( dest, substr );
+		offs = pos + pattern_len;
+	}
+	if( offs < m_len(src) ) {
+		m_puti( dest, m_slice( 0,0, src, offs, -1 ) );
+	}
+		
+	return dest;
+}
+
+int s_trim(int m)
+{	
+	if( m == 0 ) return 0;
+	int a=0; int b=m_len(m)-2;
+	while( a < b && isspace( CHAR(m,a) ) ) a++;
+	while( b >=a && isspace( CHAR(m,b) ) ) b--;
+	if( a == 0 ) {
+		m_setlen(m,b+1);
+		return m;
+	}	
+	return s_slice(m,0,m,a,b);
+}
+
+
 
 void m_map( int m, int (*fn) ( int m, int p, void *ctx ), void *ctx  )
 {
 	if( m == 0 || fn == 0  ) return;
 	int n=m_len(m);	
 	for(int i=0; i<n; i++ ) fn( m,i,ctx);
+}
+
+int s_strdup(const char *s)
+{
+	if( s==NULL ) {
+		int v = m_create(1,1);
+		m_putc(v,0);
+		return v;
+	}
+	
+	int len = strlen(s)+1;
+	int v = m_create(len,1);
+	m_write( v, 0, s, len );
+	return v;
 }
