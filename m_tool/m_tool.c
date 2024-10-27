@@ -238,7 +238,7 @@ void m_free_user(int m, void (*free_h)(void*), int only_clear )
 {
     void *d; int p;
     m_foreach(m,p,d) free_h(d);
-    if(!only_clear) m_free(m);
+    if(only_clear) m_clear(m); else m_free(m);
 }
 
 void m_clear_user( int m, void (*free_h)(void*) )
@@ -258,16 +258,17 @@ void m_clear_list(int m)
     m_free_user( m, m_free_ptr, 1 );
 }
 
-/* clear a list of (malloced char*) */
-void m_clear_stringlist(int m)
-{
-    m_free_user(m,free,1);
-}
 
 /* free a list of (malloced char*) */
 void m_free_stringlist(int m)
 {
     m_free_user(m,free,0);
+}
+
+/* clear a list of (malloced char*) */
+void m_clear_stringlist(int m)
+{
+    m_free_user(m,free,1);
 }
 
 
@@ -412,6 +413,17 @@ int s_warn(int m)
 /* verify that m is a not zero-length zero terminated string */
 int s_isempty(int m)
 {
+	if( m==0 ) WARN("handle is zero");
+	else {
+		if( m_len(m) == 0 ) WARN("strlen  is zero");
+		else {
+			if( CHAR(m, m_len(m)-1)  ) WARN("last byte not zero");
+			if( CHAR(m,0) == 0)  WARN("first byte is zero");
+		}
+	}
+
+	
+	
 	return ( m == 0 || m_len(m) == 0 || CHAR(m,0) == 0 || m_width(m) != 1 || CHAR(m, m_len(m)-1 ) != 0 ); 
 }
 
@@ -428,11 +440,8 @@ void s_write(int m,int n)
 
 void s_puts(int m)
 {
-	if(! s_isempty(m) ) {
-		s_write(m,m_len(m));
-	}
+	s_write(m,m_len(m));
 	putchar(10);
-	return;	
 }
 
 
@@ -529,16 +538,38 @@ int s_msplit(int dest, int src, int pattern )
 int s_trim(int m)
 {	
 	if( m == 0 ) return 0;
-	int a=0; int b=m_len(m)-2;
+	int a=0;
+	int b = m_len(m)-1;
+	if( b  < 0 ) { /* make c-str */
+		m_putc(m,0);
+		return m;	
+	}	
+	if( CHAR(m,b) == 0 ) b--;	
 	while( a < b && isspace( CHAR(m,a) ) ) a++;
 	while( b >=a && isspace( CHAR(m,b) ) ) b--;
 	if( a == 0 ) {
 		m_setlen(m,b+1);
+		m_putc(m,0);
 		return m;
-	}	
+	}
 	return s_slice(m,0,m,a,b);
 }
 
+int s_lower(int m)
+{
+	if( s_isempty(m) ) return m;
+	int p; char *d;
+	m_foreach(m,p,d) *d=tolower(*d);
+	return m;
+}
+
+int s_upper(int m)
+{
+	if( s_isempty(m) ) return m;
+	int p; char *d;
+	m_foreach(m,p,d) *d=toupper(*d);
+	return m;
+}
 
 
 void m_map( int m, int (*fn) ( int m, int p, void *ctx ), void *ctx  )
@@ -548,9 +579,9 @@ void m_map( int m, int (*fn) ( int m, int p, void *ctx ), void *ctx  )
 	for(int i=0; i<n; i++ ) fn( m,i,ctx);
 }
 
-int s_strdup(const char *s)
+int s_strdup_c(const char *s)
 {
-	if( s==NULL ) {
+	if( s == NULL ) {
 		int v = m_create(1,1);
 		m_putc(v,0);
 		return v;

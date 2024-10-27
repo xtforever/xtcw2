@@ -40,8 +40,10 @@ int s_strstr(int m, int offs, int pattern );
 int s_strncmp(int m,int offs,int pattern, int n);
 void s_write(int m,int n);
 int s_isempty(int m);
-int s_strdup(const char *s);
+int s_strdup_c(const char *s);
 int s_trim(int m);
+int s_lower(int m);
+int s_upper(int m);
 int s_msplit(int dest, int src, int pattern );
 
 void m_map( int m, int (*fn) ( int m, int p, void *ctx ), void *ctx  );
