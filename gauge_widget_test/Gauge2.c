@@ -3,25 +3,25 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 326 "Gauge2.widget"
-#include <X11/Xatom.h>
-#line 327 "Gauge2.widget"
-#include <X11/Xft/Xft.h>
-#line 328 "Gauge2.widget"
-#include "converters-xft.h"
-#line 329 "Gauge2.widget"
-#include "converters.h"
-#line 330 "Gauge2.widget"
-#include <X11/Xmu/Converters.h>
-#line 331 "Gauge2.widget"
-#include "mls.h"
 #line 332 "Gauge2.widget"
-#include "xutil.h"
+#include <X11/Xatom.h>
 #line 333 "Gauge2.widget"
-#include "micro_vars.h"
+#include <X11/Xft/Xft.h>
 #line 334 "Gauge2.widget"
-#include "parsertool.h"
+#include "converters-xft.h"
 #line 335 "Gauge2.widget"
+#include "converters.h"
+#line 336 "Gauge2.widget"
+#include <X11/Xmu/Converters.h>
+#line 337 "Gauge2.widget"
+#include "mls.h"
+#line 338 "Gauge2.widget"
+#include "xutil.h"
+#line 339 "Gauge2.widget"
+#include "micro_vars.h"
+#line 340 "Gauge2.widget"
+#include "parsertool.h"
+#line 341 "Gauge2.widget"
 #include "sensorreg.h"
 #include <xtcw/Gauge2P.h>
 static void _resolve_inheritance(
@@ -95,37 +95,37 @@ static void str_print(
 Widget,int ,int ,char *,int 
 #endif
 );
-#line 205 "Gauge2.widget"
+#line 211 "Gauge2.widget"
 static void update_cache(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 253 "Gauge2.widget"
+#line 259 "Gauge2.widget"
 static void redraw(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 263 "Gauge2.widget"
+#line 269 "Gauge2.widget"
 static void calculate_size(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 274 "Gauge2.widget"
+#line 280 "Gauge2.widget"
 static void add_qpercent_cb(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 281 "Gauge2.widget"
+#line 287 "Gauge2.widget"
 static void parse_graph_spec(
 #if NeedFunctionPrototypes
 Widget,char *
 #endif
 );
-#line 314 "Gauge2.widget"
+#line 320 "Gauge2.widget"
 static void parse_label(
 #if NeedFunctionPrototypes
 Widget,char *
@@ -186,19 +186,25 @@ static void str_print(self,x,y,s,color)Widget self;int  x;int  y;char * s;int  c
 #line 198 "Gauge2.widget"
 {
    if( is_empty(s) ) return;
-   XftDrawStringUtf8(((Gauge2Widget)self)->gauge2.draw, (XftColor*)mls(((Gauge2Widget)self)->gauge2.gcolor,color), ((Gauge2Widget)self)->wheel.xftFont,
+   XftColor *col;
+   if( color >= m_len(((Gauge2Widget)self)->gauge2.gcolor) )
+     col = & ((Gauge2Widget)self)->gauge2.bg;
+   else
+     col = mls(((Gauge2Widget)self)->gauge2.gcolor,color);
+     
+   XftDrawStringUtf8(((Gauge2Widget)self)->gauge2.draw, col, ((Gauge2Widget)self)->wheel.xftFont,
     			     x,y+((Gauge2Widget)self)->wheel.xftFont->ascent, (FcChar8*)s, strlen(s) );
 }
-#line 205 "Gauge2.widget"
+#line 211 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 205 "Gauge2.widget"
+#line 211 "Gauge2.widget"
 static void update_cache(Widget self)
 #else
-#line 205 "Gauge2.widget"
+#line 211 "Gauge2.widget"
 static void update_cache(self)Widget self;
 #endif
-#line 206 "Gauge2.widget"
+#line 212 "Gauge2.widget"
 {
     int p;
 
@@ -244,16 +250,16 @@ static void update_cache(self)Widget self;
 	x0 += w;
     }
 }
-#line 253 "Gauge2.widget"
+#line 259 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 253 "Gauge2.widget"
+#line 259 "Gauge2.widget"
 static void redraw(Widget self)
 #else
-#line 253 "Gauge2.widget"
+#line 259 "Gauge2.widget"
 static void redraw(self)Widget self;
 #endif
-#line 254 "Gauge2.widget"
+#line 260 "Gauge2.widget"
 {
     TRACE(1, "Gauge");
     if( !XtIsRealized(self)) return;
@@ -262,16 +268,16 @@ static void redraw(self)Widget self;
               0,0, ((Gauge2Widget)self)->core.width, ((Gauge2Widget)self)->core.height, /* source pixmap */
               0,0 ); /* target window x,y */
 }
-#line 263 "Gauge2.widget"
+#line 269 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 263 "Gauge2.widget"
+#line 269 "Gauge2.widget"
 static void calculate_size(Widget self)
 #else
-#line 263 "Gauge2.widget"
+#line 269 "Gauge2.widget"
 static void calculate_size(self)Widget self;
 #endif
-#line 264 "Gauge2.widget"
+#line 270 "Gauge2.widget"
 {
 
 	int w,h;
@@ -281,29 +287,29 @@ static void calculate_size(self)Widget self;
 	if( ((Gauge2Widget)self)->gauge2.prefered_height < (h+2) * 2 )
 	    ((Gauge2Widget)self)->gauge2.prefered_height = (h+2) * 2;	    
 }
-#line 274 "Gauge2.widget"
+#line 280 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 274 "Gauge2.widget"
+#line 280 "Gauge2.widget"
 static void add_qpercent_cb(Widget self)
 #else
-#line 274 "Gauge2.widget"
+#line 280 "Gauge2.widget"
 static void add_qpercent_cb(self)Widget self;
 #endif
-#line 275 "Gauge2.widget"
+#line 281 "Gauge2.widget"
 {
 /*	mv_onwrite($qpercent, (void*)redraw, $, 0);	*/
 }
-#line 281 "Gauge2.widget"
+#line 287 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 281 "Gauge2.widget"
+#line 287 "Gauge2.widget"
 static void parse_graph_spec(Widget self,char * s)
 #else
-#line 281 "Gauge2.widget"
+#line 287 "Gauge2.widget"
 static void parse_graph_spec(self,s)Widget self;char * s;
 #endif
-#line 282 "Gauge2.widget"
+#line 288 "Gauge2.widget"
 {
 	XColor xc;
 	char name[20];
@@ -335,16 +341,16 @@ static void parse_graph_spec(self,s)Widget self;char * s;
 	   }	   
 	};
 }
-#line 314 "Gauge2.widget"
+#line 320 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 314 "Gauge2.widget"
+#line 320 "Gauge2.widget"
 static void parse_label(Widget self,char * s)
 #else
-#line 314 "Gauge2.widget"
+#line 320 "Gauge2.widget"
 static void parse_label(self,s)Widget self;char * s;
 #endif
-#line 315 "Gauge2.widget"
+#line 321 "Gauge2.widget"
 {
 	if( is_empty(s) ) {
 	    m_free_strings(((Gauge2Widget)self)->gauge2.glabel,0);

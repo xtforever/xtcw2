@@ -17,8 +17,10 @@ CC = gcc
 
 CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I.
 CFLAGS += -D_GNU_SOURCE -fms-extensions -Wall -fsanitize=address -fno-omit-frame-pointer
-XORGLIB=-lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lXaw
-LOADLIBES +=  $(XORGLIB)
+XORGLIB=-lX11 -lXpm -lSM -lICE -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lXaw
+LOADLIBES +=  $(XORGLIB) $(HOME)/git/libxt-1.2.1/src/.libs/libXt.a
+
+
 
 
 ifeq ($(debug_enable),1)
@@ -40,7 +42,7 @@ xtcw/%.h %.c: %.widget
 	wb_search=$(srcdir) $(WBWRAP) $^ $(WBUILD) $(WFLAGS)
 
 
-ALL: $(TARGET) sentest wlanstat cpustats
+ALL: $(TARGET) wlanstat cpustats
 
 wlanstat: CFLAGS+=-DWITH_WLANSTAT_MAIN 
 
@@ -49,9 +51,11 @@ sentest:  sensorreg.o conststr.o mls.o
 
 Gauge2.c: Gauge2.widget
 
-$(TARGET): nbus.o Gauge.o $(libdir)/libxtcw.a Gauge2.o parsertool.o sensorreg.o conststr.o var5.o m_tool.o  subshell.o
+Repeatgb.c: Repeatgb.widget
+
+$(TARGET): nbus.o Gauge.o $(libdir)/libxtcw.a Gauge2.o parsertool.o sensorreg.o conststr.o var5.o m_tool.o  subshell.o Repeatgb.o repeatergb-tool.o
 
 clean:
-	${RM} -rf $(TARGET) *.o  Gauge2.c xtcw *~ *.3 *.tex Gauge.c Wheel.c 
+	${RM} -rf $(TARGET) *.o  Repeatgb.c Gauge2.c xtcw *~ *.3 *.tex Gauge.c Wheel.c 
 
 extra: clean ALL

@@ -1,0 +1,63 @@
+@class Repeatgb(Gridbox)
+
+@CLASSVARS
+
+@PUBLIC
+@var String sensor     = <String> "Repeatgb-DEFAULT-SENSOR"
+@var String count      = <String> "Repeatgb-DEFAULT-COUNT"
+@var String args       = <String> "Repeatgb-DEFAULT-ARGS"
+
+@PRIVATE
+
+
+@METHODS
+@proc realize
+{
+    XTFUNC();
+    XtVaSetValues( $, "borderWidth", 0, NULL );
+    #realize($,mask,attributes);
+    add_widgets($);
+   
+}
+
+
+@UTILITIES
+@proc add_widgets($)
+{
+  XTFUNC();
+/*
+	Widget btn;
+  btn = XtVaCreateManagedWidget( "txt", wlabelWidgetClass, $,
+                                  "gridy", 0,
+                                  "gridx", 1,
+                                  "fill", 3,
+                                  "weighty", 10,
+                                  "weightx", 70,
+				  "gridWidth", 1,
+				  "gridHeight", 1,
+				  "label", "@s;Hello World",
+				  "borderWidth", 0,
+				  "gravity", CenterGravity,
+				  XtVaTypedArg, "xftFont", XtRString, "Sans-45", strlen("Sans-45") + 1,			  
+				 
+                                  NULL );
+*/
+
+  repgb_parse( $, $args, $count );
+}
+
+
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"
+@incl "xutil.h"
+@incl <X11/Xaw/Command.h>
+@incl "xtcw/Wlabel.h"
+@incl "repeatergb-tool.h"
+

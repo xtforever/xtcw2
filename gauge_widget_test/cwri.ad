@@ -1,6 +1,9 @@
 %%
 %% set default colors
 %%
+
+
+
 *color1: Yellow
 *foreground: #A0A0E0
 *background: #0000C0
@@ -19,6 +22,7 @@
 
 cwri.WcChildren: tt1
 %% cwri.traceLevel: 0
+
 
 *tt1.WcClass: Gridbox
 *tt1.WcChildren: ab ac ad  bb bc bd 
@@ -54,10 +58,10 @@ cwri.WcChildren: tt1
 
 
 *ac.WcClass: Wlabel
-*ac.label: NVME0
+*ac.label: _
 
 *ad.WcClass: Wlabel
-*ad.label: MEM
+*ad.label: _
 
 
 *bb.sensor: wlanstat
@@ -69,12 +73,14 @@ cwri.WcChildren: tt1
 
 *bc.WcClass: Gauge2
 *bc.label: NVME0
+*bc.padleft: 60pt
 *bc.sensor: diskstats
 *bc.graph: 100,green:70,blue
 
 % WidgetRepeater creates  'count' widgets, $$ is replaced with widget number (starting at zero) 
 % label,sensor,graph,front are given as resources  
-*bd.WcClass: WidgetRepeater
-*bd.count: $ncores
-*bd.res: label: CPU$$, sensor: cpustats, graph: 1000,white:$usage[$$],red:$iowait[$$], gridx: $$
-*bd.widget: Gauge2
+*bd.WcClass: Repeatgb
+*bd.count: 4
+*bd.sensor: cpustats 
+*bd.args1: Class: Gauge2 | Label: CPU$$ | graph: 1000,white:$usage[$$],red:$iowait[$$] | gridy: $$
+*bd.args: Class: Gauge2 | front: | Label: CPU$$ | graph: 1000,white:$usage[$$],red:$iowait[$$] | padleft: 10pt  | weightx: 1 | gridy: $$

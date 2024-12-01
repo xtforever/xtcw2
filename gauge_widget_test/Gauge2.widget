@@ -197,7 +197,13 @@ letting Xt figure out what really needs to be changed.
 @proc str_print($, int x, int y, char *s, int color )
 {
    if( is_empty(s) ) return;
-   XftDrawStringUtf8($draw, (XftColor*)mls($gcolor,color), $xftFont,
+   XftColor *col;
+   if( color >= m_len($gcolor) )
+     col = & $bg;
+   else
+     col = mls($gcolor,color);
+     
+   XftDrawStringUtf8($draw, col, $xftFont,
     			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
 }
 					       

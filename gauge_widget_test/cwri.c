@@ -56,17 +56,18 @@
 #include <X11/Xaw/XawInit.h>
 
 
-#include <WcCreate.h>
-#include <Xp.h>
-#include <xutil.h>
+#include "WcCreate.h"
+#include "Xp.h"
+#include "xutil.h"
 #include "wcreg2.h"
-#include <xtcw/register_wb.h>
+#include "xtcw/register_wb.h"
 #include "nbus.h"
 #include "subshell.h"
 #include "m_tool.h"
 
 #include "xtcw/Gauge.h"
 #include "xtcw/Gauge2.h"
+#include "xtcw/Repeatgb.h"
 
 Widget TopLevel;
 int trace_main;
@@ -74,7 +75,7 @@ int trace_main;
 static XtAppContext APPCTX;
 
 char *fallback_resources[] = {
-    APP_NAME ".allowShellResize: False",
+	APP_NAME ".allowShellResize: True",
     "*WclResFiles:" APP_NAME ".ad\n",
     "*traceLevel: 1",
     NULL };
@@ -114,8 +115,6 @@ static XtResource CWRI_CONFIG_RES [] = {
 #undef WID
 
 
-static int SPROC;
-static XtInputId sprocid[2];
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++***/
 
@@ -375,13 +374,15 @@ static void sensor_timer(XtPointer data, XtIntervalId *id )
     }
 }
 
-    
+#include "WcCreateP.h"
+
 static void RegisterApplication ( Widget top )
 {
     /* -- Register widget classes and constructors */
     // RCP( top, wbatt );
     RCP( top, gauge );
     RCP( top, gauge2 );
+    RCP( top, repeatgb );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
@@ -490,32 +491,16 @@ static void InitializeApplication( Widget top )
     trace_level = CWRI.traceLevel;
 
     /* init sensors */
-    /* well known identifier to connect data-source and gauge2 */
     int p;
-
+    struct sensor_reg *d;
     struct task_reg *task;
     TASK_REG = m_create(10, sizeof(*task));
-    struct sensor_reg *d;
     m_foreach( SENSOR_LIST, p, d ) {
 	    TRACE(TRACE_MAIN, "check sensor %s", CHARP(d->name) );
 	    lookup_int(TASK_REG, d->name );	    
     }
 
-
-    gauge_timer(APPCTX,NULL);
     sensor_timer(APPCTX,NULL);
-
-    // NBUS = nbus_create( CWRI.listenPort );
-    // int fd = nbus_get_socket(NBUS);
-    // if( fd < 0 ) ERR("could not open port 7788");
-    // XtAppAddInput(APPCTX,fd, (XtPointer) XtInputReadMask,
-    // gauge_server, (void*)(intptr_t)-1);
-
-    int args = m_create(10,sizeof(char*));
-    char *prog = "./diskstats";
-    m_put( args, &prog );
-    run_script( top, args );
-    m_free(args);
 }
 
 /******************************************************************************
