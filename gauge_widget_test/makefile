@@ -16,12 +16,11 @@ CC = gcc
 
 
 CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I.
-CFLAGS += -D_GNU_SOURCE -fms-extensions -Wall -fsanitize=address -fno-omit-frame-pointer
-XORGLIB=-lX11 -lXpm -lSM -lICE -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lXaw
-LOADLIBES +=  $(XORGLIB) $(HOME)/git/libxt-1.2.1/src/.libs/libXt.a
-
-
-
+CFLAGS += -D_GNU_SOURCE -fms-extensions -Wall
+#CFLAGS += -fsanitize=address -fno-omit-frame-pointer
+XORGLIB=-lX11 -lXpm -lICE -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lXaw -lSM -lXt
+#LOADLIBES +=  $(HOME)/git/libxt-1.2.1/src/.libs/libXt.a $(XORGLIB)
+LOADLIBES +=  $(libdir)/libxtcw.a  $(XORGLIB)
 
 ifeq ($(debug_enable),1)
 TAG="\"DEBUG_$(shell date)\""
@@ -51,11 +50,13 @@ sentest:  sensorreg.o conststr.o mls.o
 
 Gauge2.c: Gauge2.widget
 
+WlabelV5.c: WlabelV5.widget
+
 Repeatgb.c: Repeatgb.widget
 
-$(TARGET): nbus.o Gauge.o $(libdir)/libxtcw.a Gauge2.o parsertool.o sensorreg.o conststr.o var5.o m_tool.o  subshell.o Repeatgb.o repeatergb-tool.o
+$(TARGET): nbus.o Gauge.o  Gauge2.o parsertool.o sensorreg.o conststr.o var5.o m_tool.o  subshell.o Repeatgb.o repeatergb-tool.o WlabelV5.o
 
 clean:
-	${RM} -rf $(TARGET) *.o  Repeatgb.c Gauge2.c xtcw *~ *.3 *.tex Gauge.c Wheel.c 
+	${RM} -rf $(TARGET) *.o  Repeatgb.c Gauge2.c xtcw *~ *.3 *.tex Gauge.c Wheel.c WlabelV5.c
 
 extra: clean ALL

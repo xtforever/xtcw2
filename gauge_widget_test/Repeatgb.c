@@ -3,25 +3,25 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 53 "Repeatgb.widget"
+#line 23 "Repeatgb.widget"
 #include <X11/Xatom.h>
-#line 54 "Repeatgb.widget"
+#line 24 "Repeatgb.widget"
 #include <X11/Xft/Xft.h>
-#line 55 "Repeatgb.widget"
+#line 25 "Repeatgb.widget"
 #include "converters-xft.h"
-#line 56 "Repeatgb.widget"
+#line 26 "Repeatgb.widget"
 #include "converters.h"
-#line 57 "Repeatgb.widget"
+#line 27 "Repeatgb.widget"
 #include <X11/Xmu/Converters.h>
-#line 58 "Repeatgb.widget"
+#line 28 "Repeatgb.widget"
 #include "mls.h"
-#line 59 "Repeatgb.widget"
+#line 29 "Repeatgb.widget"
 #include "xutil.h"
-#line 60 "Repeatgb.widget"
+#line 30 "Repeatgb.widget"
 #include <X11/Xaw/Command.h>
-#line 61 "Repeatgb.widget"
+#line 31 "Repeatgb.widget"
 #include "xtcw/Wlabel.h"
-#line 62 "Repeatgb.widget"
+#line 32 "Repeatgb.widget"
 #include "repeatergb-tool.h"
 #include <xtcw/RepeatgbP.h>
 static void _resolve_inheritance(
@@ -35,44 +35,6 @@ static void realize(
 Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
-#line 25 "Repeatgb.widget"
-static void add_widgets(
-#if NeedFunctionPrototypes
-Widget
-#endif
-);
-#line 25 "Repeatgb.widget"
-/*ARGSUSED*/
-#if NeedFunctionPrototypes
-#line 25 "Repeatgb.widget"
-static void add_widgets(Widget self)
-#else
-#line 25 "Repeatgb.widget"
-static void add_widgets(self)Widget self;
-#endif
-#line 26 "Repeatgb.widget"
-{
-  XTFUNC();
-/*
-	Widget btn;
-  btn = XtVaCreateManagedWidget( "txt", wlabelWidgetClass, $,
-                                  "gridy", 0,
-                                  "gridx", 1,
-                                  "fill", 3,
-                                  "weighty", 10,
-                                  "weightx", 70,
-				  "gridWidth", 1,
-				  "gridHeight", 1,
-				  "label", "@s;Hello World",
-				  "borderWidth", 0,
-				  "gravity", CenterGravity,
-				  XtVaTypedArg, "xftFont", XtRString, "Sans-45", strlen("Sans-45") + 1,			  
-				 
-                                  NULL );
-*/
-
-  repgb_parse( self, ((RepeatgbWidget)self)->repeatgb.args, ((RepeatgbWidget)self)->repeatgb.count );
-}
 
 static XtResource resources[] = {
 #line 6 "Repeatgb.widget"
@@ -170,8 +132,6 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 #line 15 "Repeatgb.widget"
 {
     XTFUNC();
-    XtVaSetValues( self, "borderWidth", 0, NULL );
     gridboxClassRec.core_class.realize(self,mask,attributes);
-    add_widgets(self);
-   
+    repgb_parse( self, ((RepeatgbWidget)self)->repeatgb.args, ((RepeatgbWidget)self)->repeatgb.count );
 }

@@ -15,7 +15,7 @@
 #include "mrb.h"
 #include "ctx.h"
 
-int trace_child = 2;
+int trace_child = 7;
 
 static void xclose( int *fd )
 {
@@ -95,12 +95,27 @@ static void execute(struct fork2_info *child, int args)
 {
     int rc = forkpty(&child->masterfd, NULL, NULL, NULL);
     if ( rc < 0 ) {
-	ERR("can not fork");
+	perror( "can not fork");
+	_exit(EXIT_FAILURE);    
     }
 
     if ( rc == 0 ) {
-	execvp( STR(args,0), m_buf(args) ); // never returns
-	ERR("execvp not executed");
+	    int fd = open("/dev/null", O_WRONLY);
+	    if (fd != -1) { dup2(fd, STDERR_FILENO); close(fd); }
+	    signal(SIGINT, SIG_DFL);
+	    signal(SIGTERM, SIG_DFL);
+	    signal(SIGCHLD, SIG_DFL);
+	    // Unblock signals
+	    sigset_t mask;
+	    sigemptyset(&mask);
+	    sigprocmask(SIG_SETMASK, &mask, NULL);	    
+	    // Close unnecessary file descriptors
+	    for (int fd = 3; fd < sysconf(_SC_OPEN_MAX); fd++) {
+		    close(fd);
+	    }	    
+	    execvp( STR(args,0), m_buf(args) ); // never returns
+	    perror("execvp not executed");
+	    _exit(EXIT_FAILURE);
     }
     
     // Parent
@@ -108,9 +123,6 @@ static void execute(struct fork2_info *child, int args)
     child->pid = rc;
     return;
 }
-
-
-
 
 struct fork2_info *fork2_open(char *filename, ...)
 {
@@ -190,26 +202,26 @@ static int mrb_read(int fd, struct mrb *mrb )
     FD_ZERO(&rfds);
     FD_SET(fd, &rfds);
 
-    /* Wait up to five seconds. */
+    /* Wait up to 1/10th second */
     tv.tv_sec = 0;
-    tv.tv_usec = 1000;
+    tv.tv_usec = 100 * 1000;
 
     retval = select(fd+1, &rfds, NULL, NULL, &tv);
     if (retval < 0 ) {
-	TRACE(1, "Warning: read error on fd:%d", fd );
+	TRACE(trace_child, "Warning: read error on fd:%d", fd );
 	perror("");
 	return -1;
     }
 
     if( retval == 0 ) { // timeout
-	TRACE(1, "Warning: no data available on fd:%d",fd );
+	TRACE(trace_child, "Warning: no data available on fd:%d",fd );
 	return mrb_error( mrb );
     }
 
 
     TRACE(1, "rd:%d wr:%d size:%d, used:%d", mrb->rd, mrb->wr, mrb->size,   mrb_bytesused(mrb) );
     char *buf  = mrb_maxsize(mrb, &free_space);
-    TRACE(trace_child,"chunksize: %d", free_space );
+    TRACE(1,"chunksize: %d", free_space );
     if( free_space == 0 ) return 0;
     int nread;
     nread = read( fd, buf, free_space );
@@ -220,7 +232,7 @@ static int mrb_read(int fd, struct mrb *mrb )
     }
     
     if( nread == 0 ) {
-	TRACE(1,"read returns 0, could be the child exited");
+	TRACE(trace_child,"read returns 0, could be the child exited");
 	return mrb_error( mrb );
     }
 
@@ -234,17 +246,11 @@ static int mrb_read(int fd, struct mrb *mrb )
 }
 
 
-/** kill child and free all resources */
-void fork2_close( struct fork2_info *child )
-{
-    fork2_close3(child);
-    free(child);
-}
 
 
 void fork2_kill( struct fork2_info *child )
 {
-    TRACE(1,"");
+    TRACE(trace_child,"");
     int status,err;
     if( child->stat == CHILD_RUNNING ) {
         kill( child->pid, SIGKILL );
@@ -258,17 +264,26 @@ void fork2_kill( struct fork2_info *child )
 
 void fork2_close3( struct fork2_info *child )
 {
-    TRACE(1,"");
-
-    fork2_kill(child);
+	if( child->stat ) {
+		TRACE(trace_child,"");
+		fork2_kill(child);
+	} else {
+		TRACE(trace_child,"child already stopped");	
+	}
+	
+	
+	for(int i=0;i<2;i++) {
+		if(child->pipe_buf[i]) { free(child->pipe_buf[i]); }
+		child->pipe_buf[i]=0;
+	}
     
-    for(int i=0;i<2;i++) {
-	if(child->pipe_buf[i]) { free(child->pipe_buf[i]); }
-	child->pipe_buf[i]=0;
-    }
-    
-    xclose(& child->masterfd );
+	xclose(& child->masterfd );
+}
 
+/** kill child and free all resources */
+void fork2_close( struct fork2_info *child )
+{
+    fork2_close3(child);
 }
 
 
@@ -331,19 +346,21 @@ static int  mrb_getline(struct mrb *c, int m, int *pos)
 }
 
 /** read
- * returns" -1 on read error, -2 if child is not running and no more data available
+ * returns -1 on read error, -2 if child is not running and no more data available
  */
 int fork2_read(struct fork2_info *child, int pipe )
 {
     int err;
     
+    /* child is not running */
+    if( child->stat == CHILD_NOT_INIT ) return -2;
+
     int fd = child->masterfd;
     if( pipe ) {
 	pipe = 1;
 	ERR("stderr not supported");
     }
-    
-
+        
     /* pipe is closed */
     if( fd <0
 	||  child->pipe_buf[pipe] == 0 ) return -1;
@@ -357,7 +374,8 @@ int fork2_read(struct fork2_info *child, int pipe )
 
     /* read() returns 0 */
     if( err == 0 ) {
-	TRACE(trace_child, "no more data, checking  child" );
+	/* child is not running */
+	if( child->stat & CHILD_EXIT_MASK ) return -2;
     }
     
     TRACE(1,"read success, leave");
@@ -368,7 +386,7 @@ int fork2_read(struct fork2_info *child, int pipe )
 
 int fork2_getchar(struct fork2_info *child, int pipe )
 {
-    TRACE(1,"");
+    TRACE(trace_child,"");
     if( pipe ) pipe = 1;
     return mrb_get(child->pipe_buf[pipe]);
 }
@@ -393,10 +411,8 @@ int fork2_write( struct fork2_info *child, char *s )
 }
 
 
-
-
 static int SUBSHELL =0;
-static int SIGNAL_SIGCHLD = 0;
+
 
 static struct fork2_info *shell_ctx(int n)
 {
@@ -410,9 +426,8 @@ static void shell_free_cb(int *ctx, int n)
 }
 
 void shell_close( int n )
-{
-    ctx_free( &SUBSHELL, n, shell_free_cb );
-    SIGNAL_SIGCHLD = 0;
+{	
+	ctx_free( &SUBSHELL, n, shell_free_cb );
 }
 
 /**
@@ -453,14 +468,16 @@ int  shell_getline(int h, int p, int buf)
 {
     int err;
     struct fork2_info *sh = shell_ctx(h);
+    if(! sh->init ) return -1; 
 
     // alle daten aus dem puffer ausliefern
     if( fork2_getline( sh, p, buf ) == 0 ) return 1;
 
+    /* check shell status */
     // neue daten einlesen
     err = fork2_read( sh, p );
     if( err < 0 ) {
-	return -1;
+   	    return -1;
     }
 
     // jetzt wieder alle daten aus dem puffer ausliefern,
@@ -470,11 +487,12 @@ int  shell_getline(int h, int p, int buf)
     if( fork2_getline( sh, p, buf ) == 0 ) return 1;
 
     return 0;
+
 }
 
 int  shell_write(int h, char *msg)
 {
-    TRACE(1,"");
+    TRACE(trace_child,"");
     struct fork2_info *sh = shell_ctx(h);
     return fork2_write(sh,msg);
 }
@@ -493,30 +511,46 @@ int shell_fd(int h, int n)
  */
 int  shell_signal(int pid, int exit_value)
 {
-    TRACE(1, "pid: %d", pid);
+    TRACE(trace_child, "pid: %d", pid);
     int p;
     struct fork2_info *sh;
     m_foreach( SUBSHELL, p, sh) {
 	if(!sh->init) continue;
 	if( sh->pid == pid ) {
-	    sh->stat = 0;
 	    sh->exit_value=exit_value;
+	    sh->stat = exit_value ? CHILD_EXIT_FAILURE :  CHILD_EXIT_SUCCESS ;
 	    return 0;
 	}
     }
     return 1;
 }
 
-void shell_signal_cb(int dum)
+void shell_signal_cb( int dummu )
 {
-    TRACE(1,"%d", dum);
-    TRACE(1,"sigchld");
-    SIGNAL_SIGCHLD=1;
-    return;
+    int saved_errno = errno; // Save errno, because it might be modified.
+    pid_t child_pid;
+    int status;
+
+    // Wait for any child process to terminate
+    while ((child_pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        if (WIFEXITED(status)) {
+		TRACE(trace_child,"Child with PID %d exited with status %d\n", child_pid, WEXITSTATUS(status));
+		shell_signal(child_pid,WEXITSTATUS(status));
+        } else if (WIFSIGNALED(status)) {
+            TRACE(trace_child,"Child with PID %d was terminated by signal %d\n", child_pid, WTERMSIG(status));
+        }
+    }
+
+    errno = saved_errno; // Restore errno.
 }
 
-/* returns 0 if child still running */
-int shell_check(int h)
+/* returns 1 -  shell is running */
+int shell_running(int h)
 {
-    return SIGNAL_SIGCHLD;
+	return (shell_ctx(h)->init && shell_ctx(h)->stat);
+}
+
+int shell_exitcode(int h)
+{
+	return shell_ctx(h)->exit_value;
 }

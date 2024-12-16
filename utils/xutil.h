@@ -37,4 +37,5 @@ void grab_window_quit(Widget w);
 void XtcwAppAddInput(Widget w,
 		     int fd, long mask, 
 		     void (*cb)(Widget, int *, XtInputId *) );
+Widget XtArgCreateWidget(int name, int widget_class_name, Widget parent, int args );
 #endif

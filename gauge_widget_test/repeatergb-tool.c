@@ -14,7 +14,6 @@ Widget _XtCreateWidget(String name,
                 XtTypedArgList typed_args,
                 Cardinal num_typed_args);
 
-
 static void create_widget_from_args(Widget parent, const char *s, char *count_str )
 {
 	int count =  atoi(count_str);

@@ -4,7 +4,7 @@
 #define APP_NAME "cwri"
 
 /* speed of gauge update */
-#define GAUGE_TIMER_MS 2000
+#define UPDATE_TIMER_MS 2000
 #define SENSOR_TIMER_MS 2000
 /*
  */
@@ -68,10 +68,11 @@
 #include "xtcw/Gauge.h"
 #include "xtcw/Gauge2.h"
 #include "xtcw/Repeatgb.h"
+#include "xtcw/WlabelV5.h"
 
 Widget TopLevel;
 int trace_main;
-#define TRACE_MAIN 4
+#define TRACE_MAIN 7
 static XtAppContext APPCTX;
 
 char *fallback_resources[] = {
@@ -149,33 +150,13 @@ void quit_cb( Widget w, void *u, void *c )
 
   -------------------------------------------------------------------------------------------------------------------- */
 
-static void gauge_timer(XtPointer data, XtIntervalId *id )
-{
-    /* straight from the resource file: g1-percent */
-    static int qvar = 0;
-    if( !qvar) qvar = XrmStringToQuark("g1-percent");
-
-    /* XT timer stuff */
-    XtAppContext app = data;
-    XtAppAddTimeOut(app,GAUGE_TIMER_MS, gauge_timer, APPCTX ); 
-
-    /* update gauge widget with: mv_onwrite(...) */
-    int p = rand() % 100;
-    mv_write(qvar, p );
-    TRACE(4,"update values");
-
-    struct sensor_reg *d;
-    m_foreach( SENSOR_LIST, p, d ) {
-	    if( d->gather ) {
-		    d->gather(d);
-	    }	    
-    }
-}
 
 
 /* extract path, index and value */
 int mvar_assign2( int buf )
 {
+	TRACE(TRACE_MAIN,"parse %s", m_str(buf) );
+	
 	int id = -1;
 	int typ = VAR_STRING;
 	int ls = m_split_list( (const char*) mls(buf,0), "=" );
@@ -234,145 +215,116 @@ int mvar_assign_c(const char *s)
 	return x;
 }
 
-static void sproc_parse( int sensorid )
+
+static int TASK_CNT = 0;
+static int TASK_MAX = 3;
+static int TASK_LAST = 0;
+
+
+static void close_task(int task_num)
 {
-    int n=0; // only stdout supported
-    TRACE(1, "" );
-    int err;
-    int buf = m_create(100,1);
-    
-	    
-    // new line of data available if err==1 
-    while( (err=shell_getline( SPROC, n, buf)) == 1 ) {
-	    int sens_var = s_printf(0,0, "diskstats.%s", m_str(buf) );
-	    TRACE(TRACE_MAIN,"%s", m_str(sens_var));
-	    mvar_assign2(sens_var);
-	    m_free(sens_var);
-	    m_clear(buf);
-    }
+	struct sensor_reg *r = mls(SENSOR_LIST, task_num);
+	TRACE(TRACE_MAIN,"closing subshell: (%d), %s", r->shell, m_str(r->name) );
+	XtRemoveInput(r->inputid);
+	if( shell_exitcode(r->shell) == 0 )
+		r->run = 0;
+	else
+		r->run = -1;
 
-    
-    /* error handling - could loose data on stderr, but i dont care */
-    if( err < 0 ) {
-	    TRACE(TRACE_MAIN,"error reading stdout, closing subshell" );
-	    XtRemoveInput(sprocid[n]);
-	    sprocid[n]=0; 
-	    shell_close(SPROC);
-	    SPROC=0;
-    }
+	shell_close(r->shell);
+	TASK_CNT--;
 
-    m_free(buf);
-    TRACE(1, "leave" );
-    return;
+
+
 }
-
-static void sproc_stdout_cb( XtPointer p, int *n, XtInputId *id )
-{
-	int sensor_num = (intptr_t) n;
-	TRACE(TRACE_MAIN,"");
-	sproc_parse(sensor_num);
-}
-
-int run_script(Widget top, int args )
-{
-    TopLevel=top;
-    XtAppContext app = XtWidgetToApplicationContext(top);
-
-    if( SPROC ) {
-	WARN("script already running");
-	return -1;
-    }
-    
-    SPROC = shell_create( args );
-    if( SPROC < 0 ) {
-	return -1;
-    }
-    signal(SIGCHLD, shell_signal_cb);
-    
-    sprocid[0]=
-	XtAppAddInput(app,
-		      shell_fd(SPROC,  CHILD_STDOUT_RD), (XtPointer)  (XtInputReadMask),
-		      sproc_stdout_cb, (void*) (intptr_t) SPROC );
-    /* sprocid[1] = */
-    /* 	XtAppAddInput(app, */
-    /* 		      shell_fd(SPROC, CHILD_STDERR_RD), (XtPointer)  (XtInputReadMask), */
-    /* 		      sproc_stderr_cb, NULL ); */
-    
-
-    return 0;
-}
-
-
-
-static int TASK_CNT = 0,
-	TASK_MAX = 3,
-	TASK_LAST = 0;
-
-struct task_reg {
-	int sensor_name; /* must be the first entry */
-	int shell;
-	int run;
-};
-
-int TASK_REG = 0;
 
 static void task_cb(XtPointer p, int *n, XtInputId *id )
 {	
 	int task_num = (intptr_t) p;
-	struct task_reg *r = mls(TASK_REG,task_num);
+	struct sensor_reg *r = mls(SENSOR_LIST, task_num);
 	int shell = r->shell;
 	// cp sensor name w/o trailing zero and append a dot  
-	int prefix = m_slice(0,0, r->sensor_name, 0, -2 );
+	int prefix = m_slice(0,0, r->name, 0, -2 );
 	m_putc(prefix,'.');
 	int prefix_len = m_len(prefix);	       	    
-
 	int stream = 0; // only stdout supported
 	int err;
 	int buf = m_create(100,1);
+
+
+	TRACE(TRACE_MAIN,"subshell: %s", m_str(r->name));
 	// new line of data available if err==1 
 	while( (err=shell_getline( shell, stream, buf)) == 1 ) {
-		m_slice( prefix, prefix_len, buf, 0, -1 );
-		TRACE(TRACE_MAIN,"%s", m_str(prefix) );
-		mvar_assign2(prefix);
+		if(! isalpha(CHAR(buf,0))) continue; 
+		m_slice( prefix, prefix_len, buf, 0, -1 ); /* app buf to prefix */
+		mvar_assign2(prefix);		
 		m_clear(buf);
 	}
 	m_free(prefix);
 	m_free(buf);
 	
 	/* error handling - could loose data on stderr, but i dont care */
-	if( err < 0 ) {
-	    TRACE(TRACE_MAIN,"error reading stdout, closing subshell" );
-	    XtRemoveInput(*id);
-	    shell_close(shell);
-	    r->run=0; r->shell=0;
-	    TASK_CNT--;
+	if( err < 0 ) {		
+		if( r->inputid != *id )
+			ERR("inputid does not match, task_num:%d, inputid:%ld",  task_num, *id);
+		close_task( task_num );	
 	}
 }
 
 static void sensor_timer(XtPointer data, XtIntervalId *id )
 {
-    /* XT timer stuff */
-    XtAppContext app = data;
-    XtAppAddTimeOut(app,SENSOR_TIMER_MS, sensor_timer, APPCTX );
-    TRACE(TRACE_MAIN,"");
+	int filename = 0;
+	XtAppContext app = data;
+	XtAppAddTimeOut(app,SENSOR_TIMER_MS, sensor_timer, APPCTX );
+	TRACE(TRACE_MAIN,"");
+	struct sensor_reg *r;
+	int i;
 
-    // find not running task and start it
-    int len =  m_len( TASK_REG );
-    for( int i=0; i<len && TASK_CNT < TASK_MAX;i++ ) {
-	    if( ++TASK_LAST  >= len ) TASK_LAST = 0;
-	    struct task_reg *r = mls(TASK_REG,TASK_LAST);
-	    if( r->run ) continue;
-	    int filename = s_printf(0,0, "./%s", m_str(r->sensor_name) ); 
-	    r->shell=shell_create1( filename  );
-	    m_free(filename);
-	    if( r->shell < 0 ) continue;
-	    r->run=1;
-	    TASK_CNT++;
-	    XtAppAddInput(app,
+	/* check for dead sub-processes, killed before task_cb was called */
+	m_foreach(SENSOR_LIST,i,r) {
+		// if( r->run > 0 && (! shell_running(r->shell))) {
+		//	close_task( i );
+		// }
+	}		
+	
+	// find not running task and start it
+	int len =  m_len(  SENSOR_LIST );
+	for( i=0; i<len && TASK_CNT < TASK_MAX;i++ ) {
+		if( ++TASK_LAST  >= len ) TASK_LAST = 0;
+		r = mls(SENSOR_LIST, TASK_LAST);
+		if( r->run ) {
+			TRACE(TRACE_MAIN,"Task ignored:%s %d", m_str(r->name), r->run );
+			continue;
+		}
+	    
+		filename = s_printf(filename,0, "./%s", m_str(r->name) ); 
+		r->shell=shell_create1( filename  );
+		if( r->shell < 0 ) {
+			r->run=-1; /* disable command */
+			TRACE(TRACE_MAIN,"ERROR cmd: %s", m_str(filename) );
+			continue;
+		}
+		TRACE(TRACE_MAIN,"run shell cmd: %s", m_str(filename) );
+		r->run=1;
+		TASK_CNT++;
+		r->inputid = XtAppAddInput(app,
 		      shell_fd(r->shell,  CHILD_STDOUT_RD), (XtPointer)  (XtInputReadMask),
 			  task_cb, (void*) (intptr_t) TASK_LAST );
-    }
+		// TRACE(TRACE_MAIN, "task:%d has inputid:%ld", TASK_LAST );
+	}
+	m_free(filename);
 }
+
+
+static void gui_update(XtPointer data, XtIntervalId *id )
+{
+	XtAppContext app = data;
+	XtAppAddTimeOut(app,UPDATE_TIMER_MS, gui_update, APPCTX );	
+	int q=mvar_parse_string("gui_update",0);
+        var_call_callbacks( q, 0 );
+
+}
+
 
 #include "WcCreateP.h"
 
@@ -383,6 +335,7 @@ static void RegisterApplication ( Widget top )
     RCP( top, gauge );
     RCP( top, gauge2 );
     RCP( top, repeatgb );
+    RCP( top, wlabelV5 );
     
     /* -- Register application specific actions */
     /* -- Register application specific callbacks */
@@ -412,65 +365,6 @@ void add_widget( char *s )
 
 }
 
-void handle_msg(char *msg)
-{
-    int mm = m_split(0,msg,32,1);
-    if( m_len(mm) != 2 ) goto leave;
-
-    if( strcmp(STR(mm,0), "add" ) == 0 ) {
-	add_widget(STR(mm,1));
-	goto leave;
-    }
-    
-    gauge_set_value( STR(mm,0), STR(mm,1) );
-
- leave:
-    m_free_strings(mm,0);
-}
-
-void gauge_server( XtPointer p, int *n, XtInputId *id );
-void gauge_server_new_connection(void);
-void gauge_server_parse_messge(XtInputId *id, int client_id);
-
-static int NBUS;
-
-void gauge_server_new_connection(void)
-{
-    int client_id = nbus_server_message(NBUS);
-    if( client_id < 0 ) return;
-    int fd = nbus_client_fd(NBUS, client_id);
-    XtAppAddInput(APPCTX,fd,(XtPointer) XtInputReadMask,
-		  gauge_server, (void*)(intptr_t)client_id);
-}
-
-void gauge_server_parse_messge(XtInputId *id, int client_id)
-{
-    int req = nbus_client_message(NBUS,client_id);
-    if( req == CLIENT_EXIT ) {
-	TRACE(1,"remove client:%d", client_id );
-	XtRemoveInput(*id);
-	return;
-    }
-
-    if( req == CLIENT_REQ ) {
-	char *msg = nbus_client_get_msg(NBUS,client_id);
-	TRACE(1,"client sends: %s", msg );
-	handle_msg(msg);
-    }    
-}
-
-
-void gauge_server( XtPointer p, int *n, XtInputId *id )
-{
-    int client_id = (intptr_t) p;
-
-    if( client_id < 0 ) {
-	gauge_server_new_connection();
-	return;
-    }
-
-    gauge_server_parse_messge(id, client_id);	
-}
 
 
 /* Exported variables:
@@ -490,17 +384,14 @@ static void InitializeApplication( Widget top )
 {
     trace_level = CWRI.traceLevel;
 
-    /* init sensors */
-    int p;
-    struct sensor_reg *d;
-    struct task_reg *task;
-    TASK_REG = m_create(10, sizeof(*task));
-    m_foreach( SENSOR_LIST, p, d ) {
-	    TRACE(TRACE_MAIN, "check sensor %s", CHARP(d->name) );
-	    lookup_int(TASK_REG, d->name );	    
+    struct sigaction sa;
+    sa.sa_handler = shell_signal_cb;
+    sa.sa_flags = SA_RESTART | SA_NOCLDSTOP; // Automatically restart system calls; don't notify for stopped children
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
     }
-
-    sensor_timer(APPCTX,NULL);
 }
 
 /******************************************************************************
@@ -527,14 +418,13 @@ int main ( int argc, char **argv )
 {
     trace_main = TRACE_MAIN;
     trace_level=1;
+    trace_child=6;
     XtAppContext app;
     m_init();
     mv_init();
     conststr_init();
     mvar_init();
-
     srand(time(NULL));
-    TRACE(2,"test");
     XtSetLanguageProc (NULL, NULL, NULL);
     XawInitializeWidgetSet();
 
@@ -573,6 +463,11 @@ int main ( int argc, char **argv )
     */
     XpRegisterAll ( app );
 
+
+
+
+
+    
     /*  --  Create widget tree below toplevel shell
             using Xrm database
     */
@@ -595,10 +490,15 @@ int main ( int argc, char **argv )
 
     grab_window_quit( appShell );
 
+    /* start sensors */
+    sensor_timer(APPCTX,NULL);
+    gui_update(APPCTX,NULL);
     XtAppMainLoop ( app ); /* use XtAppSetExitFlag */
     XtDestroyWidget(appShell);
 
     mv_destroy();
+    mvar_destruct();
+    conststr_free();
     m_destruct();
 
     return EXIT_SUCCESS;

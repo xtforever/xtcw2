@@ -14,39 +14,9 @@
 @proc realize
 {
     XTFUNC();
-    XtVaSetValues( $, "borderWidth", 0, NULL );
     #realize($,mask,attributes);
-    add_widgets($);
-   
+    repgb_parse( $, $args, $count );
 }
-
-
-@UTILITIES
-@proc add_widgets($)
-{
-  XTFUNC();
-/*
-	Widget btn;
-  btn = XtVaCreateManagedWidget( "txt", wlabelWidgetClass, $,
-                                  "gridy", 0,
-                                  "gridx", 1,
-                                  "fill", 3,
-                                  "weighty", 10,
-                                  "weightx", 70,
-				  "gridWidth", 1,
-				  "gridHeight", 1,
-				  "label", "@s;Hello World",
-				  "borderWidth", 0,
-				  "gravity", CenterGravity,
-				  XtVaTypedArg, "xftFont", XtRString, "Sans-45", strlen("Sans-45") + 1,			  
-				 
-                                  NULL );
-*/
-
-  repgb_parse( $, $args, $count );
-}
-
-
 
 
 @IMPORTS

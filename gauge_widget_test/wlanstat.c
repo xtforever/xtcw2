@@ -44,7 +44,7 @@ static void print_wireless_stats(int sockfd, const char* ifname, int num ) {
 
     n = 100 + (signed char)stats.qual.noise;
     if( n > 100 ) n=100; else if(n < 0 ) n=0;    
-    printf("noiselevel[%d]=[%d]\n", num, n );
+    printf("noiselevel[%d]=%d\n", num, n );
 }
 
 // Function to get all interfaces and print wireless statistics

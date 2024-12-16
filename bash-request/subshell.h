@@ -5,10 +5,11 @@
 #include "mrb.h"
 
 enum fork2_proc_state {
-    CHILD_NOT_INIT,
-    CHILD_RUNNING,
-    CHILD_EXIT_SUCCESS,
-    CHILD_EXIT_FAILURE
+    CHILD_NOT_INIT      = 0,
+    CHILD_RUNNING       = 2,
+    CHILD_EXIT_SUCCESS  = 4,
+    CHILD_EXIT_FAILURE  = 4+1,
+    CHILD_EXIT_MASK     = 4
 };
 
 enum fork2_pipes {
@@ -53,4 +54,6 @@ int  shell_write(int h, char *msg);
 struct mrb *shell_queue(int h, int p);
 int shell_fd(int h, int n);
 
+int shell_running(int h);
+int shell_exitcode(int h);
 #endif

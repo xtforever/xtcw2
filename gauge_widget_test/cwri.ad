@@ -10,7 +10,7 @@
 *Wedit.cursorColor: #FFFF00
 *fg_norm: #A0A0E0
 *bg_norm: #0000C0
-*xftFont: Source Code Pro-14
+*xftFont: Source Code Pro-8
 *Wlabel.xftFont: Serif-8
 *vb.vgap: 2
 *borderWidth: 0
@@ -25,7 +25,7 @@ cwri.WcChildren: tt1
 
 
 *tt1.WcClass: Gridbox
-*tt1.WcChildren: ab ac ad  bb bc bd 
+*tt1.WcChildren: ab ac ad  bb bc bd be bf
 
 *weightx: 0
 *vb.gridy: 3
@@ -38,13 +38,15 @@ cwri.WcChildren: tt1
 *bb.gridx: 1
 *bc.gridx: 1
 *bd.gridx: 1
+*be.gridx: 1
 
 *bb.gridy: 0
 *bc.gridy: 1
 *bd.gridy: 2
+*be.gridy: 3
 
-
-
+*bf.gridx: 1
+*bf.gridy: 4
 
 
 *ab.weightx: 0
@@ -58,29 +60,45 @@ cwri.WcChildren: tt1
 
 
 *ac.WcClass: Wlabel
-*ac.label: _
+*ac.label: AC
 
 *ad.WcClass: Wlabel
-*ad.label: _
+*ad.label: AD
 
 
-*bb.sensor: wlanstat
+
 *bb.WcClass: Gauge2
-*bb.label: WLAN0
+*bb.front: WLAN0
 *bb.padleft: 60pt
-*bb.graph: 100,green:70,blue
+*bb.graph: 100,green:$linkquality
 *bb.prefered_width: 10cm
+*bb.sensor: wlanstat
+*bb.bar_height: 1pt
+*bb.signal_update: gui_update
+
 
 *bc.WcClass: Gauge2
-*bc.label: NVME0
+*bc.front: NVME0
 *bc.padleft: 60pt
 *bc.sensor: diskstats
 *bc.graph: 100,green:70,blue
 
+% should be replaced with a macro, e.g. lua precompiler/php...
 % WidgetRepeater creates  'count' widgets, $$ is replaced with widget number (starting at zero) 
 % label,sensor,graph,front are given as resources  
 *bd.WcClass: Repeatgb
-*bd.count: 4
-*bd.sensor: cpustats 
-*bd.args1: Class: Gauge2 | Label: CPU$$ | graph: 1000,white:$usage[$$],red:$iowait[$$] | gridy: $$
-*bd.args: Class: Gauge2 | front: | Label: CPU$$ | graph: 1000,white:$usage[$$],red:$iowait[$$] | padleft: 10pt  | weightx: 1 | gridy: $$
+*bd.count: 6
+*bd.args:  signal_update: gui_update | sensor: cpustats | Class: Gauge2 | front: CPU$$ | label: | graph: 10000,green:$usage[$$],red:$iowait[$$] | padleft: 60pt  | weightx: 1 | gridy: $$
+*bd.*.bar_height: 1pt
+
+
+*be.WcClass: Repeatgb
+*be.count: 3
+*be.args:  signal_update: gui_update | sensor: diskfree  | Class: Gauge2 | front: | label: $mount[$$] | graph: 100,red:$used[$$],green:$free[$$] | padleft: 60pt  | weightx: 1 | gridy: $$
+
+*be.*.bar_height: 2pt
+
+*bf.WcClass: WlabelV5
+*bf.plabel: Hello $device[0]
+*bf.sensor: diskfree
+*bf.signal_update: gui_update

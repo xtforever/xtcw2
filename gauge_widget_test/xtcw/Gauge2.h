@@ -175,6 +175,26 @@ _XFUNCPROTOBEGIN
 #define XtRDistance "Distance"
 #endif
 
+#ifndef XtNsignal_update
+#define XtNsignal_update "signal_update"
+#endif
+#ifndef XtCSignal_update
+#define XtCSignal_update "Signal_update"
+#endif
+#ifndef XtRString
+#define XtRString "String"
+#endif
+
+#ifndef XtNbar_height
+#define XtNbar_height "bar_height"
+#endif
+#ifndef XtCBar_height
+#define XtCBar_height "Bar_height"
+#endif
+#ifndef XtRDistance
+#define XtRDistance "Distance"
+#endif
+
 typedef struct _Gauge2ClassRec *Gauge2WidgetClass;
 typedef struct _Gauge2Rec *Gauge2Widget;
 externalref WidgetClass gauge2WidgetClass;

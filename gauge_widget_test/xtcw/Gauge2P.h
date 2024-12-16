@@ -38,6 +38,8 @@ String  front;
 Distance  padleft;
 Distance  prefered_width;
 Distance  prefered_height;
+String  signal_update;
+Distance  bar_height;
 /* private state */
 XftDraw * draw;
 Pixmap  pixmap;
@@ -49,6 +51,7 @@ int  gcolor;
 int  glabel;
 int  gsize;
 int  range;
+int  spacer;
 XftColor  bg;
 } Gauge2Part;
 

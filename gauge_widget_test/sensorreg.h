@@ -9,6 +9,9 @@ void sensor_register(Widget w, int name );
 extern int SENSOR_LIST;
 struct sensor_reg {
 	int name; /* type conststr */
+	int shell;
+	int run;
+	XtInputId  inputid;
 	Widget w;
 	void (*gather)(struct sensor_reg*);
 	void (*format)(struct sensor_reg*);

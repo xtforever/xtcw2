@@ -19,16 +19,19 @@
 @var <Pixel> Pixel color2 = <String> "#ff0000"
 @var String sensor = <String> "" 
 
-@ <range>,<part1>:color,...<part-n>:color
-      100,red:30,yellow:20,green:10,white:0
-@var String graph = <String> "100,red:30,yellow:20,green:10,white"
-@var String label = <String> "mem,cache,swap,free"
-@var String front = <String> "Test"
+@ <range>,color0:size0,...colorX:sizeX:colorM
+      100,red:30,yellow:20,green:10,white
+@var String graph = <String> ""
+@ name1,name2,name3
+@var String label = <String> ""
+@ text to put in front of bargraph
+@var String front = <String> ""
+@ space for front-label if left to zero will be calucalted from front label size
 @var Distance padleft = 0
 @var Distance prefered_width  = 0
 @var Distance prefered_height = 0
-
-
+@var String signal_update = <String> "" 
+@var Distance bar_height = 0
 
 @PRIVATE
 @var XftDraw *draw
@@ -41,7 +44,9 @@
 @var int glabel
 @var int gsize
 @var int range
+@var int spacer
 @var XftColor bg
+
 
 @METHODS
 
@@ -72,11 +77,17 @@
     parse_graph_spec($,$graph);
     parse_label($,$label);
     sensor_register_c($,$sensor);
+    if( ! is_empty($signal_update) ) {
+       int q = mvar_parse_string($signal_update,0);
+       mvar_set_callback(q, (varsig_t)update_graph, $, 0 );
+    }
+
+    $spacer = xft_textwidth( XtDisplay($), $xftFont, " | " );    
 }
 
 @proc realize
  {
-        TRACE(1, "Gauge");
+        TRACE(1, "Gauge2");
         XtCreateWindow($, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent, *mask, attributes);
   	reshape_widget($);
@@ -113,10 +124,12 @@
 
 @proc set_values
 {
+	TRACE(4,"LABEL %s", $label );
+	TRACE(4,"GRAPH %s", $graph );
+	TRACE(4,"FRONT %s", $front );	
 	parse_label($,$label);
 	parse_graph_spec($,$graph);
-	/* get_selection($); */
-       return True;
+        return True;
 }
 
 @proc expose
@@ -199,7 +212,7 @@ letting Xt figure out what really needs to be changed.
    if( is_empty(s) ) return;
    XftColor *col;
    if( color >= m_len($gcolor) )
-     col = & $bg;
+     col = & $xft_col[COLOR_FG_NORM];
    else
      col = mls($gcolor,color);
      
@@ -210,6 +223,7 @@ letting Xt figure out what really needs to be changed.
 @ redraws everything on pixmap cache
 @proc update_cache($)
 {
+
     int p;
 
     TRACE(1, "Gauge2");
@@ -218,10 +232,11 @@ letting Xt figure out what really needs to be changed.
     /* clear background */
     XftDrawRect($draw, & $bg, 0,0,$width,$height );    
 
-
     /* draw label in front of bar */
     if( ! is_empty($front) ) {
-       str_print($,0,0,$front,0); 	
+        const char *s =  mvar_str_string( $sensor, $front );
+        p = $xftFont->ascent +  $xftFont->descent;	
+       	str_print($,0, ($height-p) /2,s,0); 	
     }
     
     /* Position of BAR */
@@ -231,10 +246,9 @@ letting Xt figure out what really needs to be changed.
     /* draw label on top of bar */
     if( $glabel && m_len($glabel) ) { 
       char *sep = " | ";
-      int space = xft_textwidth( XtDisplay($), $xftFont, sep );
       char **s;    
       m_foreach( $glabel, p, s ) {
-         if( p ) { str_print( $,x0,y0,sep,0 ); x0+=space; }
+         if( p ) { str_print( $,x0,y0,sep,0 ); x0+=$spacer; }
          str_print($,x0,y0,*s,p);
 	 x0 +=  xft_textwidth( XtDisplay($), $xftFont, *s );  
       }
@@ -245,7 +259,12 @@ letting Xt figure out what really needs to be changed.
 
     /* draw bars */
     float e = $width * 1.0 / $range;
-    int h = $height-y0;
+    int h = $height-y0; /* maximum height */
+    if( $bar_height < h ) { /* user wants bar smaller than maximum */
+        y0 += ( h - $bar_height ) / 2;
+	h =  $bar_height;
+    }
+
     XftColor *col;
     m_foreach( $gcolor, p, col ) {
         int w = INT($gsize,p);
@@ -258,7 +277,7 @@ letting Xt figure out what really needs to be changed.
 
 @proc redraw($)
 {
-    TRACE(1, "Gauge");
+    TRACE(1, "Gauge2");
     if( !XtIsRealized($)) return;
     update_cache($);
     XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
@@ -266,25 +285,37 @@ letting Xt figure out what really needs to be changed.
               0,0 ); /* target window x,y */
 }
 
+
+@  calculate layout of gauge2 widget
+   preferences:  $prefered_width,$prefered_height, $bar_height, $padleft   
 @proc calculate_size($)
 {
+	/* label -> on top */
+	/* front -> label on the left side of the bar */
 
-	int w,h;
-	xft_calc_string_size( $, $xftFont, $label, &w, &h );
+	int pw = 2, ph = 2, w = 0, h = 0;
+	if(  $bar_height < 1 ) $bar_height = 2;
 	
-	if( $prefered_width < w+4 ) $prefered_width=w+4;
-	if( $prefered_height < (h+2) * 2 )
-	    $prefered_height = (h+2) * 2;	    
+	if(! is_empty($label) ) { 
+		xft_calc_string_size( $, $xftFont, $label, &w, &h );
+		ph = h + $bar_height;
+		if(  $bar_height == 0 ) ph++;
+	} else {
+		ph = 2;
+	}		 
+
+        if( ! is_empty($front) ) {
+		xft_calc_string_size( $, $xftFont, $front, &w, &h );
+		if( h > ph ) ph=h;
+		if( $padleft == 0 ) $padleft = w + 1;
+	}
+
+	if( $prefered_width < 2 ) $prefered_width=pw;
+	if( $prefered_height < 2 ) $prefered_height=ph;
 }
 
-@proc add_qpercent_cb($)
-{
-/*	mv_onwrite($qpercent, (void*)redraw, $, 0);	*/
-}
 
-
-
-@proc parse_graph_spec($, char *s)
+@proc parse_graph_spec($, const char *s)
 {
 	XColor xc;
 	char name[20];
@@ -325,7 +356,22 @@ letting Xt figure out what really needs to be changed.
 	    return;
 	} 
 	$glabel = m_split($glabel,s,',',1);
+        TRACE(4,"%s", s );
 }
+
+@proc update_graph($, int var, int sig)
+{
+   const char *s =  mvar_str_string( $sensor, $graph );
+   TRACE(4,"Draw %s", s );
+   parse_graph_spec($, s);
+
+   s = mvar_str_string( $sensor, $label );
+   TRACE(4,"LABEL %s: %s", $label, "" );
+   parse_label($, s);
+
+   redraw($);
+}
+
 
 
 @IMPORTS
@@ -339,3 +385,4 @@ letting Xt figure out what really needs to be changed.
 @incl "micro_vars.h"
 @incl "parsertool.h"
 @incl "sensorreg.h"
+@incl "var5.h"

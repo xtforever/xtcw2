@@ -112,6 +112,7 @@
 #include "xtcw/ctx.h"
 #include "var5.h"
 #include "m_tool.h"
+#include <errno.h>
 
 #define HASH_SIZE (4*8)
 #define HASH_BITS 14
@@ -556,7 +557,14 @@ char *integer_impl_get_string(var_t *v, int p)
 
 int integer_impl_put_string(var_t *v,char *str, int p)
 {
-    return integer_impl_put_integer(v,atol(str),p);
+	errno = 0;    /* To distinguish success/failure after call */
+	char *endptr;
+	long val = strtol(str, &endptr, 0);	
+        /* Check for various possible errors */
+	if (errno != 0 || *endptr != 0 ) {
+		WARN("type error; got string but expected integer");
+	}
+	return integer_impl_put_integer(v,val,p);
 }
 
 int integer_impl_put_integer(var_t *v, long value, int p)
@@ -1429,8 +1437,13 @@ const char* mvar_str_expand( mvar_str_t *se, char *prefix, int row )
     else  // variable found
       {
         if( s[1] == '\'' ) { quotes=1; s++; } else quotes=0;
-	s_printf(varname,0,"%s.%s", prefix, s+1 );
-        var = mvar_parse(varname,0);
+	if( prefix && *prefix ) {
+		s_printf(varname,0,"%s.%s", prefix, s+1 );
+	} else {
+		s_printf(varname,0,"%s", s+1 );
+	}
+	
+	var = mvar_parse(varname,VAR_STRING);
         index = INT(se->indices, vn ); vn++;
 	count = mvar_length(var);
         // expand var

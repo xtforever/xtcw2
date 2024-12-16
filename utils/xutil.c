@@ -2,6 +2,10 @@
 #include <math.h>
 #include "mls.h"
 #include <assert.h>
+#include "WcCreateP.h"
+#include <X11/IntrinsicP.h> /*  XtTypedArg */
+#include <X11/StringDefs.h>
+
 #if 0
 #include <cairo/cairo.h>
 #include <cairo/cairo-xlib-xrender.h>
@@ -327,4 +331,42 @@ void grab_window_quit(Widget top)
     (void) XSetWMProtocols (XtDisplay(top), XtWindow(top),
                             &wm_delete_window, 1);
 }
+
+/* defined in libxt:create.c */
+Widget _XtCreateWidget(String name,
+                WidgetClass widget_class,
+                Widget parent,
+                ArgList args,
+                Cardinal num_args,
+                XtTypedArgList typed_args,
+                Cardinal num_typed_args);
+
+Widget XtArgCreateWidget(int name, int widget_class_name, Widget parent, int key_value_list )
+{	
+	TRACE(2, "Create Widget (class: name) %s: %s", m_str(widget_class_name), m_str(name) );
+	/* create widget: lookup WidgetClass by lowercase(ClassName) */
+	XtAppContext app = XtWidgetToApplicationContext( parent );
+	XrmQuark q = XrmStringToQuark(m_str(widget_class_name));
+	WidgetClass class = WcMapClassFind( app, (intptr_t) q );
+	if( !class ) {		/* exit if class not found */
+		ERR("Widget class not found. Resource: %s", m_str(widget_class_name) );
+	}
+
+	XtTypedArg *xtarg;
+	int xtargs = m_create( 10, sizeof(*xtarg) );
+	for( int i=0; i < m_len( key_value_list )-1 ; i+=2 ) {
+		int k = INT( key_value_list, i );
+		int v = INT( key_value_list, i+1 );
+		xtarg=m_add(xtargs);
+		xtarg->name  = m_str(k);
+		xtarg->value = (XtArgVal) m_str( v );
+		xtarg->size  = m_len(v);
+		xtarg->type  = XtRString;
+	}
+	
+	Widget w = _XtCreateWidget(m_str(name), class, parent,NULL,0, m_buf(xtargs), m_len(xtargs));
+	m_free(xtargs);
+	return w;
+}
+
 

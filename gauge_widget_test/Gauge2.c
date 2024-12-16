@@ -3,144 +3,146 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 332 "Gauge2.widget"
+#line 378 "Gauge2.widget"
 #include <X11/Xatom.h>
-#line 333 "Gauge2.widget"
+#line 379 "Gauge2.widget"
 #include <X11/Xft/Xft.h>
-#line 334 "Gauge2.widget"
+#line 380 "Gauge2.widget"
 #include "converters-xft.h"
-#line 335 "Gauge2.widget"
+#line 381 "Gauge2.widget"
 #include "converters.h"
-#line 336 "Gauge2.widget"
+#line 382 "Gauge2.widget"
 #include <X11/Xmu/Converters.h>
-#line 337 "Gauge2.widget"
+#line 383 "Gauge2.widget"
 #include "mls.h"
-#line 338 "Gauge2.widget"
+#line 384 "Gauge2.widget"
 #include "xutil.h"
-#line 339 "Gauge2.widget"
+#line 385 "Gauge2.widget"
 #include "micro_vars.h"
-#line 340 "Gauge2.widget"
+#line 386 "Gauge2.widget"
 #include "parsertool.h"
-#line 341 "Gauge2.widget"
+#line 387 "Gauge2.widget"
 #include "sensorreg.h"
+#line 388 "Gauge2.widget"
+#include "var5.h"
 #include <xtcw/Gauge2P.h>
 static void _resolve_inheritance(
 #if NeedFunctionPrototypes
 WidgetClass
 #endif
 );
-#line 48 "Gauge2.widget"
+#line 53 "Gauge2.widget"
 static void initialize(
 #if NeedFunctionPrototypes
 Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 77 "Gauge2.widget"
+#line 88 "Gauge2.widget"
 static void realize(
 #if NeedFunctionPrototypes
 Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
-#line 86 "Gauge2.widget"
+#line 97 "Gauge2.widget"
 static void resize(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 100 "Gauge2.widget"
+#line 111 "Gauge2.widget"
 static void destroy(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 114 "Gauge2.widget"
+#line 125 "Gauge2.widget"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 122 "Gauge2.widget"
+#line 135 "Gauge2.widget"
 static void expose(
 #if NeedFunctionPrototypes
 Widget,XEvent *,Region 
 #endif
 );
-#line 129 "Gauge2.widget"
+#line 142 "Gauge2.widget"
 static int  exec_command(
 #if NeedFunctionPrototypes
 Widget,int ,int 
 #endif
 );
-#line 146 "Gauge2.widget"
+#line 159 "Gauge2.widget"
 static XtGeometryResult  query_geometry(
 #if NeedFunctionPrototypes
 Widget,XtWidgetGeometry *,XtWidgetGeometry *
 #endif
 );
-#line 168 "Gauge2.widget"
+#line 181 "Gauge2.widget"
 static void reshape_widget(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 179 "Gauge2.widget"
+#line 192 "Gauge2.widget"
 static void alloc_pixmap(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 197 "Gauge2.widget"
+#line 210 "Gauge2.widget"
 static void str_print(
 #if NeedFunctionPrototypes
 Widget,int ,int ,char *,int 
 #endif
 );
-#line 211 "Gauge2.widget"
+#line 224 "Gauge2.widget"
 static void update_cache(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 259 "Gauge2.widget"
+#line 278 "Gauge2.widget"
 static void redraw(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 269 "Gauge2.widget"
+#line 291 "Gauge2.widget"
 static void calculate_size(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#line 280 "Gauge2.widget"
-static void add_qpercent_cb(
-#if NeedFunctionPrototypes
-Widget
-#endif
-);
-#line 287 "Gauge2.widget"
+#line 318 "Gauge2.widget"
 static void parse_graph_spec(
 #if NeedFunctionPrototypes
-Widget,char *
+Widget,const  char *
 #endif
 );
-#line 320 "Gauge2.widget"
+#line 351 "Gauge2.widget"
 static void parse_label(
 #if NeedFunctionPrototypes
 Widget,char *
 #endif
 );
-#line 168 "Gauge2.widget"
+#line 362 "Gauge2.widget"
+static void update_graph(
+#if NeedFunctionPrototypes
+Widget,int ,int 
+#endif
+);
+#line 181 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 168 "Gauge2.widget"
+#line 181 "Gauge2.widget"
 static void reshape_widget(Widget self)
 #else
-#line 168 "Gauge2.widget"
+#line 181 "Gauge2.widget"
 static void reshape_widget(self)Widget self;
 #endif
-#line 169 "Gauge2.widget"
+#line 182 "Gauge2.widget"
 {
 	int w;
 	if( ((Gauge2Widget)self)->gauge2.cornerRoundPercent >0 && ((Gauge2Widget)self)->gauge2.cornerRoundPercent < 100 ) {
@@ -149,16 +151,16 @@ static void reshape_widget(self)Widget self;
 	    XmuReshapeWidget( self, XmuShapeRoundedRectangle, w, w );
 	}
 }
-#line 179 "Gauge2.widget"
+#line 192 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 179 "Gauge2.widget"
+#line 192 "Gauge2.widget"
 static void alloc_pixmap(Widget self)
 #else
-#line 179 "Gauge2.widget"
+#line 192 "Gauge2.widget"
 static void alloc_pixmap(self)Widget self;
 #endif
-#line 180 "Gauge2.widget"
+#line 193 "Gauge2.widget"
 {
     TRACE(1, "Gauge");
     Display *dpy = XtDisplay(self);
@@ -174,38 +176,39 @@ static void alloc_pixmap(self)Widget self;
                        DefaultVisual(dpy, DefaultScreen(dpy)), None);
     }
 }
-#line 197 "Gauge2.widget"
+#line 210 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 197 "Gauge2.widget"
+#line 210 "Gauge2.widget"
 static void str_print(Widget self,int  x,int  y,char * s,int  color)
 #else
-#line 197 "Gauge2.widget"
+#line 210 "Gauge2.widget"
 static void str_print(self,x,y,s,color)Widget self;int  x;int  y;char * s;int  color;
 #endif
-#line 198 "Gauge2.widget"
+#line 211 "Gauge2.widget"
 {
    if( is_empty(s) ) return;
    XftColor *col;
    if( color >= m_len(((Gauge2Widget)self)->gauge2.gcolor) )
-     col = & ((Gauge2Widget)self)->gauge2.bg;
+     col = & ((Gauge2Widget)self)->wheel.xft_col[COLOR_FG_NORM];
    else
      col = mls(((Gauge2Widget)self)->gauge2.gcolor,color);
      
    XftDrawStringUtf8(((Gauge2Widget)self)->gauge2.draw, col, ((Gauge2Widget)self)->wheel.xftFont,
     			     x,y+((Gauge2Widget)self)->wheel.xftFont->ascent, (FcChar8*)s, strlen(s) );
 }
-#line 211 "Gauge2.widget"
+#line 224 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 211 "Gauge2.widget"
+#line 224 "Gauge2.widget"
 static void update_cache(Widget self)
 #else
-#line 211 "Gauge2.widget"
+#line 224 "Gauge2.widget"
 static void update_cache(self)Widget self;
 #endif
-#line 212 "Gauge2.widget"
+#line 225 "Gauge2.widget"
 {
+
     int p;
 
     TRACE(1, "Gauge2");
@@ -214,10 +217,11 @@ static void update_cache(self)Widget self;
     /* clear background */
     XftDrawRect(((Gauge2Widget)self)->gauge2.draw, & ((Gauge2Widget)self)->gauge2.bg, 0,0,((Gauge2Widget)self)->core.width,((Gauge2Widget)self)->core.height );    
 
-
     /* draw label in front of bar */
     if( ! is_empty(((Gauge2Widget)self)->gauge2.front) ) {
-       str_print(self,0,0,((Gauge2Widget)self)->gauge2.front,0); 	
+        const char *s =  mvar_str_string( ((Gauge2Widget)self)->gauge2.sensor, ((Gauge2Widget)self)->gauge2.front );
+        p = ((Gauge2Widget)self)->wheel.xftFont->ascent +  ((Gauge2Widget)self)->wheel.xftFont->descent;	
+       	str_print(self,0, (((Gauge2Widget)self)->core.height-p) /2,s,0); 	
     }
     
     /* Position of BAR */
@@ -227,10 +231,9 @@ static void update_cache(self)Widget self;
     /* draw label on top of bar */
     if( ((Gauge2Widget)self)->gauge2.glabel && m_len(((Gauge2Widget)self)->gauge2.glabel) ) { 
       char *sep = " | ";
-      int space = xft_textwidth( XtDisplay(self), ((Gauge2Widget)self)->wheel.xftFont, sep );
       char **s;    
       m_foreach( ((Gauge2Widget)self)->gauge2.glabel, p, s ) {
-         if( p ) { str_print( self,x0,y0,sep,0 ); x0+=space; }
+         if( p ) { str_print( self,x0,y0,sep,0 ); x0+=((Gauge2Widget)self)->gauge2.spacer; }
          str_print(self,x0,y0,*s,p);
 	 x0 +=  xft_textwidth( XtDisplay(self), ((Gauge2Widget)self)->wheel.xftFont, *s );  
       }
@@ -241,7 +244,12 @@ static void update_cache(self)Widget self;
 
     /* draw bars */
     float e = ((Gauge2Widget)self)->core.width * 1.0 / ((Gauge2Widget)self)->gauge2.range;
-    int h = ((Gauge2Widget)self)->core.height-y0;
+    int h = ((Gauge2Widget)self)->core.height-y0; /* maximum height */
+    if( ((Gauge2Widget)self)->gauge2.bar_height < h ) { /* user wants bar smaller than maximum */
+        y0 += ( h - ((Gauge2Widget)self)->gauge2.bar_height ) / 2;
+	h =  ((Gauge2Widget)self)->gauge2.bar_height;
+    }
+
     XftColor *col;
     m_foreach( ((Gauge2Widget)self)->gauge2.gcolor, p, col ) {
         int w = INT(((Gauge2Widget)self)->gauge2.gsize,p);
@@ -250,66 +258,68 @@ static void update_cache(self)Widget self;
 	x0 += w;
     }
 }
-#line 259 "Gauge2.widget"
+#line 278 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 259 "Gauge2.widget"
+#line 278 "Gauge2.widget"
 static void redraw(Widget self)
 #else
-#line 259 "Gauge2.widget"
+#line 278 "Gauge2.widget"
 static void redraw(self)Widget self;
 #endif
-#line 260 "Gauge2.widget"
+#line 279 "Gauge2.widget"
 {
-    TRACE(1, "Gauge");
+    TRACE(1, "Gauge2");
     if( !XtIsRealized(self)) return;
     update_cache(self);
     XCopyArea(XtDisplay(self),((Gauge2Widget)self)->gauge2.pixmap, XtWindow(self), ((Gauge2Widget)self)->gauge2.gc_copy,
               0,0, ((Gauge2Widget)self)->core.width, ((Gauge2Widget)self)->core.height, /* source pixmap */
               0,0 ); /* target window x,y */
 }
-#line 269 "Gauge2.widget"
+#line 291 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 269 "Gauge2.widget"
+#line 291 "Gauge2.widget"
 static void calculate_size(Widget self)
 #else
-#line 269 "Gauge2.widget"
+#line 291 "Gauge2.widget"
 static void calculate_size(self)Widget self;
 #endif
-#line 270 "Gauge2.widget"
+#line 292 "Gauge2.widget"
 {
+	/* label -> on top */
+	/* front -> label on the left side of the bar */
 
-	int w,h;
-	xft_calc_string_size( self, ((Gauge2Widget)self)->wheel.xftFont, ((Gauge2Widget)self)->gauge2.label, &w, &h );
+	int pw = 2, ph = 2, w = 0, h = 0;
+	if(  ((Gauge2Widget)self)->gauge2.bar_height < 1 ) ((Gauge2Widget)self)->gauge2.bar_height = 2;
 	
-	if( ((Gauge2Widget)self)->gauge2.prefered_width < w+4 ) ((Gauge2Widget)self)->gauge2.prefered_width=w+4;
-	if( ((Gauge2Widget)self)->gauge2.prefered_height < (h+2) * 2 )
-	    ((Gauge2Widget)self)->gauge2.prefered_height = (h+2) * 2;	    
+	if(! is_empty(((Gauge2Widget)self)->gauge2.label) ) { 
+		xft_calc_string_size( self, ((Gauge2Widget)self)->wheel.xftFont, ((Gauge2Widget)self)->gauge2.label, &w, &h );
+		ph = h + ((Gauge2Widget)self)->gauge2.bar_height;
+		if(  ((Gauge2Widget)self)->gauge2.bar_height == 0 ) ph++;
+	} else {
+		ph = 2;
+	}		 
+
+        if( ! is_empty(((Gauge2Widget)self)->gauge2.front) ) {
+		xft_calc_string_size( self, ((Gauge2Widget)self)->wheel.xftFont, ((Gauge2Widget)self)->gauge2.front, &w, &h );
+		if( h > ph ) ph=h;
+		if( ((Gauge2Widget)self)->gauge2.padleft == 0 ) ((Gauge2Widget)self)->gauge2.padleft = w + 1;
+	}
+
+	if( ((Gauge2Widget)self)->gauge2.prefered_width < 2 ) ((Gauge2Widget)self)->gauge2.prefered_width=pw;
+	if( ((Gauge2Widget)self)->gauge2.prefered_height < 2 ) ((Gauge2Widget)self)->gauge2.prefered_height=ph;
 }
-#line 280 "Gauge2.widget"
+#line 318 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 280 "Gauge2.widget"
-static void add_qpercent_cb(Widget self)
+#line 318 "Gauge2.widget"
+static void parse_graph_spec(Widget self,const  char * s)
 #else
-#line 280 "Gauge2.widget"
-static void add_qpercent_cb(self)Widget self;
+#line 318 "Gauge2.widget"
+static void parse_graph_spec(self,s)Widget self;const  char * s;
 #endif
-#line 281 "Gauge2.widget"
-{
-/*	mv_onwrite($qpercent, (void*)redraw, $, 0);	*/
-}
-#line 287 "Gauge2.widget"
-/*ARGSUSED*/
-#if NeedFunctionPrototypes
-#line 287 "Gauge2.widget"
-static void parse_graph_spec(Widget self,char * s)
-#else
-#line 287 "Gauge2.widget"
-static void parse_graph_spec(self,s)Widget self;char * s;
-#endif
-#line 288 "Gauge2.widget"
+#line 319 "Gauge2.widget"
 {
 	XColor xc;
 	char name[20];
@@ -341,16 +351,16 @@ static void parse_graph_spec(self,s)Widget self;char * s;
 	   }	   
 	};
 }
-#line 320 "Gauge2.widget"
+#line 351 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 320 "Gauge2.widget"
+#line 351 "Gauge2.widget"
 static void parse_label(Widget self,char * s)
 #else
-#line 320 "Gauge2.widget"
+#line 351 "Gauge2.widget"
 static void parse_label(self,s)Widget self;char * s;
 #endif
-#line 321 "Gauge2.widget"
+#line 352 "Gauge2.widget"
 {
 	if( is_empty(s) ) {
 	    m_free_strings(((Gauge2Widget)self)->gauge2.glabel,0);
@@ -358,6 +368,28 @@ static void parse_label(self,s)Widget self;char * s;
 	    return;
 	} 
 	((Gauge2Widget)self)->gauge2.glabel = m_split(((Gauge2Widget)self)->gauge2.glabel,s,',',1);
+        TRACE(4,"%s", s );
+}
+#line 362 "Gauge2.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 362 "Gauge2.widget"
+static void update_graph(Widget self,int  var,int  sig)
+#else
+#line 362 "Gauge2.widget"
+static void update_graph(self,var,sig)Widget self;int  var;int  sig;
+#endif
+#line 363 "Gauge2.widget"
+{
+   const char *s =  mvar_str_string( ((Gauge2Widget)self)->gauge2.sensor, ((Gauge2Widget)self)->gauge2.graph );
+   TRACE(4,"Draw %s", s );
+   parse_graph_spec(self, s);
+
+   s = mvar_str_string( ((Gauge2Widget)self)->gauge2.sensor, ((Gauge2Widget)self)->gauge2.label );
+   TRACE(4,"LABEL %s: %s", ((Gauge2Widget)self)->gauge2.label, "" );
+   parse_label(self, s);
+
+   redraw(self);
 }
 
 static XtResource resources[] = {
@@ -384,17 +416,21 @@ static XtResource resources[] = {
 #line 20 "Gauge2.widget"
 {XtNsensor,XtCSensor,XtRString,sizeof(((Gauge2Rec*)NULL)->gauge2.sensor),XtOffsetOf(Gauge2Rec,gauge2.sensor),XtRString,(XtPointer)""},
 #line 24 "Gauge2.widget"
-{XtNgraph,XtCGraph,XtRString,sizeof(((Gauge2Rec*)NULL)->gauge2.graph),XtOffsetOf(Gauge2Rec,gauge2.graph),XtRString,(XtPointer)"100,red:30,yellow:20,green:10,white"},
-#line 25 "Gauge2.widget"
-{XtNlabel,XtCLabel,XtRString,sizeof(((Gauge2Rec*)NULL)->gauge2.label),XtOffsetOf(Gauge2Rec,gauge2.label),XtRString,(XtPointer)"mem,cache,swap,free"},
+{XtNgraph,XtCGraph,XtRString,sizeof(((Gauge2Rec*)NULL)->gauge2.graph),XtOffsetOf(Gauge2Rec,gauge2.graph),XtRString,(XtPointer)""},
 #line 26 "Gauge2.widget"
-{XtNfront,XtCFront,XtRString,sizeof(((Gauge2Rec*)NULL)->gauge2.front),XtOffsetOf(Gauge2Rec,gauge2.front),XtRString,(XtPointer)"Test"},
-#line 27 "Gauge2.widget"
-{XtNpadleft,XtCPadleft,XtRDistance,sizeof(((Gauge2Rec*)NULL)->gauge2.padleft),XtOffsetOf(Gauge2Rec,gauge2.padleft),XtRImmediate,(XtPointer)0 },
+{XtNlabel,XtCLabel,XtRString,sizeof(((Gauge2Rec*)NULL)->gauge2.label),XtOffsetOf(Gauge2Rec,gauge2.label),XtRString,(XtPointer)""},
 #line 28 "Gauge2.widget"
+{XtNfront,XtCFront,XtRString,sizeof(((Gauge2Rec*)NULL)->gauge2.front),XtOffsetOf(Gauge2Rec,gauge2.front),XtRString,(XtPointer)""},
+#line 30 "Gauge2.widget"
+{XtNpadleft,XtCPadleft,XtRDistance,sizeof(((Gauge2Rec*)NULL)->gauge2.padleft),XtOffsetOf(Gauge2Rec,gauge2.padleft),XtRImmediate,(XtPointer)0 },
+#line 31 "Gauge2.widget"
 {XtNprefered_width,XtCPrefered_width,XtRDistance,sizeof(((Gauge2Rec*)NULL)->gauge2.prefered_width),XtOffsetOf(Gauge2Rec,gauge2.prefered_width),XtRImmediate,(XtPointer)0 },
-#line 29 "Gauge2.widget"
+#line 32 "Gauge2.widget"
 {XtNprefered_height,XtCPrefered_height,XtRDistance,sizeof(((Gauge2Rec*)NULL)->gauge2.prefered_height),XtOffsetOf(Gauge2Rec,gauge2.prefered_height),XtRImmediate,(XtPointer)0 },
+#line 33 "Gauge2.widget"
+{XtNsignal_update,XtCSignal_update,XtRString,sizeof(((Gauge2Rec*)NULL)->gauge2.signal_update),XtOffsetOf(Gauge2Rec,gauge2.signal_update),XtRString,(XtPointer)""},
+#line 34 "Gauge2.widget"
+{XtNbar_height,XtCBar_height,XtRDistance,sizeof(((Gauge2Rec*)NULL)->gauge2.bar_height),XtOffsetOf(Gauge2Rec,gauge2.bar_height),XtRImmediate,(XtPointer)0 },
 };
 
 Gauge2ClassRec gauge2ClassRec = {
@@ -411,7 +447,7 @@ Gauge2ClassRec gauge2ClassRec = {
 /* actions      	*/  NULL,
 /* num_actions  	*/  0,
 /* resources    	*/  resources,
-/* num_resources 	*/  17,
+/* num_resources 	*/  19,
 /* xrm_class    	*/  NULLQUARK,
 /* compres_motion 	*/  False ,
 /* compress_exposure 	*/  TRUE ,
@@ -449,16 +485,16 @@ WidgetClass class;
   if (class == gauge2WidgetClass) return;
   super = (Gauge2WidgetClass)class->core_class.superclass;
 }
-#line 48 "Gauge2.widget"
+#line 53 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 48 "Gauge2.widget"
+#line 53 "Gauge2.widget"
 static void initialize(Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 48 "Gauge2.widget"
+#line 53 "Gauge2.widget"
 static void initialize(request,self,args,num_args)Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 49 "Gauge2.widget"
+#line 54 "Gauge2.widget"
 {
     TRACE(1, "Gauge2");
     ((Gauge2Widget)self)->gauge2.glabel=((Gauge2Widget)self)->gauge2.gsize=((Gauge2Widget)self)->gauge2.range=0;
@@ -485,34 +521,40 @@ static void initialize(request,self,args,num_args)Widget  request;Widget self;Ar
     parse_graph_spec(self,((Gauge2Widget)self)->gauge2.graph);
     parse_label(self,((Gauge2Widget)self)->gauge2.label);
     sensor_register_c(self,((Gauge2Widget)self)->gauge2.sensor);
+    if( ! is_empty(((Gauge2Widget)self)->gauge2.signal_update) ) {
+       int q = mvar_parse_string(((Gauge2Widget)self)->gauge2.signal_update,0);
+       mvar_set_callback(q, (varsig_t)update_graph, self, 0 );
+    }
+
+    ((Gauge2Widget)self)->gauge2.spacer = xft_textwidth( XtDisplay(self), ((Gauge2Widget)self)->wheel.xftFont, " | " );    
 }
-#line 77 "Gauge2.widget"
+#line 88 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 77 "Gauge2.widget"
+#line 88 "Gauge2.widget"
 static void realize(Widget self,XtValueMask * mask,XSetWindowAttributes * attributes)
 #else
-#line 77 "Gauge2.widget"
+#line 88 "Gauge2.widget"
 static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWindowAttributes * attributes;
 #endif
-#line 78 "Gauge2.widget"
+#line 89 "Gauge2.widget"
 {
-        TRACE(1, "Gauge");
+        TRACE(1, "Gauge2");
         XtCreateWindow(self, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent, *mask, attributes);
   	reshape_widget(self);
 
 }
-#line 86 "Gauge2.widget"
+#line 97 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 86 "Gauge2.widget"
+#line 97 "Gauge2.widget"
 static void resize(Widget self)
 #else
-#line 86 "Gauge2.widget"
+#line 97 "Gauge2.widget"
 static void resize(self)Widget self;
 #endif
-#line 87 "Gauge2.widget"
+#line 98 "Gauge2.widget"
 {
         TRACE(1, "Gauge2");
         if (XtIsRealized(self)) {
@@ -524,16 +566,16 @@ static void resize(self)Widget self;
             alloc_pixmap(self);
          }
 }
-#line 100 "Gauge2.widget"
+#line 111 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 100 "Gauge2.widget"
+#line 111 "Gauge2.widget"
 static void destroy(Widget self)
 #else
-#line 100 "Gauge2.widget"
+#line 111 "Gauge2.widget"
 static void destroy(self)Widget self;
 #endif
-#line 101 "Gauge2.widget"
+#line 112 "Gauge2.widget"
 {
 
     TRACE(1, "Gauge2");
@@ -546,59 +588,61 @@ static void destroy(self)Widget self;
     
     
 }
-#line 114 "Gauge2.widget"
+#line 125 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 114 "Gauge2.widget"
+#line 125 "Gauge2.widget"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 114 "Gauge2.widget"
+#line 125 "Gauge2.widget"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 115 "Gauge2.widget"
+#line 126 "Gauge2.widget"
 {
+	TRACE(4,"LABEL %s", ((Gauge2Widget)self)->gauge2.label );
+	TRACE(4,"GRAPH %s", ((Gauge2Widget)self)->gauge2.graph );
+	TRACE(4,"FRONT %s", ((Gauge2Widget)self)->gauge2.front );	
 	parse_label(self,((Gauge2Widget)self)->gauge2.label);
 	parse_graph_spec(self,((Gauge2Widget)self)->gauge2.graph);
-	/* get_selection($); */
-       return True;
+        return True;
 }
-#line 122 "Gauge2.widget"
+#line 135 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 122 "Gauge2.widget"
+#line 135 "Gauge2.widget"
 static void expose(Widget self,XEvent * event,Region  region)
 #else
-#line 122 "Gauge2.widget"
+#line 135 "Gauge2.widget"
 static void expose(self,event,region)Widget self;XEvent * event;Region  region;
 #endif
-#line 123 "Gauge2.widget"
+#line 136 "Gauge2.widget"
 {
 	TRACE(1, "Gauge2");	
     	redraw(self);
 }
-#line 129 "Gauge2.widget"
+#line 142 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 129 "Gauge2.widget"
+#line 142 "Gauge2.widget"
 static int  exec_command(Widget self,int  cmd,int  val)
 #else
-#line 129 "Gauge2.widget"
+#line 142 "Gauge2.widget"
 static int  exec_command(self,cmd,val)Widget self;int  cmd;int  val;
 #endif
-#line 130 "Gauge2.widget"
+#line 143 "Gauge2.widget"
 {
   return 0;
 }
-#line 146 "Gauge2.widget"
+#line 159 "Gauge2.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 146 "Gauge2.widget"
+#line 159 "Gauge2.widget"
 static XtGeometryResult  query_geometry(Widget self,XtWidgetGeometry * request,XtWidgetGeometry * reply)
 #else
-#line 146 "Gauge2.widget"
+#line 159 "Gauge2.widget"
 static XtGeometryResult  query_geometry(self,request,reply)Widget self;XtWidgetGeometry * request;XtWidgetGeometry * reply;
 #endif
-#line 147 "Gauge2.widget"
+#line 160 "Gauge2.widget"
 {
     reply->request_mode = CWX | CWY | CWWidth | CWHeight;
 
