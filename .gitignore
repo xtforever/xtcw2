@@ -78,4 +78,6 @@ AdmPnl/jsn
 LuaRunner/luarunner.ad
 njson_lex.lex.c
 njson_lex.lex.h
-
+Wheel.c
+cwnet
+Wheel.tex

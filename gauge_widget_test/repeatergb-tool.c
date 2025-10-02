@@ -1,5 +1,6 @@
 #include "repeatergb-tool.h"
 #include "m_tool.h"
+#include "xutil.h"
 #include "conststr.h"
 #include <X11/IntrinsicP.h> /*  XtTypedArg */
 #include "WcCreateP.h"
@@ -31,54 +32,43 @@ static void create_widget_from_args(Widget parent, const char *s, char *count_st
 	int cs_pat = s_cstr("$$");
 	int cs_sep = s_cstr("|");
 	int cs_class_name, cs_class = s_cstr("class");
-	int xtargl = m_create( count, sizeof(XtTypedArg) );
-	XtTypedArg *xtarg;
-	int p; /* loop counter */
+	int p; 
 	int args = 0; /* int[]char[]: list of strings 'key:value'*/
 	int tmp =  m_create(10,1); /* char[]: buffer for replace and split */
 	int wl=  m_create(count,sizeof(Widget));
+	int xargs = m_create(10,sizeof(int)); /* key,value resource list for createwidget */
+
+	/* foreach widget */
 	for(int i=0;i<count;i++) {
 		int cs_num = cs_printf("%d", i );
 		int cs_name = cs_printf("%s-%d", XtName(parent), i );
-		/* replace $$ with str(i) and split into 'key:value' substrings */
+		/* replace $$ with str(i), write res to tmp, and split tmp into 'key:value' substrings */
 		args = s_msplit( args, s_replace(tmp, cs_src, cs_pat, cs_num, 0 ), cs_sep );
-		/* split  'key:value' into key,value and extract class,name */
-
+		/* split  'key:value' into key,value strings, and extract class,name,
+		   put  key,value strings into a list */
 		m_foreach(args,p,d) {
 			int pos = s_index( *d,0, ':' );
 			if( pos <= 0 ) continue;
 			int k = s_mstr(s_lower(s_trim(s_slice(tmp,0, *d, 0, pos-1)) ));
-			int v =  s_mstr(s_trim(s_slice(tmp,0, *d, pos+1, -1 )));
+			int v = s_mstr(s_trim(s_slice(tmp,0, *d, pos+1, -1 )));
 			TRACE(2,"'%s' = '%s'", m_str(k), m_str(v) );
-			if( k == cs_class )  cs_class_name = s_mstr( s_lower(tmp) );
+			if( k == cs_class ) {
+				cs_class_name = s_mstr( s_lower(tmp) );
+			}
 			else {		       
-				xtarg=m_add(xtargl);
-				xtarg->name  = m_str(k);
-				xtarg->value = (XtArgVal) m_str( v );
-				xtarg->size  = m_len(v);
-				xtarg->type  = XtRString;
+				m_puti(xargs,k);
+				m_puti(xargs,v);
 			}
 		}
-		TRACE(2, "Create Widget (class: name) %s: %s", m_str(cs_class_name), m_str(cs_name) );
-		/* create widget: lookup WidgetClass by lowercase(ClassName) */
-		XtAppContext app = XtWidgetToApplicationContext( parent );
-		XrmQuark q = XrmStringToQuark(m_str(cs_class_name));
-		WidgetClass class = WcMapClassFind( app, (intptr_t) q );
-		if( !class ) {
-			ERR("Widget class not found. Resource: %s", s );
-		}				
-		/* exit if class not found */
-		Widget xtw = _XtCreateWidget(m_str(cs_name), class, parent,NULL,0, m_buf(xtargl), m_len(xtargl) );
+		Widget xtw = XtArgCreateWidget(cs_name, cs_class_name, parent, xargs );
+		m_clear(xargs);
 		m_put(wl, &xtw); /* collect all created widgets in one list */		
-		/* free elements in list 'args', reset 'args' to zero length */
-		m_clear_list(args);
-		/* set 'xtargsl' to zero length */
-		m_clear(xtargl);
+		m_clear_list(args); /* free elements in 'args', set 'args' to zero length */
 	}
 	XtManageChildren( m_buf(wl), m_len(wl) );
 	m_free(tmp);
 	m_free_list(args); /* free int[]char[] */	
-	m_free(xtargl);
+	m_free(xargs);
 	m_free(wl);
 }
 

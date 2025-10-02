@@ -20,6 +20,7 @@ signage.width: 1920
 *b1.label: Exit
 *b1.callback: wcquit()
 *b1.gridy: 1
+*b1.weighty: 0
 
 *gb.WcClass: gridbox
 *gb.gridy: 0

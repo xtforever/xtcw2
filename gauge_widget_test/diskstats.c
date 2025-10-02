@@ -21,7 +21,7 @@
         device[0] = nvme0n1   // Name of the block device
         read[0] = 0           // Number of read operations
         write[0] = 1          // Number of write operations
-        unit[0] = *           // Unit for scaling the numbers (e.g., k, m, g, or *)
+        scale[0] = *          // Unit for scaling the numbers (e.g., k, m, g, or *)
  */
 
 // Function to check if the device is a disk (starts with 'sd', 'nvme', etc.)
@@ -133,10 +133,10 @@ int main()
 	    	    
 	    printf("read[%d]=%llu\n", i,  rd  );
 	    printf("write[%d]=%llu\n",i,  wr  );
-	    printf("unit[%d]=%s\n", i, units[unit] );
+	    printf("scale[%d]=%s\n", i, units[unit] );
     }
-    
-    
+
+
 
     
     return 0;

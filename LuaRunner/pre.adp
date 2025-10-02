@@ -92,8 +92,16 @@ function on_create_gui(a)
 end
 %%END
 
+
+%%LUA
+  -- this lua function will be execute before entering the
+  -- main loop
+  xtsetvalue( "*NewLabel", "label", "test-set-value" )
+%%END
 *gb2.WcClass: gridbox
 *gb2.WcChildren: sq3 t1 menu icnBox
+
+% execute a lua function with an argument after creating *gb2 
 *gb2.WcCallback: LUA( on_create_gui("hello world") )
 
 *icnBox.WcClass: HBox
