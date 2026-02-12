@@ -81,3 +81,7 @@ njson_lex.lex.h
 Wheel.c
 cwnet
 Wheel.tex
+
+input_test/input_test
+*.o
+*.lo
