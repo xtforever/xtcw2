@@ -374,7 +374,7 @@
 }
 
 @TRANSLATIONS
-@trans   <Btn1Down>:     set() notify()
+@trans   <Btn1Down>:     toggle() notify()
 @trans   <LeaveWindow>: reset()
 
 @ACTIONS

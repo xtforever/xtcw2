@@ -40,10 +40,9 @@ In the last 20 years, GUI development has drifted toward massive, complex framew
 
 ### Phase 3: Toolkit Expansion (In Progress)
 *   Implement standard widgets (Buttons, Lists, Inputs) using the `re-tex` layout model.
-*   **Next Step**: Implement a native `WSeparator` widget.
 *   **Next Step**: Enhance `Wlist4` to support multi-column data binding from Lua stores.
 
-### Phase 4: Application Ecosystem
+### Phase 4: Application Ecosystem (In Progress)
 *   Provide templates for full-blown applications (e.g., `AdmPnl`).
 *   Documentation for "The Independent Developer" on how to maintain and bundle the toolkit.
 
@@ -51,7 +50,7 @@ In the last 20 years, GUI development has drifted toward massive, complex framew
 *   **Goal**: Run `filemanager.lui` within the XTCW framework.
 *   **Steps**:
     *   **Widget Implementation**:
-        *   Map `(separator)` to `WSeparator` (Pending).
+        *   Map `(separator)` to `WSeparator` (Completed).
         *   Map `(check)` to `Wradio` (Completed).
         *   Map `(scrolled)` to `ScrolledCanvas` (Completed).
         *   Map `(list-view)` to `Wlist4` (Completed).
