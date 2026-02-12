@@ -1,0 +1,28 @@
+InputTest.WcChildren: grid
+
+*grid.wcClass: Gridbox
+*grid.WcChildren: input greeting quit
+
+*input.gridx: 0
+*input.gridy: 0
+*input.wcClass: Wedit
+*input.label: 
+*input.callback: input_cb
+*input.width: 500
+*input.height: 50
+
+*greeting.gridx: 0
+*greeting.gridy: 1
+*greeting.wcClass: Wlabel
+*greeting.wcManaged: False
+*greeting.label: Please enter your name above and press Enter.
+*greeting.width: 500
+*greeting.height: 300
+*greeting.fontFace: Serif
+*greeting.fontSize: 24
+
+*quit.gridx: 0
+*quit.gridy: 2
+*quit.wcClass: Wbutton
+*quit.label: Quit
+*quit.callback: quit_cb
