@@ -38,9 +38,11 @@ function M.build(node, parent_path)
         if k ~= ':id' then
             local clean_k = k:sub(2) -- remove ':'
             if clean_k == 'managed' then
-                clean_k = 'wcManaged' -- Wcl convention
+                clean_k = 'wcManaged'
             elseif clean_k == 'on-click' then
-                clean_k = 'callback' -- common Xt convention
+                clean_k = 'callback'
+            elseif clean_k == 'align' then
+                clean_k = 'alignment'
             end
             table.insert(xt_props, clean_k)
             table.insert(xt_props, tostring(v))
