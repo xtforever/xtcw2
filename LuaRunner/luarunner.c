@@ -793,10 +793,34 @@ xtsetvalue_lua( lua_State *L )
 
 /** all widgets callbacks and actions must be registered at this point
  */
+static int xtgetvalue_lua(lua_State *L) {
+    Widget w = luaarg_to_widget(L, 1);
+    const char *res = luastring(L, 2);
+    if (!w || !res) return 0;
+    char *val = NULL;
+    XtVaGetValues(w, res, &val, NULL);
+    if (val) lua_pushstring(L, val);
+    else lua_pushnil(L);
+    return 1;
+}
+
+static int xtmanage_lua(lua_State *L) {
+    Widget w = luaarg_to_widget(L, 1);
+    if (w) XtManageChild(w);
+    return 0;
+}
+
+static int xtunmanage_lua(lua_State *L) {
+    Widget w = luaarg_to_widget(L, 1);
+    if (w) XtUnmanageChild(w);
+    return 0;
+}
+
 static void RegisterApplication ( Widget top )
 {
 
     /* -- Register widget classes and constructors */
+
 
 
     /* -- Register application specific actions */
@@ -934,6 +958,9 @@ int main ( int argc, char **argv )
     lua_register(L, "xtsetvalue", xtsetvalue_lua );
     lua_register(L, "xtaction", xtaction_lua );
     lua_register(L, "callF", callF_lua );
+    lua_register(L, "xtgetvalue", xtgetvalue_lua );
+    lua_register(L, "xtmanage", xtmanage_lua );
+    lua_register(L, "xtunmanage", xtunmanage_lua );
         
     /*
     asgn("task1.t1=hello");
@@ -1033,8 +1060,5 @@ int main ( int argc, char **argv )
     luaxt_destroy();
     m_destruct();
 
-
-
-
-    return EXIT_SUCCESS;
+    return 0;
 }

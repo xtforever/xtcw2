@@ -1,5 +1,5 @@
 TARGET=luarunner
-LUA=../../lua
+LUA=../lua
 
 
 debug_enable ?= 1
@@ -24,7 +24,7 @@ CC = gcc
 CFLAGS += -D_GNU_SOURCE -fms-extensions -I$(LUA)
 CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I. -I../utils -Ixtcw
 
-XORGLIB=-lXt -lXaw -lX11 -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil  -lmysqlclient -ldl
+XORGLIB=-lXt -lXaw -lX11 -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil -ldl $(shell pkg-config --libs cairo cairo-xlib)
 LOADLIBES=$(libdir)/libxtcw.a $(LUA)/liblua.a $(XORGLIB)
 
 
@@ -62,8 +62,8 @@ COMPTAG="\"PROD_$(shell date)\""
 CFLAGS+= -O3 -DTAG=$(COMPTAG)
 endif
 
-DEPS=m_tool.o opts.o svar2.o widreg.o
-DEPS+=njson_read.o njson_lex.lex.o njson_parse.tab.o var5.o m_mysql.o
+DEPS= opts.o svar2.o widreg.o
+DEPS+=njson_read.o njson_lex.lex.o njson_parse.tab.o var5.o 
 DEPS+=luaxt_wrap.o luaxt.o lua-var5.o canvas-draw-cb.o msg_box.o
 
 WIDGET_OBJ=$(patsubst %.widget,%.o,$(wildcard *.widget))
