@@ -44,14 +44,22 @@ function M.build(node, parent_path)
             elseif clean_k == 'align' then
                 clean_k = 'alignment'
             elseif clean_k == 'model' then
-                clean_k = nil -- Handle manually
+                clean_k = 'tableStrs'
+                v = v.handle
             elseif clean_k == 'columns' then
-                clean_k = nil -- Handle manually
+                clean_k = nil -- Handle manually if needed
             elseif clean_k == 'on-row-activated' then
                 clean_k = 'notify'
+            elseif clean_k == 'on-toggle' then
+                clean_k = 'callback'
+            elseif clean_k == 'on-change' then
+                clean_k = 'callback'
             end
-            table.insert(xt_props, clean_k)
-            table.insert(xt_props, tostring(v))
+            
+            if clean_k then
+                table.insert(xt_props, clean_k)
+                table.insert(xt_props, tostring(v))
+            end
         end
     end
 

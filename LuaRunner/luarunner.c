@@ -816,6 +816,33 @@ static int xtunmanage_lua(lua_State *L) {
     return 0;
 }
 
+static int mls_create_lua(lua_State *L) {
+    int size = luaL_checkinteger(L, 1);
+    int width = luaL_checkinteger(L, 2);
+    lua_pushinteger(L, m_create(size, width));
+    return 1;
+}
+
+static int mls_put_string_lua(lua_State *L) {
+    int handle = luaL_checkinteger(L, 1);
+    const char *s = luaL_checkstring(L, 2);
+    char *dup = strdup(s);
+    m_put(handle, &dup);
+    return 0;
+}
+
+static int mls_clear_lua(lua_State *L) {
+    int handle = luaL_checkinteger(L, 1);
+    m_clear_stringlist(handle);
+    return 0;
+}
+
+static int mls_len_lua(lua_State *L) {
+    int handle = luaL_checkinteger(L, 1);
+    lua_pushinteger(L, m_len(handle));
+    return 1;
+}
+
 static void RegisterApplication ( Widget top )
 {
 
@@ -961,6 +988,10 @@ int main ( int argc, char **argv )
     lua_register(L, "xtgetvalue", xtgetvalue_lua );
     lua_register(L, "xtmanage", xtmanage_lua );
     lua_register(L, "xtunmanage", xtunmanage_lua );
+    lua_register(L, "mls_create", mls_create_lua );
+    lua_register(L, "mls_put_string", mls_put_string_lua );
+    lua_register(L, "mls_clear", mls_clear_lua );
+    lua_register(L, "mls_len", mls_len_lua );
         
     /*
     asgn("task1.t1=hello");
@@ -1062,3 +1093,4 @@ int main ( int argc, char **argv )
 
     return 0;
 }
+
