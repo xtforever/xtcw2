@@ -19,7 +19,7 @@ M.register('vertical', { class = 'Gridbox' })
 M.register('horizontal', { class = 'Gridbox' })
 
 -- New mappings for File Manager
-M.register('separator', { class = 'Wlabel' }) -- TODO: Implement proper separator
+M.register('separator', { class = 'WSeparator' })
 M.register('check', { class = 'Wradio' })
 M.register('scrolled', { class = 'ScrolledCanvas' })
 M.register('list-view', { class = 'Wlist4' })

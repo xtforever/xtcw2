@@ -28,12 +28,22 @@ function M.unmanage(id)
     if w then xtunmanage(w) end
 end
 
+function M.update(id)
+    local w = backend.get_widget(id)
+    if w then
+        local handle = M.get(id, 'tableStrs')
+        if handle then
+            xtsetvalue(w, 'tableStrs', tostring(handle))
+        end
+    end
+end
+
 function M.loop()
     while luaxt.processevent() == 0 do
         local cb_name = luaxt.pullcallback()
         if cb_name ~= '' then
-            local h = handlers[cb_name]
-            if h then h() elseif _G[cb_name] then _G[cb_name]() end
+            local h = handlers[cb_name] or _G[cb_name]
+            if h then h() end
         end
     end
 end
@@ -93,27 +103,21 @@ function M.prompt(title, msg, default)
     return result
 end
 
--- Real MLS Store API
 function M.create_store(cols)
-    local handle = mls_create(10, 8) -- sizeof(char*)
+    local handle = mls_create(10, 8)
     local store = { handle = handle, cols = cols }
     function store:clear() mls_clear(self.handle) end
-    function store:get_iter(path) 
+    function store:get_iter(path)
         local idx = tonumber(path)
         if idx and idx < mls_len(self.handle) then return idx + 1 end
     end
-    setmetatable(store, { __index = function(t, k) 
-        -- TODO: Implement retrieval from MLS if needed
-        return nil
-    end })
+    setmetatable(store, { __index = function(t, k) return nil end })
     return store
 end
 
 function M.create_tree_store(cols) return M.create_store(cols) end
 
 function M.store_append(store, values)
-    -- filemanager.lui passes {name, weight, color, perms}
-    -- Wlist4 expects just the string to display
     mls_put_string(store.handle, tostring(values[1]))
     return mls_len(store.handle)
 end

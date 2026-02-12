@@ -1,0 +1,42 @@
+@class WSeparator (Wheel)
+
+@PUBLIC
+@var Boolean vertical = FALSE
+@var Pixel foreground = XtDefaultForeground
+@var Dimension lineWidth = 1
+
+@METHODS
+
+@proc initialize
+{
+    if ($width == 0) $width = $vertical ? 2 : 10;
+    if ($height == 0) $height = $vertical ? 10 : 2;
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    
+    XSetForeground(dpy, gc, $foreground);
+    
+    if ($vertical) {
+        int x = $width / 2;
+        XFillRectangle(dpy, win, gc, x - $lineWidth/2, 0, $lineWidth, $height);
+    } else {
+        int y = $height / 2;
+        XFillRectangle(dpy, win, gc, 0, y - $lineWidth/2, $width, $lineWidth);
+    }
+}
+
+@proc query_geometry
+{
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = $vertical ? 2 : 10;
+    reply->height = $vertical ? 10 : 2;
+    return XtGeometryAlmost;
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
