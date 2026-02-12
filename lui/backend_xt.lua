@@ -43,6 +43,12 @@ function M.build(node, parent_path)
                 clean_k = 'callback'
             elseif clean_k == 'align' then
                 clean_k = 'alignment'
+            elseif clean_k == 'model' then
+                clean_k = nil -- Handle manually
+            elseif clean_k == 'columns' then
+                clean_k = nil -- Handle manually
+            elseif clean_k == 'on-row-activated' then
+                clean_k = 'notify'
             end
             table.insert(xt_props, clean_k)
             table.insert(xt_props, tostring(v))
