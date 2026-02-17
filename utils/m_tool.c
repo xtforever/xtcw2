@@ -819,6 +819,8 @@ conststr_free(void)
 	CONSTSTR_DATA = 0;
 }
 
+
+
 void
 conststr_init(void)
 {
@@ -900,6 +902,21 @@ conststr_lookup(int s)
 	}
 	TRACE(1, "ADD %d %s", p, CHARP(s));
 	return INT(CONSTSTR_DATA, p) = m_dub(s);
+}
+
+static int destruct_conststr = 0;
+
+/* debug function check if we try to free a constant */
+void conststr_handle_free(int h)
+{
+  if( destruct_conststr ) return;
+  int p, *d;
+  m_foreach( CONSTSTR_DATA, p, d ) {
+    if( *d == h ) {
+      WARN("trying to delete a conststr");
+      m_del(CONSTSTR_DATA,p);
+    }
+  }
 }
 
 int

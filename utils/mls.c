@@ -648,7 +648,7 @@ int vas_printf(int m, int p, const char *format, va_list ap) {
   len = vsnprintf(0, 0, format, ap); /* get string size */
   len++;                             /* with terminating zero */
   if (m == 0) {
-    m = m_create_impl(len, 1); // we do not want m_create to implement traceing */
+    m = m_create(len, 1); // we do not want m_create to implement traceing */
     p = 0;
   }
 

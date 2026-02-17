@@ -374,10 +374,11 @@ enum {
 	_m_clear(__LINE__, \
 	__FILE__,__FUNCTION__,(m))
 
+/*
 #define vas_printf(m,p,format,argptr)		\
   _vas_printf( __LINE__,__FILE__,__FUNCTION__,	\
 	       (m),(p),(format),(argptr) )
-
+*/
 #endif // MLS_DEBUG
 #endif // MLS_DEBUG_DISABLE
 
