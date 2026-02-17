@@ -1,0 +1,175 @@
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 2 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 3 still allocated. Source: node_pack_hbox() in node.c:102
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 4 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 5 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 6 still allocated. Source: line_break() in linebreak.c:8
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 7 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 8 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 9 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 10 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 11 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 12 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 13 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 14 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 15 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 16 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 17 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 18 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 19 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 20 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 21 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 22 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 23 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 24 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 25 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 26 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 27 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 28 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 29 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 30 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 31 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 32 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 33 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 34 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 35 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 36 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 37 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 38 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 39 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 40 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 41 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 42 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 43 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 44 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 45 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 46 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 47 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 48 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 49 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 50 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 51 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 52 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 53 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 54 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 55 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 56 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 57 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 58 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 59 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 60 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 61 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 62 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 63 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 64 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 65 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 66 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 67 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 68 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 69 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 70 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 71 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 72 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 73 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 74 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 75 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 76 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 77 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 78 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 79 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 80 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 81 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 82 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 83 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 84 still allocated. Source: node_create_glue() in node.c:32
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 86 still allocated. Source: line_break() in linebreak.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 87 still allocated. Source: retex_layout() in retex.c:64
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 89 still allocated. Source: node_create_char() in node.c:13
+WARNING: mls.c Line: 809 Function: _m_destruct
+List 90 still allocated. Source: node_create_char() in node.c:13
+xft converter Sans-22

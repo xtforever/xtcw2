@@ -1,0 +1,160 @@
+@class Wls (Gridbox)
+@ listbox mit slider
+
+@PUBLIC
+@var StringMArray lst = <String> "Hello,World,who,are,you,tell,me,you,could,speak,or,remain,silent,you,could,also,take,a,flight,to,miami"
+@var String svar = <String> "dummy"
+@var String value = <String> "dummy"
+@var <Callback> XtCallbackList callback  = NULL
+@var int visible_lines = 0
+
+
+@PRIVATE
+@var Widget slider
+@var Widget list
+@var int list_height
+@var int ignore_cb
+
+@METHODS
+@proc initialize
+{
+	XtVaSetValues( $, "defaultDistance", 0,
+	/* "borderWidth", 0, */
+	NULL );
+	
+        do_layout($);
+}
+
+@proc destroy
+{
+	/* memleak intentionally */
+	/* m_free_strings($lst,0); */
+}
+
+@proc expose
+{
+	adjust_slider_size($);
+	#expose($,NULL,0);
+}
+
+@proc set_values
+{
+    int n = *num_args;
+    int do_expose = 0;
+    TRACE(2, "Wls widget %s", XtName($) );
+    while( n-- )  {
+	if(strncmp( args[n].name, "lst",3 ) == 0 ) {
+              XtVaSetValues( $list, "tableStrs", $lst, NULL );
+        }
+    }
+    return 1;
+}
+
+
+
+
+@UTILITIES
+@proc adjust_slider_size($)
+{
+	TRACE(9, "************************* WinHeight: %d", $height );
+
+	int line_max; /* anzahl zeilen */
+	int list_height; /* sichtbarer bereich */
+	int line_height; /* zeilenhoehe in pixel */
+	int first_line; /* erste sichtbare zeile */
+	XtVaGetValues($list,
+		"line_max", &line_max,
+		"list_height", &list_height,
+		"line_height", &line_height,
+		"top_y", &first_line,
+		NULL );
+
+
+	list_height = line_max * line_height;
+
+	TRACE(9,"Total-List-Size:%d first:line%d", list_height, first_line );
+
+
+	wls_set_slider_pos( $slider,
+	  list_height,
+	  first_line
+	);
+}
+
+
+@proc do_layout($)
+{
+	int act;
+        Widget w;
+        int i;
+        char *grid = "gridx";
+        // for( i=0; i<$num_children;i++ )
+        //     XtDestroyWidget($children[0]);
+
+	/* XtVaCreateManagedWidget( "combo-label",
+                wlabelWidgetClass, $,
+                "gridy", 1,
+                "label", "hello-World",
+		"gridWidth", 2,
+                NULL ); */
+
+	$list = XtVaCreateManagedWidget( "combo-list",
+                wlistWidgetClass, $,
+                "gridx", 0,
+                "label", "hello-World",
+		"gridWidth", 1,
+		"weightx", 100,
+		"tableStrs", $lst,
+		"fill", 3,
+		"weighty", 100,
+		"visible_lines", $visible_lines,
+                NULL );
+		
+	XtAddCallback($list, "updatecb", (XtCallbackProc)list_changed_cb, $ );			    XtAddCallback($list, "notify", (XtCallbackProc)list_select_cb, $ );
+
+	 $slider=XtVaCreateManagedWidget( "combo-slider",
+                woptcWidgetClass, $,
+                "gridx", 1,
+                "label", "h",
+		"gridWidth", 1,
+		"weightx", 0,
+                NULL );
+
+	XtAddCallback($slider, "callback", (XtCallbackProc)slider_changed_cb, $ );
+}
+
+@UTILITIES
+@proc list_select_cb(Widget dummy, $, void *class_data )
+{
+	TRACE(2,"");
+	XtCallCallbackList( $, $callback, class_data );
+}
+
+@proc slider_changed_cb(Widget sender, $, void *class_data )
+{
+	if( $ignore_cb ) return;
+	int new_pos = (intptr_t) class_data;
+	TRACE(9, "list pos(rel): %d", new_pos );
+
+	$ignore_cb = 1;
+	wlist_gotoxy($list,0, new_pos );
+	$ignore_cb = 0;
+}
+
+@proc list_changed_cb(Widget sender, $, void *class_data )
+{
+	if( $ignore_cb ) return;
+	$ignore_cb = 1;
+	adjust_slider_size($);
+	$ignore_cb = 0;
+}
+
+@IMPORTS
+
+
+@incl "converters.h"
+@incl "mls.h"
+@incl "xtcw/Wlist.h"
+@incl <xtcw/Wlabel.h>
+@incl "xtcw/Woptc.h"
+@incl "GridboxP.h"

@@ -12,9 +12,10 @@
 -- 6. Creating a sandboxed Lua environment for compile-time execution.
 ---
 
-local loader = require("loader")
+-- local loader = require("loader")
 local parser = require("parser")
-local gui = require("gui") -- Required for style loading
+local gui = require("gui_xt") -- Required for style loading
+local M = {}
 local macros = {}
 local loaded_plugins = {}
 local loaded_modules = {}
@@ -60,7 +61,7 @@ local function create_sandbox()
     platform = "linux",
     
     -- Modules
-    gui = require("gui"),
+    gui = require("gui_xt"),
     plugins = loaded_plugins,
     
     -- Safe Lua basics
@@ -194,10 +195,20 @@ local function expand_node(node, env)
         return expanded_body
       end
 
-    else -- Regular list
+    else -- Regular list or generic table
       local new_node = {}
-      for i, v in ipairs(node) do
-        local expanded_v = expand_node(v, env)
+      local is_list = true
+      for k, v in pairs(node) do
+        if type(k) ~= "number" then is_list = false end
+        new_node[k] = expand_node(v, env)
+      end
+
+      if not is_list then return new_node end
+
+      -- Special handling for lists (splicing)
+      local spliced_node = {}
+      for i = 1, #new_node do
+        local expanded_v = new_node[i]
         
         local function is_ast_node(t)
             if type(t) ~= "table" then return false end
@@ -211,24 +222,17 @@ local function expand_node(node, env)
              if #expanded_v > 0 and is_ast_node(expanded_v[1]) then
                  should_splice = true
              end
-             -- Note: Empty tables {} are NOT spliced by default to preserve empty data structures.
-             -- If a macro wants to return "nothing", it should return nil (which is filtered out implicitly by ipairs if it was in original list? No.)
-             -- Actually expand_node returns nil? No.
-             -- If you want to splice nothing, return {}? 
-             -- If we don't splice {}, we insert {} into the AST.
-             -- This might cause backend issues if {} is treated as a child.
-             -- BUT for now, prioritizing data integrity.
         end
 
         if should_splice then
           for _, item in ipairs(expanded_v) do
-            table.insert(new_node, item)
+            table.insert(spliced_node, item)
           end
         else
-          table.insert(new_node, expanded_v)
+          table.insert(spliced_node, expanded_v)
         end
       end
-      return new_node
+      return spliced_node
     end
   elseif type(node) == "string" and env[node] then
     return env[node]
@@ -243,10 +247,10 @@ local function macro_expand(ast_raw)
     if type(node) == "table" and node.defmacro then
       macros[node.defmacro] = { args = node.args, body = node.body }
     elseif type(node) == "table" and node.require then
-      local plugin = loader.load(node.require, node.version)
-      if plugin then
-          loaded_plugins[node.require] = plugin
-      end
+      -- local plugin = loader.load(node.require, node.version)
+      -- if plugin then
+      --     loaded_plugins[node.require] = plugin
+      -- end
     elseif type(node) == "table" and node[1] == "style" and type(node[2]) == "string" then
        gui.load_css(node[2])
     elseif type(node) == "table" and node[1] == "import" and type(node[2]) == "string" then
@@ -281,4 +285,12 @@ local function macro_expand(ast_raw)
   return expanded_ast
 end
 
-return { expand = macro_expand }
+function M.register(name, args, body)
+
+    macros[name] = { args = args, body = body }
+
+end
+
+
+
+return { expand = macro_expand, register = M.register }

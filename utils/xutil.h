@@ -6,6 +6,8 @@
 #include <X11/xpm.h>
 //#include <cairo/cairo.h>
 
+#define m_destroy m_destruct
+
 #define WBUILD_HAS_CHANGED(x) ($##x!=$old$##x)
 #define XT()  if( method_trace ) fprintf( stderr, "%s: %s\n", XtName(self), __func__ )
 
@@ -33,6 +35,9 @@ void XtCopyArea(Widget w, Drawable src, Drawable dst, int src_x, int src_y,
 void ManageWidget( Widget w, int managed );
 Bool rect_is_inside( XRectangle *r, int x, int y );
 void grab_window_quit(Widget w);
+void xtcw_quit(Widget w, void *u, void *c);
+void xtcw_quit_act(Widget w, XEvent *event, String *params, Cardinal *num_params);
+void xtcw_register_quit(XtAppContext app);
 
 void XtcwAppAddInput(Widget w,
 		     int fd, long mask, 

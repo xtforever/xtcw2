@@ -637,11 +637,11 @@
   should be optimized if used as on key-pressed callback
 @proc update_svar($)
 {
-	int *v = svar_value($key_svar);
+	intptr_t *v = svar_value($key_svar);
 	char *str = get_text_buffer($);
 	*v = append_mstring_array(*v,0, str, XtName($),
 	     NULL );
-	TRACE(1, "svar: %d value=%d", $key_svar, *v );
+	TRACE(1, "svar: %d value=%ld", $key_svar, *v );
 
 }
 

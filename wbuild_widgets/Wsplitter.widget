@@ -1,0 +1,162 @@
+@class Wsplitter(Composite)
+@ A simple two-pane splitter widget that manages its first two children.
+
+@PUBLIC
+@var int vertical = 1
+@var int fraction = 500
+@var int dividerWidth = 6
+
+@PRIVATE
+@var Boolean dragging
+@var int dragStartPos
+@var int dragStartFraction
+
+@METHODS
+
+@proc initialize
+{
+    $dragging = FALSE;
+    $dragStartPos = 0;
+    $dragStartFraction = 0;
+    if ($width == 0) $width = 100;
+    if ($height == 0) $height = 100;
+}
+
+@proc resize
+{
+    do_layout($);
+}
+
+@proc change_managed
+{
+    do_layout($);
+}
+
+@proc expose
+{
+    draw_divider($);
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>:   start_drag()
+@trans <Btn1Motion>: do_drag()
+@trans <Btn1Up>:     end_drag()
+
+@ACTIONS
+
+@proc start_drag
+{
+    int x = event->xbutton.x;
+    int y = event->xbutton.y;
+    int div_pos;
+
+    if ($vertical) {
+        div_pos = $width * $fraction / 1000;
+        if (x >= div_pos - $dividerWidth && x <= div_pos + $dividerWidth) {
+            $dragging = TRUE;
+            $dragStartPos = x;
+            $dragStartFraction = $fraction;
+        }
+    } else {
+        div_pos = $height * $fraction / 1000;
+        if (y >= div_pos - $dividerWidth && y <= div_pos + $dividerWidth) {
+            $dragging = TRUE;
+            $dragStartPos = y;
+            $dragStartFraction = $fraction;
+        }
+    }
+}
+
+@proc do_drag
+{
+    if (! $dragging) return;
+
+    int pos = $vertical ? event->xmotion.x : event->xmotion.y;
+    int total = $vertical ? $width : $height;
+    
+    if (total > 0) {
+        int delta = (pos - $dragStartPos) * 1000 / total;
+        $fraction = $dragStartFraction + delta;
+        if ($fraction < 50) $fraction = 50;
+        if ($fraction > 950) $fraction = 950;
+        do_layout($);
+        $expose($, NULL, NULL);
+    }
+}
+
+@proc end_drag
+{
+    $dragging = FALSE;
+}
+
+@UTILITIES
+
+@proc do_layout($)
+{
+    if ($num_children < 2) {
+        /* If less than 2 children, just give the first one all space */
+        if ($num_children == 1) {
+            Widget child = $children[0];
+            if (XtIsManaged(child)) {
+                XtConfigureWidget(child, 0, 0, $width, $height, child->core.border_width);
+            }
+        }
+        return;
+    }
+
+    Widget child1 = NULL;
+    Widget child2 = NULL;
+    int managed_count = 0;
+
+    for (int i = 0; i < $num_children; i++) {
+        if (XtIsManaged($children[i])) {
+            if (managed_count == 0) child1 = $children[i];
+            else if (managed_count == 1) child2 = $children[i];
+            managed_count++;
+        }
+    }
+
+    if (!child1) return;
+
+    int div_w = $dividerWidth;
+    if ($vertical) {
+        int w1 = ($width - div_w) * $fraction / 1000;
+        int w2 = $width - div_w - w1;
+        
+        XtConfigureWidget(child1, 0, 0, w1, $height, child1->core.border_width);
+        if (child2) {
+            XtConfigureWidget(child2, w1 + div_w, 0, w2, $height, child2->core.border_width);
+        }
+    } else {
+        int h1 = ($height - div_w) * $fraction / 1000;
+        int h2 = $height - div_w - h1;
+        
+        XtConfigureWidget(child1, 0, 0, $width, h1, child1->core.border_width);
+        if (child2) {
+            XtConfigureWidget(child2, 0, h1 + div_w, $width, h2, child2->core.border_width);
+        }
+    }
+}
+
+@proc draw_divider($)
+{
+    if (!XtIsRealized($)) return;
+    
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    int div_pos;
+
+    /* Clear the divider area or draw a handle */
+    if ($vertical) {
+        div_pos = ($width - $dividerWidth) * $fraction / 1000;
+        XFillRectangle(dpy, win, gc, div_pos, 0, $dividerWidth, $height);
+    } else {
+        div_pos = ($height - $dividerWidth) * $fraction / 1000;
+        XFillRectangle(dpy, win, gc, 0, div_pos, $width, $dividerWidth);
+    }
+}
+
+@IMPORTS
+@incl "mls.h"
+@incl "xutil.h"

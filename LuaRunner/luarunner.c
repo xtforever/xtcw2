@@ -27,6 +27,11 @@ static const char *Version="Version:" APP_NAME "_" COMPTAG;
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
+
+#if LUA_VERSION_NUM < 504
+#define luaL_pushfail(L) lua_pushnil(L)
+#endif
+
 #include "luaxt.h"
 extern int luaopen_luaxt(lua_State* L);
 #include "lua-var5.h"
@@ -43,6 +48,7 @@ extern int luaopen_luaxt(lua_State* L);
 #include <X11/IntrinsicI.h>
 #include <X11/ThreadsI.h>
 #include <X11/VarargsI.h>
+#include <X11/Xmu/Converters.h>
 #include <WcCreate.h>
 #include <Xp.h>
 #include <xutil.h>
@@ -257,13 +263,26 @@ LUA(Widget w, XtPointer client_data, XtPointer call_data)
 	return;
     }
 
-    TRACE(1,"hallo");
+    TRACE(1,"LUA callback called for widget: %s", XtName(w));
 
-    char *s = call_data ? call_data : "";
-    // lua_pushstring( LUA_CTX, s );
-    // lua_setglobal(LUA_CTX, "class_data");
-    /* can we expand vars inside the lua code? e.g. player=$radio.selection1 */
-    /* we need to store additional data besides the lua code e.g. class_data */
+    char *s = "";
+    char buf[128];
+    
+    if (call_data) {
+        if (XtIsSubclass(w, wlist4WidgetClass)) {
+            vscroll_t *vs = (vscroll_t*)call_data;
+            snprintf(buf, sizeof(buf), "%d,%d,%d", vs->top_y, vs->list_height, vs->total_height);
+            s = buf;
+        }
+        /* Heuristic: if it's a small integer, treat as intptr_t */
+        else if ((intptr_t)call_data < 10000000) {
+            snprintf(buf, sizeof(buf), "%ld", (intptr_t)call_data);
+            s = buf;
+        } else {
+            s = (char*)call_data;
+        }
+    }
+    
     luaxt_pushcallback( client_data, s );
 }
 
@@ -445,11 +464,12 @@ xtcreate_lua( lua_State *L )
     }
 
     int pairs = (num_args-3) / 2; /* number of resource=value pairs */
-    int arg_list = m_create( pairs, sizeof(XtTypedArg) );
+    int arg_list = (pairs > 0) ? m_create( pairs, sizeof(XtTypedArg) ) : 0;
     XtTypedArg *arg;
 
      int i=4;
-     while( pairs-- ) {
+     int p_count = pairs;
+     while( p_count-- > 0 ) {
 	 arg=m_add(arg_list);
 	 arg->name  = luastring(L, i++ );
 	 char *s = luastring(L, i++ );
@@ -468,8 +488,8 @@ xtcreate_lua( lua_State *L )
        Cardinal	num_typed_args)
     */
 
-     Widget w = _XtCreateWidget(name,class,parent,NULL,0, m_buf(arg_list), m_len(arg_list) );
-     m_free(arg_list);
+     Widget w = _XtCreateWidget(name,class,parent,NULL,0, (arg_list && m_len(arg_list) > 0) ? m_buf(arg_list) : NULL, pairs > 0 ? pairs : 0 );
+     if( arg_list ) m_free(arg_list);
      XtManageChild(w);
      lua_pushlightuserdata( L, w );
      return 1;
@@ -669,6 +689,26 @@ GetResources(
 }
 
 
+static void app_arg_typed( int args, const char *key, lua_State *L, int val_idx )
+{
+    XtTypedArg *arg=m_add(args);
+    arg->name  = (char*)key;
+    if (lua_isboolean(L, val_idx)) {
+        arg->type = XtRBoolean;
+        arg->value = (XtArgVal)(long)lua_toboolean(L, val_idx);
+        arg->size = sizeof(Boolean);
+    } else if (lua_isnumber(L, val_idx)) {
+        arg->type = XtRInt;
+        arg->value = (XtArgVal)(long)lua_tointeger(L, val_idx);
+        arg->size = sizeof(int);
+    } else {
+        const char *val = lua_tostring(L, val_idx);
+        arg->type  = XtRString;
+        arg->value = (XtArgVal)val;
+        arg->size  = strlen(val)+1;
+    }
+}
+
 static void app_arg( int args, const char *key, const char *val )
 {
     XtTypedArg *arg=m_add(args);
@@ -685,7 +725,7 @@ static void luatable_to_args( int args, lua_State *L, int table_index, int max )
     lua_pushnil(L);  /* first key */
     while (lua_next(L, table_index) != 0) {
 	/* uses 'key' (at index -2) and 'value' (at index -1) */
-	app_arg(args, lua_tostring(L, -2), lua_tostring(L, -1) );
+        app_arg_typed(args, lua_tostring(L, -2), L, -1);
 	/* removes 'value'; keeps 'key' for next iteration */
 	lua_pop(L, 1);
     }
@@ -698,8 +738,8 @@ static int luaarg_to_args( int args,  lua_State *L, int index, int max )
 	    return 1;
 	}
 
-	if( index < max  && lua_isstring(L,index) && lua_isstring(L,index+1) ) {
-	    app_arg( args, lua_tostring(L, index ), lua_tostring(L, index+1  ));
+	if( index < max  && lua_isstring(L,index) ) {
+            app_arg_typed( args, lua_tostring(L, index ), L, index+1 );
 	    return 2;
 	}
 
@@ -770,7 +810,6 @@ xtsetvalue_lua( lua_State *L )
     ArgList args; uint max_args;
     TypedArgListToArgList( w, m_buf(targ_list), m_len(targ_list), &args, &max_args );
     XtSetValues( w, args, max_args );
-    FreeArgList( args, max_args );
 
  cleanup:
     m_free(targ_list);
@@ -797,10 +836,30 @@ static int xtgetvalue_lua(lua_State *L) {
     Widget w = luaarg_to_widget(L, 1);
     const char *res = luastring(L, 2);
     if (!w || !res) return 0;
-    char *val = NULL;
-    XtVaGetValues(w, res, &val, NULL);
-    if (val) lua_pushstring(L, val);
-    else lua_pushnil(L);
+
+    String res_type = WcGetResourceType(w, res);
+    if (res_type == NULL) {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (strcmp(res_type, XtRInt) == 0 || strcmp(res_type, XtRUint) == 0 || 
+        strcmp(res_type, XtRShort) == 0 ||
+        strcmp(res_type, XtRLong) == 0 || strcmp(res_type, XtRDimension) == 0 ||
+        strcmp(res_type, XtRPosition) == 0 || strcmp(res_type, XtRCardinal) == 0) {
+        int val;
+        XtVaGetValues(w, res, &val, NULL);
+        lua_pushinteger(L, val);
+    } else if (strcmp(res_type, XtRBoolean) == 0) {
+        Boolean val;
+        XtVaGetValues(w, res, &val, NULL);
+        lua_pushboolean(L, val);
+    } else {
+        char *val = NULL;
+        XtVaGetValues(w, res, &val, NULL);
+        if (val) lua_pushstring(L, val);
+        else lua_pushnil(L);
+    }
     return 1;
 }
 
@@ -813,6 +872,12 @@ static int xtmanage_lua(lua_State *L) {
 static int xtunmanage_lua(lua_State *L) {
     Widget w = luaarg_to_widget(L, 1);
     if (w) XtUnmanageChild(w);
+    return 0;
+}
+
+static int xtdestroy_lua(lua_State *L) {
+    Widget w = luaarg_to_widget(L, 1);
+    if (w) XtDestroyWidget(w);
     return 0;
 }
 
@@ -840,6 +905,16 @@ static int mls_clear_lua(lua_State *L) {
 static int mls_len_lua(lua_State *L) {
     int handle = luaL_checkinteger(L, 1);
     lua_pushinteger(L, m_len(handle));
+    return 1;
+}
+
+static int mls_get_string_lua(lua_State *L) {
+    int handle = luaL_checkinteger(L, 1);
+    int index = luaL_checkinteger(L, 2);
+    if (index < 0 || index >= m_len(handle)) return 0;
+    char **s = (char **)mls(handle, index);
+    if (s && *s) lua_pushstring(L, *s);
+    else lua_pushnil(L);
     return 1;
 }
 
@@ -876,10 +951,7 @@ static void RegisterApplication ( Widget top )
 */
 static void InitializeApplication( Widget top )
 {
-
     trace_level = SIGNAGE.traceLevel;
-
-
 }
 
 
@@ -959,6 +1031,28 @@ void proc_exit()
 		}
 }
 
+static void CvtIntToUint(XrmValuePtr args, Cardinal *num_args,
+                         XrmValuePtr fromVal, XrmValuePtr toVal)
+{
+    static unsigned int u;
+    if (*num_args != 0)
+        XtAppWarningMsg(XtDisplayToApplicationContext(XtDisplay(TopLevel)),
+                        "wrongParameters", "cvtIntToUint", "XtToolkitError",
+                        "Int to Uint conversion needs no extra arguments",
+                        NULL, NULL);
+    if (toVal->addr != NULL) {
+        if (toVal->size < sizeof(unsigned int)) {
+            toVal->size = sizeof(unsigned int);
+            return;
+        }
+    }
+    else {
+        toVal->addr = (XPointer) &u;
+    }
+    toVal->size = sizeof(unsigned int);
+    u = (unsigned int) *(int *)fromVal->addr;
+}
+
 /******************************************************************************
 *   MAIN function
 ******************************************************************************/
@@ -980,6 +1074,7 @@ int main ( int argc, char **argv )
     LUA_CTX = L = luaL_newstate();
     luaL_openlibs(L); /* Load Lua libraries */
     luaopen_luaxt(L); /* functions generated by swig from luaxt.i */
+    lua_setglobal(L, "luaxt");
     luaopen_var5( L );
     lua_register(L, "xtcreate", xtcreate_lua );
     lua_register(L, "xtsetvalue", xtsetvalue_lua );
@@ -988,10 +1083,12 @@ int main ( int argc, char **argv )
     lua_register(L, "xtgetvalue", xtgetvalue_lua );
     lua_register(L, "xtmanage", xtmanage_lua );
     lua_register(L, "xtunmanage", xtunmanage_lua );
+    lua_register(L, "xtdestroy", xtdestroy_lua );
     lua_register(L, "mls_create", mls_create_lua );
     lua_register(L, "mls_put_string", mls_put_string_lua );
     lua_register(L, "mls_clear", mls_clear_lua );
     lua_register(L, "mls_len", mls_len_lua );
+    lua_register(L, "mls_get_string", mls_get_string_lua );
         
     /*
     asgn("task1.t1=hello");
@@ -1016,6 +1113,8 @@ int main ( int argc, char **argv )
 	   );
     LUAXT_APP = app;
 
+    XtAppAddConverter(app, XtRInt, XtRUint, CvtIntToUint, NULL, 0);
+
     /*  --  Enable Editres support
      */
     XtAddEventHandler(appShell, (EventMask) 0, True, _XEditResCheckMessages, NULL);
@@ -1032,6 +1131,7 @@ int main ( int argc, char **argv )
     /*  --  Register all application specific
             callbacks and widget classes
     */
+    XtcwRegister( app );
     RegisterApplication ( appShell );
 
     /*  --  Register all Athena and Public
@@ -1044,7 +1144,9 @@ int main ( int argc, char **argv )
             using Xrm database
 	    WcCallback can call Lua-functions at this point
     */
-    WcWidgetCreation ( appShell );
+    if( ! SIGNAGE.luafile ) {
+        WcWidgetCreation ( appShell );
+    }
 
 
     /*  -- Get application resources and widget ptrs
@@ -1055,6 +1157,10 @@ int main ( int argc, char **argv )
 				(ArgList)0, 0 );
 
     InitializeApplication(appShell);
+
+    if( SIGNAGE.luafile ) {
+        XtVaSetValues(appShell, XtNmappedWhenManaged, False, NULL);
+    }
 
     /*  --  Realize the widget tree and enter
             the main application loop  */

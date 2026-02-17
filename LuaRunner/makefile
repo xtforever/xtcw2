@@ -1,6 +1,6 @@
 TARGET=luarunner
-LUA=../lua
-
+LUA_CFLAGS=$(shell pkg-config --cflags lua5.3)
+LUA_LIBS=$(shell pkg-config --libs lua5.3)
 
 debug_enable ?= 1
 
@@ -21,11 +21,13 @@ YACC    = bison
 LEX     = flex
 CC = gcc
 
-CFLAGS += -D_GNU_SOURCE -fms-extensions -I$(LUA)
-CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I. -I../utils -Ixtcw
+VPATH = ../utils
+
+CFLAGS += -D_GNU_SOURCE -fms-extensions $(LUA_CFLAGS)
+CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I. -I../utils -Ixtcw -I../build/source
 
 XORGLIB=-lXt -lXaw -lX11 -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil -ldl $(shell pkg-config --libs cairo cairo-xlib)
-LOADLIBES=$(libdir)/libxtcw.a $(LUA)/liblua.a $(XORGLIB)
+LOADLIBES=$(libdir)/libxtcw.a $(LUA_LIBS) $(XORGLIB)
 
 
 #LOADLIBES+=~/git/libxt-1.1.5/src/.libs/libXt.a -lICE -lSM
@@ -73,11 +75,6 @@ WIDGET_SRC=$(patsubst %.widget,%.c,$(wildcard *.widget))
 ALL: $(WIDGET_SRC) $(TARGET)
 
 luaxt_wrap.c: luaxt.c  luaxt.i
-
-njson_lex.lex.o: njson_parse.tab.c
-
-njson_read.c: njson_parse.tab.c njson_lex.lex.c
-
 
 $(TARGET):  $(DEPS)   $(WIDGET_OBJ)
 

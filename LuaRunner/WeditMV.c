@@ -1097,11 +1097,11 @@ static void update_svar(self)Widget self;
 #endif
 #line 639 "WeditMV.widget"
 {
-	int *v = svar_value(((WeditMVWidget)self)->weditMV.key_svar);
+	intptr_t *v = svar_value(((WeditMVWidget)self)->weditMV.key_svar);
 	char *str = get_text_buffer(self);
 	*v = append_mstring_array(*v,0, str, XtName(self),
 	     NULL );
-	TRACE(1, "svar: %d value=%d", ((WeditMVWidget)self)->weditMV.key_svar, *v );
+	TRACE(1, "svar: %d value=%ld", ((WeditMVWidget)self)->weditMV.key_svar, *v );
 
 }
 #line 650 "WeditMV.widget"

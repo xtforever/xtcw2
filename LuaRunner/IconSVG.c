@@ -3,27 +3,27 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 132 "IconSVG.widget"
+#line 145 "IconSVG.widget"
 #include <assert.h>
-#line 133 "IconSVG.widget"
+#line 146 "IconSVG.widget"
 #include <stdint.h>
-#line 134 "IconSVG.widget"
+#line 147 "IconSVG.widget"
 #include <X11/Intrinsic.h>
-#line 135 "IconSVG.widget"
+#line 148 "IconSVG.widget"
 #include <X11/Xmu/Converters.h>
-#line 136 "IconSVG.widget"
+#line 149 "IconSVG.widget"
 #include <X11/Xft/Xft.h>
-#line 137 "IconSVG.widget"
+#line 150 "IconSVG.widget"
 #include <X11/Xregion.h>
-#line 138 "IconSVG.widget"
+#line 151 "IconSVG.widget"
 #include "converters.h"
-#line 139 "IconSVG.widget"
+#line 152 "IconSVG.widget"
 #include "xutil.h"
-#line 140 "IconSVG.widget"
+#line 153 "IconSVG.widget"
 #include "mls.h"
-#line 141 "IconSVG.widget"
+#line 154 "IconSVG.widget"
 #include "canvas-draw.h"
-#line 142 "IconSVG.widget"
+#line 155 "IconSVG.widget"
 #include "ximage2.h"
 #include <xtcw/IconSVGP.h>
 static void _resolve_inheritance(
@@ -61,18 +61,62 @@ static void realize(
 Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
-#line 93 "IconSVG.widget"
+#line 72 "IconSVG.widget"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
 #endif
 );
-#line 99 "IconSVG.widget"
+#line 83 "IconSVG.widget"
 static XtGeometryResult  query_geometry(
 #if NeedFunctionPrototypes
 Widget,XtWidgetGeometry *,XtWidgetGeometry *
 #endif
 );
+#line 113 "IconSVG.widget"
+static void do_render(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+#line 113 "IconSVG.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 113 "IconSVG.widget"
+static void do_render(Widget self)
+#else
+#line 113 "IconSVG.widget"
+static void do_render(self)Widget self;
+#endif
+#line 114 "IconSVG.widget"
+{
+     Display *dpy = XtDisplay(self);
+     Visual *vis = DefaultVisual(dpy, DefaultScreen(dpy));
+
+     double scale = 1.0;
+     int w = ((IconSVGWidget)self)->core.width;
+     int h = ((IconSVGWidget)self)->core.height;
+
+     /* if forced size is given, use it as target size for rasterization */
+     if(((IconSVGWidget)self)->iconSVG.forced_width ) w = ((IconSVGWidget)self)->iconSVG.forced_width;
+     if(((IconSVGWidget)self)->iconSVG.forced_height) h = ((IconSVGWidget)self)->iconSVG.forced_height;
+     
+     if( w < ((IconSVGWidget)self)->iconSVG.prefered_width || h < ((IconSVGWidget)self)->iconSVG.prefered_height || ((IconSVGWidget)self)->iconSVG.forced_width || ((IconSVGWidget)self)->iconSVG.forced_height ) {
+     	 double scale1 = w * 1.0  / ((IconSVGWidget)self)->iconSVG.prefered_width;
+	 double scale2 = h * 1.0 / ((IconSVGWidget)self)->iconSVG.prefered_height;
+	 if( ((IconSVGWidget)self)->iconSVG.forced_width && !((IconSVGWidget)self)->iconSVG.forced_height ) scale = scale1;
+	 else if( !((IconSVGWidget)self)->iconSVG.forced_width && ((IconSVGWidget)self)->iconSVG.forced_height ) scale = scale2;
+	 else scale = Min(scale1,scale2);
+     }
+
+     if( ((IconSVGWidget)self)->iconSVG.img->loaded ) {
+         xim2_delete( ((IconSVGWidget)self)->iconSVG.img );
+         xim2_load_svg( ((IconSVGWidget)self)->iconSVG.img, ((IconSVGWidget)self)->iconSVG.filename );
+     }
+     
+     xim2_render( ((IconSVGWidget)self)->iconSVG.img, dpy, vis, XtWindow(self), scale, 0 );
+     ((IconSVGWidget)self)->iconSVG.img->loaded = 1;
+}
 
 static XtResource resources[] = {
 #line 10 "IconSVG.widget"
@@ -218,52 +262,36 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 	XtCreateWindow(self, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent,
 			  *mask, attributes);
-
-     Display *dpy = XtDisplay(self);
-     Visual *vis = DefaultVisual(dpy, DefaultScreen(dpy));
-
-     double scale = 1.0;
-     int w = ((IconSVGWidget)self)->core.width;
-     int h = ((IconSVGWidget)self)->core.height;
-
-     /* apply forced size constrained only if appropriate */ 
-     if(((IconSVGWidget)self)->iconSVG.forced_width && ((IconSVGWidget)self)->iconSVG.forced_width < w && ((IconSVGWidget)self)->iconSVG.forced_height <= h ) {
-     	 w = ((IconSVGWidget)self)->iconSVG.forced_width;
-	 h = ((IconSVGWidget)self)->iconSVG.forced_height;
-     }
-     
-     /* shrink image, if widget is too small */
-     if( w < ((IconSVGWidget)self)->iconSVG.prefered_width || h < ((IconSVGWidget)self)->iconSVG.prefered_height ) {
-     	 double scale1 = w * 1.0  / ((IconSVGWidget)self)->iconSVG.prefered_width;
-	 double scale2 = h * 1.0 / ((IconSVGWidget)self)->iconSVG.prefered_height;
-	 scale = Min(scale1,scale2);
-     }
-
-     xim2_render( ((IconSVGWidget)self)->iconSVG.img, dpy, vis, XtWindow(self), scale, 0 );
+     do_render(self);
 }
-#line 93 "IconSVG.widget"
+#line 72 "IconSVG.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 93 "IconSVG.widget"
+#line 72 "IconSVG.widget"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 93 "IconSVG.widget"
+#line 72 "IconSVG.widget"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 94 "IconSVG.widget"
+#line 73 "IconSVG.widget"
 {
-	return True; /* yes we want a redraw */	
+    if( ((IconSVGWidget)old)->iconSVG.forced_width != ((IconSVGWidget)self)->iconSVG.forced_width || ((IconSVGWidget)old)->iconSVG.forced_height != ((IconSVGWidget)self)->iconSVG.forced_height ) {
+        if( XtIsRealized(self) ) {
+            do_render(self);
+        }
+    }
+    return True; /* yes we want a redraw */	
 }
-#line 99 "IconSVG.widget"
+#line 83 "IconSVG.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 99 "IconSVG.widget"
+#line 83 "IconSVG.widget"
 static XtGeometryResult  query_geometry(Widget self,XtWidgetGeometry * request,XtWidgetGeometry * reply)
 #else
-#line 99 "IconSVG.widget"
+#line 83 "IconSVG.widget"
 static XtGeometryResult  query_geometry(self,request,reply)Widget self;XtWidgetGeometry * request;XtWidgetGeometry * reply;
 #endif
-#line 100 "IconSVG.widget"
+#line 84 "IconSVG.widget"
 {
 
     reply->request_mode = CWX | CWY | CWWidth | CWHeight;

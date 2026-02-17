@@ -1,0 +1,21 @@
+*foreground: #ecf0f1
+*background: #2c3e50
+*fontName: Sans-12
+
+hello.WcChildren: main
+
+*main.WcClass: Gridbox
+*main.WcChildren: lbl btn
+
+*lbl.WcClass: Wlabel
+*lbl.label: Hello XTCW World!
+*lbl.gridy: 0
+*lbl.weighty: 100
+*lbl.fill: Both
+
+*btn.WcClass: Wbutton
+*btn.label: Exit
+*btn.gridy: 1
+*btn.callback: quit_cb
+*btn.weighty: 0
+*btn.fill: Width

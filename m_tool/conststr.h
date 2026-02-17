@@ -1,1 +1,0 @@
-../mls/bashmake/conststr.h

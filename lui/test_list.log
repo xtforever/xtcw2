@@ -1,0 +1,9 @@
+[1]main: Version:luarunner_DEBUG_Fr 13. Feb 21:59:23 CET 2026
+[1]_m_create: NEW LIST 2 allocated by mv_init:13 in micro_vars.c
+[1]_m_create: NEW LIST 3 allocated by mvar_registry:706 in var5.c
+[1]_m_create: NEW LIST 4 allocated by svar_create:540 in svar2.c
+[1]_m_create: NEW LIST 5 allocated by new_svar_container:325 in svar2.c
+[1]_m_create: NEW LIST 6 allocated by svar_create:542 in svar2.c
+[1]_m_create: NEW LIST 7 allocated by new_hashtable:532 in svar2.c
+[1]_m_create: NEW LIST 8 allocated by luaxt_init:15 in luaxt.c
+[1]_m_create: NEW LIST 9 allocated by modif_init:422 in canvas-draw-cb.c

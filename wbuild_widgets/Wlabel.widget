@@ -5,12 +5,16 @@
 @var XtEnum compress_exposure = TRUE
 
 @PUBLIC
+@ a simple string. but double newlines define paragraphs
 @var String label = <String> NULL
+@ freetype font name
 @var String fontFace = "Sans"
+@ default size
 @var int fontSize = 12
 @var int cornerRoundPercent = 0
 @var int leftOffsetPercent = 5
 @var int update = 0
+@ use 3 for right-justified
 @var int alignment = 0
 
 @PRIVATE
@@ -23,6 +27,13 @@
 @var String label_mem
 
 @METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
 
 @proc initialize
 {
@@ -130,7 +141,7 @@
 
     if ($pixmap) {
         XCopyArea(XtDisplay($), $pixmap, XtWindow($), 
-                  DefaultGC(XtDisplay($), DefaultScreen(XtDisplay($))),
+                  $gc[0],
                   0, 0, $width, $height, 0, 0);
     }
 }
@@ -138,6 +149,7 @@
 @proc update_cache($)
 {
     if (!$backend) {
+        if (!XtIsRealized($)) return;
         $backend = backend_xpixmap_create(XtDisplay($), XtWindow($), $width, $height);
         if (!$backend) return;
         $pixmap = backend_xpixmap_get_pixmap($backend);
@@ -151,26 +163,58 @@
     Backend *be = (Backend*)$backend;
     
     /* Layout */
-    double layout_width = ($width > 0) ? $width : 10000.0;
-    $para = retex_layout(be, $label, layout_width, $fontFace, $fontSize, $alignment);
-    
-    /* Clear background (backend_xpixmap creates white bg, but we might want to clear if reusing?) */
-    be->draw_rect(be, 0, 0, $width, $height, 0xFFFFFFFF); /* White */
+    double layout_width_pt = ($width > 0) ? px2pt($, $width) : 10000.0;
+    if (layout_width_pt < 10.0) layout_width_pt = 10.0; /* SAFETY */
+    $para = retex_layout(be, $label, layout_width_pt, $fontFace, $fontSize, $alignment);
+    if (!$para) return;
+
+    /* Clear background */
+    /* draw_rect expects points if we are using the scaled backend. */
+    /* So we convert widget pixels to points. */
+    be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), 0xFFFFFFFF); /* White */
 
     /* Render centered */
-    double text_h = retex_paragraph_get_height($para);
-    double text_w = retex_paragraph_get_width($para);
+    double text_h_pt = retex_paragraph_get_height($para);
+    double text_w_pt = retex_paragraph_get_width($para);
     
-    /* Center logic */
-    double x = ($width - text_w) / 2.0;
-    double y = ($height - text_h) / 2.0;
+    double width_pt = px2pt($, $width);
+    double height_pt = px2pt($, $height);
+
+    /* Center logic in points */
+    double x = (width_pt - text_w_pt) / 2.0;
+    double y = (height_pt - text_h_pt) / 2.0;
     if (x < 0) x = 0;
     if (y < 0) y = 0;
+
+    /* Add baseline offset (in points) */
+    y += retex_paragraph_get_first_line_height($para);
 
     retex_paragraph_render($para, be, x, y);
 }
 
 @UTILITIES
+
+@proc double get_dpi($)
+{
+    Display *dpy = XtDisplay($);
+    char *s = XGetDefault(dpy, "Xft", "dpi");
+    if (s) {
+        double dpi = atof(s);
+        if (dpi < 1.0 || dpi > 1000.0) return 96.0;
+        return dpi;
+    }
+    return 96.0;
+}
+
+@proc double pt2px($, double pt)
+{
+    return pt * get_dpi($) / 72.0;
+}
+
+@proc double px2pt($, double px)
+{
+    return px * 72.0 / get_dpi($);
+}
 
 @proc calculate_size($, int *w, int *h)
 {
@@ -185,12 +229,22 @@
     
     /* Use a large width to check natural width (single line) */
     /* Let's assume infinite width for preferred size (no wrapping) */
-    double target_width = ($width > 0) ? $width : 10000.0;
-    RetexParagraph *p = retex_layout(be, $label, target_width, $fontFace, $fontSize, $alignment);
+    /* SAFETY: Ensure target_width_pt is at least 10pt to avoid infinite line wrapping */
+    double target_width_pt = ($width > 0) ? px2pt($, $width) : 10000.0;
+    if (target_width_pt < 10.0) target_width_pt = 10.0;
+
+    RetexParagraph *p = retex_layout(be, $label, target_width_pt, $fontFace, $fontSize, $alignment);
     
     if (p) {
-        *w = ($width > 0) ? $width : (int)retex_paragraph_get_width(p) + 4; /* margin */
-        *h = (int)retex_paragraph_get_height(p) + 4;
+        if ($width > 0) {
+            *w = $width;
+        } else {
+            *w = (int)pt2px($, retex_paragraph_get_width(p)) + 4;
+        }
+        double h_px = pt2px($, retex_paragraph_get_height(p)) + 4;
+        /* SAFETY: Cap pixel height to prevent XCreatePixmap BadAlloc (max 4000px) */
+        if (h_px > 4000) h_px = 4000;
+        *h = (int)h_px;
         retex_paragraph_free(p);
     } else {
         *w = 50; *h = 20;
@@ -213,5 +267,7 @@
 @incl "retex.h"
 @incl "backend_xpixmap.h"
 @incl "mls.h"
+@incl "conststr.h"
+@incl "converters.h"
 @incl <X11/Xmu/Converters.h>
 @incl <X11/Xft/Xft.h>

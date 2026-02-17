@@ -1,0 +1,22 @@
+*foreground: #ecf0f1
+*background: #2c3e50
+*fontName: Sans-12
+
+main.WcChildren: box
+
+*box.WcClass: Gridbox
+*box.WcChildren: sel exit
+
+*sel.WcClass: WfileSelector
+*sel.label: Click to select file
+*sel.directory: .
+*sel.gridy: 0
+*sel.fill: Both
+*sel.weighty: 1
+
+*exit.WcClass: Wbutton
+*exit.label: Exit
+*exit.gridy: 1
+*exit.callback: quit_cb
+*exit.weighty: 0
+*exit.fill: Width

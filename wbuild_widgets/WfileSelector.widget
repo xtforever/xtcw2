@@ -1,0 +1,92 @@
+@class WfileSelector (Wbutton)
+@ a Button that popups a file selection dialog
+
+@PUBLIC
+@var String directory = <String> "."
+@var String pattern = <String> "*"
+
+@PRIVATE
+@var Widget popup_shell
+@var Widget selector
+
+@METHODS
+@proc initialize
+{
+    $popup_shell = NULL;
+    $selector = NULL;
+}
+
+@TRANSLATIONS
+@trans   <BtnDown>:     popup_files()
+
+@ACTIONS
+@proc popup_files
+{
+    if( ! $popup_shell ) create_popup($);
+    
+    /* update file list */
+    int lines = list_files($directory, $pattern);
+    XtVaSetValues($selector, "lines", lines, NULL);
+    
+    /* popup */
+    XtPopup($popup_shell, XtGrabNone);
+}
+
+@UTILITIES
+
+@proc int list_files(char *path, char *pat)
+{
+    m_init(); /* ensure mls is initialized */
+    int list = m_create(10, sizeof(char*));
+    DIR *d = opendir(path);
+    if( !d ) {
+        char *err;
+        asprintf(&err, "Error: cannot open %s", path);
+        m_put(list, &err);
+        return list;
+    }
+    
+    struct dirent *de;
+    while( (de = readdir(d)) ) {
+        if( de->d_name[0] == '.' ) continue;
+        char *s = strdup(de->d_name);
+        m_put(list, &s);
+    }
+    closedir(d);
+    return list;
+}
+
+@proc create_popup($)
+{
+    Widget root = $;
+    while( ! XtIsShell(root) && XtParent(root) ) root = XtParent(root);
+
+    $popup_shell = XtVaCreatePopupShell("fileSelectorPopup",
+                                        topLevelShellWidgetClass, root,
+                                        NULL);
+    $selector = XtVaCreateManagedWidget("selector",
+                                        selectReqWidgetClass, $popup_shell,
+                                        NULL);
+    XtAddCallback($selector, "callback", (XtCallbackProc)selection_done_cb, $);
+}
+
+@proc selection_done_cb(Widget w, $, void *d)
+{
+    int selection = (intptr_t)d;
+    XtPopdown($popup_shell);
+    if( selection >= 0 ) {
+        int lines;
+        XtVaGetValues(w, "lines", &lines, NULL);
+        char *filename = STR(lines, selection);
+        XtVaSetValues($, "label", filename, NULL);
+        /* trigger our own callback with the filename */
+        XtCallCallbackList($, $callback, filename);
+    }
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <dirent.h>
+@incl <X11/Shell.h>
+@incl "xtcw/SelectReq.h"
+@incl "mls.h"

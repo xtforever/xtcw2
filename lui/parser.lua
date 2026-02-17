@@ -20,7 +20,7 @@ setmetatable(NIL, { __tostring = NIL.tostring })
 -- ... (grammar definition omitted for brevity in docs, but kept in code)
 
 local comment = P(";") * (P(1) - P("\n"))^0
-local white_char = S(" \t\r\n")
+local white_char = S(" \t\r\n,")
 local skip = (white_char + comment)^0
 
 local function T(p) return p * skip end
@@ -67,11 +67,25 @@ local g = P{
   "program",
   program = skip * Ct(V("exp")^0),
   
-  exp = T(V("macro") + V("require_block") + V("lua_block") + V("list") + V("atom")),
+  exp = T(V("macro") + V("require_block") + V("lua_block") + V("list") + V("table") + V("atom")),
   
   atom = boolean + nil_token + number + string_val + keyword + symbol,
 
   list = P("(") * skip * Ct(V("exp")^0) * P(")"),
+
+  table = P("{") * skip * Ct(V("pair")^0) * P("}") / function(pairs)
+    local t = {}
+    for _, p in ipairs(pairs) do
+        local key = p[1]
+        if type(key) == "table" and key.keyword then
+            key = key.keyword:sub(2)
+        end
+        t[key] = p[2]
+    end
+    return t
+  end,
+
+  pair = Ct(T(V("atom")) * P("=") * skip * T(V("exp"))),
 
   require_block = P("(") * skip * P("require") * skip * 
                   T(string_val) * (T(number)^-1) * 
@@ -104,7 +118,12 @@ local g = P{
 -- @return (table|nil) The AST (list of expressions) if successful, or nil on error.
 -- @sideeffect Prints syntax error details to stdout if parsing fails.
 function parse(s)
+  print("Parsing string of length:", #s)
+  if #s > 0 then
+    print("First byte:", string.byte(s, 1))
+  end
   local ast, pos = (g * lpeg.Cp()):match(s)
+  print("Match finished at pos:", pos)
   
   if pos and pos <= #s then
       -- Parsing finished but didn't consume all input
@@ -138,4 +157,61 @@ function parse(s)
   return ast
 end
 
-return { parse = parse, NIL = NIL }
+--- Dumps a table (AST) to a string for debugging.
+-- @param t The table to dump.
+-- @param indent (string, optional) Initial indentation.
+-- @return (string) The formatted string.
+local function dump(t, indent)
+    indent = indent or ""
+    if type(t) ~= "table" then
+        if type(t) == "string" then return string.format("%q", t) end
+        return tostring(t)
+    end
+    
+    local s = "{"
+    local count = 0
+    local is_list = true
+    for k, v in pairs(t) do
+        count = count + 1
+        if type(k) ~= "number" then is_list = false end
+    end
+    
+    if count == 0 then return "{}" end
+
+    if is_list and count < 10 then
+        s = "{"
+        for i=1, count do
+            s = s .. dump(t[i]) .. (i < count and ", " or "")
+        end
+        return s .. "}"
+    end
+
+    s = "{\n"
+    local next_indent = indent .. "  "
+    local keys = {}
+    for k in pairs(t) do table.insert(keys, k) end
+    table.sort(keys, function(a, b)
+        if type(a) == type(b) then return a < b end
+        return type(a) < type(b)
+    end)
+
+    for _, k in ipairs(keys) do
+        local v = t[k]
+        s = s .. next_indent
+        if type(k) == "string" then
+            s = s .. k .. " = "
+        else
+            s = s .. "[" .. tostring(k) .. "] = "
+        end
+        
+        if type(v) == "table" then
+            s = s .. dump(v, next_indent) .. ",\n"
+        else
+            s = s .. dump(v) .. ",\n"
+        end
+    end
+    s = s .. indent .. "}"
+    return s
+end
+
+return { parse = parse, NIL = NIL, dump = dump }

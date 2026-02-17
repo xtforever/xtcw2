@@ -1,1 +1,3 @@
-luarunner.allowShellResize: True
+luarunner.WcChildren: dummy
+*dummy.wcClass: Wlabel
+*dummy.label: Loading...

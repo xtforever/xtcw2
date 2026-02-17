@@ -1,0 +1,165 @@
+@class Canvas(Core)
+@ Demo widget: draw something
+
+@classvars
+        @var compress_motion = True
+        @var compress_exposure = XtExposeCompressMultiple
+        @var compress_enterleave = True
+
+@PUBLIC
+@var <XftFont> XftFont* xftFont = <String> "Serif-22"
+@var Pixel foreground = XtDefaultForeground
+@var <Callback> XtCallbackList callback = NULL
+@var int topx = 0
+@var int topy = 0
+@var int zoom_thousandth  = 1000
+
+@PRIVATE
+@var canvas_draw_t canv
+
+@def BG   = $canv.xcol
+@def FG   = ($canv.xcol+1)
+@def DRAW = $canv.xdraw
+
+
+@METHODS
+@proc expose
+{
+    XTFUNC();
+    /* XftDrawRect(DRAW,BG,0,0,$width,$height); */
+    paint1($);
+}
+
+@proc initialize
+{
+
+    XTFUNC();
+    memset(& $canv, 0, sizeof ($canv));
+
+	if( $width <=0 ) $width = 20;
+	if( $height <=0 ) $height = 20;
+	init_colors($);
+	DRAW=0;
+}
+
+@proc destroy
+{
+        XTFUNC();
+        if( DRAW ) XftDrawDestroy( DRAW );
+        XtReleaseGC( $, $canv.gc[0] );
+        XtReleaseGC( $, $canv.gc[1] );
+}
+
+@proc resize
+{
+	XTFUNC();
+    $canv.win_width  = $width;
+    $canv.win_height = $height;
+
+}
+
+@proc realize
+ {
+    XTFUNC();
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent,
+			  *mask, attributes);
+    Display *dpy = XtDisplay($);
+  	DRAW = XftDrawCreate(dpy, XtWindow($),
+                 DefaultVisual(dpy, DefaultScreen(dpy)), None);
+
+    $canv.xfont    = $xftFont;
+    $canv.dpy      =  dpy;
+    $canv.screen   = DefaultScreen(dpy);
+    
+    XGCValues     values;
+    values.graphics_exposures = False;
+    values.foreground = $foreground;
+    values.background = $background_pixel;
+
+    $canv.gc[0] = XtGetGC( $,
+      (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
+      &values);
+
+    values.foreground = $background_pixel;
+    $canv.gc[1] = XtGetGC( $,
+      (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
+      &values);
+
+     $canv.app_context = XtWidgetToApplicationContext( $ );
+}
+
+@ check: zoom__thousandth
+
+@proc set_values
+{
+	return True; /* yes we want a redraw */	
+}
+
+
+@UTILITIES
+@proc paint1($)
+{
+    XTFUNC();
+    XtCallCallbackList( $, $callback, (XtPointer) & $canv );
+}
+
+@proc init_colors($)
+{
+	pixel_to_xftcolor( $, $background_pixel, BG );
+ 	pixel_to_xftcolor( $, $foreground,       FG );
+}
+
+
+@ACTIONS
+@ Widget self;XEvent*event;String*params;Cardinal*num_params
+@proc zoom
+{
+	XTFUNC();
+	float scale;
+	int parse = 0;
+	for( int i=0;i<*num_params;i++)
+	{
+		char *s = params[i];
+		TRACE(1,"PARSE: %s", s );
+		switch( parse ) {
+			//---- key
+			case 0: if( strcasecmp(s, "scale") == 0 ) parse=2;
+			        break;
+			//---- value
+			case 2: TRACE(1,"PARSE");
+				scale=strtof(s,NULL);
+			        canvas_zoom( $, & $canv, scale );
+				parse=0;
+				break;
+			default: WARN("uknown parameter: %s", s );
+		}
+	}
+}
+
+
+@EXPORTS
+@incl "canvas-draw.h"
+@proc canvas_draw_t* canvas_get_priv($)
+{
+    if( XtIsSubclass( $,canvasWidgetClass ) )
+      return & $canv;
+    XtWarning( "Widget is not subclass of canvas" );
+    return NULL;
+}
+
+
+
+
+
+@IMPORTS
+@incl <assert.h>
+@incl <stdint.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xregion.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "canvas-draw.h"

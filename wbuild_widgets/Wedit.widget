@@ -65,11 +65,8 @@
 @proc initialize
 {
   Display *dpy = XtDisplay($);
- /*
-     $xftFont = 0;
-  */
+
  $draw = 0;
- // $xftFont = XftFontOpenName( dpy, DefaultScreen(dpy), $fontName );
   $xftFont = font_load(dpy, DefaultScreen(dpy), $fontName );
   int w,h;
   alloc_colors($);
@@ -151,15 +148,6 @@
 
 @proc resize_widget($)
 {
-        /*
-        int w;
-	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
-	    w = Min($height,$width);
-	    w = w * $cornerRoundPercent / 100;
-	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
-	}
-        */
-
     if( $pix.data ) { XFreePixmap( XtDisplay($), $pix.data ); }
     $pix.data = XtCreatePixmap($,$width,$txt.height);
     $pix.r.width = $width; $pix.r.height = $txt.height;
@@ -217,11 +205,7 @@
 
 @proc dump($)
 {
-    int i; for(i=0;i< m_len($str_m)-1; i++)
-               printf("%x ", (unsigned char) CHAR($str_m, i) );
-    putc(10,stdout);
-    fwrite( m_buf($str_m), m_len($str_m), 1, stdout );
-    printf("Left:%d Crsr:%d\n", $left_char_offset, $crsr_pos );
+    TRACE(2, "Left:%d Crsr:%d", $left_char_offset, $crsr_pos );
 }
 
 @ clear the pixmap, draw text on pixmap, draw pixmap on window
@@ -269,7 +253,6 @@
 {
     *w = $txt.width;
     *h = $txt.height;
-    /*    xft_calc_string_size($, $xftFont, $label, w, h ); */
 }
 
 @proc copy_str($, char *s)

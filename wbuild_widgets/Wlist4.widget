@@ -52,7 +52,9 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 @ mstringlist
 @var int tableStrs = 0
 @var <XftColor> XftColor fg = <String> "White"
+
 @var <Callback> XtCallbackList notify   = NULL
+@var <Callback> XtCallbackList vscroll  = NULL
 @var <Callback> XtCallbackList getEntry = NULL
 @var <Int> int line_distance = 2
 @var int top_x = 0
@@ -163,7 +165,6 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 	$drag_time = t;
 	$drag_update = t;
 	$drag_line_start = lineno;
-	/* printf( "start %d\n",  lineno ); */
 }
 
 @proc motion_end
@@ -175,20 +176,14 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
       if( $drag_time == 0 || t < $drag_time ) goto click;
 
       t -= $drag_time;
-      /* printf( "line: start: %d, end: %d, time: %ld\n", $drag_line_start, lineno, t ); */
-
       y -= $drag_start_y;
       if( y > -15 && y < 15 ) goto click;
-
-      /*      if( t < AUTO_SCROLL_TIME_MS ) { start_autoscroll($, event->xbutton.y, t ); }
-      */
 
       goto reset_drag;
 
       /* kein drag nur ein click */
       click:
-      XtCallCallbackList($, $notify, lineno );
-      // toggle_line_state( $, lineno );
+      XtCallCallbackList($, $notify, (XtPointer)(intptr_t)lineno );
       goto reset_drag;
 
       reset_drag:
@@ -561,11 +556,21 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
 @ erzeuge die pixmap für den Puffer und initialisiere xftDraw
 @proc init_graphics($)
 {
+  if( $width <= 0 || $height <= 0 ) {
+      WARN("init_graphics: invalid dimensions width=%d height=%d", $width, $height);
+      return;
+  }
+  if( $width > 4000 ) $width = 4000;
+  if( $height > 4000 ) $height = 4000;
+
   if( $line_width < $width ) $line_width = $width;
+  if( $line_width > 4000 ) $line_width = 4000;
 
   /* berechnen der puffer Größe: 4-Zeilen größer als das fenster */
   int height;
   height = ((int)($height / $line_height) + PREFETCH_BUFFER) * $line_height;
+  if( height > 4000 ) height = 4000;
+
   $buf.height = height;
   $buf.width  = $line_width;
   $buf.x = 0;
@@ -620,11 +625,8 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   /* falls die liste vollständig angezeigt werden kann, */
   /* oder der rest der liste das fenster nicht füllt */
   if( $top_y + $list_height > list_h ) {
-    /* printf( "top_y:%d\n", $top_y ); */
     if( $list_height >= list_h ) $top_y = 0;
     else                    $top_y = list_h - $list_height;
-
-    /* printf( "top_y:%d\n", $top_y ); */
   }
 
   /* anzuzeigender bereich liegt im puffer */
@@ -660,11 +662,6 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
 
 	    scroll_down_lines($, buf_d );
 	    ln_pos = 0; ln_no = buf_a;
-            /*
-	    printf( "cur_buf_a=%d, buf_h = %d, buf_a=%d\n", cur_buf_a, buf_h, buf_a );
-	    printf( "buf_d = %d, ln_no=%d, ln_pos = %d\n", buf_d, ln_no, ln_pos );
-            */
-
 	}
 
 	while( buf_d-- ) {
@@ -711,8 +708,8 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
 	float speed = fabs( ($drag_start_y - y) * 1.0 / t );
 	float pixel_total = ($drag_start_y - y) / speed;
 	float pixel_per_update = 1+ pixel_total / $autoscroll_cnt;
-	printf( "drag_y0:%d, y1:%d\n", $drag_start_y, y );
-	printf( "autoscroll started: speed:%f, pixel_total:%f\n", speed, pixel_total );
+	TRACE(2, "drag_y0:%d, y1:%d", $drag_start_y, y );
+	TRACE(2, "autoscroll started: speed:%f, pixel_total:%f", speed, pixel_total );
 
 	$pixel_to_scroll =  pixel_per_update;
 
@@ -888,7 +885,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
     redraw_line($,$key_cursor);
     dirty = 1;
     int last_visible_line = ($top_y + $list_height) / $line_height;
-    printf( "crsr:%d Vis:%d\n", $key_cursor, last_visible_line );
+    TRACE(2, "crsr:%d Vis:%d", $key_cursor, last_visible_line );
 
     if( $key_cursor >= last_visible_line ) {
       int y=($key_cursor+1) * $line_height - $list_height;
@@ -918,6 +915,14 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   XCopyArea($dpy,$pixmap,XtWindow($), $gc_copy,
             $top_x, $top_y - $buf.y, $width -2*bx, $height-by,
 	    bx, by );
+
+  if( $vscroll ) {
+      vscroll_t vs;
+      vs.top_y = $top_y;
+      vs.list_height = $list_height;
+      vs.total_height = $line_max * $line_height;
+      XtCallCallbackList( $, $vscroll, &vs );
+  }
 }
 
 

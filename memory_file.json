@@ -1,0 +1,62 @@
+{
+  "overall_goal": "Implement forced-size SVG rasterization in the IconSVG widget and integrate inline SVG rendering into the re-tex layout engine for use in Wlabel.",
+  "active_constraints": [
+    "Backends must handle coordinate conversion between Points (re-tex Scaled type) and Pixels (Cairo/X11) using DPI (default 96).",
+    "Inline SVG commands in re-tex must follow TeX-like syntax: \includesvg{path}{width}{height}.",
+    "Avoid multiple definitions of NANOSVG_IMPLEMENTATION; it is already defined in canvas-draw-cb.c.",
+    "Robustly handle NULL or empty font face strings to prevent engine crashes."
+  ],
+  "key_knowledge": [
+    "NanoSVG Color Logic: Colors are parsed as 0x00RRGGBB or 0xAARRGGBB for gradients. Alpha is handled via separate opacity fields or stop-opacity. Solid colors also get alpha set based on fillOpacity/strokeOpacity.",
+    "Gradient Transformation: NanoSVG gradients use an inverted affine transform matrix (xform) from User Space to Gradient Space. Cairo's cairo_pattern_set_matrix expects the same.",
+    "Radial Gradient Focal Points: NanoSVG stores fx/r and fy/r relative to the center. The gradient matrix xform (which is inverted) includes the total transformation. The focal point in Cairo's pattern space needs to be adjusted using the matrix's translation component: (grad->fx + t[4], grad->fy + t[5]) where t is grad->xform.",
+    "Widget Realization: Wlabel must not create Cairo surfaces until realized (XtIsRealized).",
+    "\hbox, \parbox, \hangindent, \hangafter Commands: Implemented commands in the re-tex builder to create horizontal boxes (\hbox), vertical boxes for text (\parbox), and support hanging indentation (\hangindent, \hangafter) for complex text flow."
+  ],
+  "artifact_trail": [
+    "lui/backend_xt.lua: Mapped LUI scaling properties.",
+    "re-tex/src/node.h & node.c: Added NODE_PROPERTY, PropType, NODE_SVG, node_create_property, node_list_to_vbox. node.c now correctly calculates VBox dimensions.",
+    "re-tex/src/builder.c: Added parsing and node creation for \includesvg, \fontface, \hangindent, \hangafter, \hbox (packs inner hlist), and \parbox{width}{text} (uses line_break and node_list_to_vbox). Implemented extract_group helper.",
+    "re-tex/src/linebreak.h & linebreak.c: Modified line_break to accept and use hang_indent and hang_after.",
+    "re-tex/src/backend_cairo.c & backend_xpixmap.c: Implemented draw_svg to handle inline SVG, including correct color mapping, linear and radial gradients, fixed radial gradient focal point calculation (grad->fx + t[4]), removed redundant matrix inversion, and ensured path clearing with cairo_new_path per shape.",
+    "re-tex/src/retex.c: Refactored retex_layout to extract paragraph properties (hang_indent, hang_after) before calling line_break, exposed node_list_to_vbox, and coordinated builder commands for \hbox/\parbox.",
+    "retex_test/main.ad: Updated to test centered SVGs, hanging indentation, and nested boxes (\hbox, \parbox, \includesvg)."
+  ],
+  "file_system_state": {
+    "cwd": "/home/jens/git/xtcw2",
+    "modified": [
+      "re-tex/src/node.c",
+      "re-tex/src/node.h",
+      "re-tex/src/builder.c",
+      "re-tex/src/linebreak.c",
+      "re-tex/src/retex.c",
+      "re-tex/src/token.c",
+      "re-tex/src/backend_cairo.c",
+      "re-tex/src/backend_xpixmap.c"
+    ]
+  },
+  "recent_actions": [
+    "Fixed memory management in line_break by ensuring each line has its own node list.",
+    "Updated node_dump to support KERN, PENALTY, and PROPERTY nodes.",
+    "Fixed memory leak in node_free_tree for SVG nodes.",
+    "Added \par command support to tokenizer.",
+    "Investigated inline SVG layout issues; confirmed SVG nodes are correctly placed in HBoxes but may trigger line breaks if width is insufficient."
+  ],
+  "task_state": {
+    "done": [
+      "Implement forced-size SVG rasterization in the IconSVG widget.",
+      "Integrate inline SVG rendering into the re-tex layout engine for use in Wlabel.",
+      "Add \includesvg command to re-tex builder.",
+      "Implement SVG color parsing and rendering (including gradients).",
+      "Correct handling of SVG coordinate systems and transformations.",
+      "Implement \hangindent and \hangafter for hanging indentation.",
+      "Implement \hbox and \parbox commands for nested layouts."
+    ],
+    "in_progress": [
+      "Fixing layout issues where icons are not correctly mixed with text (investigating line breaking and alignment)."
+    ],
+    "todo": [
+      "Implement a caching mechanism for NSVGimage pointers in the backend to avoid re-parsing the same SVG file multiple times."
+    ]
+  }
+}

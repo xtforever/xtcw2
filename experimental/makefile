@@ -25,7 +25,7 @@ CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/inc
 #CC=gcc -Wall -I. -I../utils  -O3  -fomit-frame-pointer
 LOADLIBES+=-lm
 
-T=var5-test hash_test geo1
+T=var5-test hash_test
 D=mls.o ctx.o m_tool.o
 ALL: ${T}
 

@@ -15,31 +15,31 @@ _XFUNCPROTOBEGIN
 #define XtRString "String"
 #endif
 
-#ifndef XtNcornerRoundPercent
-#define XtNcornerRoundPercent "cornerRoundPercent"
+#ifndef XtNfontFace
+#define XtNfontFace "fontFace"
 #endif
-#ifndef XtCCornerRoundPercent
-#define XtCCornerRoundPercent "CornerRoundPercent"
+#ifndef XtCFontFace
+#define XtCFontFace "FontFace"
+#endif
+#ifndef XtRString
+#define XtRString "String"
+#endif
+
+#ifndef XtNfontSize
+#define XtNfontSize "fontSize"
+#endif
+#ifndef XtCFontSize
+#define XtCFontSize "FontSize"
 #endif
 #ifndef XtRInt
 #define XtRInt "Int"
 #endif
 
-#ifndef XtNdraw_override
-#define XtNdraw_override "draw_override"
+#ifndef XtNcornerRoundPercent
+#define XtNcornerRoundPercent "cornerRoundPercent"
 #endif
-#ifndef XtCDraw_override
-#define XtCDraw_override "Draw_override"
-#endif
-#ifndef XtRXTCallbackProc
-#define XtRXTCallbackProc "XTCallbackProc"
-#endif
-
-#ifndef XtNheightIncreasePercent
-#define XtNheightIncreasePercent "heightIncreasePercent"
-#endif
-#ifndef XtCHeightIncreasePercent
-#define XtCHeightIncreasePercent "HeightIncreasePercent"
+#ifndef XtCCornerRoundPercent
+#define XtCCornerRoundPercent "CornerRoundPercent"
 #endif
 #ifndef XtRInt
 #define XtRInt "Int"
@@ -60,6 +60,16 @@ _XFUNCPROTOBEGIN
 #endif
 #ifndef XtCUpdate
 #define XtCUpdate "Update"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNalignment
+#define XtNalignment "alignment"
+#endif
+#ifndef XtCAlignment
+#define XtCAlignment "Alignment"
 #endif
 #ifndef XtRInt
 #define XtRInt "Int"

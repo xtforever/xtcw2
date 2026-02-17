@@ -302,13 +302,23 @@ Bool rect_is_inside( XRectangle *r, int x, int y )
 
 
 
-/* quit xt main loop callback function */
-/* static void wm_quit ( Widget w, XEvent *event, String *params, */
-/* 		   Cardinal *num_params ) */
-/* { */
-/*     TRACE(1,"WM_QUIT"); */
-/*     XtAppSetExitFlag( XtWidgetToApplicationContext(w) ); */
-/* } */
+void xtcw_quit(Widget w, void *u, void *c)
+{
+    XtAppSetExitFlag(XtWidgetToApplicationContext(w));
+}
+
+void xtcw_quit_act(Widget w, XEvent *event, String *params, Cardinal *num_params)
+{
+    xtcw_quit(w, NULL, NULL);
+}
+
+void xtcw_register_quit(XtAppContext app)
+{
+    static XtActionsRec actions[] = {
+        {"xtcw_quit", xtcw_quit_act},
+    };
+    XtAppAddActions(app, actions, XtNumber(actions));
+}
 
 /* if the window manager closes the window, tell the
    window manager to send a message to xt. xt will
@@ -317,11 +327,13 @@ Bool rect_is_inside( XRectangle *r, int x, int y )
 void grab_window_quit(Widget top)
 {
     XtAppContext app = XtWidgetToApplicationContext(top);
+    xtcw_register_quit(app);
+
     /* if the user closes the window
-       the Window Manager will call our WcQuit() *defined in wcl* function
+       the Window Manager will call our xtcw_quit() action
     */
     XtOverrideTranslations
-	(top, XtParseTranslationTable ("<Message>WM_PROTOCOLS: WcQuit()"));
+	(top, XtParseTranslationTable ("<Message>WM_PROTOCOLS: xtcw_quit()"));
 
     /* http://www.lemoda.net/c/xlib-wmclose/ */
     static Atom wm_delete_window;

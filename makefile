@@ -43,7 +43,7 @@ endif
 CFLAGS+= -DCOMPTAG=$(COMPTAG)
 
 
-ALL: build_lib build_experimental
+ALL: build_lib build_tools build_experimental
 
 make_dirs:
 	$(MKDIR) -p $(bindir)  $(docdir)  $(PKGDATADIR)  $(incdir) $(libdir) $(srcdir)
@@ -55,7 +55,10 @@ copy_files: make_dirs
 	$(RSYNC)  wcl/*.c $(srcdir)/
 	$(RSYNC)  wcl/*.h $(incdir)/
 	$(RSYNC)  plainc_widgets/ $(srcdir)/
+	$(RSYNC)  plainc_widgets/*.h $(incdir)/xtcw/
 	$(RSYNC)  wbuild_widgets/ $(srcdir)/
+	$(RSYNC)  re-tex/src/ $(srcdir)/
+	$(RSYNC)  re-tex/src/*.h $(incdir)/
 	$(CP) makefile_library $(srcdir)/makefile
 
 build_tools:

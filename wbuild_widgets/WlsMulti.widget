@@ -1,0 +1,118 @@
+@class WlsMulti (Gridbox)
+@ A scrollable multi-column list box combining WlistMulti and Woptc.
+
+@PUBLIC
+@var int tableStrs = 0
+@var <Callback> XtCallbackList callback  = NULL
+@var int visible_lines = 0
+@var ArrayInt columnWidths = 0
+@var Boolean retexCells = FALSE
+@var String fontFace = "Sans"
+@var int fontSize = 22
+
+@PRIVATE
+@var Widget slider
+@var Widget list
+@var int ignore_cb
+
+@METHODS
+@proc initialize
+{
+    XtVaSetValues($, "defaultDistance", 0, NULL);
+    do_layout($);
+}
+
+@proc expose
+{
+    adjust_slider_size($);
+    #expose($, NULL, 0);
+}
+
+@proc set_values
+{
+    int n = *num_args;
+    while( n-- )  {
+        if(strncmp( args[n].name, "tableStrs", 9 ) == 0 ) {
+            XtVaSetValues( $list, "tableStrs", $tableStrs, NULL );
+        }
+    }
+    return 1;
+}
+
+@UTILITIES
+@proc adjust_slider_size($)
+{
+    int line_max;
+    int list_height;
+    int line_height;
+    int first_line;
+    
+    XtVaGetValues($list,
+        "line_max", &line_max,
+        "list_height", &list_height,
+        "line_height", &line_height,
+        "top_y", &first_line,
+        NULL );
+
+    list_height = line_max * line_height;
+    wls_set_slider_pos($slider, list_height, first_line);
+}
+
+@proc do_layout($)
+{
+    $list = XtVaCreateManagedWidget("list",
+                wlistMultiWidgetClass, $,
+                "gridx", 0,
+                "gridWidth", 1,
+                "weightx", 100,
+                "tableStrs", $tableStrs,
+                "fill", 3,
+                "weighty", 100,
+                "visible_lines", $visible_lines,
+                "columnWidths", $columnWidths,
+                "retexCells", $retexCells,
+                "fontFace", $fontFace,
+                "fontSize", $fontSize,
+                NULL );
+        
+    XtAddCallback($list, "updatecb", (XtCallbackProc)list_changed_cb, $);
+    XtAddCallback($list, "notify", (XtCallbackProc)list_select_cb, $);
+
+    $slider = XtVaCreateManagedWidget("slider",
+                woptcWidgetClass, $,
+                "gridx", 1,
+                "gridWidth", 1,
+                "weightx", 0,
+                NULL );
+
+    XtAddCallback($slider, "callback", (XtCallbackProc)slider_changed_cb, $);
+}
+
+@proc list_select_cb(Widget dummy, $, void *class_data )
+{
+    XtCallCallbackList($, $callback, class_data);
+}
+
+@proc slider_changed_cb(Widget sender, $, void *class_data )
+{
+    if( $ignore_cb ) return;
+    int new_pos = (intptr_t) class_data;
+    $ignore_cb = 1;
+    wlist_multi_gotoxy($list, 0, new_pos);
+    $ignore_cb = 0;
+}
+
+@proc list_changed_cb(Widget sender, $, void *class_data )
+{
+    if( $ignore_cb ) return;
+    $ignore_cb = 1;
+    adjust_slider_size($);
+    $ignore_cb = 0;
+}
+
+@IMPORTS
+@incl "converters.h"
+@incl "mls.h"
+@incl "xtcw/WlistMulti.h"
+@incl "xtcw/Woptc.h"
+@incl "GridboxP.h"

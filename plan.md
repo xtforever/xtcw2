@@ -40,7 +40,7 @@ In the last 20 years, GUI development has drifted toward massive, complex framew
 
 ### Phase 3: Toolkit Expansion (In Progress)
 *   Implement standard widgets (Buttons, Lists, Inputs) using the `re-tex` layout model.
-*   **Next Step**: Enhance `Wlist4` to support multi-column data binding from Lua stores.
+*   **Next Step**: Support multi-column data binding from Lua stores and `re-tex` cell rendering (Completed: `WlistMulti`).
 
 ### Phase 4: Application Ecosystem (In Progress)
 *   Provide templates for full-blown applications (e.g., `AdmPnl`).
@@ -53,8 +53,25 @@ In the last 20 years, GUI development has drifted toward massive, complex framew
         *   Map `(separator)` to `WSeparator` (Completed).
         *   Map `(check)` to `Wradio` (Completed).
         *   Map `(scrolled)` to `ScrolledCanvas` (Completed).
-        *   Map `(list-view)` to `Wlist4` (Completed).
+        *   Map `(list-view)` to `WlsMulti` (Completed).
+        *   Map `(splitter)` to `Wsplitter` (Completed).
     *   **Store API Implementation (Lua)**:
         *   Implemented `gui.create_store` and `gui.store_append` using real `mls` handles (Completed).
     *   **Dialog API Implementation**:
         *   Implemented `gui.alert`, `gui.confirm`, and `gui.prompt` using dynamic LUI dialogs (Completed).
+
+### Phase 6: Source Consolidation & Standardization (Completed)
+*   **Widget Migration**: Moved stable widgets from `LuaRunner/` and `experimental/` to `wbuild_widgets/`.
+*   **Re-tex Integration**: Ported migrated widgets to use `re-tex` for high-quality cell rendering in `WlistMulti`.
+*   **Unified Build**: Updated root `makefile` and `LuaRunner/makefile` for a clean, consolidated library build.
+
+### Phase 7: Advanced Widget Roadmap
+*   **Rich Text**: `WmultiEdit` – A multi-line editor built entirely on the `re-tex` box/glue model, supporting mixed fonts and inline styles.
+*   **Layout Engines**:
+    *   `Wsplitter`: Resizable pane divider.
+    *   `WtabWidget`: Multi-page container with tabbed navigation.
+*   **Data Visualization**:
+    *   `WtreeView`: Hierarchical data display.
+    *   `WtableView`: Full-featured grid with column sorting and `re-tex` cell rendering.
+*   **UI Polish**: `Wtooltip`, `WstatusBar`, `Wtoolbar`, and `Wimage` (Cairo-optimized).
+*   **System Dialogs**: `WcolorPicker`, `WfontPicker`, and enhanced `WfileSelector`.

@@ -9,6 +9,7 @@
 
 static int cb_list=0;
 static char* temp_str=0;
+static char* temp_data=0;
 
 void   luaxt_init(void)
 {
@@ -20,6 +21,7 @@ void   luaxt_destroy(void)
     m_free_strings( cb_list, 0);
     cb_list=0;
     free( temp_str ); temp_str=0; 
+    free( temp_data ); temp_data=0;
 }
 
 
@@ -44,16 +46,26 @@ void luaxt_pushcallback( char *callback_str, char *class_data )
 char*  luaxt_pullcallback( void )
 {
     free(temp_str); temp_str=0;
+    free(temp_data); temp_data=0;
     if( m_len(cb_list) == 0 ) return "";
     temp_str = *(char **)m_pop(cb_list);
+    if( m_len(cb_list) > 0 ) {
+        temp_data = *(char **)m_pop(cb_list);
+    }
     return temp_str;
+}
+
+char* luaxt_pulldata( void )
+{
+    return temp_data ? temp_data : "";
 }
 
 Widget luaxt_nametowidget(char *s)
 {
     char buffer[4096];
+    if( is_empty(s) || (s[0] == '.' && s[1] == 0) ) return TopLevel;
     if( strlen(s) >= sizeof(buffer)) return 0;
-    char *args = WcCleanName( s, buffer );
+    WcCleanName( s, buffer );
     return  WcFullNameToWidget( TopLevel, buffer );
 }
 

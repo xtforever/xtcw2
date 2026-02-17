@@ -259,7 +259,9 @@ _CvtStringToArrayInt(dpy, args, num_args, fromVal, toVal, data)
     int m_array = m_create(10,sizeof(int));
     char *s=str,*e;
     int val;
-    while(1) {
+    while(*s) {
+      while(*s && !isdigit(*s) && *s != '-') s++;
+      if(!*s) break;
       val = strtol( s, &e, 0 );
       if( e == s ) break;
       m_put( m_array, &val );

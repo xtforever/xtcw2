@@ -21,6 +21,7 @@ libexecdir  ?= $(exec_prefix)/libexec
 PKGDATADIR  ?= $(prefix)/etc/xtcw
 
 CC=gcc
+CFLAGS += -fms-extensions
 YFLAGS  = -d
 YACC    = bison
 LEX     = flex
@@ -58,6 +59,7 @@ CPPFLAGS  += -I. -I$(incdir)/xtcw -I$(incdir) $(shell pkg-config --cflags cairo 
 
 OBJS=focus-group.o Gridbox.o converters-xft.o xutil.o mls.o
 OBJS+=ini_parse.tab.o ini_lex.lex.o ini_read2.o
+OBJS+=njson_parse.tab.o njson_lex.lex.o njson_read.o
 OBJS+=converters.o util.o xlayout.o wcreg2.o xprint2.o
 OBJS+=micro_vars.o parser_util.o communication.o socket_log.o
 OBJS+=XCC.o long.o icon.o choosecol.o strarray.o StrToPmap.o
@@ -68,7 +70,9 @@ OBJS+=TableLoc.o WcConvert.o WcLateBind.o WcReg.o WcTemplate.o
 OBJS+=register_wb.o
 OBJS+=font.o ctx.o table256-crc16.o timer.o
 OBJS+=cp2.o slop4.o slopnet.o command-parser.o mrb.o m_tool.o
-OBJS+=scaled.o glue.o node.o token.o builder.o linebreak.o retex.o renderer.o backend_xpixmap.o
+OBJS+=svar2.o var5.o opts.o
+OBJS+=scaled.o glue.o node.o token.o builder.o linebreak.o retex.o renderer.o backend_xpixmap.o backend_cairo.o math_node.o math_layout.o
+OBJS+=canvas-draw-cb.o
 
 WIDGET_OBJ=$(patsubst %.widget,%.o,$(wildcard *.widget))
 OBJS+=$(WIDGET_OBJ)
@@ -82,6 +86,10 @@ SHARED_LIB: $(SL_NAME)
 ini_lex.lex.o: ini_parse.tab.h
 
 ini_read2.o: ini_lex.lex.o
+
+njson_lex.lex.o: njson_parse.tab.h
+
+njson_read.o: njson_lex.lex.o
 
 $(SL_NAME): ${ALL_LO}
 	$(LINK.c) $^ $(LOADLIBES) -shared -Wl,-soname,$@ -o $@

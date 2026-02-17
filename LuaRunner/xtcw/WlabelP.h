@@ -6,16 +6,23 @@
 #include <xtcw/WheelP.h>
 #include <xtcw/Wlabel.h>
 _XFUNCPROTOBEGIN
-typedef Bool  (*cache_hit_Proc)(
+typedef void (*redraw_label_Proc)(
 #if NeedFunctionPrototypes
 Widget
 #endif
 );
-#define XtInherit_cache_hit ((cache_hit_Proc) _XtInherit)
+#define XtInherit_redraw_label ((redraw_label_Proc) _XtInherit)
+typedef void (*update_cache_Proc)(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+#define XtInherit_update_cache ((update_cache_Proc) _XtInherit)
 
 typedef struct {
 /* methods */
-cache_hit_Proc cache_hit;
+redraw_label_Proc redraw_label;
+update_cache_Proc update_cache;
 /* class variables */
 } WlabelClassPart;
 
@@ -28,21 +35,20 @@ WlabelClassPart wlabel_class;
 typedef struct {
 /* resources */
 String  label;
+String  fontFace;
+int  fontSize;
 int  cornerRoundPercent;
-XtCallbackProc  draw_override;
-int  heightIncreasePercent;
 int  leftOffsetPercent;
 int  update;
+int  alignment;
 /* private state */
-XftDraw * draw;
-String  label_cache;
+void * backend;
+void * para;
 Pixmap  pixmap;
-GC  gc_copy;
-int  state_cache;
-Bool  dirty;
-String  label_mem;
 int  prefered_width;
 int  prefered_height;
+Bool  dirty;
+String  label_mem;
 } WlabelPart;
 
 typedef struct _WlabelRec {

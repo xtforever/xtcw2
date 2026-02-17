@@ -5,58 +5,37 @@
 
 @private
 @var XrmQuark qvar
-@var int drawn
+@var String prefix
 
 @methods
 @proc initialize
 {
         $qvar = XrmStringToQuark( $varname );
-        $draw_override = show_data;
+        char *s = $label;
+        if (!s) s = $name;
+        $prefix = XtNewString(s);
+        
         mv_onwrite( $qvar, do_update, $, 0 );
-        $height = ($xftFont->height) * 2.5;
+        do_update($, NULL, NULL); 
 }
 
-@proc Bool cache_hit
+@proc destroy
 {
-        int val = *mv_var( $qvar );
-        Bool hit = ($drawn == val);
-        hit = hit && #cache_hit($);
-        return hit;
+    XtFree($prefix);
 }
-
-
 
 @utilities
 
-@proc do_update($)
+@proc do_update($, void*d, void*d2)
 {
-        XtVaSetValues( $, "update", $update+1, NULL );
-}
-
-
-@proc show_data($,void *a, void *b)
-{
-
-        int wh,val,h,x,y;
-        char *s, str[30];
-        val = *mv_var( $qvar );
-        sprintf(str,"%d", val );
-        h = $xftFont->height;
-        wh = $height / 2;
-        x = 0;
-        y = (wh-h) / 2 + $xftFont->ascent;
-        s = $label;
-        XftDrawStringUtf8($draw,$xft_col + $state, $xftFont,
-                                         x,y,(FcChar8*)s, strlen(s) );
-
-
-        y += wh;
-        s = str;
-        x = $width - 2 - xft_textwidth(XtDisplay($),$xftFont, s );
-        XftDrawStringUtf8($draw,$xft_col + $state, $xftFont,
-                                         x,y,(FcChar8*)s, strlen(s) );
-        $drawn = val;
-
+        int val = *mv_var( $qvar );
+        char buf[256];
+        snprintf(buf, sizeof(buf), "%s\n%d", $prefix, val);
+        
+        /* Update label using XtSetValues to trigger Wlabel's update logic */
+        Arg args[1];
+        XtSetArg(args[0], XtNlabel, buf);
+        XtSetValues($, args, 1);
 }
 
 @imports

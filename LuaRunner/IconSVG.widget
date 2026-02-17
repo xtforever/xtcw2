@@ -65,34 +65,18 @@
 	XtCreateWindow($, (unsigned int) InputOutput,
         		  (Visual *) CopyFromParent,
 			  *mask, attributes);
-
-     Display *dpy = XtDisplay($);
-     Visual *vis = DefaultVisual(dpy, DefaultScreen(dpy));
-
-     double scale = 1.0;
-     int w = $width;
-     int h = $height;
-
-     /* apply forced size constrained only if appropriate */ 
-     if($forced_width && $forced_width < w && $forced_height <= h ) {
-     	 w = $forced_width;
-	 h = $forced_height;
-     }
-     
-     /* shrink image, if widget is too small */
-     if( w < $prefered_width || h < $prefered_height ) {
-     	 double scale1 = w * 1.0  / $prefered_width;
-	 double scale2 = h * 1.0 / $prefered_height;
-	 scale = Min(scale1,scale2);
-     }
-
-     xim2_render( $img, dpy, vis, XtWindow($), scale, 0 );
+     do_render($);
 }
 
 
 @proc set_values
 {
-	return True; /* yes we want a redraw */	
+    if( $old$forced_width != $forced_width || $old$forced_height != $forced_height ) {
+        if( XtIsRealized($) ) {
+            do_render($);
+        }
+    }
+    return True; /* yes we want a redraw */	
 }
 
 
@@ -126,6 +110,35 @@
 
 
 @UTILITIES
+@proc do_render($)
+{
+     Display *dpy = XtDisplay($);
+     Visual *vis = DefaultVisual(dpy, DefaultScreen(dpy));
+
+     double scale = 1.0;
+     int w = $width;
+     int h = $height;
+
+     /* if forced size is given, use it as target size for rasterization */
+     if($forced_width ) w = $forced_width;
+     if($forced_height) h = $forced_height;
+     
+     if( w < $prefered_width || h < $prefered_height || $forced_width || $forced_height ) {
+     	 double scale1 = w * 1.0  / $prefered_width;
+	 double scale2 = h * 1.0 / $prefered_height;
+	 if( $forced_width && !$forced_height ) scale = scale1;
+	 else if( !$forced_width && $forced_height ) scale = scale2;
+	 else scale = Min(scale1,scale2);
+     }
+
+     if( $img->loaded ) {
+         xim2_delete( $img );
+         xim2_load_svg( $img, $filename );
+     }
+     
+     xim2_render( $img, dpy, vis, XtWindow($), scale, 0 );
+     $img->loaded = 1;
+}
 
 
 @IMPORTS

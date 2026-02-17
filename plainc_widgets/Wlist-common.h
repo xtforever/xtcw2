@@ -13,5 +13,11 @@ typedef struct { int x,y,width,height; } rect32_t;
 
 typedef struct { int pos, max, state; char *data; } wlist_entry_t;
 
+typedef struct {
+    int top_y;
+    int list_height;
+    int total_height;
+} vscroll_t;
+
 
 #endif
