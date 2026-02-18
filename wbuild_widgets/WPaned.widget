@@ -500,6 +500,10 @@
                 *childP = *managedP;
                 *managedP = tmp;
             }
+            CPane(*managedP)->position = $num_panes - 1;
+            if (HasGrip(*managedP)) {
+                CPane(CPane(*managedP)->grip)->position = $num_panes - 1;
+            }
             managedP++;
         }
     }
@@ -652,9 +656,10 @@
 {
     XawGripCallData call_data = (XawGripCallData)callData;
     WPanedWidget pw = (WPanedWidget) XtParent(grip);
+    Widget pane = (Widget)temp;
     int loc; char action_type[2], direction[2]; Cursor cursor; Arg arglist[1];
     
-    fprintf(stderr, "DEBUG: HandleGrip called, num_params=%d\n", call_data->num_params);
+    fprintf(stderr, "DEBUG: HandleGrip called for pane %s, num_params=%d\n", XtName(pane), call_data->num_params);
     if (call_data->num_params) {
         XmuNCopyISOLatin1Uppered(action_type, call_data->params[0], sizeof(action_type));
         fprintf(stderr, "DEBUG: action_type=%s\n", action_type);
@@ -665,19 +670,19 @@
         fprintf(stderr, "DEBUG: direction=%s\n", direction);
     }
     switch (action_type[0]) {
-        case 'S': pw->wPaned.resize_children_to_pref = False; StartGripAdjustment(pw, grip, (Direction)direction[0]); pw->wPaned.start_loc = loc; break;
-        case 'M': MoveGripAdjustment(pw, grip, (Direction)direction[0], loc); break;
+        case 'S': pw->wPaned.resize_children_to_pref = False; StartGripAdjustment(pw, pane, (Direction)direction[0]); pw->wPaned.start_loc = loc; break;
+        case 'M': MoveGripAdjustment(pw, pane, (Direction)direction[0], loc); break;
         case 'C': XtSetArg(arglist[0], XtNcursor, &cursor); XtGetValues(grip, arglist, 1); XDefineCursor(XtDisplay(grip), XtWindow(grip), cursor); CommitGripAdjustment(pw); break;
     }
 }
 
-@proc StartGripAdjustment(WPanedWidget pw, Widget grip, Direction dir)
+@proc StartGripAdjustment(WPanedWidget pw, Widget pane, Direction dir)
 {
-    Widget *childP; Cursor cursor;
+    Widget *childP; Cursor cursor; Widget grip = CPane(pane)->grip;
     pw->wPaned.whichadd = pw->wPaned.whichsub = NULL;
-    if (dir == ThisBorderOnly || dir == UpLeftPane) pw->wPaned.whichadd = ((CompositeWidget)pw)->composite.children[CPane(grip)->position];
-    if (dir == ThisBorderOnly || dir == LowRightPane) pw->wPaned.whichsub = ((CompositeWidget)pw)->composite.children[CPane(grip)->position + 1];
-    if (XtIsRealized(grip)) {
+    if (dir == ThisBorderOnly || dir == UpLeftPane) pw->wPaned.whichadd = ((CompositeWidget)pw)->composite.children[CPane(pane)->position];
+    if (dir == ThisBorderOnly || dir == LowRightPane) pw->wPaned.whichsub = ((CompositeWidget)pw)->composite.children[CPane(pane)->position + 1];
+    if (grip && XtIsRealized(grip)) {
         if (IsVert((Widget)pw)) {
             if (dir == UpLeftPane) cursor = pw->wPaned.adjust_upper_cursor;
             else if (dir == LowRightPane) cursor = pw->wPaned.adjust_lower_cursor;
@@ -694,7 +699,7 @@
     _DrawTrackLines((Widget)pw, True);
 }
 
-@proc MoveGripAdjustment(WPanedWidget pw, Widget grip, Direction dir, int loc)
+@proc MoveGripAdjustment(WPanedWidget pw, Widget pane, Direction dir, int loc)
 {
     int diff, add_size = 0, sub_size = 0;
     diff = loc - pw->wPaned.start_loc;
@@ -709,7 +714,7 @@
     }
     if (add_size != 0) CPane(pw->wPaned.whichadd)->size = add_size;
     if (add_size != 0) CPane(pw->wPaned.whichsub)->size = sub_size;
-    RefigureLocations((Widget)pw, CPane(grip)->position, dir);
+    RefigureLocations((Widget)pw, CPane(pane)->position, dir);
     _DrawTrackLines((Widget)pw, False);
 }
 
