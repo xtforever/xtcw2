@@ -307,7 +307,12 @@ m_free_user(int m, void (*free_h)(void *), int only_clear)
 {
 	void *d;
 	int p;
-	m_foreach(m, p, d) free_h(d);
+	if (m_width(m) == sizeof(void *)) {
+		m_foreach(m, p, d) free_h(*(void **)d);
+	} else {
+		m_foreach(m, p, d) free_h(d);
+	}
+
 	if (only_clear)
 		m_clear(m);
 	else
@@ -423,7 +428,7 @@ lookup_int(int m, int key)
 {
 	void *obj = calloc(1, m_width(m));
 	memcpy(obj, &key, sizeof(key));
-	int p = m_binsert(m, obj, m_cmp_int, 0);
+	int p = m_binsert(m, obj, cmp_int, 0);
 	free(obj);
 	if (p < 0) {
 		return (-p) - 1;

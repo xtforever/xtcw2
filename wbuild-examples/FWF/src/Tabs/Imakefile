@@ -1,0 +1,11 @@
+#define NOT_SINGLE_OBJECT_FILE
+
+WIDGET = Tabs
+SUPERCLASSES = ../Common/Common.w ../Frame/Frame.w ../Board/Board.w
+LIB_OBJS = Tabs.o rotated.o
+EXT_OBJS = TabsT.o
+OTHERLIBS = $(XPM_LIB) -lm
+DEFINES = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300 -DCACHE_FID
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

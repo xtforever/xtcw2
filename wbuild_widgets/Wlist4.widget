@@ -496,7 +496,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
                        XftDraw *draw, XftColor *col, XftFont *font,
                        int x, int y, char *s )
 {
-  int subs=m_split(0,s, '\n', 0 );
+  int subs=s_split(0,s, '\n', 0 );
   int p;
   char **str;
   m_foreach( subs, p, str ) {
@@ -763,7 +763,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   int p,
       cur_x = 0,
       cur_tab = 0;
-  int subs=m_split(0,buf, '\t', 1 );
+  int subs=s_split(0,buf, '\t', 1 );
   int last_substr = m_len(subs) > 0 ? m_len(subs)-1 : 0;
 
   m_foreach( subs, p, str ) {
@@ -805,7 +805,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   int cur_tab = 0; /* index des nächsten tab */
   int xoff;        /* größe des teil-str. in pixel */
   int cur_x = 0;   /* x-pos. des nächsten str. in pixel */
-  int subs=m_split(0,buf, '\t', 0 );
+  int subs=s_split(0,buf, '\t', 0 );
   int p;
   char **str;
   m_foreach( subs, p, str ) {

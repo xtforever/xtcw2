@@ -1,0 +1,508 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfIconBox
+.SH DESCRIPTION
+An IconBox widget is surface on which labeled icons are displayed.
+The icons and the labels are actually a graphic representation of the
+list of strings that is the value of the \fIlist\fP resource. The user can
+rearrange the icons by dragging them with the mouse, he can click on
+them or double click and even select a number of them (selection is
+indicated by reversing the colors of the icon). The application will
+be notified of clicks and selections via callbacks. The \fIlist\fP
+resource also indicates whether icons are sensitive to other icons
+being dropped on them. Icons that are, will give visual feedback and
+cause a callback to be called.
+
+The \fIlist\fP resource contains three fields of information for every
+icon: (1) the icon itself, (2) whether the icon is sensitive to
+dropping, and (3) the label of the icon. Icons are specified by the
+name of the file that contains the pixmap for it. Pixmaps are cached,
+so that files are only read once. An application can also provide
+pre-loaded icons.
+
+The IconBox widget tries to adjust its height so that all icons can be
+displayed, at least in canonical order.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfIconBox
+Name	Class	Type	Default
+XtNlist	XtCList	XfwfIconList 	NULL 
+XtNhorizontalGrid	XtCHorizontalGrid	Dimension 	100 
+XtNverticalGrid	XtCVerticalGrid	Dimension 	100 
+XtNtopskip	XtCTopskip	int 	3 
+XtNitemSelect	XtCItemSelect	Callback	NULL 
+XtNitemDeselect	XtCItemDeselect	Callback	NULL 
+XtNitemActivate	XtCItemActivate	Callback	NULL 
+XtNitemDrop	XtCItemDrop	Callback	NULL 
+XtNlabelFont	XtCLabelFont	FontStruct	"fixed"
+XtNiconTranslations	XtCIconTranslations	String 	"\\
+            <Message>Drop: handle_drop(%1$d)\\n\\
+            Shift<Key>space: select_also(%1$d)\\n\\
+            <Key>space: select_or_drop(%1$d)\\n\\
+            <Key>Return: activate_item(%1$d)\\n\\
+            Shift<Btn1Up>: select_also(%1$d)\\n\\
+            <Btn1Up>: select_or_drop(%1$d)\\n\\
+            <Btn1Down>: prepare_drag(%1$d) check_double_click(%1$d)\\n\\
+            <Btn1Motion>: drag(%1$d)"
+XtNdragCursor	XtCDragCursor	Cursor 	"crosshair"
+
+.TE
+.ps +2
+
+.TP
+.I "XtNlist"
+The \fIlist\fP resource is an array of \fIXfwfIconListItem\fPs. If the list
+is not empty, there must be a pseudo-item after the last real one,
+with -1 in the \fIflags\fP field. After setting the resource (e.g., with
+\fIXtCreateWidget\fP or \fIXtSetValues\fP) the list can be deallocated or used
+again elsewhere, since the IconBox will have made a private copy of it.
+
+        
+
+.TP
+.I "XtNhorizontalGrid"
+The IconBox widget has methods that can arrange the icons on a grid,
+if the user so wishes. The size of that grid is set with two
+resources: \fIhorizontalGrid\fP and \fIverticalGrid\fP. Both are in pixels.
+
+        
+
+.TP
+.I "XtNverticalGrid"
+The vertical size of a grid cell in pixels.
+
+        
+
+.TP
+.I "XtNtopskip"
+The first icons are placed a few pixels from the top of the IconBox.
+\fItopskip\fP determines how much.
+
+	
+
+.TP
+.I "XtNitemSelect"
+When an icon is selected, either by a mouse click or by being
+included in a rubber box, the \fIitemSelect\fP callback list is called.
+The callback is called after the selection is complete, i.e., after
+the click occurred or after the user completed the rubber box. The
+callback is called once for every selected icon. The index of the icon
+in the \fIlist\fP is passed in the \fIcall_data\fP argument.
+
+        
+
+.TP
+.I "XtNitemDeselect"
+When an icon becomes unselected, the \fIitemDeselect\fP callback is
+called, also with the icon's index as \fIcall_data\fP argument.
+
+        
+
+.TP
+.I "XtNitemActivate"
+When an icon is double-clicked, the icon is first selected (the
+first mouse click causes the \fIitemSelect\fP callback to be called) and
+then the \fIitemActivate\fP callback list is called. The icon's index is
+passed in the \fIcall_data\fP argument.
+
+        
+
+.TP
+.I "XtNitemDrop"
+When an icon or a group of icons is dropped on an icon that is
+sensitive to this, the \fIitemDrop\fP callback list is invoked. The
+\fIcall_data\fP argument will contain a pointer to an \fIXfwfItemDropInfo\fP
+structure, containing the numbers of the dropped icons and the icon
+they were dropped upon.
+
+        
+
+.TP
+.I "XtNlabelFont"
+The font for the labels is usually smaller than the default font for
+labels. The value of \fIlabelFont\fP will be passed to the labels, this
+means that setting the resource \fIButton.font\fP has no effect on the
+labels below the icons.
+
+	
+
+.TP
+.I "XtNiconTranslations"
+The translations that are installed on the icons and labels can be
+changed by setting the \fIiconTranslations\fP resource. The default
+translations provide for dragging, dropping, selecting and double
+clicking, all with the first mouse button.
+
+The \fI%1$d\fP in the actions will be replaced with the icon's number in
+the \fIlist\fP resource.
+
+	
+
+.TP
+.I "XtNdragCursor"
+The cursor that is used during dragging.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The header file for the \fIXfwfIcon\fP widget has to be included,
+because it defines the \fIIcon\fP type, which is used in the
+\fIXfwfCacheIcon\fP function.
+
+	
+
+.nf
+
+.B incl
+ <Xfwf/Icon.h>
+.fi
+
+The \fIXfwfIconListItem\fP structure has three fields: \fIicon\fP, which is
+the name of file containing a pixmap; \fIflags\fP, which is an integer;
+and \fIlabel\fP, which is a string, possibly containing newlines. The
+\fIflags\fP field is interpreted as follows: a value of -1 means that this
+item is a pseudo-item, used as sentinel at the end of a list,
+otherwise an even number indicates an item that is not sensitive to
+other items being dropped on top of it, an odd value indicates an item
+that will cause a callback to be called when an icon is dropped on it.
+
+        
+
+.nf
+
+.B type
+ XfwfIconListItem = struct {
+            String icon;
+            int flags;
+            String label;
+        }
+.fi
+
+.nf
+
+.B type
+ XfwfIconList = XfwfIconListItem *
+.fi
+
+The \fIXfwfItemDropInfo\fP structure is used in the \fIitemDrop\fP callback. It
+contains the number of the icon on which something was dropped and an
+array with the numbers of the dropped icons. The \fIn\fP is the length of
+the array.
+
+        
+
+.nf
+
+.B type
+ XfwfItemDropInfo = struct {
+            Widget sender;
+            int target;
+            int n;
+            int *droplings;
+        }
+.fi
+
+The \fIXfwfCleanUp\fP function calls the \fIclean_up\fP method, after
+checking that the argument is indeed an IconBox. That method will move
+the icons to the nearest unoccupied grid point.
+
+.nf
+XfwfCleanUp( $)
+.fi
+
+The \fIXfwfCanonicalOrder\fP function checks the class of the widget and
+then calls the \fIcanonical_order\fP method. The method will move the
+icons to their original positions on the grid. The order of the icons
+is the order in the \fIlist\fP resource.
+
+.nf
+XfwfCanonicalOrder( $)
+.fi
+
+The pixmaps for the icons are normally read from file by the IconBox
+widget, but an application may provide pre-built icons and instruct
+the IconBox to add them to its cache. In this way an application can
+use compiled-in icons. The application should call the \fIXfwfCacheIcon\fP
+function with the name under which the icon is kown (usually the file
+name) and a complete \fIIcon\fP structure (see the XfwfIcon widget for a
+description). The function is called with a particular widget, but the
+icon cache is actually shared by all IconBox widgets.
+
+The function simply stores the icon, without checking if another icon
+of the same name already exists. If that is the case, the new icon
+will override the old one.
+
+.nf
+XfwfCacheIcon( $, String  name, Icon  icon)
+.fi
+
+.SS "Translations"
+
+Note that the translations contain no click, double click or drag
+actions involving a single icon. These events are not seen by the
+IconBox, since they occur in an icon or a label. The IconBox will
+install translations for these actions directly in the icons and
+labels.
+
+        
+
+.nf
+Shift<Btn1Down>: area_select_also() 
+.fi
+
+.nf
+<Btn1Down>: area_select() 
+.fi
+
+A drag-and-drop operation can end on an icon or over unoccupied
+space. In the first case, a client message will be sent to the icon,
+in the second case, the client message will arrive at the IconBox
+itself. The action will then move the dropped icons to the new
+position.
+
+	
+
+.nf
+<Message>Drop: move_icons() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "area_select
+
+The \fIarea_select\fP action first unselect all selected icons and then
+displays a rubberband. One corner of the rubberband box will follow
+the mouse pointer, until the mouse button is released again. All icons
+that are within the box at that moment will become selected and the
+\fIitemSelect\fP callback will be called for them.
+
+.TP
+.I "area_select_also
+
+The \fIarea_select_also\fP action does not unselect the selected items
+before it starts, but otherwise it performs the same function as the
+\fIarea_select\fP action. \fIarea_select_also\fP will only call the
+\fIitemSelect\fP callback for items within the rubberband box that were
+not already selected.
+
+.TP
+.I "move_icons
+
+The action \fImove_icons\fP should be called in response to the client
+message that is sent at the end of a drag operation. The numbers of
+the icons that are dropped are retrieved from the root window property
+\fI"DropSelection"\fP and the icons are moved to the position where they
+were dropped.
+
+The following actions are installed automatically on the icons
+within the IconBox. They should not be installed on the IconBox
+itself.
+
+.TP
+.I "select_also
+
+The \fIselect_also\fP action is also only installed on icons. The
+\fIselect_also\fP action selects the icon in which the event occurred,
+without deselecting already selected icon. It will call the
+\fIitemSelect\fP callback with the item's number as \fIcall_data\fP.
+
+.TP
+.I "activate_item
+
+When an icon is double-clicked, the \fIitemActivate\fP callback will be
+called for it, with the item's number as \fIcall_data\fP. Note that double
+clicking will also invoke the \fIicon_select\fP action (or the
+\fIselect_also\fP action if the Shift key was pressed).
+
+.TP
+.I "check_double_click
+
+\fIcheck_double_click\fP compares the time of the click to the last
+click time and if it is less than the multi-click time, a double click
+is assumed and the \fIitemActivate\fP callback is called.
+
+.TP
+.I "prepare_drag
+
+When the user starts to drag the mouse when the mouse pointer is on
+an icon that is not (yet) selected, nothing happens. But when the
+dragging starts with the cursor over a selected icon, all selected
+icons will be dragged along with the mouse. (For speed, only an
+outline of the icons is drawn.) If the mouse button is then released,
+all icons will stay at the position where they are at that moment. No
+callbacks are invoked. However, if the mouse button is released when
+the mouse is on an icon that is sensitive to dropping, the icons will
+return to their original positions and the \fIitemDrop\fP callback is
+called.
+
+\fIprepare_drag\fP only records the mouse coordinates. The drag is not
+really started until the mouse is moved.
+
+.TP
+.I "drag
+
+When the mouse is moved, the previous outlines on the screen are
+removed and replaced with new ones. If this is the first time the mouse
+has moved after the button-down event, the pointer grab is changed to
+install a temporary cursor.
+
+.TP
+.I "select_or_drop
+
+At the end of the drag, the outlins are removed and a message is sent
+to the widget on which the mouse pointer ended. If there was no drag in
+progress, the icon is selected instead.
+
+If an icon is selected all other items become unselected. The action
+will then call the \fIitemSelect\fP and possibly \fIitemDeselect\fP callbacks.
+The icon's label will be shown in reverse.
+
+.TP
+.I "handle_drop
+
+When something is dropped on an icon that is sensitive to dropping,
+the icon will call the \fIitemDrop\fP callbacks. The \fIcall_data\fP will be a
+pointer to an \fIXfwfItemDropInfo\fP structure with the numbers of the
+dropped icons.
+
+If the icon on which the drop occurred is not sensitive to dropping, the
+dropped icons will simply be moved.
+
+.TP
+.I "drag_into
+
+When the pointer enters an icon during a drag operation, the icon (and
+label) will be highlighted. The highlighting is the same as for keyboard
+focus, since the same (Common) method is used.  Hopefully this is not too
+confusing.
+
+.TP
+.I "drag_out_of
+
+When the pointer leave an icon during a drag operation, the highlight is
+removed again.
+

@@ -1,0 +1,19 @@
+.TH "ButtonT" "1" "28 Aug 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+ButtonT \- Test program for the XfwfButton widget
+.SH DESCRIPTION
+.PP
+The program shows an XfwfBoard widget with two XfwfButton
+children. The label in the buttons is a number that counts how often
+the mouse is clicked on that button. Instead of the mouse, the keyboard
+can also be used.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+

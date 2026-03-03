@@ -1,0 +1,77 @@
+.TH "RheostatT" 1 "14 Jul 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+RheostatT \- Test Program For The Rheostat Widget
+.SH DESCRIPTION
+.PP
+.I RheostatT
+is a simple program that creates and displays two Rheostat widgets,
+stacked on top of each other.
+It prints the Rheostat value on stdout whenever the
+.I notify
+callback is invoked on the top widget.
+Dragging either widget will update the other.
+Most of the important resources may be
+set from the command-line.
+.SH OPTIONS
+.TP
+.BI "\-minvalue " n
+Sets the minimum Rheostat value 
+.I (.minimumValue)
+to \fIn\fP.
+.TP
+.BI "\-maxvalue " n
+Sets the maximum Rheostat value 
+.I (.maximumValue)
+to \fIn\fP.
+.TP
+.BI "\-minangle " n
+.TP
+.BI "\-maxangle " n
+Set the minimum and maximum display angles
+.I (.minimumAngle, .maximumAngle)
+to \fIn\fP degrees.  
+Measurements are clockwise, with zero degrees down.
+.TP
+.BI "\-intervals " n
+Sets the number of tick intervals
+.I (.numberIntervals)
+to \fIn\fP.
+.TP
+.BI "\-outer " n
+.TP
+.BI "\-inner " n
+.TP
+.BI "\-width " n
+Set the inner arrow length, outer arrow length, and arrow width resources
+.I (.arrowWidth, .outerArrowLength, \fRand\fP .innerArrowLength)
+to \fIn\fP.
+.TP
+.BI \-fill
+Fills the dial arrow.
+.I (.fillArrow: True)
+.TP
+.BI \+fill
+Draws an outline of the dial arrow only.
+.I (.fillArrow: False)
+.TP
+.BI \-gravity
+Turns on tick gravity.
+.I (.tickGravity: True)
+.TP
+.BI \+gravity
+Turns off tick gravity.
+.I (.tickGravity: False)
+.SH EXAMPLES
+.TP
+.I RheostatT -outer 40 -inner 80 -width 20 +fill
+Uses a diamond shaped arrow instead of the usual Enterprise logo shaped
+arrow.
+.TP 
+.I RheostatT -minangle 0 -maxangle 360 -minvalue 0 -maxvalue 360 -intervals 8
+Configures the Rheostat as an angle valuator, with ticks every 45 degrees.
+.SH AUTHOR
+.sp
+.nf
+Joe English
+\fIjoe@trystero.art.com\fP
+.fi

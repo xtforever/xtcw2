@@ -1,0 +1,6 @@
+WIDGET = Calendar
+SUPERCLASSES = ../Common/Common.w ../Frame/Frame.w ../Board/Board.w
+OTHERLIBS = -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

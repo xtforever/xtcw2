@@ -1,0 +1,5 @@
+Scrollbar (Superclass: XfwfBoard) A Scrollbar widget has four parts: a
+	trough in which a slider moves up and down (or left and right)
+	and two arrows. Clicking and dragging on the different parts
+	causes a callback to be invoked with different arguments,
+	which presumably causes another widget to scroll.

@@ -1,0 +1,289 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfLabel
+.SH DESCRIPTION
+The Label class has the capability to display one or more lines of
+text in a single font. Otherwise it is the same as the Board class.
+The text can be left, right or center justified and it can be centered
+vertically or put against the top or the bottom of the widget. There
+is also a resource to set tab stops.
+
+The text is `grayed out' when the widget becomes insensitive
+(resource: \fIsensitive\fP), even though a Label widget has no actions of
+its own.
+
+There are two ways of highlighting portions of the label: reversing
+the colors or changing the foreground. Both methods can be combined,
+though the result when both highlighting methods are applied to the
+same part of the text is undefined.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfLabel
+Name	Class	Type	Default
+XtNlabel	XtCLabel	String 	NULL 
+XtNtablist	XtCTablist	String 	NULL 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNforeground	XtCForeground	Color 	XtDefaultForeground 
+XtNhlForeground	XtCHlForeground	Color 	XtDefaultForeground 
+XtNalignment	XtCAlignment	Alignment 	0 
+XtNtopMargin	XtCTopMargin	Dimension 	2 
+XtNbottomMargin	XtCBottomMargin	Dimension 	2 
+XtNleftMargin	XtCLeftMargin	Dimension 	2 
+XtNrightMargin	XtCRightMargin	Dimension 	2 
+XtNshrinkToFit	XtCShrinkToFit	Boolean 	False 
+XtNrvStart	XtCRvStart	int 	0 
+XtNrvLength	XtCRvLength	int 	0 
+XtNhlStart	XtCHlStart	int 	0 
+XtNhlLength	XtCHlLength	int 	0 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNlabel"
+The text is a single string, which may contain embedded newlines.
+There is no provision for changing fonts in the middle of a text.
+
+	
+
+.TP
+.I "XtNtablist"
+A tablist can be provided for tabbing to particular columns
+within the label.
+
+	
+
+.TP
+.I "XtNfont"
+The text is drawn in the font which is given as the \fIfont\fP resource.
+
+	
+
+.TP
+.I "XtNforeground"
+The foreground color is the color used to draw the
+text. \fIhlForeground\fP is the foreground for highlighted text.
+
+	
+
+.TP
+.I "XtNhlForeground"
+
+.TP
+.I "XtNalignment"
+The text can be aligned in the widget in nine ways: left, right or
+center, combined with top, center or bottom. Symbolic constants
+\fIXfwfTop\fP, \fIXfwfBottom\fP, \fIXfwfLeft\fP and \fIXfwfRight\fP can be added together to
+get the desired alignment.  The alignment is actually a four-bit
+number made up of two parts of 2 bits added together: 1 is left, 2 is
+right, 0 is center, 4 is top, 8 is bottom, 0 is vertical center. Thus
+5 (= 1 + 4) means top left and 2 (= 2 + 0) means center right. For
+easier specification, there is also a converter from strings, that
+accepts string like `top left' or `center right'.
+
+	
+
+.TP
+.I "XtNtopMargin"
+The \fItopmargin\fP is only used when the text is not centered. It gives
+the number of pixels between the frame and the top of the text.
+
+	
+
+.TP
+.I "XtNbottomMargin"
+The \fIbottomMargin\fP is only used to compute the preferred size of the
+button in case \fIshrinkToFit = True\fP.
+
+	
+
+.TP
+.I "XtNleftMargin"
+The \fIleftMargin\fP is only used when the text is not centered. It
+gives the number of pixels between the frame and the left edge of the
+text, and if possible also between the frame and the right edge of the
+text.
+
+	
+
+.TP
+.I "XtNrightMargin"
+The \fIrightMargin\fP is only used to compute the preferred size of the
+button in case \fIshrinkToFit = True\fP.
+
+	
+
+.TP
+.I "XtNshrinkToFit"
+Buttons will normally not occupy the full area of their parents.
+Most likely they will be a fixed size or a size depending on the
+label. By setting the \fIshrinkToFit\fP resource to True, the width and
+height are recomputed with every new label.
+
+	
+
+.TP
+.I "XtNrvStart"
+It is possible to set a part of the label apart by drawing it in
+reverse. The \fIrvStart\fP resource gives the index of the first
+character to draw in reverse video.
+
+	
+
+.TP
+.I "XtNrvLength"
+The \fIrvLength\fP resource contains the number of characters to
+draw in reverse video.
+
+	
+
+.TP
+.I "XtNtraversalOn"
+A label normally needs no keyboard interface, therefore traversal is
+turned off.
+
+	
+
+.TP
+.I "XtNhlStart"
+The start and length of the highlighted portion are set with the
+resources \fIhlStart\fP and \fIhlLength\fP.
+
+	
+
+.TP
+.I "XtNhlLength"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+\fIXfwfLabelSetLabel\fP is a convenience function that calls the
+\fIset_label\fP method. If \fIshrinkToFit\fP is FALSE, this method is faster
+than calling \fIXtSetValues\fP, since it only redraws the label and leaves
+the size of the widget (and its border) unchanged.
+
+.nf
+XfwfLabelSetLabel( $, String  newlabel)
+.fi
+

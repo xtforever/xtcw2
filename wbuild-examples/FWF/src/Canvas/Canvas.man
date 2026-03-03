@@ -1,0 +1,129 @@
+./"" Canvas.3  1.1  Jan 14, 1994
+./""  Copyright 1990,1993,1994 Robert Forsman
+./""  Gnu Library General Public License version 2.0
+./""
+./""
+.TH Canvas 3 "14 Jan 1994" "Version 3.6" "Free Widget Foundation"
+.SH NAME
+Canvas - a Widget that allows the programmer to specify a redraw procedure
+and a resize procedure on a per-widget basis.
+
+.SH VITAL STATS
+
+.nf
+.TA 3.0i
+.ta 3.0i
+Application Header file		<Canvas.h>
+Class Header file		<CanvasP.h>
+Class				xfwfcanvasWidgetClass
+Class Name			Canvas
+Superclass			Core
+.fi
+
+  The Canvas widget is useful when the program needs an area for
+drawing or display and the creation of a custom widget would not be
+``cost-effective''.  Examples of this are display of an XImage,
+display of an animation, or display of a custom diagram.  The Canvas
+widget is a gain over registering an action proc for an Expose event
+because the class definition takes advantage of the X toolkit's
+internal expose event compression capabilities to allow the
+application to send the drawing commands only once for a collection of
+Expose events.
+
+.SH PROGRAMMER INFORMATION
+
+  The Canvas widget is identical to the Core widget except that its
+compress_exposure field is XtExposeCompressMultiple and it allows the
+programmer to specify both an Expose procedure and a Resize procedure
+on per widget basis.
+
+The following resources are specific to the Canvas widget
+
+.TS H
+lw(1i) lw(1i) lw(1i) lw(1i).
+_
+.sp .6
+.TB
+Name	Class	Type	Default Value
+.sp .6
+_
+visual	Visual	Visual*	CopyFromParent
+exposeProc	ExposeProc	CanvExposeProc	NULL
+exposeProcData	ExposeProcData	XtPointer	NULL
+resizeProc	ResizeProc	CanvResizeProc	NULL
+resizeProcData	ResizeProcdata	XtPointer	NULL
+.sp .6
+_
+.TE
+
+.IP \fBvisual\fP
+This is used if the canvas must be a different visual from the parent.
+This comes in very handy for an 8-bit application that wants to
+display a 24-bit image in a subwindow.  The only Intrinsics-supplied
+widgets that have an XtNvisual resource are the Shell widgets.
+.IP
+\fB!Warning!\fP If you specify a visual for the Canvas widget, make
+sure that you specify a colormap and depth that match (these resources
+are part of the Core widget).  If you do not, you will almost
+certainly generate a BadMatch error from the Xlib layer when you
+realize the canvas.
+.IP \fBexposeProc\fP
+This is a pointer to a function of type XfwfCanvasExposeProc which is
+identical to XtExposeProc except that it has an extra XtPointer
+argument at the end of the argument list through which the
+exposeProcData is passed.
+.IP \fBexposeProcData\fP
+This is a pointer to widget-specific data that will be passed in
+through the client_data of the exposeProc.
+.IP \fBresizeProc\fP
+This is a pointer to a function of type XfwfCanvasResizeProc which is
+identical to XtWidgetProc except that it has an extra XtPointer
+argument at the end of the argument list through which the
+resizeProcData is passed.
+.IP \fBresizeProcData\fP
+This is a pointer to widget-specific data that will be passed in
+through the client_data of the resizeProc.
+
+.SH TYPEDEFS
+
+  The following types are defined in the public header file for the
+programmer's enlightenment.
+
+.nf
+.TA 1i
+typedef void(*XfwfCanvasExposeProc)(
+	Widget w,
+	XExposeEvent *event,
+	Region region,
+	XtPointer client_data );
+
+typedef void(*XfwfCanvasResizeProc)(
+	Widget w,
+	XtPointer client_data );
+.fi
+
+.SH COPYRIGHT
+Copyright (C) 1990,93,94 Robert Forsman
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free
+Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+.SH "AUTHOR"
+.nf
+Robert Forsman
+thoth@cis.ufl.edu
+http://www.cis.ufl.edu/~thoth
+University of Florida
+Department of Computer and Information Science
+.fi

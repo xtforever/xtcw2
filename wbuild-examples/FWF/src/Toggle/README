@@ -1,0 +1,53 @@
+Toggle
+
+Files
+	Imakefile
+	Toggle.tex	(documentation; format with Plain TeX)
+	wbuildmac.tex	(TeX macros)
+	tick.bm		(X bitmap)
+	Toggle.c
+	ToggleP.h
+	Toggle.h
+	Toggle.w	(the real source, see below)
+	ToggleT.c	(test program)
+
+N.B.
+	The widget files are computer-generated. The real source is
+	Toggle.w. It has been processed with Wbuild (available by
+	anonymous ftp from ftp.let.rug.nl)
+
+Author
+	Bert Bos <bert@let.rug.nl>
+	Alfa-informatica, Rijksuniversiteit Groningen, The Netherlands
+	August 1992
+
+History
+2.1	(3 Jul '93) Added onPixmap and offPixmap resources, which
+	override the default tickmark pixmap.
+
+Copyright
+
+	Copyright 1995 Bert Bos (hereafter `the author')
+
+Conditions of use
+
+	Permission to use, copy, modify, distribute, and sell this
+	software and its documentation for any purpose is hereby
+	granted without fee, provided that the above copyright notice
+	appears in all copies and that both that copyright notice and
+	this permission notice appear in supporting documentation, and
+	that the name of the author not be used in advertising or
+	publicity pertaining to distribution of the software without
+	specific, written prior permission. The author makes no
+	representations about the suitability of this software for any
+	purpose. It is provided "as is" without express or implied
+	warranty.
+
+	The author disclaims all warranties with regard to this
+	software, including all implied warranties of merchantability
+	and fitness, in no event shall the author be liable for any
+	special, indirect or consequential damages or any damages
+	whatsoever resulting from loss of use, data or profits,
+	whether in an action of contract, negligence or other tortuous
+	action, arising out of or in connection with the use or
+	performance of this software.

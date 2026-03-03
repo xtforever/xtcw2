@@ -1,0 +1,22 @@
+.TH "IconT" "1" "11 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+IconT \- Test program for the Icon widget
+.SH SYNOPSIS
+IconT [pixmapfile]
+.SH DESCRIPTION
+The
+.I IconT
+program shows a
+rowcol widget with eight icon widgets. The icons are the eight
+built-in images, that the type converter knows about: FATAL, ERROR,
+WARNING, QUESTION, INFO, and NONE. Note that NONE is totally
+transparent, and is thus invisible. Clicking on the first icon will
+stop the program.
+.PP
+If the program is given an argument, that argument must be the name of
+a pixmap file. That pixmap will be loaded and shown as the ninth
+pixmap.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

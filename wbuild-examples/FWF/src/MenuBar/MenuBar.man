@@ -1,0 +1,213 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfMenuBar
+.SH DESCRIPTION
+The MenuBar widget is a special kind of Rows widget. It assumes
+that all its children are PullDown buttons or other widgets that pop
+up a menu. (But nothing will break if they are not.)
+
+The MenuBar attaches itself to the \fIpopup\fP callback of the menu shell
+that is popped up by the children, and inserts itself in the list of
+pointer grabs that Xt maintains. This is necessary to be able to drag
+the mouse from one menu into another, popping down the first one and
+popping up the second. If you use a RowCol widget instead of a
+MenuBar, you will find that switching from one menu to the next
+involves releasing the mouse and then pressing it again.
+
+To find the menu shell, the children are asked for their \fIpopup\fP
+resource. PullDown buttons have this resource, others may not.
+
+The MenuBar widget introduces no new resources.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfMenuBar
+Name	Class	Type	Default
+
+.TE
+.ps +2
+
+.TP
+.I "XtNframeType"
+
+.TP
+.I "XtNtraversalOn"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfRows
+Name	Class	Type	Default
+XtNalignTop	XtCAlignTop	Boolean 	True 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The MenuBar widget has a method \fIprocess_menu\fP that can be used by
+children (usually PullDown buttons) to pop up a menu and to register
+it with the menu bar. If they do so, the menu bar is able to process
+events elsewhere in the menu bar and pop down the menu in favour of
+another one, when the user moves the mouse to another button in the
+menu bar. A menu or a button is unable to do this by itself, since
+they do not know what other menus are present.
+
+To call the \fIprocess_menu\fP method, widgets should use the
+\fIXfwfCallProcessMenu\fP function, which will check that the receiver of
+the call is indeed a MenuBar widget. It returns \fITrue\fP if the
+\fIprocess_menu\fP method could be called, otherwise \fIFalse\fP.
+
+The value for \fIcursor\fP can also be \fINone\fP, in which case the cursor
+from the menu's parent (the root window, usually) will be used
+instead.
+
+.nf
+Boolean  XfwfCallProcessMenu( $, Widget  menu, Cursor  cursor)
+.fi
+
+.SS "Translations"
+
+Since the MenuBar widget adds itself to the list of cascaded popups
+that is maintained by Xt, it will receive pointer events when a menu
+is popped up. If the event is a button release, the current menu will
+have to be popped down.
+
+	
+
+.nf
+<Btn1Up>: menu_popdown() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "menu_popdown
+
+The \fImenu_popdown\fP action calls \fIXtPopdown\fP for the current menu,
+if there is one.
+

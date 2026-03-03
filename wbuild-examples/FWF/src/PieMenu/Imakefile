@@ -1,0 +1,6 @@
+WIDGET = PieMenu
+SUPERCLASSES =
+OTHERLIBS = -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

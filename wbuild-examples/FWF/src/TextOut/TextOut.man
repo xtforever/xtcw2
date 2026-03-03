@@ -1,0 +1,181 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfTextOut
+.SH DESCRIPTION
+The \fIXfwfTextOut\fP widget is used to display text in multiple fonts
+	and colors.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfTextOut
+Name	Class	Type	Default
+XtNinternalOffset	XtCInternalOffset	Dimension 	2 
+XtNfont1	XtCFont1	FontStruct	XtDefaultFont 
+XtNfont2	XtCFont2	FontStruct	XtDefaultFont 
+XtNfont3	XtCFont3	FontStruct	XtDefaultFont 
+XtNfont4	XtCFont4	FontStruct	XtDefaultFont 
+XtNcolor1	XtCColor1	Pixel 	XtDefaultForeground 
+XtNcolor2	XtCColor2	Pixel 	XtDefaultForeground 
+XtNcolor3	XtCColor3	Pixel 	XtDefaultForeground 
+XtNcolor4	XtCColor4	Pixel 	XtDefaultForeground 
+XtNcolor5	XtCColor5	Pixel 	XtDefaultForeground 
+XtNcolor6	XtCColor6	Pixel 	XtDefaultForeground 
+XtNcolor7	XtCColor7	Pixel 	XtDefaultForeground 
+XtNcolor8	XtCColor8	Pixel 	XtDefaultForeground 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNinternalOffset"
+The offset from the text to the outside edge of the widgets window.
+
+	
+
+.TP
+.I "XtNfont1"
+The text is drawn using the fonts given in the \fIfont1-4\fP resources.
+
+	
+
+.TP
+.I "XtNfont2"
+
+.TP
+.I "XtNfont3"
+
+.TP
+.I "XtNfont4"
+
+.TP
+.I "XtNcolor1"
+The \fIcolor1-8\fP resources specify the colors used for drawing the text.
+
+	
+
+.TP
+.I "XtNcolor2"
+
+.TP
+.I "XtNcolor3"
+
+.TP
+.I "XtNcolor4"
+
+.TP
+.I "XtNcolor5"
+
+.TP
+.I "XtNcolor6"
+
+.TP
+.I "XtNcolor7"
+
+.TP
+.I "XtNcolor8"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The \fIXfwfAddText\fP function is used to add chunks of text to the end of
+	the text structure.  The \fIdata\fP is the text, \fIf\fP is the font number
+	(1-4), \fIc\fP is the color (1-8) and \fInl\fP means the there is a new line
+	after this chunk.  If \fIdata\fP is a NULL pointer then widget will resize
+	itself to fit the new structure.  This is used so that when adding
+	lots of chunks the widget is not re-calculating it's size all of
+	the time.
+
+.nf
+XfwfAddText( $, char * data, int  f, int  c, int  nl)
+.fi
+
+The \fIXfwfEraseText\fP function is used to erase all of the chunks added
+	to the text widget.  This is useful if you wish to add a new set of
+	text to the widget.
+
+.nf
+XfwfEraseText( $)
+.fi
+
+The \fIXfwfComputeTextOutSize\fP could be useful for sub-classes so we allow
+	a hook into it.  There must be a better way!  Please tell me.
+
+.nf
+XfwfComputeTextOutSize( $, Dimension * w, Dimension * h)
+.fi
+

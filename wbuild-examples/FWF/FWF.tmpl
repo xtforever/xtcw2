@@ -1,0 +1,177 @@
+/****************************************************************************
+
+	FWF.tmpl
+
+	This file contains a template for definitions used in the Free
+	Widget Foundation imake build system.  You can edit these if
+	necessary for your system.
+
+ ****************************************************************************/
+#ifndef XCOMM
+#define XCOMM #
+#endif
+
+XCOMM ------------------------------------------------------------------------
+XCOMM	Start of FWF.tmpl Definitions
+XCOMM ------------------------------------------------------------------------
+
+
+/*------------------------------------------------------------------------
+	Set this if you have, and want to use, Wbuild.
+
+	Wbuild is a preprocessor available from FWF
+	that generates C code for widgets
+	from templates (*.w ) included in this distribution.
+	(You don't need it. This preprocessing has already been done.)
+------------------------------------------------------------------------*/
+
+#define HaveWbuild 1
+
+/*------------------------------------------------------------------------
+	Set if you want Motif-compatible widgets whenever possible
+------------------------------------------------------------------------*/
+
+#define WantMotifVersions 1
+
+XCOMM  MOTIFINC = -I/usr/include/Motif1.2
+XCOMM  XMLIB = -L/usr/lib/Motif1.2 -lXm
+
+MOTIFINC = -I/usr/dt/include/Xm
+XMLIB = -lXm
+
+/*------------------------------------------------------------------------
+	To use a different compiler, or different compiler options
+------------------------------------------------------------------------*/
+
+/* CC = cc -Ae */
+CC = gcc
+CDEBUGFLAGS = -g
+
+/*------------------------------------------------------------------------
+	If you don't want to build the test programs, set this to 0
+------------------------------------------------------------------------*/
+
+#define	BuildExecs	1
+
+/*------------------------------------------------------------------------
+	If you have the XPM pixmap library installed:
+------------------------------------------------------------------------*/
+
+#define	HaveXpm		1
+
+XCOMM XPM_INCDIR = -I/usr/include/X11R5.supplement/X11
+XPM_LIB = -lXpm
+
+/*------------------------------------------------------------------------
+	The following lines might be helpful for your system.  Uncomment
+	them if you want to enable them.
+------------------------------------------------------------------------*/
+
+/* MKDIRHIER = /bin/sh $(PROJECTDIR)/utils/mkdirhier.sh */
+/* EXTRA_LOAD_FLAGS = /usr/lib/libdl.so.1.0 */
+
+/*------------------------------------------------------------------------
+	These directories are the final installation locations for the
+	files.  Once everything is built, a make install will move the
+	binaries and man pages and libraries and includes to the directories
+	listed below.
+------------------------------------------------------------------------*/
+
+FWF_INSTALL_BINDIR = $(BINDIR)
+FWF_INSTALL_MANDIR = $(MANDIR)
+FWF_INSTALL_LIBDIR = $(USRLIBDIR)
+FWF_INSTALL_INCDIR = $(INCROOT)/Xfwf
+
+/*------------------------------------------------------------------------
+	You probably won't need to edit these...
+------------------------------------------------------------------------*/
+
+IMAKE_DEFINES = -DAvoidNullMakeCommand
+
+ARMERGE = ar r
+PROJECTDIR = $(TOP)
+
+FWF_LIBBASENAME = fwf
+FWF_LIBNAME = lib$(FWF_LIBBASENAME).a
+FWF_LIB = $(FWF_LIBDIR)/$(FWF_LIBNAME)
+
+DIR_LIBBASENAME = Dir
+DIR_LIBNAME = lib$(DIR_LIBBASENAME).a
+DIR_LIB = $(FWF_LIBDIR)/$(DIR_LIBNAME)
+
+RM_CMD = $(RM) FilesToClean ExtraFilesToClean Makefile.bak
+SQUEAKY_RM_CMD = $(RM_CMD) Makefile
+
+/*------------------------------------------------------------------------
+	Compilation & Link arguments
+------------------------------------------------------------------------*/
+
+#if HaveXpm
+#  if WantMotifVersions
+FWF_CFLAGS = -I$(FWF_INCBASE) $(XPM_INCDIR) $(MOTIFINC) $(CFLAGS) -DMOTIF=1
+FWF_LFLAGS = $(FWF_LIB) $(XPM_LIB) $(DIR_LIB) $(XMLIB)
+#  else
+FWF_CFLAGS = -I$(FWF_INCBASE) $(XPM_INCDIR) $(CFLAGS)
+FWF_LFLAGS = $(FWF_LIB) $(XPM_LIB) $(DIR_LIB)
+#  endif
+#else /* HaveXpm */
+#  if WantMotifVersions
+FWF_CFLAGS = -I$(FWF_INCBASE) -DNO_XPM $(MOTIFINC) $(CFLAGS) -DMOTIF=1
+FWF_LFLAGS = $(FWF_LIB) $(DIR_LIB) $(XMLIB)
+#  else
+FWF_CFLAGS = -I$(FWF_INCBASE) -DNO_XPM $(CFLAGS)
+FWF_LFLAGS = $(FWF_LIB) $(DIR_LIB)
+#  endif
+#endif /* HaveXpm */
+
+/*------------------------------------------------------------------------
+	If you do a make install, the files will be moved to their final
+	system locations from these locations.  You shouldn't need to
+	ever edit these.
+------------------------------------------------------------------------*/
+
+FWF_BINBASE = $(PROJECTDIR)/bin
+FWF_MANBASE = $(PROJECTDIR)/man
+FWF_LIBBASE = $(PROJECTDIR)/lib
+FWF_INCBASE = $(PROJECTDIR)/include
+
+FWF_BINDIR = $(FWF_BINBASE)
+FWF_MANDIR = $(FWF_MANBASE)
+FWF_LIBDIR = $(FWF_LIBBASE)
+FWF_INCDIR = $(FWF_INCBASE)/Xfwf
+
+/*------------------------------------------------------------------------
+	Some shells don't like it when RanLibrary expands to nothing.
+------------------------------------------------------------------------*/
+
+#undef RanLibrary
+#if DoRanlibCmd
+#define RanLibrary(args) $(RANLIB) args
+#else
+#define RanLibrary(args) true
+#endif
+
+/*------------------------------------------------------------------------
+	Definitions that are inserted into every generated Makefile.
+------------------------------------------------------------------------*/
+
+#include "FWF.rules"
+
+all::
+
+#ifdef IHaveSubdirs
+SqueakyCleanSubdirs($(SUBDIRS))
+#endif
+
+SqueakyCleanTarget()
+
+/*------------------------------------------------------------------------
+	Makefile definitions used to debug and lint the widgets.
+------------------------------------------------------------------------*/
+
+LINTFLAGS=-uv -DLINT -I$(FWF_INCBASE) $(ALLDEFINES)
+
+XCOMM ------------------------------------------------------------------------
+XCOMM End of FWF.tmpl Definitions
+XCOMM ------------------------------------------------------------------------
+

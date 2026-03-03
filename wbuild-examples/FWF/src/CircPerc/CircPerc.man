@@ -1,0 +1,123 @@
+.TH XfwfCircularPercentage 3X "" "" "" ""
+.SH NAME
+\fBXfwfCircularPercentage \- The CircularPercentage widget class.\fP
+.iX "XfwfCircularPercentage"
+.iX "widget class" "CircularPercentage"
+.sp .5
+.SH SYNOPSIS
+\fB#include <Xfwf/CircPerc.h>\fP
+.sp .5
+.SH DESCRIPTION
+CircularPercentage is a widget that draws a filled circle, with two pie
+slices in different color to indicate the amount of work already completed 
+in some part of an application.
+.sp .5
+.SS "Classes"
+CircularPercentage inherits behavior and resources 
+>from the \fBCore\fP class.
+.PP
+The class pointer is \fBxfwfCircularPercentageWidgetClass\fP. 
+.PP
+The class name is \fBXfwfCircularPercentage\fP.
+.sp .5
+.SS "New Resources"
+The following table defines a set of widget resources used by the programmer
+to specify data.  The programmer can also set the resource values for the 
+inherited classes to set attributes for this widget.  To reference a
+resource by name or by class in a .Xdefaults file, remove the \fBXtN\fP or
+\fBXtC\fP prefix and use the remaining letters.  To specify one of the defined 
+values for a resource in a .Xdefaults file, remove the \fBXt\fP prefix and use
+the remaining letters (in either lowercase or uppercase, but include any
+underscores between words).
+The codes in the access column indicate if the given resource can be
+set at creation time (\fBC\fP),
+set by using \fBXtSetValues\fP (\fBS\fP), 
+retrieved by using \fBXtGetValues\fP (\fBG\fP), or is not applicable (\fBN/A\fP).
+.sp .5
+.sp .5
+.in 0
+.KS
+.sp 1
+.in 0
+.TS
+center;
+cBp7 ssss
+lBp6 lBp6 lBp6 lBp6 lBp6
+lp6 lp6 lp6 lp6 lp6.
+XfwfCircularPercentage Resource Set
+Name	Class	Type	Default	Access
+_
+XtNborderColor	XtCBorderColor	Pixel	black	CSG
+XtNcompletedColor	XtNCompletedColor	Pixel	yellow	CSG
+XtNinteriorColor	XtCInteriorColor	Pixel	red 	CSG
+XtNpercentageCompleted	XtCPercentageCompleted	int	0	CSG
+.TE
+.in
+.sp 1
+.KE
+.in
+.sp .5
+.sp .5
+.IP "\fBXtNborderColor\fP"
+Specifies the color of the circle enclosing the filled area.
+.IP "\fBXtNcompletedColor\fP"
+Specifies the color of the part of the circle that indicates the percentage of
+work completed.
+.IP "\fBXtNinteriorColor\fP"
+Specifies the color of the part of the circle that indicates the percentage of
+work not yet completed.
+.IP "\fBXtNpercentageCompleted\fP"
+The part of the circle that is drawn in the different colors, is calculated
+>from this resource. You should specify a number in the range [0,10000], or in
+other words, you specify the percentage with a two decimal precision (0.25%
+will be 25, 12.50% will be 1250 and so on).
+.SS "New function"
+.IP \fBvoid XfwfCircularPercentageSetPercentage(Widget, int);\fP
+Sets the percentageCompleted resource of the Widget.
+.SS "Inherited Resources"
+CircularPercentage inherits behavior and resources from the following   
+superclasses.  For a complete description of each resource, refer to the
+man page for that superclass.
+.in
+.sp 1
+.KE
+.in
+.sp .5
+.sp .5
+.sp .5
+.in 0
+.KS
+.sp 1
+.in 0
+.TS
+center;
+cBp7 ssss
+lBp6 lBp6 lBp6 lBp6 lBp6
+lp6 lp6 lp6 lp6 lp6.
+Core Resource Set 
+Name	Class	Type	Default	Access
+_
+XmNaccelerators	XmCAccelerators	XtAccelerators	NULL	CSG
+XmNancestorSensitive	XmCSensitive	Boolean	dynamic	G
+XmNbackground	XmCBackground	Pixel	dynamic	CSG
+XmNbackgroundPixmap	XmCPixmap	Pixmap	XmUNSPECIFIED_PIXMAP	CSG
+XmNborderColor	XmCBorderColor	Pixel	XtDefaultForeground	CSG
+XmNborderPixmap	XmCPixmap	Pixmap	XmUNSPECIFIED_PIXMAP	CSG
+XmNborderWidth	XmCBorderWidth	Dimension	0	CSG
+XmNcolormap	XmCColormap	Colormap	dynamic	CG
+XmNdepth	XmCDepth	int	dynamic	CG
+XmNdestroyCallback	XmCCallback	XtCallbackList	NULL	C
+XmNheight	XmCHeight	Dimension	dynamic	CSG
+XmNinitialResourcesPersistent	XmCInitialResourcesPersistent	Boolean	True	CG
+XmNmappedWhenManaged	XmCMappedWhenManaged	Boolean	True	CSG
+XmNscreen	XmCScreen	Screen *	dynamic	CG
+XmNsensitive	XmCSensitive	Boolean	True	CSG
+XmNtranslations	XmCTranslations	XtTranslations	NULL	CSG
+XmNwidth	XmCWidth	Dimension	dynamic	CSG
+XmNx	XmCPosition	Position	0	CSG
+XmNy	XmCPosition	Position	0	CSG
+.TE
+.SH RELATED INFORMATION
+\fBCore(3X)\fP.
+.SH AUTHOR
+Copyright (C) 1992 by Ronald van Loon. (rvloon@cv.ruu.nl)

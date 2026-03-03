@@ -1,0 +1,18 @@
+'\" t
+.TH "ScrListT" "1" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+ScrListT \- Test Program For The ScrolledList Widget
+.SH DESCRIPTION
+.PP
+.I ScrListT
+is a simple program that creates and test a ScrolledList widget.  The
+source may be useful is seeing how the ScrolledList widget can be used.
+.SH AUTHOR
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi

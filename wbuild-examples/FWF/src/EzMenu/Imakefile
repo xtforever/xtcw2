@@ -1,0 +1,73 @@
+#include "../../FWF.tmpl"
+
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+
+TESTER = EzMenuT
+WIDGET1 = EzMenu
+WIDGET2 = EzME
+
+LIB_OBJS = $(WIDGET1).o $(WIDGET2).o
+EXT_OBJS = $(TESTER).o
+
+SRCS = $(WIDGET1).c $(WIDGET2).c $(TESTER).c
+OBJS = $(LIB_OBJS) $(EXT_OBJS)
+
+TEST = $(FWF_BINDIR)/$(TESTER)
+INCS1 = $(FWF_INCDIR)/$(WIDGET1).h $(FWF_INCDIR)/$(WIDGET1)P.h
+INCS2 = $(FWF_INCDIR)/$(WIDGET2).h $(FWF_INCDIR)/$(WIDGET2)P.h
+INCS = $(INCS1) $(INCS2)
+
+MANS = $(FWF_MANDIR)/$(WIDGET1).man					\
+       $(FWF_MANDIR)/$(WIDGET2).man					\
+       $(FWF_MANDIR)/$(TESTER).man
+
+LIBS_NEEDED = $(FWF_LIB) $(OTHERLIBS)
+LOCALLIBS = $(LIBS_NEEDED)
+DEPLIBS = XawClientDepLibs $(OTHERDEPLIBS)
+SYSLIBS = XawClientLibs
+
+AddToLibraryTarget(archive,$(FWF_LIBDIR),$(FWF_LIBNAME),$(WIDGET1).o)
+AddToLibraryTarget(archive,$(FWF_LIBDIR),$(FWF_LIBNAME),$(WIDGET2).o)
+
+RequireThisFileForInit($(FWF_INCDIR)/$(WIDGET1).h)
+RequireThisFileForInit($(FWF_INCDIR)/$(WIDGET1)P.h)
+RequireThisFileForInit($(FWF_INCDIR)/$(WIDGET2).h)
+RequireThisFileForInit($(FWF_INCDIR)/$(WIDGET2)P.h)
+
+FileCopyWhenNeeded(.,$(WIDGET1).h,$(FWF_INCDIR),$(WIDGET1).h)
+FileCopyWhenNeeded(.,$(WIDGET1)P.h,$(FWF_INCDIR),$(WIDGET1)P.h)
+FileCopyWhenNeeded(.,$(WIDGET2).h,$(FWF_INCDIR),$(WIDGET2).h)
+FileCopyWhenNeeded(.,$(WIDGET2)P.h,$(FWF_INCDIR),$(WIDGET2)P.h)
+FileCopyWhenNeeded(.,$(WIDGET1).man,$(FWF_MANDIR),$(WIDGET1).man)
+FileCopyWhenNeeded(.,$(WIDGET2).man,$(FWF_MANDIR),$(WIDGET2).man)
+FileCopyWhenNeeded(.,$(TESTER).man,$(FWF_MANDIR),$(TESTER).man)
+
+NormalProgramTarget($(TEST),$(EXT_OBJS),$(DEPLIBS),$(LOCALLIBS),$(SYSLIBS))
+
+LintTarget()
+
+InstallProgram($(TEST),$(FWF_INSTALL_BINDIR))
+InstallManPage($(WIDGET1),$(FWF_INSTALL_MANDIR))
+InstallManPage($(WIDGET2),$(FWF_INSTALL_MANDIR))
+InstallManPage($(WIDGET1)T,$(FWF_INSTALL_MANDIR))
+InstallMultiple($(INCS1),$(FWF_INSTALL_INCDIR))
+InstallMultiple($(INCS2),$(FWF_INSTALL_INCDIR))
+
+ObjectRuleWithFlags($(CFLAGS) $(XPM_INCDIR) -I$(FWF_INCBASE))
+
+GatherDescription($(WIDGET1).txt,../../README.INDEX);
+GatherDescription($(WIDGET2).txt,../../README.INDEX);
+
+run: $(TEST)
+	xrdb -display unix:0 -merge $(WIDGET1)T.res
+	$(TEST) -display unix:0
+
+objects: first objs archive last
+
+first:: $(INCS)
+
+objs: $(OBJS)
+
+last: $(MANS)
+
+execs: $(TEST)

@@ -1,0 +1,4 @@
+XmPager (superclass: XmManager) The Pager widget displays one page
+	from a long text. A dog's ear in the corner allows flipping
+	pages. This is an alternative to scrolled texts, meant for
+	material that is preferrably read a page at a time.

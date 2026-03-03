@@ -1,0 +1,20 @@
+.TH CircPercT 1 "" "" "" ""
+.SH NAME
+\fBCircPercT \- Test program for the CircularPercentage widget class.\fP
+.iX "XfwfCircularPercentage"
+.iX "widget class" "CircularPercentage"
+.sp .5
+.SH SYNOPSIS
+\fBCircPercT\fP [ X toolkit options ]
+.sp .5
+.SH DESCRIPTION
+CircPercT is a small program that creates a XfwfCircularPercentage widget, and
+updates it in a loop. Effect is that you get the impression that something is
+happening. In this particular program, that is not true, but it shows the
+purpose of the XfwfCircularPercentage widget, which was the main objective for
+writing it in the first place.
+.TE
+.SH RELATED INFORMATION
+\fBCore(3X)\fP, \fBXfwfCircularPercentage(3X)\fP.
+.SH AUTHOR
+Copyright (C) 1992 by Ronald van Loon. (rvloon@cv.ruu.nl)

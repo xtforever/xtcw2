@@ -1,0 +1,14 @@
+.TH "OptButtonT" "1" "12 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+OptButtonT \- Test program for the XfwfOptionButton widget
+.SH DESCRIPTION
+The \fIOptButtonT\fP program creates a button on a larger board. When
+the mouse is pressed on the button, a menu drops down. The last
+selection from the menu is shown as the label on the button. Note that
+the button only calls its callback routine when the label changes, not
+when you select the same item twice.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands

@@ -1,0 +1,25 @@
+This directory contains everything you need to create yourself a nice
+set of Vplot fonts GIVEN the hershey font set already. (You can get the
+Hershey font distribution from hanauma.stanford.edu .) Note that the .hmp
+files here are somewhat different (better) from the .hmp files that come
+with the Hershey fonts. (IE, keep the .oc files, since they contain
+what you need, but throw away their .hmp files and use mine instead.)
+
+Only "normal" sized fonts are used. If you want small characters, just scale
+down the normal-sized ones!
+
+Documentation is contained in the beginning lines of all .csh and .c files,
+although the "make_vplot.csh" shell should do everything for you.
+
+Note that the "romant" font of the Hershey fonts has an error in it. If you
+have the "Hershey_Fonts" directory as part of your distribution, you will find
+the "fixed" romant.vplot_font file there. Otherwise, read the comments in
+make_vplot.csh and fix the error by hand (or do without).
+
+The files in this directory are NOT under the Vplot copyright, as
+some files contain code from the Hershey Font distribution.
+
+When will somebody create some Japanese-language fonts using this directory
+and the .or files from the Hershey distribution?
+
+- Joe Dellinger

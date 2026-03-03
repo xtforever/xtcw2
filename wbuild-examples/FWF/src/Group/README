@@ -1,0 +1,34 @@
+Group	(superclass: XfwfRowCol) Arranges children in rows and columns
+	with a frame around it and a title. It has special support for
+	XfwfToggleButtons, optionally turning them into radio buttons.
+
+History:
+1.0	(Jan 1994)
+1.1	(12 Feb '96) background_pixel replaced by background (see Common)
+
+Copyright
+
+	Copyright 1995 Bert Bos (hereafter `the author')
+
+Conditions of use
+
+	Permission to use, copy, modify, distribute, and sell this
+	software and its documentation for any purpose is hereby
+	granted without fee, provided that the above copyright notice
+	appears in all copies and that both that copyright notice and
+	this permission notice appear in supporting documentation, and
+	that the name of the author not be used in advertising or
+	publicity pertaining to distribution of the software without
+	specific, written prior permission. The author makes no
+	representations about the suitability of this software for any
+	purpose. It is provided "as is" without express or implied
+	warranty.
+
+	The author disclaims all warranties with regard to this
+	software, including all implied warranties of merchantability
+	and fitness, in no event shall the author be liable for any
+	special, indirect or consequential damages or any damages
+	whatsoever resulting from loss of use, data or profits,
+	whether in an action of contract, negligence or other tortuous
+	action, arising out of or in connection with the use or
+	performance of this software.

@@ -1,0 +1,4 @@
+OptButton (Superclass: XfwfPullDown) An OptButton is a button with a
+	  drop-down menu that displays options from which only one can
+	  be chosen. The most recently chosen option remains visible
+	  after the menu is closed.

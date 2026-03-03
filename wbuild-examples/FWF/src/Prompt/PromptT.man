@@ -1,0 +1,17 @@
+.TH "PromptT" "1" "24 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+PromptT \- Test program for the XfwfPrompt widget
+.SH DESCRIPTION
+The program creates three XfwfPrompt widgets: one with a two-line
+template, one with a single-line template and one without a template.
+Pressing Return while in the last Prompt will exit the program.
+.SH AUTHOR
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen, The Netherlands
+.fi
+
+
+
+

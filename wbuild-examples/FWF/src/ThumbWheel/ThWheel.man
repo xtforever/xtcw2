@@ -1,0 +1,328 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfThumbWheel
+.SH DESCRIPTION
+This is a very basic implementation of a valuator (scrolling) widget
+that uses a thumbwheel as a metaphor. The thumbwheel is placed
+vertically by default. The edge is turned towards the viewer and
+sticking out. It can be turned up or down (or left-right) with the
+mouse or with the up/down arrow keys.
+
+With the mouse, there are two modes of operation: continuous and
+discrete. Continuous movement is the result of pressing a mouse button
+and dragging the mouse up or down. This is best for large, sweeping
+movements. The default arrangement causes the left mouse button to
+make the largest movements, the middle button makes the wheel turn
+about half as fast and the third mouse button turns the wheel at a
+quarter speed.
+
+Discrete movements are good for finer control. By clicking the mouse
+just below or above the wheel, the wheel turns a fixed distance (the
+step size) in that direction. Here again the middle and right buttons
+make the wheel turn half or a quarter of the step.
+
+When the mouse is kept pressed for longer than a certain interval, the
+wheel is repeatedly stepped, until the mouse is released.
+
+With the keyboard, only discrete steps are possible. The default
+translations assign the normal step size to the up and down keys, and
+the smaller steps to the same keys combined with with Shift and
+Control.
+
+The picture of a thumb wheel is not integral to the widget, although a
+default picture is provided. The picture (or rather series of
+pictures) is an Image resource. To archieve a realistic `turning'
+effect, at least three slightly different pictures must be provided.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfThumbWheel
+Name	Class	Type	Default
+XtNnumberOfPictures	XtCNumberOfPictures	int 	0 
+XtNpictures	XtCPictures	ImageList	NULL 
+XtNvertical	XtCVertical	Boolean 	True 
+XtNclickArea	XtCClickArea	Dimension 	7 
+XtNminValue	XtCMinValue	int 	0 
+XtNmaxValue	XtCMaxValue	int 	100 
+XtNvalue	XtCValue	int 	0 
+XtNstep	XtCStep	int 	1 
+XtNinitialDelay	XtCInitialDelay	int 	500 
+XtNrepeatDelay	XtCRepeatDelay	int 	50 
+XtNsensitivity	XtCSensitivity	int 	2 
+XtNscrollCallback	XtCScrollCallback	Callback	NULL 
+XtNscrollResponse	XtCScrollResponse	XtCallbackProc 	scroll_response 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNnumberOfPictures"
+The widget is formed by the images that represents the wheel. The
+wheel includes areas where the mouse can be clicked for small,
+discrete movements. The size of the image thus determines the size of
+the widget. There can be any number of images, but for realisticly
+looking movement at least three slightly different pictures are
+needed. \fInumberOfPictures\fP gives the number of imagess, \fIpictures\fP
+must be an array of at least that many images.
+
+A default set of pictures is provided when the \fIpictures\fP array is
+left undefined.
+
+Note for application programmers: the array is not copied to private
+memory, so the array must stay valid for as long as the widget exists
+and changes to elements of the array have unpredictable results.
+
+In the current implementation, these resources cannot be set with
+\fIXtSetValues\fP.
+
+	
+
+.TP
+.I "XtNpictures"
+
+.TP
+.I "XtNvertical"
+The wheel can be either horizontal or vertical. The default is
+vertical. Note that the setting of \fIvertical\fP should correspond to the
+set of \fIpictures\fP.
+
+	
+
+.TP
+.I "XtNclickArea"
+A small area along the top and bottom (or left and right) of the
+widget is reserved for clicking the mouse, in order to get discrete
+movements. \fIclickArea\fP is the number of pixels to reserve for this
+area.
+
+	
+
+.TP
+.I "XtNminValue"
+The wheel can be turned through a range of values (integers),
+indicated by \fIminValue\fP and \fImaxValue\fP. By default they are 0 and 100.
+\fIvalue\fP is the current value, which must lie between the two
+(inclusive).  Note that \fIminValue\fP may be greater than \fImaxValue\fP, but
+in that case \fIstep\fP (see below) should be negative.
+
+Note for programmers: the information that is passed to callback
+function always contains a value between 0 and 1, regardless of
+\fIminValue\fP and \fImaxValue\fP.
+
+	
+
+.TP
+.I "XtNmaxValue"
+
+.TP
+.I "XtNvalue"
+
+.TP
+.I "XtNstep"
+When the user clicks on the areas below or above the wheel itself,
+or when the user drags the wheel with the mouse, the wheel is turned
+in fixed increments (or fractions thereof, see the translations). The
+default step size is 1.
+
+	
+
+.TP
+.I "XtNinitialDelay"
+When the user presses and holds the mouse for longer than
+\fIinitialDelay\fP milliseconds in the areas above or below the wheel, the
+wheel is turned repeatedly every \fIrepeatDelay\fP milliseconds.
+
+	
+
+.TP
+.I "XtNrepeatDelay"
+
+.TP
+.I "XtNsensitivity"
+The \fIsensitivity\fP is the number of pixels the mouse has to move
+before the wheel turns. A small value such as 3, 2 (the default) or 1
+is usually best.
+
+	
+
+.TP
+.I "XtNscrollCallback"
+When the wheel is turned, the ThumbWheel widget calls the callback
+functions on the \fIscrollCallback\fP list. It does so with every change,
+but the information in the \fIcall_data\fP argument is different depending
+on the event that caused the change. The \fIcall_data\fP argument is a
+pointer to an \fIXfwfScrollInfo\fP structure. For a full explanation of
+this structure, refer to `SWIP', the Scrolling Widgets Interface
+Policy. The field that are of interest here are \fIreason\fP, \fIflags\fP and
+\fIvpos\fP.
+
+The field \fIreason\fP can be either \fIXfwfSDrag\fP, \fIXfwfSMove\fP, \fIXfwfSUp\fP,
+\fIXfwfSDown\fP, \fIXfwfSLeft\fP, or \fIXfwfSRight\fP. Callbacks with \fIreason =
+XfwfSDrag\fP are repeatedly called when the user drags the wheel up or
+down. An application may ignore them (to save time), because at the
+end of the drag there will always be a callback with \fIreason =
+XfwfSMove\fP. The reasons \fIXfwfSUp\fP and \fIXfwfSDown\fP (\fIXfwfSLeft\fP,
+\fIXfwfSRight\fP) are used when the user clicks on the areas above or
+below the wheel (repeatedly, if he holds the button down.)
+
+In all cases, the \fIflags\fP field has the value \fIXFWF_VPOS\fP for a
+vertical thumbwheel or \fIXFWF_HPOS\fP for a horizontal thumbwheel.
+
+The \fIvpos\fP (or \fIhpos\fP) field is a real number between 0 and 1. It
+indicates what the ThumbWheel widget suggests as the new position
+after the event. This value is computed by adding or subtracting the
+\fIstep\fP from the current \fIvalue\fP and dividing by the total range.
+
+When the callback is called, the \fIvalue\fP resource has already been
+updated, so applications may use the \fIvalue\fP resource directly instead
+of the \fIvpos\fP or \fIhpos\fP field.
+
+	
+
+.TP
+.I "XtNscrollResponse"
+In the SWIP there is a provision for scrollee widgets (i.e., the
+widgets that are controlled by the wheel widget) to call back to the
+wheel with their reaction to the scroll request as given by the
+\fIscrollCallback\fP above. The \fIscrollResponse\fP resource (which is
+read-only!) holds a pointer to a method function inside the wheel
+widget. Calling this function with an appropriate \fIXfwfScrollInfo\fP
+structure has the effect of updating the wheel to the values provided
+by the scrollee. For more information, see the SWIP.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The \fIscroll.h\fP file contains the definition of \fIXfwfScrollInfo\fP and
+some other things. It is exported so that applications do not have to
+import it.
+
+	
+
+.nf
+
+.B incl
+ <Xfwf/scroll.h>
+.fi
+
+.SS "Translations"
+
+Presses of each of the three mouse buttons are translated to calls
+to the \fIturn\fP action. The argument indicates how fast to turn as a
+percentage of the step size. An omitted argument is equivalent to 100
+percent.
+
+	
+
+.nf
+<Btn1Down>: turn() 
+.fi
+
+.nf
+<Btn2Down>: turn(50) 
+.fi
+
+.nf
+<Btn3Down>: turn(25) 
+.fi
+
+.nf
+<BtnUp>: stop_turning() 
+.fi
+
+.nf
+None<Key>Up: up() 
+.fi
+
+.nf
+!Shift<Key>Up: up(50) 
+.fi
+
+.nf
+!Ctrl<Key>Up: up(25) 
+.fi
+
+.nf
+None<Key>Down: down() 
+.fi
+
+.nf
+!Shift<Key>Down: down(50) 
+.fi
+
+.nf
+!Ctrl<Key>Down: down(25) 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "up
+
+The \fIup\fP action has an optional argument \fIpercentage\fP. It subtracts
+\fIstep*percentage\fP from the \fIvalue\fP resource and changes the displayed
+picture. The change in picture is not (yet) related to the change in
+\fIvalue\fP.
+
+.TP
+.I "down
+
+The \fIdown\fP action adds \fIstep*percentage\fP to the \fIvalue\fP resource.
+
+The \fIturn\fP action looks at the position of the mouse and if it is in
+the top or bottom (left or right, if horizontal) area of the widget it
+turns the wheel in discrete, timed steps, as long as the button
+remains pressed. If the mouse is elsewhere, the position is remembered
+and while the mouse remains pressed, the wheel is turned an amount
+proportional to the distance that the mouse moves from its initial
+position.
+
+The optional argument gives the percentage of the \fIstep\fP that the
+wheel is turned with every event.
+
+.TP
+.I "turn
+
+.TP
+.I "stop_turning
+
+The \fIstop_turning\fP action removes the timer.
+

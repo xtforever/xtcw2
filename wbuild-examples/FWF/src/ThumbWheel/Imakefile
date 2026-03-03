@@ -1,0 +1,6 @@
+WIDGET = ThWheel
+SUPERCLASSES =
+OTHERLIBS = $(XPM_LIB)
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

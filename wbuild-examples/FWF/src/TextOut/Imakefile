@@ -1,0 +1,6 @@
+WIDGET = TextOut
+SUPERCLASSES = ../Common/Common.w
+OTHERLIBS = -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

@@ -1,0 +1,14 @@
+.TH HdialT 1 "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+.PP
+HdialT \- Hdial Widget Test 
+.SH DESCRIPTION
+.PP
+Displays a hdial widget.
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1992
+Materials Research Laboratory Center for Computation
+University of Illinois, Champaign

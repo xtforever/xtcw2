@@ -1,0 +1,11 @@
+#define NOT_SINGLE_OBJECT_FILE
+
+WIDGET = XmTabs
+SUPERCLASSES = 
+LIB_OBJS = XmTabs.o rotated.o
+EXT_OBJS = XmTabsT.o
+OTHERLIBS = -lm
+DEFINES = -DCACHE_BITMAPS -DCACHE_SIZE_LIMIT=300 -DCACHE_FID
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

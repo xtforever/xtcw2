@@ -1,0 +1,5 @@
+Shistogram	 This is the simple histogram widget.  It is called simple for
+		a couple of reasons: 1) it only accepts unsigned characters
+		for data (I do image processing work) 2) most things are
+		automatic. 
+

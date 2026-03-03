@@ -1,0 +1,31 @@
+FileLister: this widget is a modification of Brian Totty's FileSelector
+widget.  Besides the functionality provided by FileSelector, the FileLister
+provides the capability of generating a list of files, as well as their 
+paths.  The FileLister returns a count of the selected files, and pointers
+to two arrays of String: one for the paths, and one for the files.
+
+Three new buttons have been added to the display, to support the list of
+selected files.  "Path" gives the path of a file highlighted in the selection
+list.  "Remove" deletes a selected file (and its path) from the list.
+"Clear" zeros the entire list.
+
+The test program provided, FileListT, is, not surprisingly, a modification 
+of FileSelT.  The "OK" button prints a list of the selected files and their
+paths.
+
+
+Important: The current maximum number of files for the selection list is 120.
+This is probably more files than most patient people would want to hand-pick
+with such a widget.  If you'd like to modify this value, it must be changed
+in *both* FileList.h and FileListP.h.  This will hopefully be fixed in a
+future revision (recommendations welcome).
+
+
+Scott Chilcote
+DSR, Inc.
+12450 Fair Lakes Circle
+Fairfax, VA  22033
+ 
+scotty@cais.com
+ 
+

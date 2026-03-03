@@ -1,0 +1,5 @@
+Prompt	(Superclass: XfwfLabel) The Prompt widget is a text field for
+	inputting short texts. It can also use templates such as
+	"date: __/__/__" where the user can type only on the "_". The
+	input can be further constrained with patterns or callback
+	functions.

@@ -1,0 +1,17 @@
+This directory contains C source for the PcBar widget.
+
+The PcBar widget is used to display a percentage from 0 to 100 by means
+of a horizontal or vertical bar drawn in a window.  The actual percentage
+value may optionally be displayed as text in the middle of the window.
+
+Revision History:
+	1.00   16-Dec-94    Original release
+
+Author:
+	Copyright (C) 1994 by Lachlan Wetherall
+	lwether@cs.newcastle.edu.au            
+
+    .-_|\   Department of Computer Science
+   /     \  University of Newcastle
+   \.--._*  Callaghan NSW 2308
+        v   Australia

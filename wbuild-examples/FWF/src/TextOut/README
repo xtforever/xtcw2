@@ -1,0 +1,14 @@
+XfwfTextOut widget
+
+N.B.
+	The widget files are computer-generated. The real source is
+	the .w file. It has been processed with Wbuild (available by
+	anonymous ftp from ftp.let.rug.nl)
+
+Author
+	Paul Kendall <paul@kcbbs.gen.nz>
+
+History
+
+20 Aug 95
+	Created

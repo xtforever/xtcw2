@@ -1,0 +1,1 @@
+ThumbWheel2 (superclass: Core) ThumbWheel that doesn't require XPM.

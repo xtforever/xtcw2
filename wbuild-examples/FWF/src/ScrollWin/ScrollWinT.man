@@ -1,0 +1,20 @@
+.TH "ScrollWinT" "1" "12 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+ScrollWinT \- Test program for the XfwfScrolledWindow widget
+.SH DESCRIPTION
+The \fIScrollWinT\fP program creates a scrolled window with an
+histogram widget in the controlled area. (The histogram displays just
+random data.) Clicking or dragging the scrollbars will scroll the
+histogram accordingly.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+
+
+
+
+
+
+

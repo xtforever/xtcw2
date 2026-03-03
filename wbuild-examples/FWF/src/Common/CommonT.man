@@ -1,0 +1,12 @@
+.TH "CommonT" "1" "9 Nov 1992" "v3.0" "Free Widget Foundation"
+.SH NAME
+CommonT \- Test program for the Common widget
+.SH DESCRIPTION
+CommonT does nothing, since Common widgets cannot be instantiated
+and thus not tested, except through subclasses.
+.SH AUTHOR
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica
+Rijksuniversiteit Groningen
+.fi

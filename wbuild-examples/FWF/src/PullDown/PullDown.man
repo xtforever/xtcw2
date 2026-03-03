@@ -1,0 +1,340 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfPullDown
+.SH DESCRIPTION
+A PullDown button looks like a normal button, but when it is clicked or
+pressed, a menu drops down. The menu can be specified in two ways: as a
+string or as a widget. If a string is given, it must be in the correct
+syntax for the XfwfTextMenu widget and a widget will be created
+automatically. If a widget is given instead, it must be a widget that is
+able to pop up: in other words: a Shell widget or a subclass of Shell.
+
+The most likely application of this widget is as a menu in a menu bar.  A
+menu bar can be created, e.g., with a RowCol widget and a number of
+PullDown buttons.
+
+When the popup is passed in as a string in the \fImenu\fP resource, the widget
+will call the \fIactivate\fP callback (see XfwfButton) when the user exits the
+menu with a valid selection. It will also call the \fIchangeSelection\fP
+callback (see below) when the user moves from one menu item to the next.
+Neither of these callbacks will be called when the popup is passed in as a
+ready-made widget in the \fIpopup\fP resource.
+
+Note however, that the \fIcall_data\fP argument of the \fIactivate\fP callback will
+contain the number of the selected item (0, 1, 2, etc.) and not the event,
+as is the case in an XfwfButton widget.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfPullDown
+Name	Class	Type	Default
+XtNpopup	XtCPopup	Widget 	NULL 
+XtNmenu	XtCMenu	String 	NULL 
+XtNcascaded	XtCCascaded	Boolean 	False 
+XtNhotkey	XtCHotkey	String 	NULL 
+XtNmenuCursor	XtCMenuCursor	Cursor 	"arrow"
+XtNprepare	XtCPrepare	Callback	NULL 
+XtNchangeSelection	XtCChangeSelection	Callback	NULL 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNpopup"
+Two resources determine the menu. The \fIpopup\fP resource can be
+pointed at the widget that should pop up when the button is pressed,
+but when the \fIpopup\fP resource is NULL, the menu will be created
+from the \fImenu\fP resource. If the \fIpopup\fP resource is set, it must
+be set to a widget that is (a subclass of) a Shell widget.
+
+	
+
+.TP
+.I "XtNmenu"
+When \fIpopup\fP is \fINULL\fP, the widget will be created from the
+textual description in \fImenu\fP. For the syntax of this string, see the
+XfwfTextMenu.
+
+	
+
+.TP
+.I "XtNcascaded"
+When the button is part of a dialog or menu, that has already
+caused a grab of the pointer, the resource \fIcascaded\fP should be
+\fITrue\fP. If the button is inserted into an XfwfMenuBar, the resource is
+set to \fITrue\fP automatically.
+
+	
+
+.TP
+.I "XtNhotkey"
+The pull down button installs an event handler that catches all
+keyboard events for the whole application and checks for a special key
+combination. If that key is detected, the menu will be popped up.
+Thus, the menu can be used even if the keyboard focus is somewhere
+else. The \fIhotkey\fP resource is usually a string such as \fI"Alt<Key>a"\fP,
+or \fI"Ctrl<Key>f"\fP.
+
+When the \fIhotkey\fP resource is used, any \fIaccelerators\fP will be ignored.
+
+	
+
+.TP
+.I "XtNmenuCursor"
+The cursor shape that is used in the menu can be set with the
+\fImenuCursor\fP resource. By default it is an arrow pointing to the upper
+right.
+
+	
+
+.TP
+.I "XtNprepare"
+The \fIprepare\fP callback is invoked by the \fIprepare\fP action, normally just
+before the menu is popped up.
+
+	
+
+.TP
+.I "XtNchangeSelection"
+When the user moves from one item to another in the menu that was created
+from the \fImenu\fP resource, the \fIchangeSelection\fP callback is called, with
+the number of the new selection as \fIcall_data\fP. This callback is called
+even when the new selection is an inactive (grayed out) item. It is also
+called when the mouse leaves the menu, in which case the argument will be
+-1. This callback will notbe called when the menu is a ready-made widget,
+passed in via the \fIpopup\fP resource.
+
+	
+
+.TP
+.I "XtNframeWidth"
+Since the most likely place for this type of button will be in a
+menubar, the default frame width is reset to zero.
+
+	
+
+.TP
+.I "XtNshrinkToFit"
+The \fIshrinkToFit\fP resource is set to a new default of \fITrue\fP.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfButton
+Name	Class	Type	Default
+XtNactivate	XtCActivate	Callback	NULL 
+XtNenter	XtCEnter	Callback	NULL 
+XtNleave	XtCLeave	Callback	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfLabel
+Name	Class	Type	Default
+XtNlabel	XtCLabel	String 	NULL 
+XtNtablist	XtCTablist	String 	NULL 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNforeground	XtCForeground	Color 	XtDefaultForeground 
+XtNhlForeground	XtCHlForeground	Color 	XtDefaultForeground 
+XtNalignment	XtCAlignment	Alignment 	0 
+XtNtopMargin	XtCTopMargin	Dimension 	2 
+XtNbottomMargin	XtCBottomMargin	Dimension 	2 
+XtNleftMargin	XtCLeftMargin	Dimension 	2 
+XtNrightMargin	XtCRightMargin	Dimension 	2 
+XtNshrinkToFit	XtCShrinkToFit	Boolean 	False 
+XtNrvStart	XtCRvStart	Int 	0 
+XtNrvLength	XtCRvLength	Int 	0 
+XtNhlStart	XtCHlStart	Int 	0 
+XtNhlLength	XtCHlLength	Int 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+.nf
+<Btn1Down>: prepare() open_menu() 
+.fi
+
+.nf
+Button1<Enter>: prepare() open_menu() enter() 
+.fi
+
+.nf
+<Key>Return: prepare() open_menu() 
+.fi
+
+.nf
+<Btn1Up>: popdown_maybe() 
+.fi
+
+.nf
+<EnterNotify>: enter() 
+.fi
+
+.nf
+<LeaveNotify>: leave() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "note
+
+\fInote\fP is for debugging only.
+
+.TP
+.I "prepare
+
+The \fIprepare\fP action just calls the \fIprepare\fP callback functions, passing
+the \fIXEvent\fP pointer in the \fIcall_data\fP argument.
+
+.TP
+.I "open_menu
+
+The \fIopen_menu\fP action computes the coordinates of the menu, such that it
+will appear directly below the button. A local grab is added, so that the
+button itself will continu to receive events, even after the popped up menu
+has grabbed the pointer and keyboard. The accelerators of the menu are
+installed in the pulldown button, which will continue to have the focus.
+It then pops up the menu.
+
+.TP
+.I "popdown_maybe
+
+The \fIpodown_maybe\fP action only pops down the menu when the pointer
+is outside the button. When the pointer is on the button, the menu
+stays posted.
+

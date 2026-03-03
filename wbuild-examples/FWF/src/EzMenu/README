@@ -1,0 +1,8 @@
+
+	EzMenu is a simple menu package built by Dirk Grunwald on top of the
+	X11R4 Athena menu widgets.  It allows you to construct menu trees
+	from resource descriptions.
+
+	To try the sample program first load the resource file EzMenu.res
+	with xrdb and then run the test program EzMenuT, which will construct
+	a menu based on the description in the file EzMenu.res.

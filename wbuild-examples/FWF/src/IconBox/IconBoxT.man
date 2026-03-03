@@ -1,0 +1,23 @@
+.TH "IconBoxT" "1" "24 Dec 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+IconBoxT \- Test program for the XfwfIconBox widget
+.SH DESCRIPTION
+The \fIIconBoxT\fP program starts with a single window, in which the
+current directory is displayed. There is a menubar along the top and a
+scrollbar at the right side. Each file is represented as an icon,
+directories have different icons from other files. The icons can be
+moved with the mouse. When a file is dropped on a directory icon, the
+file will be moved to that directory. Double clicking on a directory
+icon will display that directory. Many files can be moved or dropped
+together if they are selected with the rubberband or by holding the
+shift key while clicking (or while pressing the spacebar).
+.PP
+New windows can be opened by selecting the "Clone" entry in the menu.
+Icons can be moved between windows.
+.PP
+Selecting "Exit" from the menu of any window will stop the program.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands

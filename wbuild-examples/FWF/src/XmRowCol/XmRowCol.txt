@@ -1,0 +1,4 @@
+RowCol	(SuperClass: XfwfBoard) The RowCol widget aligns all its
+	children in rows and columns, in the order in which they were
+	created. They are aligned on a grid that is coarse enough to
+	hold the largest of the children.

@@ -1,0 +1,51 @@
+.TH Stack 3 "12 Jul 1993" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+.PP
+Stack \- Stack Widget (Stack Widget)
+.SH DESCRIPTION
+.PP
+#include "Stack.h"
+.PP
+The stack widget is an X toolkit (and Motif if compiled right) compatible 
+widget that is a subclass of constraint.  The stack widget allows only
+one child to be managed at a time.
+.SH WIDGET CLASS
+.PP
+\fIstackWidgetClass\fP
+.PP
+.SH RESOURCES
+.PP
+.TP
+.B \fIXfwfNdata\fP 
+Extra data to hang on widget.
+.TP
+.B \fIXfwfNmargin\fP
+Mimumum margin around widget.
+.TP
+.B \fIXfwfNsameSize\fP
+Boolean, forces children to be same size.
+.TP
+.B \fIXfwfNfill\fP
+Boolean, forces all children to be the size of stack widget
+.TP
+.B \fIXfwfNstackWidget\fP
+Widget, the currently managed child
+.TP
+.B \fIXfwfNstackType\fP
+Enum, the way in which children are shown, either XfwfSTACK_END_TO_END or XfwfSTACK_CIRCULAR
+.TP
+.SH CONSTRAINT RESOURCES
+.PP
+.TP
+.B \fIXfwfNfill\fP 
+Boolean, force widget to be size of stack widget
+.TP
+.B \fIXfwfNgravity\fP
+Which way child should hang if it is not forced to be the size of the stack widget 
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1993
+Wolfram Research, Inc
+cwikla@wri.com

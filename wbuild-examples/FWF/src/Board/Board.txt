@@ -1,0 +1,5 @@
+XfwfBoard (superclass: XfwfLabel)
+	A widget that can be used as the parent for other widgets.
+	Children can be any size and anywhere. The `location' resource
+	also provides a more powerful way of specifying size and
+	position than the `geometry'.

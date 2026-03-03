@@ -1,0 +1,4 @@
+WIDGET = Mdial 
+OTHERLIBS = -lm
+
+#include "../StdImakefile"

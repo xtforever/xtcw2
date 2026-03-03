@@ -1,0 +1,4 @@
+Icon	(Superclass: XfwfBoard) The Icon widget is used to display an
+	icon, which is normally read from an XPM file. There are also
+	a few built-in icons. The widget uses the shape extension to
+	create icons that are non-rectangular or transparent.

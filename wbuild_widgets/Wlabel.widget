@@ -25,6 +25,7 @@
 @var int prefered_height
 @var Bool dirty
 @var String label_mem
+@var int last_state
 
 @METHODS
 
@@ -46,6 +47,7 @@
   $para = NULL;
   $pixmap = 0;
   $dirty = 1;
+  $last_state = -1;
   $prefered_width = 100; 
   $prefered_height = 20;
 
@@ -87,6 +89,13 @@
 
     if ($update != $old$update) {
     if ($alignment != $old$alignment) { redraw_flag = 1; }
+        redraw_flag = 1;
+    }
+
+    if ($fg_norm != $old$fg_norm || $bg_norm != $old$bg_norm ||
+        $fg_sel != $old$fg_sel || $bg_sel != $old$bg_sel ||
+        $fg_hi != $old$fg_hi || $bg_hi != $old$bg_hi ||
+        $state != $old$state ) {
         redraw_flag = 1;
     }
 
@@ -134,6 +143,10 @@
 {
     if (!XtIsRealized($)) return;
     
+    /* state might have changed without set_values (e.g. from actions) */
+    /* but if state changed, we MUST redraw. */
+    if( $state != $last_state ) { $dirty = 1; $last_state = $state; }
+
     if ($dirty || !$backend) {
         update_cache($);
         $dirty = 0;
@@ -171,7 +184,7 @@
     /* Clear background */
     /* draw_rect expects points if we are using the scaled backend. */
     /* So we convert widget pixels to points. */
-    be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), 0xFFFFFFFF); /* White */
+    be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), xftcolor_to_argb($, COLOR_BG_NORM + $state));
 
     /* Render centered */
     double text_h_pt = retex_paragraph_get_height($para);
@@ -189,10 +202,21 @@
     /* Add baseline offset (in points) */
     y += retex_paragraph_get_first_line_height($para);
 
+    be->set_color(be, xftcolor_to_argb($, COLOR_FG_NORM + $state));
     retex_paragraph_render($para, be, x, y);
 }
 
 @UTILITIES
+
+@proc uint32_t xftcolor_to_argb($, int index)
+{
+    XftColor *xc = &$xft_col[index];
+    uint32_t r = xc->color.red >> 8;
+    uint32_t g = xc->color.green >> 8;
+    uint32_t b = xc->color.blue >> 8;
+    uint32_t a = xc->color.alpha >> 8;
+    return (a << 24) | (r << 16) | (g << 8) | b;
+}
 
 @proc double get_dpi($)
 {

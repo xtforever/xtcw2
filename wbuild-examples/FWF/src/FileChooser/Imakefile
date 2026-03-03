@@ -1,0 +1,3 @@
+WIDGET = FChooser
+
+#include "../StdImakefile"

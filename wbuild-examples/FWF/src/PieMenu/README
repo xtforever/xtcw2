@@ -1,0 +1,47 @@
+XfwfPieMenu
+
+N.B.
+	The widget files are computer-generated. The real source is
+	PieMenu.w. It has been processed with Wbuild (available by
+	anonymous FTP from ftp.let.rug.nl)
+
+Author
+	Bert Bos <bert@let.rug.nl>
+	Alfa-informatica, Rijksuniversiteit Groningen, The Netherlands
+	February 1994
+
+History
+
+20 Jul '94 (version 1.1)
+	changed "atan2(dy, dx)" to "atan2((double) dy, (double) dx)"
+	(thanks to Arne Jansson)
+16 Nov '94 (version 1.2)
+	changed select() to select_item(), because of conflict with
+	select() system call (thanks to George Ross)
+
+Copyright
+
+	Copyright 1995 Bert Bos (hereafter `the author')
+
+Conditions of use
+
+	Permission to use, copy, modify, distribute, and sell this
+	software and its documentation for any purpose is hereby
+	granted without fee, provided that the above copyright notice
+	appears in all copies and that both that copyright notice and
+	this permission notice appear in supporting documentation, and
+	that the name of the author not be used in advertising or
+	publicity pertaining to distribution of the software without
+	specific, written prior permission. The author makes no
+	representations about the suitability of this software for any
+	purpose. It is provided "as is" without express or implied
+	warranty.
+
+	The author disclaims all warranties with regard to this
+	software, including all implied warranties of merchantability
+	and fitness, in no event shall the author be liable for any
+	special, indirect or consequential damages or any damages
+	whatsoever resulting from loss of use, data or profits,
+	whether in an action of contract, negligence or other tortuous
+	action, arising out of or in connection with the use or
+	performance of this software.

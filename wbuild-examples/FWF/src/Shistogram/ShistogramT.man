@@ -1,0 +1,14 @@
+.TH ShistogramT 1 "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+.PP
+ShistogramT \- Shistogram Widget Test 
+.SH DESCRIPTION
+.PP
+Program plots random numbers in a shistogram widget.
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1992
+Materials Research Laboratory Center for Computation
+University of Illinois, Champaign

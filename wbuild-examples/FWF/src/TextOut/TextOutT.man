@@ -1,0 +1,16 @@
+.TH "TextOutT" "1" "31 Aug 1995" "Version 1.0" "Free Widget Foundation"
+.SH NAME
+TextOutT \- Test program for the XfwfTextOut widget
+.SH DESCRIPTION
+.PP
+.I TextOutT
+opens a window with a TextOut window with a few lines of text
+displayed in different fonts and different colors.
+.SH AUTHOR
+.sp
+.nf
+Paul Kendall <paul@kcbbs.gen.nz>
+.fi
+
+
+

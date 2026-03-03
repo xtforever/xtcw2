@@ -1,0 +1,113 @@
+FWFINCDIR       =	$(BASEPATH)/include
+FWFLIBDIR       =	$(BASEPATH)/lib
+FWFBINDIR       =	$(BASEPATH)/bin
+
+CP		=	cp
+CC		=	cc
+CFLAGS		=	-g -I.
+MV		=	mv
+RM		=	rm
+
+DIRH		=	Directory.h
+DIRSRC		=	Directory.c
+DIROBJ		=	Directory.o
+DIRTESTSRC	=	DirectoryTest.c
+DIRTESTOBJ	=	DirectoryTest.o
+DIRTEST		=	$(FWFBINDIR)/DirectoryTest
+REGH		=	RegExp.h
+REGSRC		=	RegExp.c
+REGOBJ		=	RegExp.o
+REGTESTSRC	=	RegExpTest.c
+REGTESTOBJ	=	RegExpTest.o
+REGTEST		=	$(FWFBINDIR)/RegExpTest
+DIRMGRH		=	DirectoryMgr.h
+DIRMGRSRC	=	DirectoryMgr.c
+DIRMGROBJ	=	DirectoryMgr.o
+DIRMGRTESTSRC	=	DirectoryMgrTest.c
+DIRMGRTESTOBJ	=	DirectoryMgrTest.o
+DIRMGRTEST	=	$(FWFBINDIR)/DirectoryMgrTest
+
+HEADERS         =       $(FWFINCDIR)/$(DIRH) $(FWFINCDIR)/$(REGH) \
+                        $(FWFINCDIR)/$(DIRMGRH)
+
+OBJS		=	$(DIROBJ) $(REGOBJ) $(DIRMGROBJ)
+OUTLIB		=	$(FWFLIBDIR)/libDir.a
+
+all::		first $(DIRTEST) $(REGTEST) $(DIRMGRTEST) $(OUTLIB)
+
+first:
+		@rm -f dirent.h
+		@rm -f $(FWFINCDIR)/dirent.h
+		-@if [ ! -f /usr/include/dirent.h ];			\
+		    then echo "Patching because no dirent.h";		\
+		         echo "#ifndef _BRIDIRENT_H_" > dirent.h;	\
+		         echo "#define _BRIDIRENT_H_" >> dirent.h;	\
+		         echo "#define dirent direct" >> dirent.h;	\
+		         echo "#include <sys/dir.h>" >> dirent.h;	\
+		         echo "#endif" >> dirent.h;			\
+		         cp dirent.h $(FWFINCDIR)/dirent.h		\
+		    else echo "";					\
+		    fi
+		@rm -f regexp.h
+		@rm -f $(FWFINCDIR)/regexp.h
+		-@if [ ! -f /usr/include/regexp.h ];			\
+		    then echo "Patching because no regexp.h";		\
+		         echo "#ifndef _BRIREGEXP_H_" > regexp.h;	\
+		         echo "#define _BRIREGEXP_H_" >> regexp.h;	\
+		         echo "#define NO_REGEXP 1" >> regexp.h;	\
+		         echo "#endif" >> regexp.h;			\
+		         cp regexp.h $(FWFINCDIR)/regexp.h		\
+		    else echo "";					\
+		    fi
+
+$(DIRTEST):	$(DIRTESTOBJ) $(DIROBJ) $(REGOBJ) $(FWFINCDIR)/$(DIRH)
+	$(CC) $(CFLAGS) $(DIRTESTOBJ) $(DIROBJ) $(REGOBJ) $(LIBS) -o $(DIRTEST)
+
+$(DIRTESTOBJ):	$(DIRTESTSRC) $(FWFINCDIR)/$(DIRH)
+	$(CC) $(CFLAGS) -c $(DIRTESTSRC)
+
+$(DIROBJ):	$(DIRSRC) $(FWFINCDIR)/$(DIRH)
+	$(CC) $(CFLAGS) -c $(DIRSRC)
+
+$(FWFINCDIR)/$(DIRH): $(DIRH)
+	$(CP) $(DIRH) $(FWFINCDIR)
+
+
+
+
+$(REGTEST):	$(REGTESTOBJ) $(REGOBJ) $(FWFINCDIR)/$(REGH)
+	$(CC) $(CFLAGS) $(REGTESTOBJ) $(REGOBJ) -o $(REGTEST)
+
+$(REGTESTOBJ):	$(REGTESTSRC) $(FWFINCDIR)/$(REGH)
+	$(CC) $(CFLAGS) -c $(REGTESTSRC)
+
+$(REGOBJ):	$(REGSRC) $(FWFINCDIR)/$(REGH)
+	$(CC) $(CFLAGS) -c $(REGSRC)
+
+$(FWFINCDIR)/$(REGH): $(REGH)
+	$(CP) $(REGH) $(FWFINCDIR)
+
+
+
+
+$(DIRMGRTEST):	$(DIRMGRTESTOBJ) $(DIROBJ) $(REGOBJ) $(DIRMGROBJ)
+	$(CC) $(CFLAGS) $(DIRMGRTESTOBJ) $(DIRMGROBJ) $(DIROBJ) $(REGOBJ) $(LIBS) -o $(DIRMGRTEST)
+
+$(DIRMGRTESTOBJ):	$(DIRMGRTESTSRC) $(HEADERS)
+	$(CC) $(CFLAGS) -c $(DIRMGRTESTSRC)
+
+$(DIRMGROBJ):	$(DIRMGRSRC) $(HEADERS)
+	$(CC) $(CFLAGS) -c $(DIRMGRSRC)
+
+$(FWFINCDIR)/$(DIRMGRH): $(DIRMGRH)
+	$(CP) $(DIRMGRH) $(FWFINCDIR)
+
+
+
+
+$(OUTLIB): $(OBJS)
+	ar rv $(OUTLIB) $(OBJS)
+	ranlib $(OUTLIB)
+
+clean:
+	rm -f *.o core *~ *# regexp.h dirent.h

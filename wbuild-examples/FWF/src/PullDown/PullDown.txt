@@ -1,0 +1,3 @@
+PullDown (Superclass: XfwfButton) A PullDown button is a button with a
+	pull-down menu. The menu is given as a string resource. There
+	is also support for a hotkey, but it doesn't work yet.

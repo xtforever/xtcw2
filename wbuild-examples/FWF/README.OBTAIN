@@ -1,0 +1,55 @@
+================================ README.OBTAIN ================================
+
+OBTAINING A LIBRARY COPY
+
+The FWF source code release is available via FTP (file transfer protocol) from
+the machine ftp.let.rug.nl (129.125.8.20) in the file pub/FWF/fwf.tar.Z.
+
+First, connect to the machine with anonymous ftp (ftp to
+ftp.let.rug.nl, login as 'anonymous' or 'ftp', and provide your email
+address as the password).  Once you are connected, change directory to
+the 'pub' directory.  Switch to binary transfer mode, and get the
+file.  Once you receive the file, uncompress it (using 'uncompress'),
+and then unarchive it by typing 'tar xvf fwf.tar'.  This will create a
+directory called FWF, containing the source files, documentation, test
+programs, and build instructions.
+
+RECEIVING FWF WIDGETS VIA EMAIL
+
+Using FTP is the best way to receive the FWF widgets.  But, if you cannot
+access the widgets using FTP, it is possible to obtain them via email.
+
+Because the FWF release is large, it must be sent in many pieces.  Is is
+possible for us to send it by hand, but this is labor-intensive and
+error-prone, and will be done only as a last-resort.
+
+The preferable way to obtain widgets by email is to access an email server
+program.  We are currently gathering a list of email servers and searching for
+volunteers to maintain releases on each site.  The servers currently secured
+are described below.
+
+	SUNSITE.UNC.EDU
+	    One such server is sunsite.unc.edu, run by the University of
+	    North Carolina and SUN.  FWF volunteer Reed Wade (wade@cs.utk.edu)
+	    maintains the FWF software on this site.  If the release is out
+	    of date, or if you have trouble with the server, send email to
+	    Reed.  To obtain the FWF release via the SunSite email server,
+	    send email to ftpmail@sunsite.unc.edu, with the following
+	    commands in the body:
+
+		open
+		cd pub/X11/fwf
+		get fwf.shar.Z
+
+	FTP.INFORMATIK.TU-MUENCHEN.DE (131.159.0.198)
+	    The FWF widgets have also been available via the FTP mailer
+	    at ftp.informatik.tu-muenchen.de, in Munich, Germany.  FWF
+	    volunteer Markus Stumpf (markus.stumpf@informatik.tu-muenchen.de)
+	    maintains the FWF software on this site.  If the release is out
+	    of date, or if you have trouble with the server, send email to
+	    Markus.  To obtain the FWF release via the Munich server,
+	    send email to FTP-Mailer@ftp.informatik.tu-muenchen.de with the
+	    following command in the body:
+
+		GET /pub/comp/X11/contrib/lib/fwf/fwf.tar.gz
+

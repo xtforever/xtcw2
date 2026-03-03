@@ -1,0 +1,5 @@
+WIDGET = FText
+SUPERCLASSES =
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

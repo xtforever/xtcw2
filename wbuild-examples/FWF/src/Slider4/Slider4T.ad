@@ -1,0 +1,28 @@
+Slider4T.width: 650
+Slider4T.height: 350
+*font: helvB12
+*borderWidth: 0
+*frameWidth: 2
+*thumbFrameWidth: 2
+*minsize: 1
+*background: SeaGreen
+
+*board.frameOffset: 12
+
+*ONE.sensitive: False
+*ONE.label: slider\nONE
+*ONE.foreground: white
+*ONE.alignment: top left
+*ONE.location: 10 10 1.0-130 1.0-20
+*ONE.thumbColor: BlueViolet
+
+*TWO.label: 2
+*TWO.foreground: white
+*TWO.location: 1.0-110 1.0-100 100 90
+*TWO.thumbColor: Firebrick
+*TWO.sashColor: DarkOrange
+
+*label.location: 1.0-110 10 100 1.0-120
+*label.alignment: top
+*label.frameWidth: 4
+*label.frameType: ledged

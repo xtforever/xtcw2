@@ -1,0 +1,13 @@
+'\" t
+.TH "EzME" "3" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+EzMenu \- A Menu Item For EzMenu Widgets
+.SH DESCRIPTION
+.PP
+.I EzME
+is a single item in an EzMenu widget.
+.SH AUTHOR
+.sp
+.nf
+Dirk Grunwald, \fIgrunwald@foobar.colorado.edu\fR
+.fi

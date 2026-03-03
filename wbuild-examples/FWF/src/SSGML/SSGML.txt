@@ -1,0 +1,4 @@
+XfwfSimpleSGML (superclass: XfwfFormattedText)
+	Parses simple SGML document and uses a style sheet to format
+	them. See <http://www.let.rug.nl/~bert/stylesheets.html> for
+	info on the style sheet syntax.

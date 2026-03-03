@@ -1,0 +1,4 @@
+ThumbWheel (superclass: Core) A vertical thumb wheel that can be
+	turned up or down. It can serve as a scroller or valuator. The
+	turning effect is achieved by showing a series of prepared
+	images one after the other.

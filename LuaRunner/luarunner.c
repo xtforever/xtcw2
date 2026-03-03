@@ -1140,6 +1140,8 @@ int main ( int argc, char **argv )
     XpRegisterAll ( app );
     widreg(app);
 
+    WcInitialize(appShell);
+
     /*  --  Create widget tree below toplevel shell
             using Xrm database
 	    WcCallback can call Lua-functions at this point

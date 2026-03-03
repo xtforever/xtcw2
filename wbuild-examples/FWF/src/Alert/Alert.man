@@ -1,0 +1,259 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfAlert
+.SH DESCRIPTION
+The XfwfAlert widget is a pop-up dialog box with three parts: an
+icon in the top left corner, a text area, and a row of buttons along
+the bottom. Usually the alert widget is used for error messages,
+warnings and other kinds of informational messages. The icon indicates
+the type of message: (fatal) error, warning, other message, request
+for confirmation, etc. There are some built-in icons for these types.
+Most alerts will have one or two buttons, e.g., OK and CANCEL.
+
+An alert widget can be created in the usual way for shells, with
+\fIXtVaCreatePopup\fP and similar routines, but a much more convenient way
+is a call to \fIXfwfDialog\fP. \fIXfwfDialog\fP creates a temporary alert
+widget and waits for the user to acknowledge it by clicking one of the
+buttons. The function returns the number of the button that was
+clicked.
+
+An alert is made up of XfwfBoard(3X11), XfwfIcon(3X11),
+Xfwflabel(3X11) and XfwfButton(3X11) widgets. The label widget will be
+set to the minimum size that will show the full message. The alert
+widget will be as small as possible to show all its children.
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfAlert
+Name	Class	Type	Default
+XtNicon	XtCIcon	Icon *	"NONE"
+XtNmessage	XtCMessage	String 	NULL 
+XtNbuttons	XtCButtons	String 	NULL 
+XtNlastChoice	XtCLastChoice	int 	0 
+XtNcallback	XtCCallback	Callback	NULL 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNicon"
+The icon is of type \fIIcon\fP (see XfwfIcon(3X11)). The converter can load
+images from file and it knows about 6 built-in icons: \fI"FATAL"\fP, \fI"ERROR"\fP,
+\fI"WARNING"\fP, \fI"QUESTION"\fP, \fI"INFO"\fP and \fI"NONE"\fP. The \fINONE\fP icon is an
+invisible (i.e., transparent) image of the same size as the others.
+
+
+
+
+
+
+.TP
+.I "XtNmessage"
+The message is a simple string, that may include newlines.
+
+
+
+
+
+
+.TP
+.I "XtNbuttons"
+The buttons are created with labels which will be taken from the
+\fIbuttons\fP resource. \fIbuttons\fP is a string with the labels separated by
+vertical bars. If the string is empty, a single button with label
+``Ok'' will be created.
+
+
+
+
+
+
+.TP
+.I "XtNlastChoice"
+The last button that was selected is also the default for the next
+time (as soon as keyboard traversal has been implemented\dots) Buttons
+are numbered starting with 0. Set this resource to -1 if you don't
+want a default button.
+
+
+
+
+
+
+.TP
+.I "XtNcallback"
+When a button is clicked, the number of the button is stored in
+\fIlastChoice\fP, before the \fIcallback\fP functions are called. The
+callbacks is passed the number in the \fIcall_data\fP argument. The
+buttons are numbered starting at 0.
+
+
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+TransientShell
+Name	Class	Type	Default
+transientFor	XtCTransientFor	Widget 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+WMShell
+Name	Class	Type	Default
+baseHeight	XtCBaseHeight	Int 	XtUnspecifiedShellInt 
+baseWidth	XtCBaseWidth	Int 	XtUnspecifiedShellInt 
+XtNtitle	XtCTitle	String 	NULL 
+titleEncoding	XtCTitleEncoding	Atom 	XA_STRING 
+XtNtransient	XtCTransient	Boolean 	False 
+waitForWm	XtCWaitForWm	Boolean 	True 
+winGravity	XtCWinGravity	Int 	NULL 
+wmTimeout	XtCWmTimeout	Int 	5000 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Shell
+Name	Class	Type	Default
+allowShellResize	XtCAllowShellResize	Boolean 	False 
+createPopupChildProc	XtCCreatePopupChildProc	XTCreatePopupChildProc 	NULL 
+XtNgeometry	XtCGeometry	String 	NULL 
+overrideRedirect	XtCOverrideRedirect	Boolean 	False 
+popdownCallback	XtCPopdownCallback	Callback	NULL 
+popupCallback	XtCPopupCallback	Callback	NULL 
+saveUnder	XtCSaveUnder	Boolean 	False 
+XtNvisual	XtCVisual	Visual *	CopyFromParent 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+As stated above, the alert widget can be created in the normal way
+as a Shell widget with a particular set of resources, but a more
+convenient way in many cases will be the \fIXfwfDialog\fP function. The
+function creates an alert box with an icon, message and buttons, pops
+it up, and returns only when the user has clicked one of the buttons.
+The function's result will be the number of the button that was
+clicked.
+
+The first argument, \fItoplevel\fP, will be the widget that is used as the
+alert's parent. Usually that will be the top level window of the
+application, but it need not be. The alert box will appear
+approximately in the middle of the \fItoplevel\fP widget (if the window
+manager allows it).
+
+The second argument is the name of the icon that will be shown in the
+upper left corner of the alert. It can be one of the built-in names
+\fI"FATAL"\fP, \fI"ERROR"\fP, \fI"WARNING"\fP, \fI"QUESTION"\fP, \fI"INFO"\fP and
+\fI"NONE"\fP; or it can be the name of a file that contains an icon in XPM
+format. The icon widget is of class XfwfIcon(3X11). It is named
+\fI"_icon"\fP.
+
+The third argument is the message to display in the center of the
+alert. It may contain newlines. The message will be put into an
+XfwfLabel(3X11) widget, named, appropriately, \fI"_message"\fP.
+
+The last argument, \fIbuttons\fP, is a single string containing the labels
+for all buttons, separated with a vertical bar. If this argument is
+\fINULL\fP, that doesn't mean that there will be no buttons. Instead, a
+single button with the label \fI"OK"\fP will be created. After all, if
+there are no buttons, how will the alert box ever disappear? The
+buttons are of type XfwfButton(3X11) and are named \fI"1"\fP, \fI"2"\fP, etc.
+
+The alert itself will simply be called \fI"alert"\fP and its child, an
+XfwfBoard(3X11) widget, will be called \fI"_board"\fP.
+
+The implementation is as follows: After the alert has been created,
+\fIXfwfDialog\fP adds a callback to the alert widget, which will set the
+\fIchoice\fP variable when a button is pressed. The function then enters a
+special purpose event loop, which dispatches events normally, but only
+until the \fIchoice\fP variable is changed. The function returns with the
+value of \fIchoice\fP
+
+
+
+\fBdef\fP max(a, b) =
+((a )>(b )?(a ):(b ))
+
+\fBdef\fP min(a, b) =
+((a )<(b )?(a ):(b ))
+
+
+.nf
+int  XfwfDialog(String  name, Widget  parent, String  icon, String  msg, String  buttons)
+.fi
+

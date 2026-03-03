@@ -1,0 +1,4 @@
+XfwfFormattedText (superclass: XmManager)
+	Formats text, using different fonts, colors, floating images,
+	etc. Mainly used as superclass for XfwfSimpleSGML and
+	XfwfHTML2.

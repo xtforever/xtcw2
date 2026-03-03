@@ -1,0 +1,257 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfAnimator
+.SH DESCRIPTION
+The animator widget cycles through a series of images (XImage
+structures). Each image is displayed for a certain number of
+milliseconds. After the last image, the animation can either start
+over or stop with the last image displayed.
+
+The animation must be started with \fIXfwfStartAnimation\fP and it may be
+stopped with \fIXfwfStopAnimation\fP.
+
+The widget uses the location resources (see XfwfBoard(3)) for
+positioning only; the preferred size of the widget will be the size of
+the largest image, plus room for the frame.
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfAnimator
+Name	Class	Type	Default
+XtNimages	XtCImages	ImageList	NULL 
+XtNintervals	XtCIntervals	CardinalList	NULL 
+XtNdefaultInterval	XtCDefaultInterval	Cardinal 	500 
+XtNcycle	XtCCycle	Boolean 	True 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNimages"
+The list of images can be specified in the resource file as a series
+of filenames of files in XPM format. If it is set from an application,
+the list must end with a \fINULL\fP. Every element is a pointer to an
+\fIXImage\fP structure.
+
+
+
+
+
+
+.TP
+.I "XtNintervals"
+The time that each image will be displayed can be set with
+\fIintervals\fP. It is a list of cardinals, each representing a number of
+milliseconds. The list must end with a zero. If there are insufficient
+numbers in the list, the last number will be used as the interval for
+any remaining images. If the list is empty (NULL), the interval will
+be \fIdefaultInterval\fP (normally 500).
+
+
+
+
+
+
+.TP
+.I "XtNdefaultInterval"
+If the list of intervals is empty, the interval will be
+\fIdefaultInterval\fP milliseconds.
+
+
+
+
+
+
+.TP
+.I "XtNcycle"
+The animation repeats indefinitely by default. When the \fIcycle\fP
+resource is set to \fIFalse\fP the animation sequence is shown once only,
+for every call to \fIXfwfStartAnimation\fP.
+
+
+
+
+
+
+.TP
+.I "XtNframeType"
+The default type of frame is set to `sunken'.
+
+
+
+
+
+
+.TP
+.I "XtNrel_width"
+If there is no image to display, the widget has no obvious size. The
+following defaults for the location resources create a 7 by 7 pixel
+widget.
+
+
+
+
+
+
+.TP
+.I "XtNabs_width"
+
+
+
+.TP
+.I "XtNrel_height"
+
+
+
+.TP
+.I "XtNabs_height"
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+To start the animation an application should call
+\fIXfwfStartAnimation\fP. If the animation is already running, it will be
+restarted from the beginning.
+
+
+
+
+.nf
+XfwfStartAnimation( $)
+.fi
+
+
+The animation can be stopped with \fIXfwfStopAnimation\fP.
+
+
+
+
+.nf
+XfwfStopAnimation( $)
+.fi
+

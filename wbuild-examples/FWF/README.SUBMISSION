@@ -1,0 +1,130 @@
+============================== README.SUBMISSION =============================
+
+	Here are some rough guidelines for submitting widgets to the FWF
+	release.  These rules can bend a little.  The main reasons for the
+	structure is (a) so I don't have to spend hours on every submission
+	to get it to build, and (b) so the FWF users see a consistent,
+	usable set of widgets.
+
+	Don't let the guidelines scare you away.  They are actually quite
+	simple.  We just want to make sure names don't conflict, and that
+	all widgets can compile conveniently and portably into a single
+	library that is easy to install in a variety of systems.
+
+	Okay, here the guidelines:
+
+	(1) The current FWF release is a tree of directories.  An Imakefile
+	    system has been set up to recursively build the directory tree.
+	    Imake parameters are included from a top level fwf configuration
+	    file.  Include files are copied to a local include directory before
+	    the widgets are compiled to allow fwf widgets to include other fwf
+	    widgets.  Widgets build into a single common library.
+
+	    Each widget submission should be contained within a subdirectory
+	    or several subdirectories.  The widgets should normally add the
+	    widgets to the global fwf library.  An Imake template and rules
+	    have been provided with the fwf release to hopefully make this
+	    process easier.  Use the existing Imakefiles as examples, so you
+	    are sure your contribution will be compatible.  The Imake structure
+	    is more fully described in the fwf release.  Typically a widget
+	    Imakefile looks like:
+
+			WIDGET = Histogram
+			OTHERLIBS = -lm
+
+			#include "../StdImakefile"
+
+	(2) Each widget should come with a simple driver program that tests
+	    the widget, and shows users how to create & manage the widget.
+	    The program should be runnable and useful without reading any
+	    documentation. (Fallback resources in the test program are
+	    useful, but choose them carefully; think about people with
+	    low-res or monochrome screens.)
+
+	(3) The name of the test program should be the widget's base
+	    file name followed by a T.  The PixelEditor widget source is in
+	    the file PixEdit.c, so the test program is called PixEditT and
+	    its source is in PixEditT.c
+
+	(4) Widgets should not have filenames longer than 14 characters
+	    for System V users.
+
+	(5) Widgets should not require ANSI C declarations, because many
+	    people's C compilers still do not support them.  Use old style
+            declarations:
+
+			static void Realize(_w,_xvm,_xswa)
+			CmapWidget _w; 
+			XtValueMask *_xvm;
+			XSetWindowAttributes *_xswa;
+
+	    Please #ifdef prototypes for the functions:
+
+			#if NeedFunctionPrototypes
+			static int XYtoBox(CmapWidget _w,int _x,int _y);
+			static void ReString(CmapWidget _w);
+			static void DrawLabel(CmapWidget _w,GC _gc);
+			static void DrawSelected(CmapWidget _w,int _boxNumber);
+			static void DrawBox(CmapWidget _w,int _boxNumber);
+			#else
+			static int XYtoBox();
+			static void ReString();
+			static void DrawLabel();
+			static void DrawSelected();
+			static void DrawBox();
+			#endif
+
+				or
+
+			static int XTYoBox(
+			#ifdef NeedFunctionPrototypes
+				CmapWidget _w,int _x,int _y
+			#endif
+			)
+					.
+					.
+					.
+				
+	(6) FWF include files should be referenced as #include <Xfwf/...>
+
+	(7) All externally accessible functions from a widget should be
+	    preceded by Xfwf.
+
+	(8) Class names should be preceded by xfwf.
+
+	(9) Each widget should have a man page (copy the structure of others
+	    if you want), as should the test program.  A README file should
+	    provide a brief overview of the widget, and include the author's
+	    name and email address.
+
+	    NOTE: if a man-page requires `tbl' to format tables, some
+	    systems (Linux, Sun) require '\" t (that is: apostroph
+	    backslash space letter-t) as the very first line in the
+	    file.
+
+	(10) Every contribution should contain a short paragraph describing
+	    that subdirectory, so I can add it into the top-level directory
+	    index.  This should be a file called <Widget>.txt.  Please
+	    format it like below:
+
+FileSelector     A hierarchical file selection widget that allows perusing
+		of directory tree, and selection of files.  It has two panes,
+		the left lists the directory path from the root of the file
+		system to the current directory, and the right pane shows the
+		contents of the current directory.
+
+	(11) Here are the contents of a typical widget submission, a
+	    Histogram widget, in a directory called 'Histogram':
+
+		Histogram.c	Histogram.man	HistogramP.h	Histogram.h
+		HistogramT.c	HistogramT.man  Histogram.txt
+		Imakefile	README
+
+	(12) Test your submission ahead of time, without it depending on local
+	    resource definitions.  Insert your new directory into the FWF/src
+	    directory, and edit the FWF/src/Imakefile to add the subdirectory
+	    name to the lists of subdirectories to compile.  Submit the
+	    subdirectory when you are done, by email shar files, ftp, ...
+
+	(13) Thanks!  The world is now a slightly better place :-)
+

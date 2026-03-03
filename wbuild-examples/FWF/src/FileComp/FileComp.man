@@ -1,0 +1,558 @@
+./" FileComplete.3
+./"  Copyright 1992,93,94 Robert Forsman
+./"  Gnu Library General Public License version 2.0
+./"
+./" $Log: FileComp.man,v $
+./" Revision 0.24  1993/01/19  12:00:40  thoth
+./" important stuff is now prefixed with xfwf (I hope)
+./"
+./" Revision 0.23  92/07/12  15:10:23  thoth
+./" *** empty log message ***
+./" 
+./" Revision 0.22  92/07/12  15:09:31  thoth
+./" forgot to update some parts.
+./" 
+./" Revision 0.21  92/07/12  15:07:28  thoth
+./" almost every externally visible type and symbol is prefixed with Xfwf now.
+./" 
+./" Revision 0.20  92/05/20  17:13:06  thoth
+./" this was released with FWF 3.0
+./" 
+./" Revision 0.19  92/05/12  14:10:13  thoth
+./" commented on a new "problem"
+./" 
+./" Revision 0.18  92/05/12  13:39:54  thoth
+./" documented the new XfwfFileCompleteTrimToPath
+./" convenience procedure.
+./" 
+./" Revision 0.17  92/05/08  16:35:34  thoth
+./" Documented a small idiosyncracy.
+./" 
+./" Revision 0.16  92/05/07  12:32:52  thoth
+./" Added documentation for new acceptableFilenameProcs that filter
+./" out tilde backups.
+./" 
+./" Revision 0.15  92/05/06  13:37:06  thoth
+./" Spell checked the bugger and added a few more
+./" acknowledgements.
+./" 
+./" Revision 0.14  92/05/06  13:11:20  thoth
+./" *** empty log message ***
+./" 
+./" Revision 0.13  92/05/06  13:08:34  thoth
+./" Added acknowledgments to Berkeley for getod.c as specified
+./" in term 3 of their copyright.
+./" 
+./" Revision 0.12  92/05/06  11:08:56  thoth
+./" adding rcsid[]
+./"
+./"
+.TH FileComplete 3 "26 Sep 1993" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+FileComplete - an emacs-style file selection widget for the X toolkit built
+upon Athena widgets.
+
+.SH VITAL STATS
+
+.nf
+.TA 3.0i
+.ta 3.0i
+Application Header file	<Xfwf/FileComp.h>
+Class Header file		<Xfwf/FileCompP.h>
+Class				xfwffileCompleteWidgetClass
+Class Name			XfwfFileComplete
+Superclass			Form
+.fi
+
+ The file completion widget allows the application programmer to
+easily provide the user with a familiar, convenient and (hopefully)
+intuitive way to select files from the Unix filesystem.
+
+  It borrows ideas from other popular windowing systems by allowing
+the user to double-click to select files or switch directories.
+
+  It borrows from the popular copylefted emacs editor by allowing the
+user to type in filenames, use SpaceBar and Tab to complete filenames,
+and perform ~ expansion.
+
+  Both of these input modes can be mixed for users who frequently
+switch gears.
+
+.SH USER INFORMATION
+
+.B Preprocessing
+
+  There is a certain amount of preprocessing that is done to the text
+buffer to save the user keystrokes.  This preprocessing occurs
+whenever the user presses one of the special keys mentioned below or
+presses the Ok button.
+
+  If a ~ or a / appears immediately after a /, all the text before and
+including that / is deleted.  Therefore \fB/var/tmp//goop//cis/src\fP
+would become \fB/cis/src\fP.  csh-style ~ expansion is also performed.
+\fB~/\fP expands to the user's home directory (as recorded in the HOME
+environment variable).  \fB~username\fP expands to \fBusername\fP's
+home directory (as returned by getpwnam(3)).
+
+  If the \fIfollowLinks\fP resource is set to always, the path in the
+buffer is normalized by statting .. until the root is reached.  The
+path computed by this procedure is then substituted for the old path
+and the preprocessing is complete.
+
+  If the \fIfollowLinks\fP resource is set to whenShorter, the path in
+the buffer is normalized as before, but only substituted if it is
+shorter than the old path.  If a substitution is appropriate,
+preprocessing is complete.
+
+  If the \fIfollowLinks\fP resource is set to never or the whenShorter
+was not shorter, the next stage of preprocessing occurs.
+
+  If a sequence of \fBpath/dirname/../\fP is encountered, and it and
+\fBpath/\fP refer to the same directory (as determined by statting and
+comparing inode and device numbers for the two) then the
+\fBdirname/../\fP will be deleted leaving only \fBpath\fP.  If it does
+not match, then .. statting similar to that above will be performed
+and substitutions will be performed or not based on the
+\fIfollowLinks\fP resource.
+
+  A value of \fIfollowLinks\fP = never gives the fastest preprocessing
+and should be acceptable to most users.  Programmers should not
+specify the value of this unless they absolutely have to.
+
+.B Keyboard Actions
+
+  The user can type anywhere in the widget and keyboard input will
+appear in the text window at the top of the widget.  There are three
+special keys that will not be interpreted as filename components.
+
+.I SpaceBar
+  When the user presses the \fBSpaceBar\fP the widget will search the
+list of files it has stored internally for filenames whose prefix
+matches what the user has typed so far.  If there is a unique
+completion, it will be entered into the buffer.  The user may then
+press \fBReturn\fP or press \fBOK\fP to select that file.  If there
+are several completions, the widget will substitute the longest prefix
+that is common to all of the candidates.  If this does not extend the
+currently typed text, the list widget in the bottom left will change
+to show all of the possible completions.  The user may then type more
+characters to make the prefix unique, or click on one of the
+selections to substitute it into the buffer.
+
+  If the completion is unique and a directory, the widget will change
+to that directory and list its files.
+
+.I Tab
+  The \fBTab\fP key is identical to the \fBSpaceBar\fP except it will
+not change the list widget unless there is a directory change.
+
+.I Return
+  This tells the application that the filename currently in the text
+buffer is what you want.  Pressing this key is equivalent to hitting
+the \fBOK\fP button and will invoke the application-specific actions
+that the FileComplete was created for.
+
+.B Mouse Actions
+
+  When the user single-clicks on an item in the list widget, the
+filename is substituted into the text buffer at the top of the widget.
+When the user double-clicks the file is "selected".  For files, this
+means the same thing that pressing the \fBOK\fP button does.  For
+directories, if the \fIdirnamesOk\fP resource is true then
+double-clicking is the same as pressing the \fBOK\fP button.  If the
+resource is false, then double-clicking will go into that directory.
+
+  Therefore, if the \fIdirnamesOk\fP resource is true, you can not
+switch directories by double-clicking.  You have to type the dirname
+or click on the dirname and press \fBSpaceBar\fP.  If the
+\fIdirnamesOk\fP resource is false, you can not select a directory by
+double-clicking.  You have to type the dirname or click on the dirname
+and press \fBReturn\fP.
+
+  There are also usually at least two buttons in a box in the bottom
+right section of the widget.  The \fBOk\fP and \fBCancel\fP buttons
+appear by default, but can be disabled by the application.
+
+  The \fBOk\fP button signifies that you have selected a file for the
+program.  It is the same as double clicking on a filename, or pressing
+\fBReturn\fP.  The current contents of the text buffer will be
+preprocessed and passed to the file completion widget's callback list.
+
+  The \fBCancel\fP button signifies that you do not want to perform
+the operation, instead you want to abort.  The functions on the
+cancelCallback list will be invoked.
+
+  Other buttons in the box could be available on a per-application
+basis to do other functions.  Check your application's manual for
+details.
+
+.SH PROGRAMMER INFORMATION
+
+  The FileComplete widget is divided into four areas.  The top is an
+AsciiText widget called "text".  Just below that is a status Label
+called "status".  Below that is a pair of widgets.  On the left is a
+ScrolledList called "files" that contains a list of files.  On the
+right is a Box called "buttons" that holds an "Ok" and a "Cancel"
+Command widget called "ok" and "cancel" respectively.
+
+The following resources are specific to the FileComplete widget
+
+.TS H
+lw(1i) lw(1i) lw(1i) lw(1i).
+_
+.TB
+Name	Class	Type	Default Value
+_
+filename	Filename	String	"./"
+sortProc	SortProc	Function	NULL
+statThreshold	StatThreshold	Int	32
+acceptableFilenameProc	AcceptableFilenameProc	AcceptableFileProc	any
+filenameProcData	FilenameProcData	String	NULL
+acceptableStatsProc	AcceptableStatsProc	AcceptableStatsProc	any
+statsProcData	StatsProcData	String	NULL
+okLabel	Label	String	"Ok"
+callback	Callback	XtCallbackList	NULL
+showOkButton	ShowButton	Boolean	True
+cancelLabel	Label	String	"Cancel"
+cancelCallback	Callback	XtCallbackList	NULL
+showCancelButton	ShowButton	Boolean	True
+dirnamesOk	DirnamesOk	Boolean	False
+statLinks	StatLinks	Boolean	True
+followLinks	FollowLinks	FollowLinks	never
+_
+.TE
+
+.IP \fBfilename\fP
+The value in the text buffer.  This can be used to set the initial
+directory displayed for the user.  When retrieved, do \fBnot\fP modify
+this String in place.  This can lead to strange behavior.
+.IP \fBsortProc\fP
+This is a procedure used to sort the filenames in a directory.  It
+should be of type XfwfFCSortProc, defined below.  Beware that you can
+sort .  and .. into a position \fBnot\fP at the top of the directory.
+Therefore the programmer is encouraged not to sort the first two
+elements of the Xfwffileent array.  If no sort proc is provided then
+the widget uses qsort to sort the files according to the result of
+strcmp on the filenames.
+.IP \fBstatThreshold\fP
+If there is no acceptableStatsProc and there are more than
+statThreshold filenames in a directory, these entries will be statted
+in the background to prevent the application from "freezing".  The
+user is encouraged to continue typing or selecting because if another
+directory is selected, the statting will be short circuited and
+unneeded processing will not occur.
+.IP \fBacceptableFilenameProc\fP
+This is a function of type XfwfFCAcceptableFilenameProc that returns True
+if a filename is allowed to appear in the list.  Note that the
+procedure has no other information than the filename.  The
+FileComplete class registers a type converter from String to
+AcceptableFileProc.
+.IP \fBfilenameProcData\fP
+This is a pointer that is passed to the acceptableFilenameProc through
+the client_data argument.  It is a String for convenience reasons.
+.IP \fBacceptableStatsProc\fP
+This is a function of type XfwfFCAcceptableStatsProc that returns True if
+a filename is allowed to appear in the list.  This procedure has both
+the filename and the struct stat returned by the stat(2) system call
+available for perusal.  Providing the widget with one of these
+procedures disables the background statting capability.  This can
+cause the application to "freeze" during the statting of large
+directories.  If an acceptableFilenameProc is provided and returns
+False for a filename, that file will not be statted and the
+acceptableStatsProc will not be consulted.  The FileComplete class
+registers a type converter from String to AcceptableStatsProc.
+.IP \fBstatsProcData\fP
+This is a pointer that is passed to the acceptableStatsProc through
+the client_data argument.  It is a String for convenience reasons.
+.IP \fBokLabel\fP
+This is the label that will appear on the Ok button.
+.IP \fBcallback\fP
+This is a callback list that will be called whenever the user presses
+the Ok button or the Return key.
+.IP \fBshowOkButton\fP
+This Boolean resource determines whether the Ok button will exist or not.
+.IP \fBcancelLabel\fP
+This is the label that will appear on the Cancel button.
+.IP \fBcancelCallback\fP
+This is a callback list that will be called whenever the user presses the
+Cancel button.
+.IP \fBshowCancelButton\fP
+This Boolean resource determines whether the Cancel button will exist or not.
+.IP \fBdirnamesOk\fP
+This Boolean resource affects the behavior of a double-click on a
+directory name.  See the User Info section for more details.
+.IP \fBstatLinks\fP
+This resource determines whether the widget will use lstat(2) or stat(2)
+to retrieve information about a file.  If it is True, the widget will use
+lstat(2).  This is the default because use of stat(2) can be a REAL pain
+on systems that use amd(8), the AutoMount Daemon.
+.IP \fBfollowLinks\fP
+This resource is of type enum XfwfFCFollowLinks and is either never,
+whenShorter, or always.  It alters widget behavior as described above
+in the User Info section.
+
+.SH STRUCTURES, TYPEDEFS AND CONVENIENCE FUNCTIONS
+
+  The following types are defined in the FileComplete.h header file
+for the programmer's use.
+
+.nf
+.TA .2i 1i
+.ta .2i 1i
+typedef struct {
+	char	*filename;
+	char	*repr;
+} Xfwffileent;
+
+typedef void (*XfwfFCSortProc)( Xfwffileent *base, int nfiles );
+
+typedef Boolean (*XfwfFCAcceptableFilenameProc)(
+		char *filename,
+		XtPointer client_data );
+
+typedef Boolean (*XfwfFCAcceptableStatsProc)(
+		char *filename,
+		struct stat *filestats,
+		XtPointer client_data );
+
+enum XfwfFCFollowLinks {
+  XfwfFCNever, XfwfFCWhenShorter, XfwfFCAlways
+};
+.fi
+
+  The FileComplete widget registers a converter from String to
+FollowLinks that will convert "never", "whenshorter", and "always" to
+appropriate values.
+
+  The following values and convenience functions are declared in the
+public header file for use with the acceptableFilenameProc:
+
+.nf
+#define XfwfFCAnyFilename  ((XfwfFCAcceptableFilenameProc)0)
+#define XfwfFCGlobFiles	   ((XfwfFCAcceptableFilenameProc)1)
+extern Boolean XfwfFCNoDotFiles(
+		char *filename,
+		XtPointer ignored );
+extern Boolean XfwfFCNoTildeBackups(
+		char *filename,
+		XtPointer ignored );
+extern Boolean XfwfFCNoTildeBackupsOrDotFiles(
+		char *filename,
+		XtPointer ignored );
+extern Boolean XfwfFCRegexFiles(
+		char *filename,
+		XtPointer regex );
+.fi
+
+The converter defined by the class will turn a string value of "any",
+"nodotfiles", "notildebackups", "notildebackupsordotfiles",
+"regexfiles", or "globfiles" into the appropriate
+XfwfFCAcceptableFilenameProc value.
+
+  The regular expression for XfwfFCRegexFiles is taken from the
+filenameProcData resource. If the widget library is compiled to use
+the AT&T <regex.h> then the regex is a sed(1) style regular
+expression.  If you compiled with the GNU regex library you must use
+emacs regular expression syntax (which is mostly the same).  If the
+library is compiled without regex support then a warning message will
+be printed and all file names will be accepted.
+
+  When using XfwfFCGlobFiles, the filenameProcData should be a glob
+expression (the kind most shells support: *.c part.0[1-4]).  If the
+library is compiled without glob support then a warning message will
+be printed and all file names will be accepted.
+
+The following values are defined in the public header file for use
+with the acceptableStatsProc:
+
+.nf
+#define XfwfFCAnyStats  ((XfwfFCAcceptableStatsProc)0)
+extern Boolean XfwfFCDirsOrRegexFiles(
+		char *filename,
+		struct stat *filestats,
+		XtPointer regex );
+extern Boolean XfwfFCDirsOrGlobFiles(
+		char *filename,
+		struct stat *filestats,
+		XtPointer regex );
+.fi
+
+The converter defined by the class will turn a string value of "any",
+"dirorregexfiles", or "dirorglobfiles" into the appropriate
+XfwfFCAcceptableStatsProc value.
+
+  The regex parameter of XfwfFCDirsOrRegexFiles is taken from the
+statsProcData resource.  It passed to XfwfFCRegexFiles if the file is
+not a directory.
+
+  The regex parameter of XfwfFCDirsOrGlobFiles is taken from the
+statsProcData resource.  It passed to XfwfFCGlobFiles if the file is
+not a directory.
+
+The following procedures are declared in the public header file in the
+event that a programmer needs to use the subwidgets of a FileComplete
+widget.
+
+.nf
+Widget XfwfFileCompleteText(Widget w);
+Widget XfwfFileCompleteStatus(Widget w);
+Widget XfwfFileCompleteFileList(Widget w);
+Widget XfwfFileCompleteBox(Widget w);
+.fi
+
+There is also a convenience procedure to add buttons to the
+FileComplete's box.
+
+.nf 
+Widget XfwfFileCompleteAddButton(
+		Widget w,
+		char *name,
+		XtCallbackProc proc,
+		XtPointer client_data );
+.fi
+
+This function returns the newly created widget so that the programmer
+can modify it using XtSetValues.
+
+The public header file declares another convenience procedure
+
+.nf
+void XfwfFileCompleteTrimToPath(Widget w);
+.fi
+
+This procedure deselects any item from the ScrolledList and trims off
+the trailing filename component of the current filespec, leaving only
+directory path elements.  It is useful to clean up a reusable popup
+FileComplete widget just before it is popped up or just after it is
+popped down.
+
+There are two functions that can be used to determine what sort of
+pattern matching capabilities the FileComplete widget has been
+compiled with.  They are somewhat self-explanatory.
+
+.nf
+enum xfwfFileCompleteRegexFlavor {
+  xfwfFC_NoRegex,
+  xfwfFC_ATT,
+  xfwfFC_Emacs
+};
+
+enum xfwfFileCompleteRegexFlavor XfwfFileCompleteRegexFlavor();
+
+int XfwfFileCompleteHasGlob();
+.fi
+
+  If you use XtVaSetValues to alter the filenameProcData or
+statsProcData and you are using a static data buffer, the pointers
+will not change.  Therefore you could alter what's in the buffers and
+perform a setvalues, but a directory rescan would not be triggered
+(the XtPointer values would not change).  To force a rescan use the
+following convenience procedure:
+
+.nf
+void XfwfFileCompleteForceRescan(
+		Widget w );
+.fi
+
+.SH TRICKS
+
+  There is a reason the widget provides type converters for the
+acceptableProcs and the ProcData is a String.  It allows the user or
+programmer to control the list of files using nothing more complicated
+than the app-defaults.  For example, this will make \fBall\fP
+FileComplete widgets show only directories, .c and .h files.  It will
+also slow down all those FileComplete widgets since they have to stat
+every entry in the directory before accepting user input.
+
+.nf
+*FileComplete.acceptableStatsProc: dirorregexfiles
+*FileComplete.statsProcData: .*\\.[ch]
+.fi
+
+If you must have an acceptableStatsProc, try to eliminate as many
+files as you can using the acceptableFilenameProc first.  Anything
+that doesn't survive the acceptableFilenameProc will not be statted
+and will save you a lot of time.  Unfortunately, for most
+applications, you can rarely do this.
+
+.SH PROBLEMS
+
+  This widget has only been tested on Sun4s, and not very well tested
+at that.  If you have problems compiling, tell me.  I'll try to fix
+it.  If you have other problems using it, tell me.
+
+  The getod function could be made much nicer by having it check the
+mount entries when it crosses device boundaries.  This would result in
+much "nicer" filenames on systems that mount onto symlinks and may
+result in a performance enhancement.
+
+  It would be nice if the widget could delay the statting of items
+that were not visible on the list and dynamically delete items that
+failed the predicates.  This would require a much more sophisticated
+list widget, though.
+
+  The box widget does not make the same assumptions about "preferred
+size" that the FileComplete widget does.  This leads to ugly button
+layout.  I need to abandon the box and do some custom layout.  Better
+yet, I'll write a different form widget.
+
+.SH "COPYRIGHT"
+Copyright (C) 1992,93,94 Robert Forsman
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free
+Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+.SH "ACKNOWLEDGMENTS"
+This product includes software developed by the University of
+California, Berkeley and its contributors.  Specifically, the getod.c
+module is derived from Berkeley's getcwd.c.
+
+  Thanks to Brian Totty for creating the Free Widget Foundation and
+maintaining the distribution.
+
+  Thanks to Jordan Breslow and Dan Greening for copyright assistance.
+
+.nf
+Jordan J. Breslow
+a copyright and computer lawyer type guy
+P.O. Box 12979
+Oakland, CA  94604-2979
+(510) 451-0544
+.fi
+
+.nf
+Dan Greening
+Software Transformation
+1601 Saratoga-Sunnyvale Rd, #100
+dgreen@sti.com
+(408) 973-8081 x313
+Cupertino, CA 95014
+.fi
+
+  Thanks to Edward Williams who provided the diffs to support glob
+pattern matching.  He also provided diffs that should enable the
+FileComp widget to be built on systems lacking the AT&T regex library.
+
+.nf
+Capt Edward M. Williams
+WilliamsEM@space.laafb.af.mil
+.fi
+
+.SH "AUTHOR"
+.nf
+Robert Forsman
+thoth@cis.ufl.edu
+http://www.cis.ufl.edu/~thoth
+University of Florida
+Department of Computer and Information Science
+.fi

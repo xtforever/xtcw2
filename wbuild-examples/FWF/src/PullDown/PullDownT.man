@@ -1,0 +1,18 @@
+.TH "PullDownT" "1" "12 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+PullDownT \- Test program for the XfwfPullDown widget
+.SH DESCRIPTION
+The \fIPullDownT\fP program creates a sort of menubar (a rowcol
+widget) with two buttons, Each button has an associated "pull down"
+menu. Most actions in the menu are not bound to anything, only the
+"quit" action works.
+.PP
+Note that this is not a good example of a menubar, since
+you cannot drag the mouse from one menu to the next.
+For a better implementation, see the
+MenuBarT program.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands

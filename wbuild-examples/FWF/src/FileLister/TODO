@@ -1,0 +1,16 @@
+1. At present, the maximum number of files has to be set in BOTH include 
+files, FileList.h and FileListP.h.  This does not fit into the philosophy
+shown in other FWF widgets, but is a result of the fact that this constant
+is used both by internal and external routines.  It's probably possible to
+get around this requirement by dynamically allocating each new path and 
+file pointer for the list (as well as the strings themselves).
+
+2. Unhighlight any selected item in the file list if an item in the selected
+list is highlighted.
+
+3. Optional: Find a more elegant way to notify the user of a redundant file
+and path selection than printing a message to stderr.
+
+4. Optional: Draw a line separating the selected list part of the GUI from
+the rest of it.
+

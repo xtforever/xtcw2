@@ -1,0 +1,21 @@
+.TH "ThWheelT" "1" "20 Jan 1994" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+ThWheelT \- Test program for the XfwfThumbWheel widget
+.SH DESCRIPTION
+.PP
+The program shows a box with a thumbwheel. When the wheel is turned
+with the mouse or with the up and down arrow keys, the background
+color changes.
+.PP
+The program never deallocates colors, so on an 8 bit display you will
+probably soon run out of colors. After all, it's just a test.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+

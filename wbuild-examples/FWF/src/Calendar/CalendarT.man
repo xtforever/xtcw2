@@ -1,0 +1,18 @@
+.TH "CalendarT" "1" "15 Dec 1995" "" "Free Widget Foundation"
+.SH NAME
+CalendarT \- Test program for the XfwfCalendar widget
+.SH DESCRIPTION
+.PP
+The program shows off the features of the Calendar widget
+with toggles to select and deselect features such as wrapping, boxing
+and headings.
+.SH AUTHOR
+Copyright (C) 1995 by Lachlan Wetherall, lwether@cs.newcastle.edu.au            
+
+    .-_|\\   Department of Computer Science
+   /     \\  University of Newcastle
+   \\.--._*  Callaghan NSW 2308
+        v   Australia
+.SH AUTHOR
+
+

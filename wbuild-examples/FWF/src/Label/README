@@ -1,0 +1,62 @@
+Label
+
+Files
+	Imakefile
+	Label.tex	(documentation; format with Plain TeX)
+	wbuildmac.tex	(TeX macros)
+	stip4.bm	(X bitmap)
+	Label.c
+	LabelP.h
+	Label.h
+	Label.w		(the real source, see below)
+	LabelT.c	(test program)
+
+N.B.
+	The widget files are computer-generated. The real source is
+	Label.w. It has been processed with Wbuild (available by
+	anonymous FTP from ftp.let.rug.nl)
+
+Author
+	Bert Bos <bert@let.rug.nl>
+	Alfa-informatica, Rijksuniversiteit Groningen, The Netherlands
+	August 1992
+
+History
+2.0	added tablist resource (by Rick Richardson <rick@digibd.com>)
+2.1	changed set_label not to call expose, but to let X server do that.
+2.2	(22 May '95) changed set_label to draw text faster, added XfwfSetLabel
+2.3	(14 Sep '95) initialize now computes tabs before counting lines
+	(Lachlan Wetherall <lwether@cs.newcastle.edu.au>)
+2.4	(7 Dec 1995) changed last need_redisplay to True (Lachlan
+	Wetherall <lwether@cs.newcastle.edu.au>)
+2.5	(8 Feb 1996) changed some XfwfDrawImageString's to
+	XfwfDrawString, to allow background pattern to show through.
+2.6	(12 Feb 1996) replaced background_pixel by background
+	(shouldn't make any diff.)
+
+Copyright
+
+	Copyright 1995,1996 Bert Bos (hereafter `the author')
+
+Conditions of use
+
+	Permission to use, copy, modify, distribute, and sell this
+	software and its documentation for any purpose is hereby
+	granted without fee, provided that the above copyright notice
+	appears in all copies and that both that copyright notice and
+	this permission notice appear in supporting documentation, and
+	that the name of the author not be used in advertising or
+	publicity pertaining to distribution of the software without
+	specific, written prior permission. The author makes no
+	representations about the suitability of this software for any
+	purpose. It is provided "as is" without express or implied
+	warranty.
+
+	The author disclaims all warranties with regard to this
+	software, including all implied warranties of merchantability
+	and fitness, in no event shall the author be liable for any
+	special, indirect or consequential damages or any damages
+	whatsoever resulting from loss of use, data or profits,
+	whether in an action of contract, negligence or other tortuous
+	action, arising out of or in connection with the use or
+	performance of this software.

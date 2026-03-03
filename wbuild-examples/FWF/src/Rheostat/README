@@ -1,0 +1,9 @@
+
+	The XfwfRheostat widget is a round, dial-like valuator widget that
+	may be used for input and/or output of integer values.  It is
+	especially useful for displaying and entering angles.  Vanilla
+	and Motif versions are available.
+
+	Joe English
+	joe@trystero.art.com
+

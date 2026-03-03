@@ -1,0 +1,201 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfRowCol
+.SH DESCRIPTION
+The RowCol widget forces all its children into rows and columns. The
+children keep their preferred size, but the preferred position is
+ignored. Resources determine how many rows or columns there should be
+(or as many as will fit) and if the children should be layed out in
+rows or in columns. In both methods, the children are placed on a
+grid, the size of which is determined by the width (height) of the
+widest (tallest) child.
+
+The children can be aligned in several ways: they can be placed in the
+center of their grid cell or against the edges. This is controlled by
+a resource of type \fIAlignment\fP.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfRowCol
+Name	Class	Type	Default
+XtNstoreByRow	XtCStoreByRow	Boolean 	True 
+XtNrows	XtCRows	int 	0 
+XtNcolumns	XtCColumns	int 	0 
+XtNalignment	XtCAlignment	Alignment 	XfwfTopLeft 
+XtNshrinkToFit	XtCShrinkToFit	Boolean 	False 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNstoreByRow"
+The child widgets can be layed out in rows (left to right) or in
+columns (top to bottom). The resource \fIstoreByRow\fP can be \fITrue\fP or
+\fIFalse\fP. \fITrue\fP means children are added to the right of the previous
+one until the row is full, like words are added to a text. \fIFalse\fP
+means children are added below the previous one, until the column is
+full.
+
+.TP
+.I "XtNrows"
+The number of rows can be set with \fIrows\fP, or the number of columns
+can be set with \fIcolumns\fP. If both are non-zero, \fIrows\fP will be
+ignored.  If \fIrows\fP is zero, there will be as many rows as needed. If
+\fIcolumns\fP is zero, there will be as many columns as needed. However,
+if both are zero, there will be as many columns as will fit in the
+current width of the RowCol widget. By default, both \fIrows\fP and
+\fIcolumns\fP are zero.
+
+.TP
+.I "XtNcolumns"
+
+.TP
+.I "XtNalignment"
+The area of the RowCol widget is partitioned into rectangular cells
+(a grid). The cells are just large enough to contain the widest and
+the tallest of the children. Within the cell, the children can be put
+in the top left corner (the default) or against one of the edges or in
+the center.  This is set with the \fIalignment\fP resource. The type
+\fIAlignment\fP is defined in the ancestor class `Common'.
+
+.TP
+.I "XtNshrinkToFit"
+The resource \fIshrinkToFit\fP determines how the size of the RowCol
+widget itself is computed. When it is \fIFalse\fP (default), the
+\fIlocation\fP resource is used to compute the widget's preferred size.
+When the value is \fITrue\fP, the preferred size is computed fromthe total
+width and height of the children. For example, when the widest child
+has a width of \fIw\fP and \fIcolumns > 0\fP, the preferred width will be
+\fIcolumns * w +\fP frame width. A similar computation is used for the
+height. If \fIcolumns > 0\fP, only the height is computed this way. If
+\fIcolumns = 0, rows > 0\fP, only the width is computed.
+
+.TP
+.I "XtNframeType"
+The inherited resource \fIframeType\fP is given a default value of
+\fIXfwfSunken\fP, instead of the inherited default \fIXfwfRaised\fP. The frame
+width is set to a default of 2 pixels, instead of 0.
+
+.TP
+.I "XtNframeWidth"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2

@@ -1,0 +1,3 @@
+Entry		(superclass: XfwfBoard) use it for reading a single line of text
+			it lets you specify the maximal length, set the allowed characters
+			and disable displaying of the entered text

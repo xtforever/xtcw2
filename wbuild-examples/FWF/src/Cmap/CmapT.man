@@ -1,0 +1,15 @@
+.TH CMAPT 1 "12 March 1992"
+.SH NAME
+.PP
+CmapT \- Cmap Widget Test 
+.SH DESCRIPTION
+.PP
+Displays a cmap widget.  This one allocates 128 colors (if possible)
+and then displays them using the XtNmappingTable resource.
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1993
+Wolfram Research, Inc
+cwikla@wri.com

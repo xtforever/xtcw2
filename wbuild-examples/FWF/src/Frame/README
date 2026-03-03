@@ -1,0 +1,72 @@
+Frame
+
+Files
+	Imakefile
+	Frame.c
+	Frame.man	(manual page for the Frame widget)
+	FrameP.h
+	Frame.h
+	stip4.bm	(X bitmap)
+	Frame.w		(the real source, see below)
+	FrameT.c	(test program)
+	FrameT.man	(manual page for test program)
+
+N.B.
+	The widget files are computer-generated. The real source is
+	Frame.w. It has been processed with Wbuild (available by
+	anonymous FTP from ftp.let.rug.nl)
+
+Author
+	Bert Bos <bert@let.rug.nl>
+	Alfa-informatica, Rijksuniversiteit Groningen, The Netherlands
+	August 1992
+
+History
+2.0	April 1993
+2.0.1	(28 June 1993) Changed change_managed to always set the size
+	of the child. (thanks to M. M. Saggaf <alsaggaf@athena.mit.edu>)
+2.1	(7 July 1993) Changed `lightColor' to `topShadowColor' and
+	`darkColor' to `bottomShadowColor', in accordance with Motif
+	usage.
+2.1.1	(7 Oct '93) changed `=' in a condition to `==' on line 322
+	(thanks to Robert Forsman)
+2.2	(19 Oct '93) moved creation of bitmaps from initialize to
+	realize method. This was an error: it cannot be assumed that a
+	widget already has a window ID when it is in it's initialize
+	method. (Thanks to Rich Alberth)
+2.2.1	(6 Dec '93) Added forgotten `return need_redisplay' to
+	`set_values'
+2.3	(12 Feb '96) changed background_pixel to background (see
+	Common, shouldn't make any diff. though)
+
+Copyright
+
+	Copyright 1995 Bert Bos (hereafter `the author')
+
+Conditions of use
+
+	Permission to use, copy, modify, distribute, and sell this
+	software and its documentation for any purpose is hereby
+	granted without fee, provided that the above copyright notice
+	appears in all copies and that both that copyright notice and
+	this permission notice appear in supporting documentation, and
+	that the name of the author not be used in advertising or
+	publicity pertaining to distribution of the software without
+	specific, written prior permission. The author makes no
+	representations about the suitability of this software for any
+	purpose. It is provided "as is" without express or implied
+	warranty.
+
+	The author disclaims all warranties with regard to this
+	software, including all implied warranties of merchantability
+	and fitness, in no event shall the author be liable for any
+	special, indirect or consequential damages or any damages
+	whatsoever resulting from loss of use, data or profits,
+	whether in an action of contract, negligence or other tortuous
+	action, arising out of or in connection with the use or
+	performance of this software.
+
+
+Local Variables:
+mode: indented-text
+end:

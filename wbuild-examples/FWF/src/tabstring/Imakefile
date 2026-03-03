@@ -1,0 +1,34 @@
+#include "../../FWF.tmpl"
+
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+
+/*CFLAGS = $(CDEBUGFLAGS) $(CCOPTIONS) $(STD_INCLUDES) $(STD_DEFINES) $(PROTO_DEFINES) $(DEFINES) $(COMPATFLAGS)*/
+
+TABSTRINGH = TabString.h
+TABSTRINGSRC = DrawImageString.c DrawString.c Tablist2Tabs.c \
+		TextWidth.c strnchr.c
+TABSTRINGOBJ = DrawImageString.o DrawString.o Tablist2Tabs.o \
+		TextWidth.o strnchr.o
+
+LIB_OBJS = $(TABSTRINGOBJ)
+
+SRCS = $(TABSTRINGSRC)
+OBJS = $(TABSTRINGOBJ)
+
+INCS = $(FWF_INCDIR)/$(TABSTRINGH)
+
+AddToLibraryTarget(archive,$(FWF_LIBDIR),$(FWF_LIBNAME),$(TABSTRINGOBJ))
+ObjectRuleWithFlags($(FWF_CFLAGS))
+RequireThisFileForInit($(FWF_INCDIR)/$(TABSTRINGH))
+FileCopyWhenNeeded(.,$(TABSTRINGH),$(FWF_INCDIR),$(TABSTRINGH))
+InstallMultiple($(INCS),$(FWF_INSTALL_INCDIR))
+
+GatherDescription(TabString.txt,../../README.INDEX);
+
+objects: first objs archive
+
+first: $(INCS)
+
+objs: $(OBJS)
+
+execs:

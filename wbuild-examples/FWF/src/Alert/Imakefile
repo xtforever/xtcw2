@@ -1,0 +1,7 @@
+WIDGET = Alert
+OTHERLIBS = $(XPM_LIB)
+SUPERCLASSES =
+OTHERLIBS = -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

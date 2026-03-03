@@ -1,0 +1,153 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XmIcon
+.SH DESCRIPTION
+The XmIcon widget displays an image. The preferred width and height
+of the widget will be set to the width and height of the loaded
+image. The widget has a callback \fIactivateCallback\fP, that is by
+default bound to a click of the left mouse button.
+
+The image is a \fIPixmap\fP, optionally accompanied by a mask, to make
+parts of the image transparent.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XmIcon
+Name	Class	Type	Default
+XtNimage	XtCImage	Icon *	NULL 
+XtNactivate	XtCActivate	Callback	NULL 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNimage"
+The image must be in \fIPixmap\fP format. The width and height of the
+image will be used to set the width and height of the widget.  There
+is a converter for strings, which will
+try to interpret a string as a file name and load the file. The file
+must be in XPM format. The converter also knows about some built-in
+images, called \fI"FATAL"\fP, \fI"ERROR"\fP, \fI"WARNING"\fP, \fI"QUESTION"\fP,
+\fI"INFO"\fP and \fI"NONE"\fP.
+
+	
+
+.TP
+.I "XtNactivate"
+The callback is called by the \fIactivate\fP action, which is by default
+bound to a click of mouse button 1.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XmManager
+Name	Class	Type	Default
+XtNbottom_shadow_color	XtCBottom_shadow_color	Pixel 	0 
+XtNbottom_shadow_pixmap	XtCBottom_shadow_pixmap	Pixmap 	0 
+XtNforeground	XtCForeground	Pixel 	0 
+XtNhelp_callback	XtCHelp_callback	Callback	NULL 
+XtNhighlight_color	XtCHighlight_color	Pixel 	0 
+XtNhighlight_pixmap	XtCHighlight_pixmap	Pixmap 	None 
+XtNinitial_focus	XtCInitial_focus	Widget 	NULL 
+navigationType	XtCNavigationType	NavigationType	XmTAB_GROUP 
+XtNshadow_thickness	XtCShadow_thickness	Dimension 	0 
+XtNstring_direction	XtCString_direction	XMStringDirection 	0 
+XtNtop_shadow_color	XtCTop_shadow_color	Pixel 	0 
+XtNtop_shadow_pixmap	XtCTop_shadow_pixmap	Pixmap 	None 
+XtNtraversal_on	XtCTraversal_on	Boolean 	True 
+XtNunit_type	XtCUnit_type	Unsigned  char 	XmPIXELS 
+XtNuser_data	XtCUser_data	XTPointer 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The type \fIIcon\fP is defined in \fIConverters.h\fP
+
+.nf
+
+.B incl
+ <Xfwf/Converters.h>
+.fi
+
+.SS "Translations"
+
+By default, the \fIactivate\fP action is bound to a mouse click and to
+the Return key.
+
+	
+
+.nf
+<Btn1Down>,<Btn1Up>: activate() 
+.fi
+
+.nf
+<Key>Return: activate() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "activate
+
+The \fIactivate\fP action just calls the \fIactivate\fP callback functions,
+passing the \fIXEvent\fP pointer in the \fIcall_data\fP argument.
+

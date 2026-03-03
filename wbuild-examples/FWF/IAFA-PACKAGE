@@ -1,0 +1,14 @@
+Title:		Free Widget Foundation Widget Set
+Version:	3.8
+Description:	Source to build the FWF widget set, and sample programs.  These
+		widgets are freely available user interface objects for use in
+		the X window system.  They were created by the all-volunteer
+		Free Widget Foundation.  The author listed below is an FWF
+		coordinator.  Individual widget authors are described in the
+		widget documentation.
+Author:		free-widgets-info@let.rug.nl
+Maintained-by:	free-widgets-info@let.rug.nl
+Maintained-at:	sunsite.unc.edu, ftp.let.rug.nl
+Platforms:	X11R4 or preferably X11R5, C, standard UNIX utilities
+Copying-Policy:	Freely Redistributable
+Keywords:	FWF, widgets, X, file selector

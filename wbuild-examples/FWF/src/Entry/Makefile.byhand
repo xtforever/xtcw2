@@ -1,0 +1,41 @@
+# makefile for the Entry Widget
+
+
+# linux
+CC		= cc
+CFLAGS	= -Wall -I/usr/include/X11 -I. -DDEBUG
+LFLAGS	= -lfwf -lXaw -lXpm -lXt -lXext -lXmu -lX11 -lm
+
+# sunos
+#CC		= gcc
+#CFLAGS	= -Wall -I/usr/local/X11R5/include -I$(PINC) -I.
+#LIB		= -L/usr/local/X11R5/lib -L$(PLIB)
+#LFLAGS	= $(LIB) -lfwf -lXaw -lXpm -lXt -lXext -lXmu -lX11 -lm
+
+WBUILD	= wbuild -h . -p Xfwf -n
+FWF_SRC	= /packages/fwf/src
+
+# superclasses
+COMMON	= $(FWF_SRC)/Common/Common.w
+FRAME	= $(FWF_SRC)/Frame/Frame.w
+BOARD	= $(FWF_SRC)/Board/Board.w
+
+PARENTS	=  $(COMMON) $(FRAME) $(BOARD)
+PROG	= EntryT
+
+all:	$(PROG)
+
+new:	old	$(PROG)
+
+old:
+	rm -f *.[oh] Entry.c *~
+
+Entry.c:	Entry.w
+	$(WBUILD) -o Entry $(PARENTS) Entry.w
+
+EntryT:	Entry.o EntryT.o 
+	$(CC) -o $@ EntryT.o Entry.o $(LFLAGS)
+
+clean:
+	@echo cleaning ...
+	rm -f *.o *~ *.out $(PROG)

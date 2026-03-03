@@ -63,6 +63,18 @@ function M.process_property(clean_k, v)
         clean_k = 'forced_width'
     elseif clean_k == 'rasterize-height' then
         clean_k = 'forced_height'
+    elseif clean_k == 'fill' then
+        local fill_map = {
+            [0] = "none",
+            [1] = "horizontal",
+            [2] = "vertical",
+            [3] = "both",
+            ["none"] = "none",
+            ["horizontal"] = "horizontal",
+            ["vertical"] = "vertical",
+            ["both"] = "both"
+        }
+        v = fill_map[v] or v
     end
 
     if type(v) == 'function' then
@@ -121,7 +133,7 @@ function M.build(node, parent_path)
             local clean_k, processed_v = M.process_property(k:sub(2), v)
             if clean_k and processed_v ~= nil then
                 table.insert(xt_props, clean_k)
-                table.insert(xt_props, processed_v)
+                table.insert(xt_props, tostring(processed_v))
             end
         end
     end

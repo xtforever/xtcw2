@@ -1,0 +1,227 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XmPager
+.SH DESCRIPTION
+The Pager widget displays one page from a long text. A dog's ear in
+the corner allows flipping pages. This is an alternative to scrolled
+texts, meant for material that is preferrably read a page at a time.
+
+The Pager can operate in two modes, depending on the setting of the
+\fIlines\fP resource. If \fIlines\fP is 0, as many lines are displayed as will
+fit in the widget. If \fIlines\fP is positive, that many lines will be
+displayed. In the latter case, the widget will also try to scale the
+font (provided the font is scalable).
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XmPager
+Name	Class	Type	Default
+XtNtext	XtCText	String 	NULL 
+XtNfontFamily	XtCFontFamily	String 	NULL 
+XtNroman	XtCRoman	FontStruct	guess_roman 
+XtNlines	XtCLines	int 	0 
+XtNwrap	XtCWrap	Boolean 	False 
+XtNbaseline	XtCBaseline	float 	"1.2"
+XtNmargin	XtCMargin	int 	5 
+XtNtablist	XtCTablist	String 	"8 16 24 32 40 48 56 64 72 80 88 96 104 112 120 128 136 144 152 160"
+
+.TE
+.ps +2
+
+.TP
+.I "XtNtext"
+The text that is displayed can either be given directly as a
+resource, or it can be input from a file or a pipe. The text can
+include newlines. Form-feed characters can be used to force the start
+of a new page.
+
+If the text starts with an atsign (@@) the rest of the text is
+interpreted as a file name. The file will only be read only and the
+contents are held in memory. The file is searched in the current
+directory first and, if that fails, with a call to
+\fIXtResolvePathname()\fP.
+
+If the text starts with an inverted quote (`), the rest of the text is
+considered a command that will be passed to \fIpopen()\fP. The output of
+the command is stored in memory and used as the text to display.
+
+	
+
+.TP
+.I "XtNfontFamily"
+The \fIfontFamily\fP is used to set a generic name for the font, instead
+of a specific font. If \fIfontFamily\fP is set, but \fIroman\fP is left
+unspecified, the widget will try to find a font of the appropriate
+size itself.
+
+	
+
+.TP
+.I "XtNroman"
+The font that is used for the text can be inferred from the
+\fIfontFamily\fP resource or it can be set explicitly.
+
+Note that, if the font is scalable and the \fIlines\fP resources is
+positive, the actual point size used will depend on the size of the
+widget.
+
+	
+
+.TP
+.I "XtNlines"
+The \fIlines\fP resource can be set to a positive value, to force the
+widget to display a fixed number of lines, whatever its size. This can
+give strange results when the font is not scalable. If \fIlines <= 0\fP,
+as many lines are displayed as will fit.
+
+	
+
+.TP
+.I "XtNwrap"
+Someday, the widget might support another mode of display, namely
+wrapping text. In this mode, lines are broken between words if they
+don't fit on one line. Newlines are ignored, unless there are two in a
+row.
+
+	
+
+.TP
+.I "XtNbaseline"
+The interline spacing depends on the font. The \fIbaseline\fP resource
+specifies how much the normal baseline is stretched (or shrunk). A
+value of 1 corresponds to a baseline equal to the font's ascent plus
+the font's descent.
+
+Note that setting \fIlines\fP to a positive value without also using a
+scalable font, will mess up the baselines, because the widget will
+still try to draw the requested number of lines.
+
+	
+
+.TP
+.I "XtNmargin"
+The \fImargin\fP resource gives the number of pixels that must be left
+blank above and to the left of the text.
+
+        
+
+.TP
+.I "XtNtablist"
+A tablist can be provided for tabbing to particular columns
+within the label.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XmManager
+Name	Class	Type	Default
+XtNbottom_shadow_color	XtCBottom_shadow_color	Pixel 	0 
+XtNbottom_shadow_pixmap	XtCBottom_shadow_pixmap	Pixmap 	0 
+XtNforeground	XtCForeground	Pixel 	0 
+XtNhelp_callback	XtCHelp_callback	Callback	NULL 
+XtNhighlight_color	XtCHighlight_color	Pixel 	0 
+XtNhighlight_pixmap	XtCHighlight_pixmap	Pixmap 	None 
+XtNinitial_focus	XtCInitial_focus	Widget 	NULL 
+navigationType	XtCNavigationType	NavigationType	XmTAB_GROUP 
+XtNshadow_thickness	XtCShadow_thickness	Dimension 	0 
+XtNstring_direction	XtCString_direction	XMStringDirection 	0 
+XtNtop_shadow_color	XtCTop_shadow_color	Pixel 	0 
+XtNtop_shadow_pixmap	XtCTop_shadow_pixmap	Pixmap 	None 
+XtNtraversal_on	XtCTraversal_on	Boolean 	True 
+XtNunit_type	XtCUnit_type	Unsigned  char 	XmPIXELS 
+XtNuser_data	XtCUser_data	XTPointer 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+.nf
+<Key>Prior: previous_page() 
+.fi
+
+.nf
+<Key>BackSpace: previous_page() 
+.fi
+
+.nf
+<Key>minus: previous_page() 
+.fi
+
+.nf
+<Key>Next: next_page() 
+.fi
+
+.nf
+<Key>space: next_page() 
+.fi
+
+.nf
+<Key>plus: next_page() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "previous_page
+
+.TP
+.I "next_page
+

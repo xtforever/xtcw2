@@ -1,0 +1,14 @@
+.TH MdialT 1 "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+.PP
+MdialT \- Mdial Widget Test 
+.SH DESCRIPTION
+.PP
+Displays a mdial widget.
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1993
+Wolfram Research, Inc
+cwikla@wri.com

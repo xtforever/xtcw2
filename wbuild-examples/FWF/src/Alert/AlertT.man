@@ -1,0 +1,12 @@
+.TH "AlertT" "1" "11 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+AlertT \- Test program for the Alert widget
+.SH DESCRIPTION
+The \fIAlertT\fP creates an alert widget, with a question mark as icon
+and the text "Click on a button to choose a number". The alert box
+shows four buttons. Clicking on a button
+stops the program and prints the number of the chosen button.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

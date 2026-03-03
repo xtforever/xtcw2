@@ -1,0 +1,65 @@
+.TH "EzMenu" "3" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH Name
+EzMenu \- menu cascade constructed from description in resource database
+.SH Synopsis
+#include <X11/Intrinsic.h>
+#include <X11/EzMenu.h>
+
+widget = XtCreatePopupShell(name, ezMenuWidgetClass, ...);
+.SH Class Hierarchy
+Core-->Composite-->Shell-->OverrideShell-->SimpleMenu-->EzMenu
+.SH Description
+EzMenu is a simple menu package built on top of the
+X11R4 (and later) Athena menu widgets.  It allows you to construct 
+a menu with cascaded submenus to any level from a
+description stored as a resource value.  You create the EzMenu
+as a top-level shell, and it reads its XtNmenu resource and
+creates child widgets according to the description therein.
+.LP
+The syntax of XtNmenu is easiest to describe using an example.
+Here is a resource file for an EzMenu called menuTitle:
+.sp
+.nf
+Eztest.menuTitle.label: EzTest Menu
+Eztest.menuTitle.menu:\\
+        (line)\\
+        (item "Meaningless Item" (action "does-not-exist()"))\\
+        (item "Another Meaningless Item" (action "does-not-exist()"))\\
+        (blank)\\
+        (menu "Submenu..." \\
+                (line)\\
+                (item "Multiple actions here" \\
+                   (action "does-not-exist() nor-does-this()"))\\
+                (item "Single Action" (action "does-not-exist()"))\\
+        )\\
+        (blank)\\
+        (line)\\
+        (blank)\\
+        (item "Last entry!" (action "does-not-exist()"))
+.fi
+.sp
+This example shows how to create separator lines, blanks,
+regular entries, and entries that pop up submenus.  Note
+that the EzMenu description specifies actions instead of 
+callbacks.  You need to
+create these actions, and add them to the global action list
+with XtAppAddActions.  If you want, you can create an action that 
+calls a callback using XtCallCallbacks().
+.sp
+More about callbacks.
+.sp
+The menu entries are encapsulated in the EzME widget.
+The EzME widget is a subclass of the Athena smeBSB widget,
+with added features that it
+.SH Illustration
+.SH Resources
+In addition to the resources defined by superclasses, this widget
+defines the following:
+XtNmenu,  XtCMenu, XtRString, NULL
+.SH Public Functions
+None.
+.SH Author
+.sp
+.nf
+Dirk Grunwald, \fIgrunwald@foobar.colorado.edu\fR
+.fi

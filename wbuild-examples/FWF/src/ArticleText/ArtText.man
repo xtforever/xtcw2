@@ -1,0 +1,174 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfArticleText
+.SH DESCRIPTION
+The \fIXfwfArticleText\fP widget is used to display news/mail articles in
+	different fonts	and colors.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfArticleText
+Name	Class	Type	Default
+XtNbodyFont	XtCBodyFont	FontStruct	XtDefaultFont 
+XtNquoteFont	XtCQuoteFont	FontStruct	XtDefaultFont 
+XtNheaderItemFont	XtCHeaderItemFont	FontStruct	XtDefaultFont 
+XtNheaderValueFont	XtCHeaderValueFont	FontStruct	XtDefaultFont 
+XtNbodyColor	XtCBodyColor	Pixel 	XtDefaultForeground 
+XtNquoteColor	XtCQuoteColor	Pixel 	XtDefaultForeground 
+XtNheaderItemColor	XtCHeaderItemColor	Pixel 	XtDefaultForeground 
+XtNheaderValueColor	XtCHeaderValueColor	Pixel 	XtDefaultForeground 
+XtNquoteChar	XtCQuoteChar	char 	'>'
+
+.TE
+.ps +2
+
+.TP
+.I "XtNbodyFont"
+The text is drawn using the fonts given.
+
+	
+
+.TP
+.I "XtNquoteFont"
+
+.TP
+.I "XtNheaderItemFont"
+
+.TP
+.I "XtNheaderValueFont"
+
+.TP
+.I "XtNbodyColor"
+The color resources specify the colors used for drawing the text.
+
+	
+
+.TP
+.I "XtNquoteColor"
+
+.TP
+.I "XtNheaderItemColor"
+
+.TP
+.I "XtNheaderValueColor"
+
+.TP
+.I "XtNquoteChar"
+The \fIquoteChar\fP resource specifies the quote character used for changing
+	color and font when parsing the article text.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfTextOut
+Name	Class	Type	Default
+XtNinternalOffset	XtCInternalOffset	Dimension 	2 
+XtNfont1	XtCFont1	FontStruct	XtDefaultFont 
+XtNfont2	XtCFont2	FontStruct	XtDefaultFont 
+XtNfont3	XtCFont3	FontStruct	XtDefaultFont 
+XtNfont4	XtCFont4	FontStruct	XtDefaultFont 
+XtNcolor1	XtCColor1	Pixel 	XtDefaultForeground 
+XtNcolor2	XtCColor2	Pixel 	XtDefaultForeground 
+XtNcolor3	XtCColor3	Pixel 	XtDefaultForeground 
+XtNcolor4	XtCColor4	Pixel 	XtDefaultForeground 
+XtNcolor5	XtCColor5	Pixel 	XtDefaultForeground 
+XtNcolor6	XtCColor6	Pixel 	XtDefaultForeground 
+XtNcolor7	XtCColor7	Pixel 	XtDefaultForeground 
+XtNcolor8	XtCColor8	Pixel 	XtDefaultForeground 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNxcc	XtCXCc	XCC 	NULL 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The \fIXfwfSetArticleText\fP function is used to build up the text chunks to be
+	displayed in the widgets window.  It parses the data for the break
+	between the header and body of the message and changes font and
+	color accordingly.  Also when parsing the body of the message, if the
+	first character of the line is the \fIquoteChar\fP then the \fIquoteFont\fP
+	and \fIquoteColor\fP is used to display the text.  If there was a previous
+	set of text then this is removed first.
+
+.nf
+XfwfSetArticleText( $, char * data)
+.fi
+

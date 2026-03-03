@@ -1,0 +1,83 @@
+@class Wmenu (Wbutton)
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+
+@PUBLIC
+@var <Callback> XtCallbackList menu_cb = NULL
+@var int lst = 0
+@var int lines_height = 10
+
+@PRIVATE
+@var Widget shell
+@var Widget listbox
+@var int entry_mode
+
+@METHODS
+
+@proc initialize
+{
+    $shell = 0;
+    $entry_mode = 0;
+}
+
+@UTILITIES
+
+@proc open_popup($)
+{
+    if ($entry_mode) return;
+
+    if (! $shell) {
+        $shell = XtCreatePopupShell("menu_shell", overrideShellWidgetClass,
+                                     $, NULL, 0);
+        $listbox = XtVaCreateManagedWidget("menu_list", wlsWidgetClass,
+                                            $shell, NULL);
+        XtAddCallback($listbox, "callback", (XtCallbackProc)item_selected_cb, $);
+        XtRealizeWidget($shell);
+    }
+
+    XtVaSetValues($listbox, "lst", $lst, NULL);
+
+    Position root_x, root_y;
+    XtTranslateCoords($, 0, $height + $border_width, &root_x, &root_y);
+    XtVaSetValues($shell, "x", (int) root_x, "y", (int) root_y, NULL);
+    
+    /* Calculate height based on lines_height or number of items */
+    int n = m_len($lst);
+    int h = $lines_height;
+    if (n < h) h = n;
+    if (h < 1) h = 1;
+
+    XtResizeWidget($shell, $width, h * $xftFont->height, 0);
+
+    XtPopup($shell, XtGrabNone);
+    $entry_mode = 1;
+}
+
+@proc item_selected_cb(Widget dummy, $, void *class_data)
+{
+    int p = (intptr_t) class_data;
+    TRACE(2, "Wmenu: %s selected %d", XtName($), p);
+    
+    XtPopdown($shell);
+    $entry_mode = 0;
+    
+    if (p >= 0) {
+        XtCallCallbackList($, $menu_cb, (XtPointer)(intptr_t)p);
+    }
+}
+
+@ACTIONS
+
+@proc notify
+{
+    TRACE(2, "Wmenu notify - opening popup");
+    open_popup($);
+}
+
+@IMPORTS
+@incl "mls.h"
+@incl <X11/Shell.h>
+@incl "xutil.h"
+@incl "xtcw/Wls.h"

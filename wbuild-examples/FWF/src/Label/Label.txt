@@ -1,0 +1,2 @@
+Label	(superclass: XfwfBoard) The widget displays a text of one or
+	more lines, optionally aligned with one of the sides.

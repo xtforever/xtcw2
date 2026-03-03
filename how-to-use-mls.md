@@ -115,11 +115,14 @@ s_printf(s, -1, "!"); // Append
 
 ### Appending and Conversion
 - `s_app(int handle, const char *s, ...)`: Appends multiple C-strings to an MLS string. Must end with `NULL`.
-- `s_cstr(const char *s)`: Creates a new MLS string handle from a C-string.
+- `s_strdup_c(const char *s)`: Creates a new MLS string handle from a C-string. 
+
 
 ### Interning (Constant Strings)
-- `s_strdup_c(const char *s)`: Returns a handle to a constant string. Multiple calls with the same C-string return the same handle.
-- `conststr_lookup_c(const char *s)`: Same as `s_strdup_c`.
+- do not use constant string functions s_cstr, s_mstr, cs_printf
+- constant strings look like normal string handles but create errors if freed
+- constant strings must never be used with m_free (except in conststr_free where all strings are freed)
+- to avoid confusion better not use constant strings
 
 ## 5. Debugging and Safety
 

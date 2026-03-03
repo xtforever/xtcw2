@@ -1,0 +1,22 @@
+./"" XfwfCreateArgsList.3  1.0  Feb 10, 1994
+./""  Copyright 94 Robert Forsman
+./""  Gnu Library General Public License version 2.0
+./""
+./""
+.TH XfwfCreateArgsList 3 "10 February 1994" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+
+XfwfCreateArgsList - convert a va_list into an XtVarArgsList.  Very
+handy for those convenience procedures that create a widget and you
+want to have a Va form available.  Motif is \fBseverly\fP lacking in
+this respect, but then, Motif sucks.
+
+.SH EXCUSE
+
+  I don't have time to document this right now.  If you are interested
+in using it, bug me and I'll write docs.
+
+.SH Trademarks and other Legal Bullshit
+
+ Motif is a trademark or some sort of legally protected thing of some
+organization.  I don't give a shit.

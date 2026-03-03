@@ -1,0 +1,11 @@
+WIDGET = Toggle
+SUPERCLASSES =\
+	../Common/Common.w\
+	../Frame/Frame.w\
+	../Board/Board.w\
+	../Label/Label.w\
+	../Button/Button.w
+OTHERLIBS = -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

@@ -1,0 +1,19 @@
+.TH "GroupT" "1" "5 Jul 1993" "Version 3.53" "Free Widget Foundation"
+.SH NAME
+GroupT \- Test program for the Group widget
+.SH SYNOPSIS
+GroupT
+.SH DESCRIPTION
+The
+.I GroupT
+program creates a window with a Group widget, which contains a number
+of radio buttons and a quit button. The Group widget (with default
+resources) makes sure that at most one of the toggle buttons is "on".
+.PP
+Clicking on the quit button stops the program and caueses a message to
+be printed on standard output, containing the label of the
+selected toggle button, if any.
+.SH AUTHOR
+Bert Bos \f(CR<bert@let.rug.nl>\fP, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

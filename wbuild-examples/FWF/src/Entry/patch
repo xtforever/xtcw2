@@ -1,0 +1,169 @@
+From free-widgets-bugs@let.rug.nl Thu Jul  6 03:03 MET 1995
+Received: from freya.let.rug.nl by grid.let.rug.nl with ESMTP
+	(1.37.109.16/16.2) id AA121082605; Thu, 6 Jul 1995 03:03:26 +0200
+Return-Path: <free-widgets-bugs@let.rug.nl>
+Received: from  (localhost) by freya.let.rug.nl with SMTP
+	(1.37.109.15/16.2) id AA208942546; Thu, 6 Jul 1995 03:02:26 +0200
+Date: Thu, 6 Jul 1995 03:02:26 +0200
+Message-Id: <199507060050.MAA20737@kcbbs.gen.nz>
+Errors-To: fwb-owner@let.rug.nl
+Reply-To: free-widgets-bugs@let.rug.nl
+Originator: free-widgets-bugs@let.rug.nl
+Sender: free-widgets-bugs@let.rug.nl
+Precedence: bulk
+From: Paul Kendall <paul@kcbbs.gen.nz>
+To: Multiple recipients of list <free-widgets-bugs@let.rug.nl>
+Subject: Entry: Patches to allow widget to use variable width fonts.
+X-Listprocessor-Version: 6.0c -- ListProcessor by Anastasios Kotsikonas
+X-Comment: Free Widget Foundation (FWF) Bug Reports List
+X-Status: 
+Status: RO
+
+Sorry about that, The last patch I sent broke the backspace a bit so heres
+a patch that actually works for everthing.
+
+VERSION:
+    FWF-3.8, public-patch-0
+
+CLIENT MACHINE and OPERATING SYSTEM:
+    Sparc/SunOS 4.1.3
+
+DISPLAY TYPE:
+    Sun GX
+
+WINDOW MANAGER:
+    ctwm
+
+COMPILER:
+    gcc 2.6.3
+
+AREA:
+    Entry
+
+SYNOPSIS:
+    The original Entry widget only handled fixed width fonts.  I needed to
+    use variable width fonts in an input field so I patched the Entry
+    widget to allow this.
+
+SAMPLE FIX:
+*** FWF.old/src/Entry/Entry.w	Tue Mar  7 07:05:26 1995
+--- FWF/src/Entry/Entry.w	Wed Jul  5 22:35:02 1995
+***************
+*** 121,127 ****
+  	if($text != NULL)
+  	{
+  		get_pos($,&x,&y);
+! 		w=++$text_len*$font->min_bounds.width;
+  		h=$font->ascent+$font->descent;
+  #ifdef DEBUG		
+  		fprintf(stderr,"clear(%s,%d) %dx%d @%d,%d,[%dx%d]\n",$text,$text_len,\
+--- 121,127 ----
+  	if($text != NULL)
+  	{
+  		get_pos($,&x,&y);
+! 		w=XTextWidth($font,$text,$text_len);
+  		h=$font->ascent+$font->descent;
+  #ifdef DEBUG		
+  		fprintf(stderr,"clear(%s,%d) %dx%d @%d,%d,[%dx%d]\n",$text,$text_len,\
+***************
+*** 329,336 ****
+  	if($text_pos < $text_len)
+  	{
+  		get_pos($,&x,&y);
+! 		x+=($text_pos*$font->min_bounds.width);
+! 		w=(1+$text_len-$text_pos)*$font->min_bounds.width;
+  		h=$font->ascent+$font->descent;
+  		
+  #ifdef DBEUG		
+--- 329,336 ----
+  	if($text_pos < $text_len)
+  	{
+  		get_pos($,&x,&y);
+! 		x+=XTextWidth($font,$text,$text_pos);
+! 		w=XTextWidth($font,$text+$text_pos,(1+$text_len-$text_pos));
+  		h=$font->ascent+$font->descent;
+  		
+  #ifdef DBEUG		
+***************
+*** 369,375 ****
+  	set_cursor($,False);
+  	get_pos($,&x,&y);
+  
+! 	$text_pos=(xbutton.x-x)/$font->min_bounds.width;
+  	if($text_pos > $text_len)
+  		$text_pos=$text_len;
+  	set_cursor($,True);
+--- 369,376 ----
+  	set_cursor($,False);
+  	get_pos($,&x,&y);
+  
+! 	for($text_pos=0;$text_pos<=$text_len && XTextWidth($font,$text,$text_pos)<(xbutton.x-x);$text_pos++);
+! 	$text_pos--;
+  	if($text_pos > $text_len)
+  		$text_pos=$text_len;
+  	set_cursor($,True);
+***************
+*** 491,497 ****
+  	
+  	gc = (flag == True ? $rgc : $ngc);
+  	get_pos($,&x,&y);
+! 	w=pos*$font->min_bounds.width;
+  					  
+  	if($text_pos == $text_len || $echo == False)
+  		XDrawImageString(XtDisplay($),XtWindow($),gc,x+w,y," ",1);
+--- 492,498 ----
+  	
+  	gc = (flag == True ? $rgc : $ngc);
+  	get_pos($,&x,&y);
+! 	w=XTextWidth($font, $text, pos);
+  					  
+  	if($text_pos == $text_len || $echo == False)
+  		XDrawImageString(XtDisplay($),XtWindow($),gc,x+w,y," ",1);
+***************
+*** 502,522 ****
+  @proc set_text($,int pos)
+  {
+  	Position x,y;
+! 	Dimension w;
+  	
+! 	get_pos($,&x,&y);
+  
+! 	w = ($echo == True ? $text_len : 0)*$font->min_bounds.width;
+! 	XDrawImageString(XtDisplay($),XtWindow($),$ngc,x+w,y," ",1);
+! 
+! 	w=pos*$font->min_bounds.width;
+  	
+  #ifdef DEBUG 	
+! 	fprintf(stderr,"set_text(%s,%d) @%d,%d\n",$text+pos,$text_len-pos,x+w,y);
+  #endif
+  	
+- 	if($echo == True)
+- 	{
+  		XDrawImageString(XtDisplay($),XtWindow($),$ngc,x+w,y,$text+pos,
+  						 $text_len-pos);
+  	}
+--- 503,526 ----
+  @proc set_text($,int pos)
+  {
+  	Position x,y;
+! 	Dimension w, h;
+  	
+! 	if($echo == True)
+! 	{
+! 		get_pos($,&x,&y);
+! 		x+=XTextWidth($font,$text,$text_len);
+! 		w=$font->max_bounds.width;
+! 		h=$font->ascent+$font->descent;
+! 		
+! 		XClearArea(XtDisplay($),XtWindow($),x,y-$font->ascent,w,h,False);
+  
+! 		get_pos($,&x,&y);
+! 		w=XTextWidth($font, $text, pos);
+  	
+  #ifdef DEBUG 	
+! 		fprintf(stderr,"set_text(%s,%d) @%d,%d\n",$text+pos,$text_len-pos,x+w,y);
+  #endif
+  	
+  		XDrawImageString(XtDisplay($),XtWindow($),$ngc,x+w,y,$text+pos,
+  						 $text_len-pos);
+  	}

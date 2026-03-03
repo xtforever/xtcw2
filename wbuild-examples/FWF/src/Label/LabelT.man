@@ -1,0 +1,36 @@
+.TH "LabelT" "1" "28 Aug 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+LabelT \- Test program for the XfwfLabel widget
+.SH DESCRIPTION
+.PP
+The program creates an XfwfLabel widget with three XfwfLabel children.
+The default resources in
+LabelT show different ways of aligning the text inside the widgets,
+different cursor shapes, different frames, etc.
+.PP
+The first and largest Label shows four lines of text, aligned at the
+bottom center in the
+widget. The cursor should be a spider. The width of the widget is
+dependent on the size of the window.
+.PP
+The second widget shows one line of text at the center right.
+The
+cursor should be a heart. The width of the widget is half the width of
+the window, minus a constant.
+.PP
+The last Label shows text at the top left.  The text
+is dimmed. The cursor should
+be a draped-box. The widget of the widget is constant, but the height
+depends on the height of the window.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+
+
+

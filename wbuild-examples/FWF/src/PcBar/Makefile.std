@@ -1,0 +1,17 @@
+XLIBS=-lXaw -lXmu -lXt -lX11
+INCDIR=../../FWF/include
+CFLAGS=-I$(INCDIR)
+FWFDIR=$(HOME)/programs/FWF/src/PcBar
+
+PcBarT:		PcBarT.o PcBar.o
+			cc -o PcBarT PcBarT.o PcBar.o $(XLIBS) 
+
+PcBarT.o:	PcBarT.c PcBar.h
+			
+PcBar.o:	PcBar.c PcBar.h PcBarP.h
+
+clean:		
+			rm -f *.o PcBarT *.bak
+
+install:	clean
+			cp * $(FWFDIR)

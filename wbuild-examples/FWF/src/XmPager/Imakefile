@@ -1,0 +1,7 @@
+WIDGET = XmPager
+SUPERCLASSES =
+OTHERLIBS = $(XMLIB)
+EXTRA_INCLUDES = $(MOTIFINC)
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

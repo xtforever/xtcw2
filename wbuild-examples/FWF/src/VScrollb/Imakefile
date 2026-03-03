@@ -1,0 +1,11 @@
+WIDGET = VScrollb
+SUPERCLASSES = \
+	../Common/Common.w\
+	../Frame/Frame.w\
+	../Board/Board.w\
+	../Scrollbar/Scrollbar.w
+OTHERLIBS = $(XPM_LIB) -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"
+

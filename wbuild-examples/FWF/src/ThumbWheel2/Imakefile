@@ -1,0 +1,5 @@
+WIDGET = ThWheel2
+SUPERCLASSES =
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

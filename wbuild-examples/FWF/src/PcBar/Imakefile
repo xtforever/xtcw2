@@ -1,0 +1,3 @@
+WIDGET = PcBar
+
+#include "../StdImakefile"

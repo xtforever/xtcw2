@@ -1,0 +1,48 @@
+'\" t
+.TH "PixEditT" "1" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+PixEditT \- A Simple Bitmap Editor Program
+.SH DESCRIPTION
+.PP
+.I PixEditT
+is a simple bitmap editor program which is used to test the
+.I PixelEditor
+widget.  It allows the loading and saving of bitmap & XPM3 pixmap
+files in the same format used as the Athena bitmap program.  Useful
+features include different magnifications, brush shapes and
+cut/copy/paste.  This program is not intended to be a full-featured
+pixel editing application.  It exists to test the PixelEditor widget
+that it is constructed from.
+
+Recently, optional scrollbars have been added to the program.  These can
+be enabled by using the flag -scrollbars on the command line.  These are
+optional because they can cause the program to slow down enormously in
+certain situations for reasons currently unknown.  It may involve the loading
+of shared libraries, or may be a bug in the geometry management, or other
+reasons.  Until the reason is discovered, the use of the viewport scrollbars
+are optional.
+
+The Xpm3 library and include file comes with the X11R5 release.  You can
+obtain the Xpm code from export.lcs.mit.edu from the ftp directory
+~ftp/contrib.  The FWF.tmpl file in the project root directory contains
+the line to include the Xpm library.  If you want to disable the Xpm
+support (e.g. because you do not have the Xpm package), insert the line:
+
+#define NO_XPM
+
+at the top of the PixEditT.h file.
+
+.SH RESTRICTIONS
+.LP
+Many potential features have been left out of this program.
+
+Doesn't always redraw when resources change.
+.SH AUTHOR
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi

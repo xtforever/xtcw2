@@ -1,0 +1,209 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfArrow
+.SH DESCRIPTION
+The Arrow widget is usually part of a composite scrollbar widget. It
+draws a triangle pointing up, down, left or right, depending on the
+\fIdirection\fP resource. It has a single callback, that is repeatedly
+called as long as a mouse button -- button 1 by default -- is pressed.
+
+The triangle has a 3D shadow, the size of which can be controlled with
+a resource. The shadow is either stippled or colored, depending on the
+\fIshadowScheme\fP and associated resources (see the XfwfFrame widget).
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfArrow
+Name	Class	Type	Default
+XtNdirection	XtCDirection	Alignment 	XfwfTop 
+XtNforeground	XtCForeground	Color 	XtDefaultBackground 
+XtNarrowShadow	XtCArrowShadow	Dimension 	2 
+XtNinitialDelay	XtCInitialDelay	Cardinal 	500 
+XtNrepeatDelay	XtCRepeatDelay	Cardinal 	200 
+XtNcallback	XtCCallback	Callback	NULL 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNdirection"
+The direction of the arrow (triangle) is given by the \fIdirection\fP
+resource, which is of type \fIAlignment\fP. Only \fI"top"\fP (\fIXfwfTop\fP),
+\fI"bottom"\fP (\fIXfwfBottom\fP), \fI"left"\fP (\fIXfwfLeft\fP) and \fI"right"\fP
+(\fIXfwfRight\fP) are valid directions. Other directions result in a
+warning.
+
+.TP
+.I "XtNforeground"
+The color of the arrow also determines the color of the 3D shadow,
+at least if \fIshadowScheme\fP is set to \fIXfwfAuto\fP, as it is by default.
+
+.TP
+.I "XtNarrowShadow"
+The width of the arrow's shadow is by default 2 pixels.
+
+.TP
+.I "XtNinitialDelay"
+When the user presses and then holds the mouse button, the action
+function waits some milliseconds before it starts repeating the
+callbacks.
+
+.TP
+.I "XtNrepeatDelay"
+Between repeated calls to the callback routines, the arrow widget
+will wait a few milliseconds.
+
+.TP
+.I "XtNcallback"
+The \fIcallback\fP function is called by the \fIactivate\fP action. It is
+called repeatedly until the mouse button that triggered the action is
+released again.
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+.nf
+<Btn1Down>: push_down() activate_and_start_timer() 
+.fi
+
+.nf
+<Btn1Up>: push_up() stop_timer() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "activate_and_start_timer
+
+The \fIactivate\fP action calls the \fIcallback\fP routine once and installs
+a timeout routine.
+
+.TP
+.I "stop_timer
+
+.TP
+.I "push_up
+
+.TP
+.I "push_down
+

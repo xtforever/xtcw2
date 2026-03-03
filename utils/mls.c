@@ -48,7 +48,6 @@ static const char *Version =
 // 2023-12-18 FEATURE: m_next : allow data==NULL
 // 2024-03-20 m_free_list( (void) user_free( void*, void* ), void *user_data )
 // 2024-06-09 BUG: s_index missing p++
-// 2026-02-17 ADD vas_printf traceing
 // -----------------------------------------------------------------------------------------------------
 
 struct lst_owner_st {
@@ -453,8 +452,8 @@ void m_destruct() {
     ERR("Not Init.");
   for (p = -1; lst_next(ML, &p, &d);)
     if (*d) {
-      TRACE(1, "m_free %d (used %d)\n", p, (*d)->l );
       free(*d);
+      TRACE(1, "m_free %d\n", p);
     }
   free(ML);
   ML = 0;
@@ -464,7 +463,7 @@ void m_destruct() {
 
 static int UAF_PROTECTION = 0;
 
-int m_create_impl(int max, int w) {
+int m_create(int max, int w) {
   int i;
   lst_t lp;
   if (!ML || max <= 0 || w <= 0)
@@ -486,7 +485,6 @@ int m_create_impl(int max, int w) {
   i = (UAF_PROTECTION << 24) | i;
   return i;
 }
-int m_create(int max, int w) { return m_create_impl(max,w); }
 
 //! X!
 // free memory for list h
@@ -638,31 +636,6 @@ int m_width(int m) {
   return (**lp).w;
 }
 
-int vas_printf(int m, int p, const char *format, va_list ap) {
-  int len;
-  va_list copy;
-
-  // Patch für 64Bit machines 08.10.14
-  va_copy(copy, ap);
-
-  len = vsnprintf(0, 0, format, ap); /* get string size */
-  len++;                             /* with terminating zero */
-  if (m == 0) {
-    m = m_create(len, 1); // we do not want m_create to implement traceing */
-    p = 0;
-  }
-
-  if (p < 0 || p > m_len(m)) /* append to string */
-    p = s_strlen(m);
-
-  m_setlen(m, p + len);
-  void *buf = mls(m, p);
-
-  vsnprintf(buf, len, format, copy); /* len is (stringsize + 1) */
-  va_end(copy);
-  return m;
-}
-
 // ********************************************
 //
 //  Debug-Function Implementation
@@ -717,10 +690,10 @@ static int _mlsdb_check_handle() {
   lp = (lst_t *)lst(ML, h);
   if (*lp == NULL) {
     perr("List base address for handle %d is not allocated", h);
-    return -1;
-  }
+    // check for other errors like double free 
+  } 
 
-  if ((*lp)->uaf_protection != (orig >> 24)) {
+  if ( *lp && (*lp)->uaf_protection != (orig >> 24)) {
     perr("uaf protection pattern does not match, expected:%d, got:%d",
          (*lp)->uaf_protection, (orig >> 24));
     return -1;
@@ -818,7 +791,7 @@ void _m_destruct() {
   }
   m_free(DEB);
   m_destruct();
-  debi.me = NULL;
+  _Exit(0);
 }
 
 int _m_create(int ln, const char *fn, const char *fun, int n, int w) {
@@ -845,7 +818,6 @@ int _m_free(int ln, const char *fn, const char *fun, int m) {
   if (!m)
     return 0;
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 1, m, 0, 0);
-  int len = m_len(m);
   m_free(m);
 
   m &= 0xffffff; /* uaf protection */
@@ -854,7 +826,7 @@ int _m_free(int ln, const char *fn, const char *fun, int m) {
   o->ln = -ln;
   o->fun = fun;
   o->fn = fn;
-  TRACE(1, "Free List %d (used:%d)", m,len);
+  TRACE(1, "Free List %d", m);
   return 0;
 }
 
@@ -884,21 +856,6 @@ void _m_clear(int ln, const char *fn, const char *fun, int h) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 1, h, 0, 0);
   m_clear(h);
 }
-
-int _vas_printf(int ln, const char *fn, const char *fun,
-		 int m, int p, const char *format, va_list ap) {
-
-  int check = 3;
-  if( m == 0 ) {
-    m = _m_create(ln,fn,fun, 20, 1 );
-    p = 0;
-    check = 0;
-  }
-  _mlsdb_caller(__FUNCTION__, ln, fn, fun, check, m, p, 0);
-  return vas_printf(m,p,format,ap);
-}
-
-  
 
 /*
    -------------------------------------------------------------------------
@@ -1050,7 +1007,7 @@ int s_split(int m, const char *s, int c, int remove_wspace) {
   for (;;) {
 
     // leading white-space
-    while (isspace(s[p]) && s[p] != c)
+    if( remove_wspace ) while (isspace(s[p]) && s[p] != c)
       p++;
     start = p;
 
@@ -1059,14 +1016,21 @@ int s_split(int m, const char *s, int c, int remove_wspace) {
       p++;
 
     //  trailing whitespace before delimeter, zero - length: end < start
-    end = p;
-    while (end >= start && isspace(s[--end]))
-      ;
-
-    if (end >= start) {
-      szTemp = strndup(s + start, end - start + 1);
-    } else
-      szTemp = strdup("");
+    if (remove_wspace) {
+        end = p;
+        while (end > start && isspace(s[--end]))
+            ;
+        if (end >= start && !isspace(s[end])) {
+            szTemp = strndup(s + start, end - start + 1);
+        } else
+            szTemp = strdup("");
+    } else {
+        end = p;
+        if (end > start) {
+            szTemp = strndup(s + start, end - start);
+        } else
+            szTemp = strdup("");
+    }
     m_put(m, &szTemp);
 
     if (s[p])
@@ -1909,6 +1873,30 @@ int s_app(int m, ...) {
   return m;
 }
 
+int vas_printf(int m, int p, const char *format, va_list ap) {
+  int len;
+  va_list copy;
+
+  // Patch für 64Bit machines 08.10.14
+  va_copy(copy, ap);
+
+  len = vsnprintf(0, 0, format, ap); /* get string size */
+  len++;                             /* with terminating zero */
+  if (m == 0) {
+    m = m_create(len, 1);
+    p = 0;
+  }
+
+  if (p < 0 || p > m_len(m)) /* append to string */
+    p = s_strlen(m);
+
+  m_setlen(m, p + len);
+  void *buf = mls(m, p);
+
+  vsnprintf(buf, len, format, copy); /* len is (stringsize + 1) */
+  va_end(copy);
+  return m;
+}
 
 /* string printf
    place string at p into array m
@@ -2155,42 +2143,4 @@ int mstr_to_long(int buf, int *p, long int *ret_val) {
   if (*endptr || errno)
     return -1;
   return 0;
-}
-
-int m_cmp_int(const void *a0, const void *b0) { return cmp_int(a0, b0); }
-
-int m_split(int m, const char *s, int c, int remove_wspace)
-{
-  int p=0,
-    start=0,
-    end;
-  char *szTemp;
-
-  if( m ) m_free_strings(m,1); else m=m_create(10,sizeof(char*));
-
-  for(;;) {
-
-    // leading white-space
-    while(remove_wspace && isspace(s[p]) && s[p]!=c ) p++;
-    start=p;
-
-    // delimeter
-    while( s[p] && s[p] != c ) p++;
-
-    //  trailing whitespace before delimeter, zero - length: end < start
-    end=p-1;
-    while( end>=start && remove_wspace && isspace( s[end] ) ) end--;
-
-    if( end >= start )
-      {
-	szTemp= strndup( s+start, end-start+1 );
-      }
-    else
-      szTemp = strdup("");
-    m_put( m, &szTemp );
-
-    if( s[p] ) p++; else break;
-  }
-
-  return m;
 }

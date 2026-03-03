@@ -1,0 +1,96 @@
+print("Commander Started")
+
+local left_list = mls_create(100, 8)
+local right_list = mls_create(100, 8)
+local active_pane = "paned.left_pane"
+local pane_data = {
+    ["paned.left_pane"] = { list = left_list, path = "." },
+    ["paned.right_pane"] = { list = right_list, path = "/tmp" }
+}
+
+function format_size(s)
+    if s > 1024*1024 then return string.format("%.1f MB", s/(1024*1024)) end
+    if s > 1024 then return string.format("%.1f KB", s/1024) end
+    return s .. " B"
+end
+
+function refresh_pane(pane_name, list_handle, path)
+    print("Refreshing " .. pane_name .. " with " .. path)
+    local files, err = ls(path)
+    if not files then
+        print("Error: " .. err)
+        return
+    end
+    
+    mls_clear(list_handle)
+    for _, f in ipairs(files) do
+        local type_str = f.is_dir and "DIR" or "FILE"
+        local size_str = f.is_dir and "" or format_size(f.size)
+        local line = string.format("%s\t%s\t%s", f.name, size_str, type_str)
+        mls_put_string(list_handle, line)
+    end
+    
+    xtsetvalue(pane_name, "tableStrs", list_handle)
+    pane_data[pane_name].files = files -- Cache file info
+    
+    -- Select first FILE if possible
+    local first_file_idx = 0
+    for i, f in ipairs(files) do
+        if not f.is_dir then
+            first_file_idx = i - 1
+            break
+        end
+    end
+    xtsetvalue(pane_name, "key_cursor", first_file_idx)
+end
+
+function task_handler(ev)
+    print(string.format("[Task %d] %d: %.1f%% - %s", ev.job_id, ev.type, ev.progress, ev.message))
+end
+task_set_handler("task_handler")
+
+local is_paused = {}
+
+function handle_key(key, event)
+    print("Key pressed: " .. key .. " in " .. active_pane)
+    
+    if key == "Tab" then
+        active_pane = (active_pane == "paned.left_pane") and "paned.right_pane" or "paned.left_pane"
+        print("Switched to " .. active_pane)
+        return
+    end
+
+    if key == "Up" then
+        wheel_exec_command(active_pane, WHEEL_UP)
+    elseif key == "Down" then
+        wheel_exec_command(active_pane, WHEEL_DOWN)
+    elseif key == "Return" then
+        wheel_exec_command(active_pane, WHEEL_FIRE)
+    elseif key == "F5" then
+        local idx = xtgetvalue(active_pane, "key_cursor")
+        if not idx then 
+            print("Error: could not get key_cursor")
+            return
+        end
+        print("Selected index: " .. idx)
+        if idx >= 0 then
+            local file = pane_data[active_pane].files[idx + 1]
+            if not file then
+                print("Error: file not found at index " .. idx)
+                return
+            end
+            print("Item at index " .. idx .. ": " .. file.name .. " (is_dir: " .. tostring(file.is_dir) .. ")")
+            if not file.is_dir then
+                local src = pane_data[active_pane].path .. "/" .. file.name
+                local other_pane = (active_pane == "paned.left_pane") and "paned.right_pane" or "paned.left_pane"
+                local dst = pane_data[other_pane].path .. "/" .. file.name
+                print("Copying " .. src .. " to " .. dst)
+                task_copy(src, dst)
+            end
+        end
+    end
+end
+
+print("LUI setup complete")
+refresh_pane("paned.left_pane", left_list, ".")
+refresh_pane("paned.right_pane", right_list, "/tmp")

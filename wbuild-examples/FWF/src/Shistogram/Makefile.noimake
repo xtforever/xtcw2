@@ -1,0 +1,17 @@
+CC = cc
+CFLAGS = -I/usr/local/include -I/usr/local/include/X11 -c -g -DUBYTE_NEEDED
+PROGRAM = ShistogramT 
+OBJS = ShistogramT.o Shistogram.o
+
+
+LIBS = -lm -lXt -lX11 
+
+all:	$(PROGRAM) 
+
+$(PROGRAM) :  $(OBJS)
+	      $(CC) -o $@ $(OBJS) $(LIBS)
+
+$(OBJS): Shistogram.h ShistogramP.h
+
+clean  : 
+	 rm -f $(OBJS) $(PROGRAM)

@@ -1,0 +1,37 @@
+FWFDIR = ${HOME}/src/X/FWF-3.4
+
+OLDIR =${HOME}/src/X/oneline
+OLLIB = # ${OLDIR}/OneLineText.o ${OLDIR}/OneLineSrc.o ${OLDIR}/OneLineSink.o
+
+#STDINCLUDE = ${HOME}/X11R5/include
+STDINCLUDE = /local/include
+#CFLAGS = -g -I. -I${FWFDIR}/include -I${STDINCLUDE} # -DUSEONELINE -I${OLDIR}
+CFLAGS = -g -I. -I${FWFDIR}/include -I${STDINCLUDE} # -DSYSV
+
+STDLIBPATH = /local/lib
+#STDLIBPATH = ${HOME}/X11R5/lib/
+LDLIBS = -L${FWFDIR}/lib -L${STDLIBPATH} ${OLLIB} -lfwf -lXaw -lXt \
+	-lXmu -lXext -lX11 /usr/lib/debug/malloc.o -lm
+BOBJS = squish.o getod.o sqtest.o
+COBJS = FileComp.o squish.o getod.o FileCompT.o
+
+all: FileCompT
+
+FileCompT: ${COBJS}
+	${CC} -o $@ ${CFLAGS} ${COBJS} ${LDLIBS}
+
+sqtest: ${BOBJS}
+	${CC} -o $@ ${CFLAGS} ${BOBJS}
+
+clean:
+	rm -f ${BOBJS} ${COBJS} core
+
+spotless: clean
+	rm -f *~ FileCompT sqtest
+
+lib:  FileComp.o squish.o getod.o
+	ar rv ${HOME}/lib/sparc/FileComp.a  FileComp.o squish.o getod.o
+	ranlib ${HOME}/lib/sparc/FileComp.a
+
+FileComp.o : FileComp.h FileCompP.h
+FileCompT.o: FileComp.h

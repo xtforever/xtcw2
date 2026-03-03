@@ -1,0 +1,111 @@
+.TH CMAP 1 "26 Jul 1993"
+.SH NAME
+.PP
+Cmap \- Cmap Widget
+.SH DESCRIPTION
+.PP
+#include "Cmap.h"
+.PP
+The cmap widget is an X toolkit compatible widget that
+displays the entries in the colormap of its XtNcolormap
+resource.  It also has an indicator box, and a label
+displaying the rgb components of the indicated box.
+.SH WIDGET CLASS
+.PP
+\fIcmapWidgetClass\fP
+.PP
+.SH RESOURCES
+.PP
+.TP
+.B \fIXtNforeground\fP 
+foreground pixel of the widget, default is XtDefaultForeground.
+.TP
+.B \fIXtNfont\fP
+font of label (XFontStruct), default is XtDefaultFont.
+.TP
+.B \fIXtNmargin\fP
+minimum margin around widget (int), default is 5.
+.TP
+.B \fIXtNchangeCallback\fP
+change callback, default is NULL.
+.TP
+.B \fIXtNboxWidth\fP
+maximum box width (int), 0 for autoscale/autosize, default is 0
+.TP
+.B \fIXtNboxHeight\fP
+maximum box height (int), 0 for autoscale/autosize, default is 0
+.TP
+.B \fIXtNselected\fP
+current box where the indicator box is at (int), default is 0
+.TP
+.B \fIXtNfirstIndex\fP
+first index to use in colormap (int), default is 0
+.TP
+.B \fIXtNlastIndex\fP
+last index to use in colomrap (int), default is LastIndexDefault (use last possible index)
+.TP
+.B \fIXtNmappingTable\fP
+a list of indices (Pixel *) that is used to map the currently selected index into this table of pixels
+.SH ACTIONS
+.PP
+.TP
+.B \fIselect()\fP
+accepts key/button/motion events, moving the indicator box to
+the square that the pointer is over
+.TP  
+.B \fIup()\fP
+moves indicator up one box (autowrap)
+.TP 
+.B \fIdown()\fP 
+moves indicator down one box (autowrap)
+.TP 
+.B \fIleft()\fP 
+moves indicator left one box (autowrap)
+.TP
+.B \fIright()\fP
+moves indicator right one box (autowrap)
+.SH DEFAULT TRANSLATIONS
+.PP
+.sp
+.nf
+<key>h: left()
+<key>j: up()
+<key>k: down()
+<key>l: right()
+<Btn1Down>: select()
+<Btn1Motion>: select() 
+.SH CALLBACK STRUCTURE
+.PP
+.sp
+.nf
+typedef struct _CmapCallbackStruct
+{
+  int reason;
+  XEvent *event;
+  XColor color;
+} CmapCallbackStruct, *CmapCallbackPtr;
+.SH REASONS
+.sp
+.nf
+CMAP_SELECT
+CMAP_LEFT
+CMAP_DOWN
+CMAP_UP
+CMAP_RIGHT
+CMAP_VERIFY
+.SH CALLABLE FUNCTIONS
+.TP
+.B \fIvoid CmapCheckSelectedColor(Widget _w, Boolean _notify);\fP
+function to make sure the pixel of the box with the indicator box
+actually matches the rgb values.  _notify is a flag on whether a
+callback should be sent.
+.TP
+.B \fIXColor CmapGetSelected(Widget _w);\fP
+get components of box with indicator.
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1993
+Wolfram Research, Inc
+cwikla@wri.com

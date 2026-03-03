@@ -1,0 +1,14 @@
+.TH StackT 1 "12 Jul 1993" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+.PP
+StackT \- Stack Widget Test 
+.SH DESCRIPTION
+.PP
+Displays a stack widget with children.
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1993
+Wolfram Research, Inc
+cwikla@wri.com

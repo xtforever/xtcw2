@@ -1,0 +1,42 @@
+./"" UGrafT.3  1.1  Jan 14, 1994
+./""  Copyright 1995 Clark McGrew
+./""  Gnu Library General Public License version 2.0
+./""
+./""
+.TH "UGrafT" "1" "20 Jan 1994" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+UGrafT \- Test program for the XfwfUGraf widget
+.SH DESCRIPTION
+.PP
+This is a test program used to debug the XfwfUGraf widget.  Most
+features of the widget are tested.
+
+.SH KEY BINDINGS
+.nf
+q	- quit
+t	- test-ugraf: Run the 2D plotting test.
+3	- test-ugraf3: Run the 3D plotting test.
+.fi
+
+In 3D mode:
+
+.nf
+0		- Show view zero.
+1		- Show view zero.
+2		- Show view zero.
+KP_Enter	- Update the view.
+.fi
+
+The rest of the actions are intrinsic to the widget and are discribed
+in the widget man page.  
+
+.SH AUTHOR
+.sp
+.nf
+Clark McGrew <mcgrew@sksol1.physics.sunysb.edu>
+State University of New York, 
+Stony Brook, NY
+USA
+.fi
+
+

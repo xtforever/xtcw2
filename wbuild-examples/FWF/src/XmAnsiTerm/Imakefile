@@ -1,0 +1,5 @@
+WIDGET = XmATerm
+SUPERCLASSES =
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

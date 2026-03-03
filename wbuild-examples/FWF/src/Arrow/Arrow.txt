@@ -1,0 +1,4 @@
+Arrow	(Superclass: XfwfBoard)
+	The Arrow widget displays a triangle, pointing in one of four
+	directions. It is usually part of a scrollbar. It calls a
+	callback repeatedly while a mouse is kept pressed.

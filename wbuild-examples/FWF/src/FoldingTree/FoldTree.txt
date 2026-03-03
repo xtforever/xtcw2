@@ -1,0 +1,2 @@
+FoldingTree	This widget shows a tree drawing of its child widgets which
+		can be expanded and collapsed by the user.

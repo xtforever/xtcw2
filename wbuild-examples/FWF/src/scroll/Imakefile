@@ -1,0 +1,35 @@
+#include "../../FWF.tmpl"
+
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+
+/*CFLAGS = $(CDEBUGFLAGS) $(CCOPTIONS) $(STD_INCLUDES) $(STD_DEFINES) $(PROTO_DEFINES) $(DEFINES) $(COMPATFLAGS)*/
+
+SCROLLH = scroll.h
+SCROLLSRC = scroll.c
+SCROLLOBJ = scroll.o
+
+LIB_OBJS = $(SCROLLOBJ)
+
+SRCS = $(SCROLLSRC)
+OBJS = $(SCROLLOBJ)
+
+INCS = $(FWF_INCDIR)/$(SCROLLH)
+
+DEPLIBS = XawClientDepLibs $(OTHERDEPLIBS)
+SYSLIBS = XawClientLibs
+
+AddToLibraryTarget(archive,$(FWF_LIBDIR),$(FWF_LIBNAME),$(SCROLLOBJ))
+ObjectRuleWithFlags($(FWF_CFLAGS))
+RequireThisFileForInit($(FWF_INCDIR)/$(SCROLLH))
+FileCopyWhenNeeded(.,$(SCROLLH),$(FWF_INCDIR),$(SCROLLH))
+InstallMultiple($(INCS),$(FWF_INSTALL_INCDIR))
+
+GatherDescription(scroll.txt,../../README.INDEX);
+
+objects: first objs archive
+
+first: $(INCS)
+
+objs: $(OBJS)
+
+execs:

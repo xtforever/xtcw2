@@ -1,0 +1,4 @@
+The UGraf widget provides a simple 2D and 3D graphics library that is
+suitable for developing simple data visualization tools.  It can be
+used do draw simple graphics that might be done with a package similar
+to GKS.

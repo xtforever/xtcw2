@@ -1,0 +1,7 @@
+WIDGET = PixEdit
+OTHERLIBS =
+
+#include "../StdImakefile"
+
+RequireThisFileForInit($(FWF_INCDIR)/$(WIDGET)T.h)
+FileCopyWhenNeeded(.,$(WIDGET)T.h,$(FWF_INCDIR),$(WIDGET)T.h)

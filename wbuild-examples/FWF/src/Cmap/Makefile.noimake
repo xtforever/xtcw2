@@ -1,0 +1,17 @@
+CC = cc
+CFLAGS = -I/usr/local/include -I/usr/local/include/X11 -c -g
+PROGRAM = CmapT 
+OBJS = CmapT.o Cmap.o
+
+
+LIBS = -lm -lXt -lX11 -lm
+
+all:	$(PROGRAM) 
+
+$(PROGRAM) :  $(OBJS)
+	      $(CC) -o $@ $(OBJS) $(LIBS)
+
+$(OBJS): Cmap.h CmapP.h
+
+clean  : 
+	 rm -f $(OBJS) $(PROGRAM)

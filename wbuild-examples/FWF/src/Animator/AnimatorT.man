@@ -1,0 +1,21 @@
+.TH "AnimatorT" "1" "11 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+AnimatorT \- Test program for the Animator widget
+.SH DESCRIPTION
+The
+.I AnimatorT
+program creates a board with a revolving planet in the upper lefthand
+corner, a label saying "Press button to quit" on the right and a
+button with a flashing orange/black square in the lower right.
+Clicking on the button icon will stop the program.
+.SH FILES
+The program needs to read the following files in order to display the
+rotating planet:
+.sp.5
+.nf
+Anim\fIxx\fP.xpm  where \fIxx\fP is 00, 05, 10, up to 75.
+.fi
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

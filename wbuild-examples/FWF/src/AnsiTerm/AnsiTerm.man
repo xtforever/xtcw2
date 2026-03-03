@@ -1,0 +1,378 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfAnsiTerm
+.SH DESCRIPTION
+The AnsiTerm widget emulates an ANSI terminal in an X Window. It
+displays lines of text and scrolls them if necessary. It displays a
+cursor, to indicate where the next text will appear and it interprets
+the ANSI escape codes to position the cursor or highlight the text.
+
+Text is written to the widget by calling \fIXfwfAnsiWrite\fP (a
+convenience function which calls the \fIwrite\fP method).
+
+A callback is provided for reacting to key presses. The widget also
+supports the selection mechanism, the same way the xterm program does
+(select by dragging with mouse button 1 pressed, paste by clicking
+with mouse button 2)
+
+Another callback is provided to notify the application when the number
+of rows or columns changes. If the application runs a shell or some
+other program in the background, it can use this callback to send a
+\fISIGWINCH\fP signal to the child process.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfAnsiTerm
+Name	Class	Type	Default
+XtNrows	XtCRows	int 	24 
+XtNcolumns	XtCColumns	int 	80 
+XtNfont	XtCFont	String 	XtDefaultFont 
+XtNboldfont	XtCBoldfont	XFontStruct *	infer_bold 
+XtNmargin	XtCMargin	int 	10 
+XtNforeground	XtCForeground	Pixel 	XtDefaultForeground 
+XtNkeyCallback	XtCKeyCallback	Callback	NULL 
+XtNresizeCallback	XtCResizeCallback	Callback	NULL 
+XtNscrollCallback	XtCScrollCallback	Callback	NULL 
+XtNscrollResponse	XtCScrollResponse	XtCallbackProc 	scroll_response ;
+
+.TE
+.ps +2
+
+.TP
+.I "XtNrows"
+The \fIrows\fP resource is used to set the number of lines of text. The
+widget will try to set its \fIheight\fP to match the number of rows. Note
+that the reverse is not true: if the height changes for any other
+reason, the \fIrows\fP resource is not changed.
+
+	
+
+.TP
+.I "XtNcolumns"
+The \fIcolumns\fP resource sets the width of the widget to a certain
+number of characters. The widget will try to set its \fIwidth\fP larger
+enough for that many columns. The reverse is not true: if the \fIwidth\fP
+changes, \fIcolumns\fP is not adjusted.
+
+	
+
+.TP
+.I "XtNfont"
+The widget uses two fonts: normal and bold. They should usually be
+monospaced fonts. Note that \fIfont\fP is a string, not a \fIXFontStruct\fP;
+this is to enable the widget to derive the name of the bold version
+from this string.
+
+	
+
+.TP
+.I "XtNboldfont"
+The \fIboldfont\fP is by default computed on the basis of the
+\fIfont\fP resource.
+
+	
+
+.TP
+.I "XtNmargin"
+The margin between the frame and the text, on all sides.
+
+	
+
+.TP
+.I "XtNforeground"
+The color of the text.
+
+	
+
+.TP
+.I "XtNkeyCallback"
+The \fIkeyCallback\fP is called whenever the widget receives a key
+press. The callback is called by the \fIkey\fP action procedure. The
+\fIcall_data\fP argument contains a pointer to the character that was
+pressed (type: \fIchar *\fP). (If the pressed key has no representation in
+the form of one or more characters, the callback is not called.)
+
+	
+
+.TP
+.I "XtNresizeCallback"
+The \fIresizeCallback\fP is invoked when the widget changes
+the number of rows or columns. The \fIcall_data\fP holds a
+pointer to a struct \fIXfwfResizeInfo\fP containing two ints.
+The first is the number of rows, the second the number of
+columns
+
+	
+
+.TP
+.I "XtNscrollCallback"
+The AnsiTerm widget takes part in the FWF's Scrolling Widget
+Interface Policy (SWIP). The following two callbacks are needed for
+connecting the widget to other scrolling widgets (such as scrollbars).
+
+The routines on the \fIscrollCallback\fP when the widget receives a call
+on its \fIscrollResponse\fP function (see below) with a reason other than
+\fIXfwfSNotify\fP. This is used to pass on the information to
+other widgets in the scrolling chain.
+
+The \fIcall_data\fP parameter of the callback routines is a pointer
+to an \fIXfwfScrollInfo\fP structure, which looks like this: \fItypedef
+struct _XfwfScrollInfo { XfwfSReason reason; XfwfSFlags flags; float
+vpos, vsize, hpos, hsize;} XfwfScrollInfo\fP.
+
+See the documentation on SWIP and in particular the function
+\fIXfwfConnectScrollingWidgets\fP for more info.
+
+	
+
+.TP
+.I "XtNscrollResponse"
+When the application or another widget wants the AnsiTerm widget to
+scroll, it calls a function in the AnsiTerm widget. A pointer to that
+function can be retrieved with \fIXtGetValues\fP as the resource
+\fIXtNscrollResponse\fP. This resource can only be queried, not set.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Pixel 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Pixel 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Pixel 	XtDefaultForeground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNuserData	XtCUserData	Pointer	NULL 
+XtNxcc	XtCXCc	XCC 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The \fIXfwfAnsiWrite\fP function sends characters to the AnsiTerm
+widget. It is a convenience function that simply calls the \fIwrite\fP
+method of the widget.
+
+.nf
+void  XfwfAnsiWrite( $, char * buf, int  nbytes)
+.fi
+
+The \fIresizeCallback\fP is passed a pointer to an
+\fIXfwfResizeInfo\fP struct.
+
+	
+
+.nf
+
+.B type
+ XfwfResizeInfo = struct {
+            int rows, columns;
+        }
+.fi
+
+The \fIscroll.h\fP header file is needed for the \fIXfwfScrollInfo\fP
+structure.
+
+.nf
+
+.B incl
+ <Xfwf/scroll.h>
+.fi
+
+.SS "Translations"
+
+.nf
+Shift<Btn1Down>: extend_selection() 
+.fi
+
+.nf
+<Btn1Down>: start_selection() traverseCurrent() 
+.fi
+
+.nf
+<Btn1Motion>: extend_selection() 
+.fi
+
+.nf
+<Btn1Up>: end_selection() 
+.fi
+
+.nf
+<Btn2Down>: paste_selection() 
+.fi
+
+.nf
+<Map>: traverseCurrent() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "key
+
+The \fIkey\fP action procedure calls the \fIkeyCallback\fP callback
+procedure with the pressed key as \fIcall_data\fP. Nothing happens
+if the key doesn't have a representation as (a sequence of)
+characters.
+
+If \fIXLookupString\fP returns a character representation, that
+representation is used, otherwise the keysym is checked for some
+special keys (Return, Backspace, etc.). Finally, if the user
+pressed Control + letter, the character returned is (letter -
+64).
+
+.TP
+.I "start_selection
+
+The selection mechanism consist of three action procedures for
+highlighting a selection and one for pasting text into the
+widget.
+
+\fIstart_selection\fP establishes the start of the highlighted
+selection from the mouse position.  \fIextend_selection\fP
+highlights the text between the start position and the current
+mouse position. \fIend_selection\fP copies the highlighted part to a
+buffer and notifies the X server that this widget wants to be
+the current selection owner.
+
+\fIpaste_selection\fP requests the current selection from whatever
+application has it and processes it as if the user had typed it;
+i.e., it calls the \fIkeyCallback\fP for every character.
+
+.TP
+.I "extend_selection
+
+\fIextend_selection\fP is called when the mouse is dragged over
+the text. It finds the cell that the mouse is on and highlights
+all cells from the one where the drag started to the current one
+(both inclusive).
+
+The function only draws the lines that the mouse passed between
+the previous and the current event.
+
+.TP
+.I "end_selection
+
+When the mouse button is released, the selection is complete
+and the highlighted part is copied to a buffer. The widget then
+tells the X server that it wants to become the selection owner
+for the PRIMARY selection.
+
+A simple click should not be taken as a selection. If there has
+been no movement between the mouse press and release, the
+\fIend_selection\fP action simply returns without doing anything.
+
+The highlight is immediately removed from the screen. This is
+easy to implement but it removes a visual indicator that some
+people may want to leave there while the selection is active.
+Something to reconsider for the next version?
+
+.TP
+.I "paste_selection
+

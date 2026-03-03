@@ -1,0 +1,209 @@
+'\" t
+.TH "FileSelector" "3" "19 Jan 1993" "Version 3.41" "Free Widget Foundation"
+.SH Name
+FileSelector \- A Hierarchical File Selector Widget
+.SH Synopsis
+#include <X11/Intrinsic.h>
+#include <X11/FileSel.h>
+
+widget = XtCreatePopupShell(name, fileSelectorWidgetClass, ...);
+.SH Class Hierarchy
+Core-->Composite-->XfwfFileSelector
+.SH Description
+XfwfFileSelector is a hierarchical file selector widget that allows a
+user to move through the directory tree and select files.
+.sp
+This widget can either be used as a stand-alone widget with it own OK 
+and Cancel buttons, or as part of a larger widget.  When used as part 
+of a larger composite widget, the OK and Cancel buttons can be turned 
+off and replaced by global termination buttons for the larger widget.
+.sp
+The File Selector has two scrolled text lists side by side.  The left
+list contains the current directory path from the root to the current
+directory, listed one directory per line.
+The right list shows the files in the current directory
+that pass a user-specified filter function, and are sorted by a user
+specified sorting order.  Files can be selected by typing them 
+in by clicking on the appropriate file in the right list.  Clicking 
+on a directory will enter that directory and list its files and 
+directories.
+.sp
+The source code in the Dir directory of the FWF distribution contains
+system-independent file listing functions that are required by 
+FileSelector.
+.SH Resources
+In addition to the resources defined by superclasses, this widget
+defines the following:
+.TS
+tab(/) ;
+lB lB lB lB.
+Name/Class/Type/Default
+.T&
+lB l l l.
+XtNwidth/Width/Dimension/500
+XtNheight/Height/Dimension/250
+XtNbackground/Background/Pixel/"white"
+XtNokButtonCallback/Callback/Callback/NULL
+XtNcancelButtonCallback/Callback/Callback/NULL
+XtNselectionChangeCallback/Callback/Callback/NULL
+XtNshowOkButton/Boolean/Boolean/True
+XtNshowCancelButton/Boolean/Boolean/True
+XtNflagLinks/Boolean/Boolean/False
+XtNcheckExistence/Boolean/Boolean/True
+XtNfileSelected/Boolean/Boolean/False
+XtNcurrentDirectory/Pathname/String/NULL
+XtNcurrentFile/Filename/String/NULL
+XtNtitle/Label/String/"File Selector"
+XtNsortMode/Value/Int/2
+XtNpattern/File/String/NULL
+.TE
+.ne 4
+.sp
+The XtNokButtonCallback, NcancelButtonCallback, and
+XtNselectionChangeCallback callback resources are used to specify any
+functions to be called when the OK button is pressed, the Cancel
+button is pressed, or a new item is selected.  The OK and Cancel
+buttons can be enabled or disabled by changing the XtNshowOkButton,
+and XtNshowCancelButton resources.  The buttons are typically disabled
+when the file selector is included in a parent widget.
+.sp
+The XtNflagLinks resource allows symbolic links to be specially
+identified with an '@' sign after the file name.  This identification
+is only done if XtNflagLinks is true.
+.sp
+The XtNcheckExistence resource determines whether file names have to
+exist before they can be selected.  Typically this resource is set to
+True when searching for a file to read or modify, but set to False if
+the user should be able to enter new file names.
+.sp
+XtNfileSelected is a read only resource which indicates if a file is
+currently selected.  XtNcurrentDirectory and XtNcurrentFile allow the
+current path and file name to be specified.
+The title of the file selector is specified via XtNtitle.
+.sp
+The filter pattern is specified in the string XtNpattern.  The method
+used to sort the file list is specified in XtNsortMode.  The sort mode
+is encoded as an integer.  The integers are defined in the DirMgr.h
+file which is part of the libDir directory management package included
+in the FWF release.  Sample XtNsortMode values are depicted below:
+.sp
+.RS 5
+.TS
+tab(/) ;
+lB lB lB.
+XtNsortMode Name/Value/Sort By
+.T&
+lB l l.
+DIR_MGR_SORT_NONE/0/No sorting
+DIR_MGR_SORT_NAME/1/File name
+DIR_MGR_SORT_NAME_DIRS_FIRST/2/File name, directories first
+DIR_MGR_SORT_SIZE_ASCENDING/3/Ascending file size
+DIR_MGR_SORT_SIZE_DESCENDING/4/Descending file size
+DIR_MGR_SORT_ACCESS_ASCENDING/5/Ascending access time
+DIR_MGR_SORT_ACCESS_DESCENDING/6/Descending access time
+.TE
+.RE
+.ne 4
+.SH Callbacks
+.LP
+Three callbacks are supported by the FileSelector widget.
+The first two, okButtonCallback and cancelButtonCallback are called when
+the FileSelector OK or Cancel buttons are pressed.  The final
+callback, selectionChangeCallback, occurs whenever the currently
+selected file changes, and can be used to update the sensitivity of
+user buttons, etc.  The cancelButtonCallback returns no data.  The
+other two callbacks notify the user of data through the data
+structures described below:
+.sp
+.RS 5
+.nf
+typedef struct _XfwfFileSelectorOkButtonReturnStruct
+{
+        char *path;
+        char *file;
+        char *file_box_text;
+} XfwfFileSelectorOkButtonReturnStruct;
+.fi
+.RE
+.sp
+.RS 5
+.nf
+typedef struct _XfwfFileSelectorSelectionChangeReturnStruct
+{
+        Boolean file_selected;
+        char *path;
+        char *file;
+} XfwfFileSelectorSelectionChangeReturnStruct;
+.fi
+.RE
+.SH Public Functions
+.nf
+.ta 3i
+void XfwfFileSelectorChangeDirectory(fsw,dir)
+XfwfFileSelectorWidget fsw;
+char *dir;
+.fi
+.sp
+.RS 5
+This routine changes the current directory of the File Selector widget <fsw>
+to be the directory <dir>.
+.RE
+.sp
+.nf
+void XfwfFileSelectorRefresh(fsw)
+XfwfFileSelectorWidget fsw;
+.fi
+.sp
+.RS 5
+This routine causes the FileSelector widget to re-read the current directory,
+refreshing the widget.  Changes to the file system will not automatically
+propogate to the widget.  This routine forces the refresh.
+.RE
+.sp
+.nf
+void XfwfFileSelectorGetStatus(fsw,ssp)
+XfwfFileSelectorWidget fsw;
+XfwfFileSelectorStatusStruct *ssp;
+.fi
+.sp
+.RS 5
+This routine obtains current information form the FileSelector widget
+pertaining to the selection state of the widget.  The structure pointed
+to by <ssp> is filled in with the currently selected file and directory,
+as well as the current contents of the file box text.  This routine allows
+status information to be queried from the widget at any time.  The structure
+<ssp> which is passed into the routine is described below:
+.RE
+.sp
+.nf
+.sp
+.RS 5
+.nf
+typedef struct _XfwfFileSelectorStatusStruct
+{
+	Boolean file_selected;
+	char *path;
+	char *file;
+	char *file_box_text;
+} XfwfFileSelectorStatusStruct;
+.fi
+.RE
+.ne 4
+.SH Restrictions
+The filter function is currently limited to shell-style pattern matching,
+even though the underlying directory managemnet functions support arbitrary
+filter functions.  The children widgets of the FileSelector can not be
+configured by the user.  The layout semantics of the widget are not always
+pretty.  We should be able to add new buttons to the widget.  Not all resources
+can be changed dynamically.  The slider bars of the viewports do not "snap
+back" when a smaller directory is loaded, and the sliders are down at the
+bottom.
+.SH Author
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi

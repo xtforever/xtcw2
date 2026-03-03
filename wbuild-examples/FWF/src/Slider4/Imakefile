@@ -1,0 +1,11 @@
+WIDGET = Slider4
+SUPERCLASSES = \
+	../Common/Common.w\
+	../Frame/Frame.w\
+	../Board/Board.w\
+	../Label/Label.w\
+	../Slider2/Slider2.w
+OTHERLIBS = -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

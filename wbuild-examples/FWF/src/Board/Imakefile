@@ -1,0 +1,8 @@
+WIDGET = Board
+SUPERCLASSES =\
+	../Common/Common.w\
+	../Frame/Frame.w
+OTHERLIBS = $(XPM_LIB) -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

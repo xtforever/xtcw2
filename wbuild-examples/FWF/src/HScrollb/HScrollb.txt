@@ -1,0 +1,4 @@
+HScrollbar (Superclass: XfwfScrollbar)
+	This widget is no different from Scrollbar, except that it has
+	translations for the Left and Right keys and the default value
+	of the `vertical' resource is `False'.

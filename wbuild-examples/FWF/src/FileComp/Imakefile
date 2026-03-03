@@ -1,0 +1,9 @@
+WIDGET = FileComp
+
+#define NOT_SINGLE_OBJECT_FILE
+
+SRCS = $(WIDGET).c squish.c getod.c
+EXT_OBJS = $(WIDGET)T.o squish.o getod.o
+LIB_OBJS = $(WIDGET).o squish.o getod.o
+
+#include "../StdImakefile"

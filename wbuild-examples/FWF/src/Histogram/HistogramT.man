@@ -1,0 +1,18 @@
+'\" t
+.TH "HistogramT" "1" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+HistogramT \- Test Program For The Histogram Widget
+.SH DESCRIPTION
+.PP
+.I HistogramT
+is a simple program that plots random numbers from a distribution
+approximating a Gaussian to the histogram widget.
+.SH AUTHOR
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi

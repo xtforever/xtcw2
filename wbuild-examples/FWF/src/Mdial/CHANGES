@@ -1,0 +1,8 @@
+
+From Charles White:
+
+Date: Thu, 8 Apr 93 09:29:36 PDT
+
+Mdial.h fixes:
+Line 57: Changed DispalyOnly to DisplayOnly
+Line 50: Added #define XmNlabelAlignment "labelAlignment"

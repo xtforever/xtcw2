@@ -1,0 +1,4 @@
+WIDGET = Histogram
+OTHERLIBS = -lm
+
+#include "../StdImakefile"

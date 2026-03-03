@@ -1,0 +1,5 @@
+XmAnsiTerm (superclass: XmPrimitive) The AnsiTerm widget emulates an
+	ANSI terminal in an X Window. It displays lines of text and
+	scrolls them if necessary. It displays a cursor, to indicate
+	where the next text will appear and it interprets the ANSI
+	escape codes to position the cursor or highlight the text.

@@ -1,0 +1,39 @@
+                                Mdial Widget
+-----------------------------------------------------------------------------
+
+  I was getting mail every so often about my Hdial widget, mainly people
+wondering if I had updated it or made a Motif type version.  Now I have.
+
+  I've compiled it on a bunch of machines and it seems to work, so I'll let
+it go at that.  I'm using R5 on a Sparc 2 with Motif-1.2.2 and have 
+also compiled it on an HP9000/700 with R5 and Motif-1.2.2.  You will need
+Motif-1.2 to use this!
+
+  Basically this is a Motif-a-like dial. I don't have any docs for it yet,
+so you'll have to figure out what the resources do for yourself...(If 
+anyone wants to write docs for it, by all means do!).  Play with the
+demo program to see what they do, it uses most of the fun features...
+
+Neato keen things:
+
+No tick marks, but there is diamond at the min point.
+Arm shadows follow the light.
+Drag and Drop (drag at least...)
+Resource for formatting the label to be whatever you want.
+Display only mode.
+
+Bad things:
+
+Probably could have subclassed of of XmLabel, but I used XmPrimitive instead
+The half height version doesn't really draw correctly.
+
+
+
+  That's about it.  Let me know what you think, and if I get encouraged
+then maybe I'll write some more...See copyright or source files for 
+distribution info...
+
+  John L. Cwikla Thu Mar 25 16:32:34 CST 1993
+  cwikla@wri.com
+
+  Furthering "open software" into reality...

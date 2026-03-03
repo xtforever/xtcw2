@@ -1,0 +1,7 @@
+WIDGET = HTML2
+SUPERCLASSES = \
+	../FText/FText.w\
+	../SSGML/SSGML.w
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

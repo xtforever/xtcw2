@@ -1,0 +1,271 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfToggle
+.SH DESCRIPTION
+The \fIXfwfToggle\fP is a button that switches states with every activation
+(which is by default with every mouse click). The states are named `on' and
+`off'. The states can be indicated with a $\surd$ before the label Two
+callbacks report the changed state to the application: \fIonCallback\fP is called
+when the button switches to `on', \fIoffCallback\fP is called when the button
+switches back to `off'.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfToggle
+Name	Class	Type	Default
+XtNonCallback	XtCOnCallback	Callback	NULL 
+XtNoffCallback	XtCOffCallback	Callback	NULL 
+XtNon	XtCOn	Boolean 	False 
+XtNonIcon	XtCOnIcon	Icon *	"filledsquare"
+XtNoffIcon	XtCOffIcon	Icon *	"emptysquare"
+
+.TE
+.ps +2
+
+.TP
+.I "XtNonCallback"
+The \fIonCallback\fP is called by the \fItoggle\fP action or by the \fIswitch_on\fP
+action, if the previous state was `off'. The \fIcall_data\fP argument will contain
+the \fIXEvent\fP pointer that trigerred the action function.
+
+	
+
+.TP
+.I "XtNoffCallback"
+The \fIoffCallback\fP is called from the \fItoggle\fP or \fIswitch_off\fP action, if the
+previous state was `on'. The \fIcall_data\fP argument will be a pointer to the
+\fIXEvent\fP that caused the action.
+
+	
+
+.TP
+.I "XtNon"
+The variable \fIon\fP records the state of the widget: \fITrue\fP means `on' and
+\fIFalse\fP means `off'.
+
+	
+
+.TP
+.I "XtNonIcon"
+By default, the button displays a $\surd$ when on and nothing when
+off. The two resources \fIonIcon\fP and \fIoffPIcon\fP can replace these
+two graphics with arbitrary pixmaps. Suggested size for these pixmaps
+is about $16\times18$.
+
+	
+
+.TP
+.I "XtNoffIcon"
+The \fIoffIcon\fP is displayed when the button is in `off' state. By
+default, nothing is displayed in this state.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfButton
+Name	Class	Type	Default
+XtNactivate	XtCActivate	Callback	NULL 
+XtNenter	XtCEnter	Callback	NULL 
+XtNleave	XtCLeave	Callback	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfLabel
+Name	Class	Type	Default
+XtNlabel	XtCLabel	String 	NULL 
+XtNtablist	XtCTablist	String 	NULL 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNforeground	XtCForeground	Color 	XtDefaultForeground 
+XtNhlForeground	XtCHlForeground	Color 	XtDefaultForeground 
+XtNalignment	XtCAlignment	Alignment 	0 
+XtNtopMargin	XtCTopMargin	Dimension 	2 
+XtNbottomMargin	XtCBottomMargin	Dimension 	2 
+XtNleftMargin	XtCLeftMargin	Dimension 	2 
+XtNrightMargin	XtCRightMargin	Dimension 	2 
+XtNshrinkToFit	XtCShrinkToFit	Boolean 	False 
+XtNrvStart	XtCRvStart	Int 	0 
+XtNrvLength	XtCRvLength	Int 	0 
+XtNhlStart	XtCHlStart	Int 	0 
+XtNhlLength	XtCHlLength	Int 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+The \fItoggle\fP action toggles the widget between `on' and `off'. By
+default it is bound to a click of the left mouse button as well as to
+the Return key.
+
+	
+
+.nf
+<Btn1Down>: set_shadow(sunken) 
+.fi
+
+.nf
+<Btn1Up>: toggle() set_shadow() 
+.fi
+
+.nf
+<Key>Return: toggle() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "toggle
+
+The \fItoggle\fP action switches the state. Depending on the resources
+it might change the tickmark. The \fIonCallback\fP or \fIoffCallback\fP
+functions are called, with the event as \fIcall_data\fP argument.
+
+.TP
+.I "switch_on
+
+The \fIswitch_on\fP action switches the button to `on' if it is `off',
+otherwise it does nothing. By default it isn't bound to any event. If
+the widget is changed, the \fIonCallback\fP is called with the event as
+\fIcall_data\fP.
+
+.TP
+.I "switch_off
+
+The \fIswitch_off\fP action switches the widget to `off' if the state is
+`on', otherwise it does nothing. When the widget changes states, the
+\fIoffCallback\fP is called, with a pointer to the \fIXEvent\fP structure as
+\fIcall_data\fP argument.
+

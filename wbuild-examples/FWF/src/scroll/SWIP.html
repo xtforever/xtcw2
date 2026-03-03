@@ -1,0 +1,682 @@
+From marks@aztec.co.za Thu Jan  4 16:13:32 1996
+Status: RO
+X-VM-v5-Data: ([nil nil nil nil t nil nil nil nil]
+	["22471" "Thu" "4" "January" "1996" "17:03:23" "+0200" "Mark Shuttleworth" "marks@aztec.co.za" "<30EBEC3B.607C82B7@aztec.co.za>" "651" "HTML version of SWIP" "^From:" "free-widgets-info@let.rug.nl, joe@trystero.art.com, bert@let.rug.nl, marks@aztec.co.za" "free-widgets-info@let.rug.nl, joe@trystero.art.com, bert@let.rug.nl, marks@aztec.co.za" "1" "1996010415:03:23" "HTML version of SWIP" nil nil]
+	nil)
+Return-Path: marks@aztec.co.za
+Received: from sophia.inria.fr by www42.inria.fr (8.6.12/8.6.12) with ESMTP id QAA14699 for <bbos@www42.inria.fr>; Thu, 4 Jan 1996 16:13:29 +0100
+Received: from freya.let.rug.nl by sophia.inria.fr (8.6.12/8.6.12) with ESMTP id QAA23538 for <bert.bos@sophia.inria.fr>; Thu, 4 Jan 1996 16:12:24 +0100
+Received: from grid.let.rug.nl by freya.let.rug.nl with ESMTP
+	(1.37.109.15/16.2) id AA096528337; Thu, 4 Jan 1996 16:12:17 +0100
+Received: from freya.let.rug.nl by grid.let.rug.nl with ESMTP
+	(1.37.109.16/16.2) id AA210588337; Thu, 4 Jan 1996 16:12:17 +0100
+Received: from aztec.co.za ([196.7.70.131]) by freya.let.rug.nl with SMTP
+	(1.37.109.15/16.2) id AA095688197; Thu, 4 Jan 1996 16:09:57 +0100
+Received: from phoenix [196.3.254.143] by aztec.co.za with smtp
+	(Smail3.1.29.1 #2) id m0tXrGL-000apBC; Thu, 4 Jan 96 17:07 EET
+Message-Id: <30EBEC3B.607C82B7@aztec.co.za>
+Organization: Thawte Consulting cc
+X-Mailer: Mozilla 2.0b4 (X11; I; Linux 1.2.13 i486)
+Mime-Version: 1.0
+X-Url: file:/home/marks/cobra/SWIP.html
+Content-Type: multipart/mixed;
+	boundary="---------------------------2770978801939286990701067086"
+From: Mark Shuttleworth <marks@aztec.co.za>
+Sender: marks@aztec.co.za
+To: free-widgets-info@let.rug.nl
+Cc: joe@trystero.art.com, bert@let.rug.nl, marks@aztec.co.za
+Subject: HTML version of SWIP
+Date: Thu, 04 Jan 1996 17:03:23 +0200
+
+This is a multi-part message in MIME format.
+
+-----------------------------2770978801939286990701067086
+Content-Type: text/plain; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+
+Hiya,
+
+I've quickly HTML-ised the version of the
+Scrolling Widgets Interface Policy (SWIP) that
+appears on the FWF pages.  It is attached.
+
+Cheers,
+Mark
+
+-----------------------------2770978801939286990701067086
+Content-Type: text/html; charset=us-ascii
+Content-Transfer-Encoding: 7bit
+Content-Disposition: inline; filename="SWIP.html"
+
+<BASE HREF="/home/marks/cobra/SWIP.html">
+
+<HTML>
+<HEAD><TITLE>Scrolling Widgets Interface Policy</TITLE></HEAD>
+<BODY>
+<P><P><P><CENTER>
+<H1>Free Widget Foundation</H1>
+<H1>Scrolling Widgets Interface Policy</H1>
+<P><B>Draft Proposal, Third Revision</B></P>
+
+<P><B>Joe English joe@trystero.art.com<BR>
+Bert Bos bert@let.rug.nl</B></P>
+</CENTER>
+
+
+<H2>Introduction</H2>
+
+<P>This document describes a common programmatic interface between
+``scroller'' widgets (such as scrollbars, panners, and zoomers) and
+``scrollee'' widgets (such as lists, text editors, and canvases).  A
+common protocol is defined so that widgets of different origins and
+parentage may interoperate simply by following these policies.  The
+interface is a message-passing protocol which is implemented using
+Xt's callback mechanism.  The callback mechanism is used instead of
+widget class methods so that there is no prescribed base class.
+
+<P>Scrolling may occur in the horizontal or vertical axes.  Zooming is
+considered as a special case of scrolling.  Both axes may be
+controlled by a single widget (e.g., a Slider2), and zooming may be
+supported by some widgets (e.g., a Slider4).  There are separate
+mechanisms for dragging the scroller continuously and for
+instantaneously setting a new position.  This distinction is made for
+scrollee widgets which take a long time to redraw.
+
+<P>Scrollee widgets may have internal scrolling capabilities as well
+(like a List), and the scroller must be updated whenever the scrollee
+decides to move.  It should also be possible to have a widget be
+controlled by more than one scroller; e.g., a horizontal and a
+vertical scrollbar and a Slider4 could all be attached to a single
+canvas widget, and all four widgets must be kept synchronized.  In the
+most complex case, two scrollee widgets may be linked together and
+kept synchronized through this protocol.
+
+<P>There are many user requests which scroller widgets may wish to
+support but cannot always interpret.  For example, if a scrollbar is
+attached to a multi-font text editor and the user presses the 'line
+up' button on the scrollbar, only the text editor knows how far to
+scroll up.  Because of this, the protocol uses a request-response
+mechanism: Scroller widgets send a _command_ message to a attached
+scrollee, and the scrollee replies by sending a _notify_ message back
+to all attached scrollers.  Scrollee widgets may independently
+generate notify messages if some user action causes scrolling.  The
+protocol is symmetric, however: all widgets must be prepared to
+respond to all messages types, whether they were designed primarily
+as scrollers or as scrollees.
+
+
+<H2>Programmatic Interface:</H2>
+
+<P>A widget's visible area in each axis is defined by two floating point
+numbers.  The <TT>_size_</TT> field is the fraction of the total area which is
+visible in the range of zero to one inclusive.  The <TT>_position_</TT> field
+represents the topmost (or leftmost) visible point of the total area;
+it must be in the range of zero to one inclusive.  Some widgets may
+further restrict the position range to <TT>[0, 1-size]</TT> if ``scrolling off
+the bottom'' is not allowed.
+
+<P>If the total displayable area is less than or equal to than the
+widget's size (e.g., a 10-line list with only 5 items present) then
+the size field should be set to one.
+
+<P>Every widget class which supports this scrolling interface must
+provide two resources:
+
+<P><OL>
+   <LI> <B>XtNscrollCallback</B> (callback list)<BR>
+
+        Invoked by the widget in response to any user input or
+	internal state change which causes the widget to scroll.  The
+	widget must pass a pointer to an XfwfScrollInfo (see below) as
+	the call_data argument.
+
+   <P><LI> <B>XtNscrollResponse</B> (callback procedure)<BR>
+
+	This is a pointer to a callback function, which is attached to
+	a sibling widget's scrollCallback callback list.  The
+	scrollResponse procedure has the following signature:
+
+<PRE>	void scrollResponseCB(Widget w,XtPointer closure,XtPointer call_data);
+</PRE>
+    <P>where <TT>_w_</TT> is the widget invoking the scroll operation,
+	 <TT>_closure_</TT> is the receiving widget (cast to a (Widget)),
+	 and <TT>_call_data_</TT> points to the scroll message 
+    (cast to an (XfwScrollInfo *)). =
+</OL></P>
+
+<P>To connect two scrolling widgets, the application attaches the first
+widget's scrollResponse callback to the second's scrollCallback
+callback list and vice versa, as follows:</P>
+
+<PRE>
+void XfwfConnectScrollingWidgets(Widget w1, Widget w2)
+{
+    XtCallbackProc response_cb_1 =3D NULL, response_cb_2 =3D NULL;
+
+    /* Error checking omitted */
+    XtVaGetValues(w1, XtNscrollResponse, &response_cb_1, NULL);
+    XtVaGetValues(w2, XtNscrollResponse, &response_cb_2, NULL);
+
+    XtAddCallback(
+	widget1,
+	XtNscrollCallback,
+	response_cb_2,
+	(XtPointer)widget2);
+
+    XtAddCallback(
+	widget2,
+	XtNscrollCallback,
+	response_cb_1,
+	(XtPointer)widget1);
+}
+</PRE>
+
+<P>For any widget that wasn't designed with the scrolling policy in mind,
+the application will have to provide its own scrollResponse callback
+procedure.  It will also have to reconfigure the scroller by hand if
+the scrollee has internal scrolling.
+
+<P>A widget passes a scroll message to other connected widgets by
+invoking its XtNscrollCallback.  A widget receives a scroll message
+when its scrollResponse function is invoked (note that the receiving,
+or ``self,'' widget is the second parameter (XtPointer closure), not
+the first parameter (Widget w).)
+
+<P>The scroll message is defined by an XfwfScrollInfo structure, which
+contains:
+
+<P><OL>
+    <LI> a 'reason' field, indicating the type of scroll message;
+    <LI> a 'flags' field indicating which of the size and position
+      fields are valid for this message;
+    <LI> the new or suggested size and position as specified by 'flags'.
+</OL></P>
+
+<P>Not all widgets will support all fields.  For example, a horizontal
+scrollbar would simply ignore the vertical size and position fields,
+and a text or list widget would ignore any requests to zoom.
+
+<P>There are several possible values for the 'reason' field.  A reason of
+XfwfSNotify indicates a <TT>_notify_</TT> message, and all other reasons
+indicate a <TT>_command_</TT> message.  A widget must always respond to a
+command message by generating a notify message in return; a widget
+must not respond to a notify message except to update its internal
+state and redraw itself.
+
+
+<H2>Data structures:</H2>
+
+<PRE>
+/*
+ * File: <Xfwf/scroll.h> (excerpts)
+ */
+
+/*
+ * The XfwfSReason typedef defines all the possible types
+ * of scroll messages.  XfwfSNotify indicates a _notify_
+ * message, and all others indicate a _command_ message.
+ */
+typedef enum _XfwfSReason
+{
+    XfwfSNotify,        /* Widget has changed position or size */
+
+    XfwfSMove,          /* Request to move widget */
+    XfwfSDrag,          /* widget is being moved continuously */
+
+    XfwfSZoom,       	/* Request to Zoom (resize visible area) */
+    XfwfSStretch,       /* widget is being zoomed continuously */
+
+    XfwfSUp,            /* User request to ``move up one unit'' */
+    XfwfSLeft,          /* User request to ``move left one unit'' */
+    XfwfSDown, XfwfSRight,      /* similar */
+
+    XfwfSPageUp,        /* User request to ``move up one page'' */
+    XfwfSPageLeft, XfwfSPageDown, XfwfSPageRight,       /* similar */
+
+    XfwfSZoomIn,        /* User invoked ``Zoom In'' */
+    XfwfSZoomOut,       /* User invoked ``Zoom Out'' */
+
+    XfwfSTop,		/* User invoked ``Scroll to top'' */
+    XfwfSBottom, XfwfSLeftSide, XfwfSRightSide, /* similar */
+
+    XfwfSZoomInFull, XfwfSZoomOutFull  /* similar, but wrt zoom state */
+
+} XfwfSReason;
+
+/* 
+
+ * #define's for the 'flags' field:
+ */
+typedef unsigned short XfwfSFlags;
+#define XFWF_VPOS       0x1     /* vpos set */
+#define XFWF_VSIZE      0x2     /* vsize set */
+#define XFWF_HPOS       0x4     /* hpos set */
+#define XFWF_HSIZE      0x8     /* hsize set */
+
+/*
+ * The XfwfScrollInfo structure defines the scroll message passed
+ * between scrolling widgets:
+ */
+typedef struct _XfwfScrollInfo
+{
+        XfwfSReason     reason;         /* see above */
+        XfwfSFlags      flags;          /* defines which fields are relevant */
+        float           vpos;           /* "top" position, [0..1] */
+        float           vsize;          /* total visible vertical size [02E.1] */
+        float           hpos;           /* "left" position */
+        float           hsize;          /* total visible horizontal size 
+*/
+} XfwfScrollInfo;
+</PRE>
+
+
+<H1>PROTOCOL:</H1>
+
+<P>Although in principal the scrolling policy is symmetric, in practice
+there is a distinction between scroller widgets and scrollee widgets. 
+
+<P>An overview is presented first, followed by more specific details as
+they apply separately to scrollers and scrollees.
+
+<H2>Overview:</H2>
+
+<P>Widgets generate _command_ messages in response to a user action.
+
+<P>Widgets generate _notify_ messages in response to a command message,
+and when they scroll internally.
+
+<P>When receiving any message a widget may adjust the specified
+configuration parameters, and should redraw itself.  If it was *not* a
+notify message, the widget must respond by generating a notify message
+of its own specifying the the configuration actualy used.
+
+<P>A widget should reconfigure and redraw itself:
+
+<P><UL>
+    <LI> After it receives a notify message
+    <LI> Before it generates a notify message
+</UL></P>
+
+
+<P>It should also reconfigure itself after it generates a command message
+if no notify messages were received in reply.
+
+
+
+<H2>Scroller policy -- Receiving messages:</H2>
+
+
+<P>Upon receiving a notify message, scroller widgets must update their
+internal state and redraw themselves.  They may ignore any position
+and size fields not relevant to their configuration.
+
+<P>Scroller widgets may receive command messages as well, and they must
+respond by invoking their scrollCallback list with a notify message.
+
+<P>They should also update their internal state as appropriate and redraw
+themselves.  The position and size fields, if not specified in the
+original message, should be computed as if the user had invoked the
+corresponding command.
+
+
+<H2>Scroller policy -- Generating messages:</H2>
+
+<P>When the user performs an action on a scroller widget, the scroller
+widget creates a ScrollInfo message with the appropriate reason, size,
+position, and flags fields set, and invokes its scrollCallback
+callback list.  Note that it should <B>not</B> redraw itself at this point;
+that should be done either inside the scroller's scrollResponse
+procedure or after the scrollCallback list has been processed.
+
+<P>In many cases the scroller will not be able to specify a new position
+or size exactly, but it should make its best guess.  For example, if
+the user invokes Page Up, a scroller should create a message with
+
+<PRE>
+	reason =3D XfwfSPageUp
+	flags =3D XFWF_VPOS
+	vpos =3D max(old_vpos - vsize, 0)
+</PRE>
+
+<P>Or, if the user invokes Line Up, the scroller should not set any position
+or size fields unless it has some idea of how big a ``line'' is.
+
+<P>The scroller's scrollResponse procedure may keep track of whether or
+not it receives a notify message while the scrollCallback list is
+being processed.  If so, it must use the position and size specified
+in the response message.  If no notify messages are received, it may
+use the position and size originally calculated.
+
+<P><B>NOTE:</B> It is possible for more than one Notify response to be received
+if a scroller widget is connected to more than one scrollee.  There is
+no prescribed way to resolve this conflict.  Any of the following
+actions may be taken:
+
+<P><UL>
+    <LI> Ignore all but the last (or first) response received;
+    <LI> Ignore all responses and use the original values;
+    <LI> Issue a warning indicating that the widget is misconfigured.
+</UL></P>
+
+<P>After the scrollCallback list has been processed, the scroller should
+update its internal state with the new position and size values and
+then redraw itself if its scrollResponse procedure has not already
+done so.
+
+<H2>Scrollee policy -- Generating messages:</H2>
+
+<P>Scrollee widgets must generate a notify message whenever a user action
+or internal state change causes it to scroll.  It should fill in all
+position and size fields, even those which have not changed.  It must
+also generate a notify message in response to a command message.
+
+<P><PRE>
+[ There remains the problem of initial synchronization: --
+  As a convention: widgets designed primarily as scrollees
+  should generate a Notify message inside their Realize procedure.
+  Will this work??? ] 
+</PRE>
+
+<P>Scrollee widgets <B>may</B> generate command messages instead of notify
+messages in response to user actions.  The protocol is the same as for
+scrollers in this case.  In particular, it may leave all position and
+size fields unset and generate a command message with the intention to
+let an attached scroller widgets figure out how far to scroll.  Of
+course, there may not <B>be</B> any scrollers attached, and those that are
+connected might not try to interpret the message either.
+
+
+<H2>Scrollee policy -- Receiving messages:</H2>
+
+<P>When a scrollee widget receives a command message, it should compute a
+new position and size based on:
+
+<P><UL>
+	<LI> the command reason
+	<LI> any position and size fields already set in the message
+	<LI> any internal constraints.
+</UL></P>
+
+<P>It must then reconfigure and redraw itself, and generate a notify
+message specifying the position and size actually used.  It must <B>not</B>
+modify the original XwfScrollInfo structure in place, since other
+widgets may be on the invoker's scrollCallback list.
+
+<P>A widget may adjust the position fields to align itself, and may
+adjust or set size fields to maintain an aspect ratio.  It may also
+reject the request altogether, in which case it should simply reset
+the position and size fields to their current values.
+
+<P>For example: if a scrolling list widget with 10 elements receives a
+Move message requesting a vertical position of 0.12, it may round this
+position to 0.10 so that the second item is precisely aligned with the
+top of the visible area. 
+
+
+<P>Or, if a canvas widget which is currently zoomed to 2x magnification
+and panned to the exact center (i.e., vsize=hsize=0.5, vpos=hpos=0.25)
+receives a message with
+<P>
+<PRE>
+	reason = Zoom
+	flags = HPOS | HSIZE
+	hpos = 0.1
+	hsize = 0.9
+</PRE>
+
+<P>(i.e., zoom out 90% in the horizontal axis), it may adjust the
+vertical size as well to maintain a 1:1 aspect ratio and reply with:
+
+<P>
+<PRE>
+	reason = Notify
+	flags = HPOS | HSIZE | VPOS | VSIZE
+	hpos = 0.1
+	vpos = 0		-- or anywhere else, for that matter
+	hsize = 0.9
+	vsize = 0.9
+</PRE>
+
+
+<P>When receiving a notify message, scrollee widgets should take the same
+action as when receiving a command message except that they must <B>not</B>
+generate a notify reply; i.e., the widget should simply adjust its
+size and redraw itself.
+
+
+<H2>Interpretations of XfwfSReason values:</H2>
+
+<P>This section describes when the various command reasons should be used
+and some additional constraints. 
+
+<P><PRE>
+    Reason              required fields
+    -----------------------------------
+    XfwfSDrag           HPOS and/or VPOS
+    XfwfSStretch        HSIZE and/or VSIZE
+</PRE>
+
+   <P>The widget is being dragged interactively, e.g., by dragging a
+	scrollbar with the mouse.  The scrollee may draw some kind of
+	outline feedback in response to these command messages if
+	fully redrawing itself is too time-consuming.
+
+   <P>Multiple Drag (Stretch) requests may appear in rapid sequence.
+
+	<P>The scroller must follow them with a final Move (Zoom) message
+	when the action is complete, to allow attached widgets to
+	fully reconfigure themselves.
+
+<P><PRE>
+    XfwfSMove           HPOS and/or VPOS
+    XfwfSZoom           HSIZE and/or VSIZE
+
+</PRE>
+	<P>The user has requested a specific position (size), e.g., by
+	clicking on a scrollbar, or has completed a series of Drag
+	(Stretch) operations.
+
+
+<P><PRE>
+    XfwfSTop
+    XfwfSBottom
+    XfwfSPageDown
+    XfwfSPageUp   	none; VPOS recommended
+</PRE>
+
+   <P>User request to adjust vertical position.  For XfwfSTop, a
+	message with vpos=0 is recommended.
+
+	<P>For XfwfSBottom, a message with vpos=(1 - vsize) is
+	recommended: i.e., the last line should appear at the bottom
+	of the visible area.
+
+	<P>For PageUp (PageDown), the current vsize should be subtracted
+	(added) to the current vpos.  That is, a ``page'' is
+	interpreted as the length of the visible area by default. =
+
+	<P>Attached scrollee widgets may have an entirely different idea
+	of logical pages, and are free to replace the suggested
+	position with their own calculated position.
+
+
+<P><PRE>
+    XfwfSLeftSide,
+    XfwfSRightSide,
+    XfwfSPageLeft,
+    XfwfSPageRight	none; HPOS recommended
+</PRE>
+    	<P>User request to adjust horizontal position.  Similar to
+	XfwfSTop, etc., above.
+
+<P><PRE>
+    XfwfSZoomInFull	none; all recommended
+</PRE>
+
+	<P>User request to zoom all the way in (maximum magnification.) A
+	widget which generates this message should have an idea of a
+	maximum zoom-in factor, either hardcoded or provided by a
+	resource.
+
+<P><PRE>
+    XfwfSZoomOutFull	none; all recommended
+</PRE>
+
+   <P>Request to zoom all the way out; normally this will be
+	hpos=vpos=0, hsize=vsize=1.
+
+<P><PRE>
+    XfwfSZoomIn
+    XfwfSZoomOut	none; all recommended
+</PRE>
+
+   <P>A reasonable default interpretation of ZoomIn is to scale
+	both size fields by a constant factor &lt; 1.
+
+	<P>A reasonable default for ZoomOut is to scale both size fields
+	by a constant factor > 1, the reciprocal of the ZoomIn factor.
+
+<P><B>For all of the Zoom reasons, the position fields should be
+adjusted to pan the visible to keep it centered at the current
+location.</B></P>
+
+<P><PRE>
+    XfwfSUp
+    XfwfSDown
+    XfwfSLeft
+    XfwfSRight		none; none recommended.
+</PRE>
+
+   <P>Unless the invoking scroller widget has some idea of how big a
+	horizontal or vertical ``unit'' is, the interpretation of
+	these requests is best left to scrollees.
+
+
+
+<H3>Recommendations:</H3>
+
+<P>In addition to making the scrollResponse procedure available as a
+widget resource, scrolling widgets should implement it as a class
+method to allow subclasses to inherit it.
+
+<P>Scrolling widgets should provide an action named Scroll(), taking a
+single case-insensitive argument which is one of the XfwfSReason enum
+types, minus the XfwfS prefix.  The action procedure may use the
+XfwfCvtStringToScrollReason(char *) convenience function declared in
+<TT>&lt;Xfwf/scroll.h&gt;</TT> This action should operate as if the widget had
+received a command message with the corresponding reason and no
+position or size fields set.  An action of Scroll(Notify) should
+simply generate a Notify message specifying the current position and
+size in the relevant axes.
+
+<P>Widgets designed primarily as scrollees should only generate notify
+messages. 
+
+<P>Widgets designed primarily as scrollers should not generate notify
+messages except in response to receiving a command message.
+
+<P><PRE>
+/*
+ * File: <Xfwf/scroll.h>
+ *
+ * Declarations and typedefs for the Free Widget Foundation
+ * Scrolling Widget Interface Policy.
+ * 
+
+ */
+
+#ifndef _XFWF_SCROLL_H
+#define _XFWF_SCROLL_H 1
+
+/*
+ * The XfwfSReason typedef defines all the possible types
+ * of scroll messages.  XfwfSNotify indicates a _notify_
+ * message, and all others indicate a _command_ message.
+ */
+typedef enum _XfwfSReason
+{
+    XfwfSNotify,        /* Widget has changed position or size */
+
+    XfwfSMove,          /* Request to move widget */
+    XfwfSDrag,          /* widget is being moved continuously */
+
+    XfwfSZoom,       	/* Request to Zoom (resize visible area) */
+    XfwfSStretch,       /* widget is being zoomed continuously */
+
+    XfwfSUp,            /* User request to ``move up one unit'' */
+    XfwfSLeft,          /* User request to ``move left one unit'' */
+    XfwfSDown, XfwfSRight,      /* similar */
+
+    XfwfSPageUp,        /* User request to ``move up one page'' */
+    XfwfSPageLeft, XfwfSPageDown, XfwfSPageRight,       /* similar */
+
+    XfwfSZoomIn,        /* User invoked ``Zoom In'' */
+    XfwfSZoomOut,       /* User invoked ``Zoom Out'' */
+
+    XfwfSTop,		/* User invoked ``Scroll to top'' */
+    XfwfSBottom, XfwfSLeftSide, XfwfSRightSide, /* similar */
+
+    XfwfSZoomInFull, XfwfSZoomOutFull  /* similar, but wrt zoom state */
+
+} XfwfSReason;
+
+/* =
+
+ * #define's for the 'flags' field:
+ */
+typedef unsigned short XfwfSFlags;
+#define XFWF_VPOS       0x1     /* vpos set */
+#define XFWF_VSIZE      0x2     /* vsize set */
+#define XFWF_HPOS       0x4     /* hpos set */
+#define XFWF_HSIZE      0x8     /* hsize set */
+
+/*
+ * The XfwfScrollInfo structure defines the scroll message passed
+ * between scrolling widgets:
+ */
+typedef struct _XfwfScrollInfo
+{
+        XfwfSReason     reason;         /* see above */
+        XfwfSFlags      flags;          /* defines which fields are relev=
+ant */
+        float           vpos;           /* "top" position, [0..1] */
+        float           vsize;          /* total visible vertical size [0=
+=2E.1] */
+        float           hpos;           /* "left" position */
+        float           hsize;          /* total visible horizontal size =
+*/
+} XfwfScrollInfo;
+
+
+/*
+ * Application convenience functions:
+ *
+ * XfwfConnectScrollingWidgets(Widget, Widget) attaches two
+ * widgets, which must have the scrollCallback and scrollResponse
+ * resources.
+ */
+
+extern void XfwfConnectScrollingWidgets( /* Widget w1, Widget w2 */);
+
+
+/*
+ * Widget convenience functions:
+ *
+ * =
+
+ * XcwfCvtStringToScrollReason(char *s) converts 's' to one
+ * of the XfwfS* enumerated values.  The comparison is case-insensitive,
+ * and the XfwfS prefix may be present but is not necessary.
+ */
+
+extern XfwfSReason XfwfCvtStringToScrollReason(/* char * */);
+
+#endif /* _XFWF_SCROLL_H */
+
+</PRE>
+</BODY>
+</HTML>
+
+-----------------------------2770978801939286990701067086--
+
+

@@ -1,0 +1,68 @@
+#include "../../FWF.tmpl"
+
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+
+CONVERTH = Converters.h
+#if HaveXpm
+CONVERTSRC = long.c icon.c XCC.c choosecol.c StrToPmap.c Pen.c strarray.c \
+	str2color.c
+#else
+CONVERTSRC = long.c XCC.h choosecol.c StrToPmap.c Pen.c strarray.c \
+	str2color.h
+#endif
+CONVERTOBJ = $(CONVERTSRC:.c=.o)
+
+LIB_OBJS = $(CONVERTOBJ)
+
+INCS =	$(FWF_INCDIR)/Converters.h 	\
+	$(FWF_INCDIR)/long.h		\
+	$(FWF_INCDIR)/icon.h		\
+	$(FWF_INCDIR)/XCCP.h		\
+	$(FWF_INCDIR)/XCC.h		\
+	$(FWF_INCDIR)/choosecol.h	\
+	$(FWF_INCDIR)/StrToPmap.h	\
+	$(FWF_INCDIR)/strarray.h	\
+	$(FWF_INCDIR)/Pen.h		\
+	$(FWF_INCDIR)/str2color.h
+SRCS = $(CONVERTSRC)
+OBJS = $(CONVERTOBJ)
+
+LIBS_NEEDED = $(FWF_LIB) $(OTHERLIBS)
+LOCALLIBS = $(LIBS_NEEDED)
+DEPLIBS = $(OTHERDEPLIBS)
+
+RequireThisFileForInit($(FWF_INCDIR)/Converters.h)
+RequireThisFileForInit($(FWF_INCDIR)/long.h)
+RequireThisFileForInit($(FWF_INCDIR)/icon.h)
+RequireThisFileForInit($(FWF_INCDIR)/XCCP.h)
+RequireThisFileForInit($(FWF_INCDIR)/XCC.h)
+RequireThisFileForInit($(FWF_INCDIR)/choosecol.h)
+RequireThisFileForInit($(FWF_INCDIR)/StrToPmap.h)
+RequireThisFileForInit($(FWF_INCDIR)/strarray.h)
+RequireThisFileForInit($(FWF_INCDIR)/Pen.h)
+RequireThisFileForInit($(FWF_INCDIR)/str2color.h)
+
+FileCopyWhenNeeded(.,Converters.h,$(FWF_INCDIR),Converters.h)
+FileCopyWhenNeeded(.,long.h,$(FWF_INCDIR),long.h)
+FileCopyWhenNeeded(.,icon.h,$(FWF_INCDIR),icon.h)
+FileCopyWhenNeeded(.,XCC.h,$(FWF_INCDIR),XCCP.h)
+FileCopyWhenNeeded(.,XCC.h,$(FWF_INCDIR),XCC.h)
+FileCopyWhenNeeded(.,choosecol.h,$(FWF_INCDIR),choosecol.h)
+FileCopyWhenNeeded(.,StrToPmap.h,$(FWF_INCDIR),StrToPmap.h)
+FileCopyWhenNeeded(.,strarray.h,$(FWF_INCDIR),strarray.h)
+FileCopyWhenNeeded(.,Pen.h,$(FWF_INCDIR),Pen.h)
+FileCopyWhenNeeded(.,str2color.h,$(FWF_INCDIR),str2color.h)
+
+AddToLibraryTarget(archive,$(FWF_LIBDIR),$(FWF_LIBNAME),$(CONVERTOBJ))
+ObjectRuleWithFlags($(FWF_CFLAGS))
+InstallMultiple($(INCS),$(FWF_INSTALL_INCDIR))
+
+GatherDescription(converters.txt,../../README.INDEX);
+
+objects: first objs archive
+
+first: $(INCS)
+
+objs: $(OBJS)
+
+execs:

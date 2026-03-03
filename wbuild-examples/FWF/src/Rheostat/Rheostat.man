@@ -1,0 +1,177 @@
+.TH "Rheostat" 3 "14 Jul 92" "Free Widget Foundation" "Free Widget Foundation" 
+.SH NAME
+Rheostat \- Angular display/input widget
+.SH DESCRIPTION
+.PP
+.I Rheostat
+is a round, dial-like valuator widget that may be used for input or display
+of integer values.  It comes in both vanilla and Motif flavours.  It
+is a general-purpose valuator, but it's especially useful for displaying
+and entering angles.  Set 
+\fI*minimumValue\fP and \fI*minimumAngle\fP to 0, and 
+\fI*minimumValue\fP and \fI*minimumAngle\fP to 360 
+to configure a Rheostat as an angle valuator.  Compile with \fB-DMOTIF=1\fP
+to get the Motif version.
+The class pointer is \fBxfwfRheostatWidgetClass\fR.
+.SH "APPEARANCE AND BEHAVIOUR"
+The Rheostat has the following appearance components, from outside
+to inside:
+.IP Ticks
+Markers placed at even intervals around the dial face.
+If \fRXtNtickGravity\fP is \fRTrue\fP, then pressing the 
+mouse in the tick region will ``snap'' the indicator to the
+nearest tick.
+.IP Dial
+A circular arc drawn around the margin.
+.IP Indicator
+The arrow-shaped pointer which displays the current widget value.
+Clicking button 1 anywhere inside the widget will set the indicator
+to point at the current mouse position.
+.SH "NEW RESOURCES"
+.\" re(source) macro : .re Name Class Type Default
+.de re
+.br
+\\fB\\$1\\fR(\\$2/\\$3) \0\0\0\0 \\$4
+.br
+..
+.\" Sorry, no tbl input -- I only have awf.
+.\" Running sed -n 's/^\.re //p' on this section should give a 
+.\" reasonable approximation;
+.re Name Class Type Default
+.LP 
+.re XtNminimumValue XtCMinimum XtRInt 0
+.re XtNmaximumValue XtCMaximum XtRInt 100
+.IP
+Minimum and maximum displayable values of the widget.
+.LP
+.re XtNvalue XtCvalue XtRInt 0
+.IP
+The current value of the widget.  This will always be
+in the range [minimumValue, maximumValue].
+.PP
+.re XtNminimumAngle XtCMinimum XtRInt 45
+.re XtNmaximumAngle XtCMaximum XtRInt 315
+.IP
+Angles in degrees of the indicator when XtNvalue is at its
+minimum and maximum value, respectively.  Angles are measured
+clockwise, with 0 straight down, 90 to the left, 180 straight up, and 
+270 to the right.  Note that this is different from the way Xlib
+does things.
+.LP
+.re XtNtickGravity XtCGravity XtRBoolean True
+.IP
+Controls the ``tick gravity'' feature:  If \fBTrue\fP, then
+the indicator will snap to the nearest tick when button 1 is
+depressed with the pointer in the tick region.
+.LP
+.re XtNnumberIntervals XtCNumberIntervals XtRInt 10
+.IP
+The number of tick intervals to display.
+.LP
+.re XtNresizeArrow XtCBoolean XtRBoolean True
+.IP
+If this resource is \fBTrue\fP, then the Rheostat will resize the
+indicator proportionally when the widget is resized.  If \fBFalse\fP,
+then the indicator remains the same size.
+.LP
+.re XtNouterMargin XtCMargin XtRDimension 2
+.re XtNtickLength XtCMargin XtRDimension 5
+.re XtNdialThickness XtCThickness XtRDimension 3
+.re XtNinnerMargin XtCMargin XtRDimension 2
+.IP
+These resources control the size of the widget.
+XtNouterMargin is the distance from the window border to the
+outside of the tick region; XtNtickLength is the length of 
+the tick marks; XtNdialThickness is the line width of the
+dial; XtNinnerMargin is the distance from the inside of the
+dial to the indicator tip; and XtNradius is the distance
+from the indicator tip to the center of the widget.  
+.LP
+.re XtNouterArrowLength XtCLength XtRDimension 25
+.re XtNinnerArrowLength XtCLength XtRDimension 20
+.re XtNarrowWidth XtCWidth XtRDimension 20
+.re XtNfillArrow XtCBoolean XtRBoolean False
+.re XtNarrowThickness XtCThickness XtRDimension 0
+.IP
+These resources control the appearance of the indicator.  XtNinnerArrowLength
+is the distance from the indicator tip to the inner arrow point; XtNarrowWidth
+is the distance between the two outer arrow points; and XtNouterArrowLength
+is the distance from the tip to the outer arrow points.  (There should
+be a FIG file with the source code which illustrates this more clearly).
+If XtNfillArrow is \fBTrue\fR, the indicator will be filled; 
+otherwise, only the outline is drawn with a line width of XtNarrowThickness.
+.LP
+.re XtNarrowColor XtCForeground XtRPixel XtDefaultForeground
+.re XtNdialColor XtCForeground XtRPixel XtDefaultForeground
+.re XtNtickColor XtCForeground XtRPixel XtDefaultForeground
+.IP
+These resources specify the color of the indicator, dial, and tick
+marks, respectively.
+.LP
+.re XtNtickThickness XtCThickness XtRDimension 0
+.re XtNarrowThickness XtCThickness XtRDimension 0
+.IP
+Specify the thickness (line width) of the tick marks
+and indicator.  
+.LP
+.re XtNuseShadowColors XtCBoolean XtRBoolean False
+.IP
+(Motif version only).  If set, then use the Motif-computed
+top shadow color for XtNdialColor and the bottom shadow color
+for XtNarrowColor.  This looks pretty good.
+.SH "ACTIONS AND CALLBACKS"
+.IP Set()
+Should only be bound to motion or button events; aims the
+indicator at the pointer location, and invokes all callbacks
+on the \fBXtNsetCallback\fP list.
+.IP Notify()
+Invokes all callbacks on the \fBXtNnotify\fP callback list.
+.IP "Increment(max|min)"
+This is not a very well-defined action.  UTSL...
+.PP
+Both the \fBXtNsetCallback\fP and \fBXtNnotify\fP callbacks
+pass a pointer to the following structure as the \fIcall_data\fP parameter:
+.sp
+.nf
+/*
+ * Rheostat callback structure:
+ */
+typedef struct {
+    int  	reason;
+    XEvent 	*event;
+    int		value;
+} XfwfRheostatCallbackStruct;
+.sp
+.fi
+.LP
+\fIvalue\fP holds the current value of the indicator.
+The \fIevent\fR field is set to the X event which triggered the
+callback.  The \fIreason\fR field is not filled in and is only
+present because Motif likes all callbacks to start off with
+\fIreason\fP and \fIevent\fR fields.
+.SH "DEFAULT TRANSLATIONS"
+.sp
+.nf
+<Btn1Down>: set() 
+<Btn1Motion>: set()
+<Btn1Up>: notify()
+<Key>minus: increment(-1) notify()
+<Key>plus: increment(+1) notify()
+<Key>Prior: increment(-1i) notify() ; osfPageUp in Motif version
+<Key>Next: increment(+1i) notify() ; osfPageDown 
+<Key>Home: increment(min) notify() 
+<Key>End: increment(max) notify()
+<Key>Return: notify() 
+.sp
+.fi
+.SH ACKNOWLEDGMENTS
+Written and maintained by
+Joe English \fI<joe@trystero.art.com>\fP.
+.LP
+.nf
+Thanks to:
+Daniel V. Klein \fI<dvk@lonewolf.com>\fP,
+Greg Janee \fI<greg@cs.ucsb.edu>\fP, and
+James R. R. Service \fI<jservice@vis.toronto.edu>\fP
+for providing bugfixes and enhancements.
+.fi

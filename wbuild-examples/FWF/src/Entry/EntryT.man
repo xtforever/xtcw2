@@ -1,0 +1,15 @@
+.TH "EntryT" "1" "6 Mar 1995" "" "Free Widget Foundation"
+.SH NAME
+EntryT \- Test program for the XfwfEntry widget
+.SH DESCRIPTION
+.PP
+The program shows a few of the different uses of the Entry widget:
+unrestricted text entry, restricted to digits, and password entry
+(without echo).
+.SH AUTHOR
+.sp
+.nf
+Andre Fornacon (afo@pub.th-zwickau.de)
+.fi
+
+

@@ -1,0 +1,421 @@
+.TH "PixelEditor" "3" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH Name
+PixelEditor \- pixel editing widget
+.SH Class Hierarchy
+Core-->PixelEditor
+.SH Synopsis
+#include <X11/Intrinsic.h>
+#include <X11/PixEdit.h>
+
+widget = XtCreateManagedWidget(name, pixelEditorWidgetClass, ...);
+.SH Description
+
+PixelEditor is an X widget to act as a building block for image editing
+applications (icon editors, font editors, picture editors, pattern
+editors, etc.).  It provides a drawing grid of pixels which can be edited
+with a set of predefined drawing tools and region operations.  The
+application interacts with the PixelEditor through resources and function
+calls.  The aim of the widget is to implement most of the tedious code
+necessary for pixel editing applications, while leaving the details of
+the user interface (menus, toolboxes, file selection, etc.) to the
+application writer.  Hooks are provided to allow the widget to be
+extended by the user.
+
+The pixel editor consists of a grid of colored pixels, where each pixel
+is square, and the size of the squares is determined by the magnification
+(or "zoom" factor) currently in effect.  Scrolling of the pixels is not
+supported, since it can be done by placing the PixelEditor inside of a
+Viewport widget.
+
+The user can modify the pixel data through a set of drawing tools and 
+a set of routines.  There are 5 tools currently supported by the 
+PixelEditor widget.  These are:
+
+Pencil
+.br
+		Left button sets a pixel
+.br
+		Right button erases a pixel
+.br
+		Middle buddle toggles a pixel on and off
+
+Brush
+.br
+		Draws a brush shape in the foreground color.
+
+Eraser
+.br
+		Draws a brush shape in the background color.
+
+Region
+.br
+		Selects a rectangular region of pixels.
+
+Paster
+.br
+		Places data from a paste buffer to the image.
+		A click will drop a floating image.  Future
+		clicks before the tool is changed will move
+		the location of the pasted image.
+
+Each of these tools has a unique corresponding number as shown in
+PixEdit.h, as well as an ASCII text name which can be sent to a
+resource converter to convert it into a tool number.  Tools can be set
+by changing the XtNtool resource of the widget.
+
+There are numerous brush shapes currently defined, as listed
+in PixEdit.h.  These range from boxes to circles to lines.  A user
+definable brush shape is also allowed.  As with tools, both
+integer and ASCII names are defined for the brush shapes, and resource
+converters convert from text to integer names.
+
+The PixEditT.c file contains a simple replacement for the X 'bitmap'
+program which demonstrates the use of the PixelEditor.  The program loads
+and saves bitmaps and XPM colored images, and allows them to be edited.
+
+Changes in some PixelEditor parameters (zoom, clippers, width, height,
+image, etc) require a redraw of the window.  Redraws are asynchronous.
+If you call XtSetValues to change the zoom, and then call
+PixelEditorSetImage to change the image, you will get two Expose events
+which will not be combined.  These will be delayed until the next event
+loop cycle, which can cause your new image to be drawn twice.  This can
+be avoided by changing the zoom and image at the same time with the same
+XtSetValues call.
+.SH Resources
+In addition to the resources defined by superclasses, this widget
+defines the following:
+.TS
+tab(/) ;
+lB lB lB lB.
+Name/Class/Type/Default
+.T&
+lB l l l.
+XtNzoom/Value/Int/23
+XtNdrawColor/Color/Pixel/Black
+XtNeraseColor/Color/Pixel/White
+XtNleftClipper/Value/Int/0
+XtNrightClipper/Value/Int/-1
+XtNtopClipper/Value/Int/0
+XtNbottomClipper/Value/Int/-1
+XtNclipperWidth/Width/Int/20
+XtNclipperHeight/Height/Int/20
+XtNgrid/Boolean/Boolean/True
+XtNclippers/Boolean/Boolean/True
+XtNautoScale/Boolean/Boolean/False
+XtNopaquePaste/Boolean/Boolean/True
+XtNtool/Tool/Tool/XtNtoolPencil
+XtNbrush/Brush/Brush/XtNbrushSmallBox
+XtNdataChangeCallback/Callback/Callback/NULL
+XtNregionChangeCallback/Callback/Callback/NULL
+XtNpasteBufferChangeCallback/Callback/Callback/NULL
+.TE
+.ne 4
+.SH Public Functions
+.nf
+.ta 3i
+void PixelEditorSelectRegion(pew,x1,y1,x2,y2)
+PixelEditorWidget pew;
+int x1,y1,x2,y2;
+.fi
+.sp
+.RS 5
+Mark the rectangular region of pixels with upper left pixel (x1,y1) and
+lower left pixel (x2,y2) as the selected region.  Normally, region selection
+is done interactively by the user, with the region selection tool.  The
+function is provided so other programs can have access to the region.  A
+common desire is to have a "select all" command which selects the entire
+image.  This routine can be used to implement the "select all" feature.
+.RE
+.sp
+.nf
+void PixelEditorSelectAll(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+Marks the entire image in the PixelEditor pew as the selected region.
+.RE
+.sp
+.nf
+void PixelEditorRegionFlipHorizontally(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+If a region is selected, flip the selected region horizontally.
+.RE
+.sp
+.nf
+void PixelEditorRegionFlipVertically(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+If a region is selected, flip the selected region vertically.
+.RE
+.sp
+.nf
+void PixelEditorRegionFill(pew,color)
+PixelEditorWidget pew;
+Pixel color;
+.fi
+.sp
+.RS 5
+If a region is selected, fill the rectangular region with color.
+.RE
+.sp
+.nf
+void PixelEditorRegionInvert(pew,bg,fg)
+PixelEditorWidget pew;
+Pixel bg,fg;
+.fi
+.sp
+.RS 5
+For each pixel in the selected region, if the pixel color is the
+background color bg, the pixel is replaced by one with the foreground
+color fg.  If the pixel is any other foreground color, it is replaced
+by the background color.  This routine has the side effect of making
+multi-colored regions become two colored.
+.RE
+.sp
+.nf
+Boolean PixelEditorRegionCopy(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+If a region is selected, copy the selected pixel data into the paste
+buffer.
+.RE
+.sp
+.nf
+Boolean PixelEditorRegionCut(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+If a region is selected, copy the selected data into the paste buffer
+and clear the selected region.
+.RE
+.sp
+.nf
+Boolean PixelEditorGetGrid(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+Return a Boolean indicating the current grid status.
+.RE
+.sp
+.nf
+int PixelEditorGetZoom(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+Return the current pixel magnification.
+.RE
+.sp
+.nf
+Pixel PixelEditorGetFGColor(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+Return the current drawing color.
+.RE
+.sp
+.nf
+Pixel PixelEditorGetBGColor(pew)
+PixelEditorWidget pew;
+.fi
+.sp
+.RS 5
+Return the current erasing color.
+.RE
+.sp
+.nf
+Boolean PixelEditorChangeTool(pew,tool)
+PixelEditorWidget pew;
+int tool;
+.fi
+.sp
+.RS 5
+Change the current drawing tool.
+.RE
+.sp
+.nf
+Pixel *PixelEditorGetImage(pew,w_ptr,h_ptr)
+PixelEditorWidget pew;
+int *w_ptr,*h_ptr;
+.fi
+.sp
+.RS 5
+Routines a pointer to the current image data in the PixelEditor by value,
+and the image width and height by reference.  This function is useful if the
+image data is not shared by the PixelEditor and the application.  The same
+functionality can be obtained from an XtGetValues call with XtNimagePixels,
+XtNimageWidth and XtNimageHeight as the resources.
+.RE
+.sp
+.nf
+void PixelEditorSetImage(pew,pixels,w,h,shared)
+PixelEditorWidget pew;
+Pixel *pixels;
+int w,h;
+Boolean shared;
+.fi
+.sp
+.RS 5
+Set a new image into the PixelEditorWidget pew.  The pixels array is
+an array of Pixel values.  The width and height in pixels are passed
+in via w and h.  If shared is True, the data will not be copied, so
+that all changes to the data will be made into the user's array.  If
+shared is false, the data is copied first, which is the preferred
+method of use (in that it is the only way that has been tested).  It
+is possible to set these data fields by XtSetValues, but it is
+essential to change the data, width, height, and shared flag concurrently
+(i.e. in the same XtSetValues call), so data will be consistant.  This
+routine will ensure that the update is performed concurrently.
+.RE
+.sp
+.nf
+void PixelEditorResizeImage(pew,w,h)
+PixelEditorWidget pew;
+unsigned int w,h;
+.fi
+.sp
+.RS 5
+Changes the size of the current PixelEditor image to have width w and height
+h.  If the size is smaller than the current size, the resize will be
+destructive, so that data outside the region will be lost.  If the width
+or height is larger than before, more memory will be allocated and the
+image rearranged so there will be enough space for the new image.  An
+increase in size will cause the data to no longer be shared.  This function
+acts the same as a call to XtSetValues with the resources XtNimageWidth and
+XtNimageHeight.
+.RE
+.sp
+.nf
+Pixel *PixelEditorBitmapDataToPixels(pew,bits,w,h,fg_color,bg_color)
+PixelEditorWidget pew;
+unsigned char *bits;
+unsigned int w,h;
+Pixel fg_color,bg_color;
+.fi
+.sp
+.RS 5
+Utility routine to take bitmap data, such as that read from an xbm bitmap
+file, and converts it to the internal Pixel format required by the
+PixelEditor widget.  The fg_color and bg_color values indicate how 1 and 0
+bits in the bitmap map to colored pixels.  The Pixel data returned is
+dynamically allocated with XtMalloc, and should be freed by the caller when
+no longer needed.
+.RE
+.sp
+.nf
+unsigned char *PixelEditorPixelsToBitmapData(pew,pixels,w,h,bg_color)
+PixelEditorWidget pew;
+Pixel *pixels;
+int w,h;
+Pixel bg_color;
+.fi
+.sp
+.RS 5
+Utility routine to take Pixel data, such as that returned by
+PixelEditorGetImage(), and convert to a bitmap array as in the xbm bitmap
+format.  The bg_color indicates which color in the Pixel data represents the
+"background".  Each Pixel with this color will map to a 0 in the bitmap data.
+All other Pixels will map to 1.  The bitmap data returned is dynamically
+allocated with XtMalloc, and should be freed by the caller when no longer
+needed.
+.RE
+.sp
+.nf
+char *PixelEditorGetBitmapData(pew,w_ptr,h_ptr,bg)
+PixelEditorWidget pew;
+unsigned int *w_ptr,*h_ptr;
+Pixel bg;
+.fi
+.sp
+.RS 5
+Returns the PixelEditor's current image in xbm bitmap format.  The color
+bg represents the pixel color which should be interpreted as background.
+Each Pixel with color bg will become a 0 bit in the bitmap data.  All other
+pixel colors will become 1.  The bitmap data returned is dynamically
+allocated with XtMalloc, and should be freed by the caller when no longer
+needed.  This function is equivalent to consecutive calls to
+PixelEditorGetImage() and PixelEditorPixelsToBitmapData().
+.RE
+.sp
+.nf
+void PixelEditorSetBitmapData(pew,bits,w,h,fg,bg,shared)
+PixelEditorWidget pew;
+unsigned char *bits;
+unsigned int w,h;
+Pixel fg,bg;
+Boolean shared;
+.fi
+.sp
+.RS 5
+This routine takes a single plane bitmap data array in the standard X
+bitmap format, converts it to a color pixel array and sets it into the
+PixelEditor widget.  Any old data is thrown away.  The new image shares
+the same data or copies it internally depending on the shared flag.  All
+"on" bits are displayed in the specified foreground color, "off" bits
+in the background color.  This routine is used by the public function
+PixelEditorLoadBitmapFile.
+.RE
+.sp
+.nf
+Boolean PixelEditorLoadBitmapFile(pew,filename,fg_color,bg_color)
+PixelEditorWidget pew;
+char *filename;
+Pixel fg_color,bg_color;
+.fi
+.sp
+.RS 5
+This routine takes a single plane bitmap file in the standard X bitmap
+format, and loads it into the pixel editor widget, setting the width
+and height correctly.  Any old data is thrown away, and the new image
+is loaded as unshared.  All "on" bits are displayed in the specified
+foreground color, "off" bits in the background color.  True is returned
+on success, False on failure.
+.RE
+.sp
+.nf
+Boolean PixelEditorSaveBitmapFile(pew,base_name,filename,bg_color)
+PixelEditorWidget pew;
+char *base_name;
+char *filename;
+Pixel bg_color;
+.fi
+.sp
+.RS 5
+This function takes the current pixel image in the PixelEditor and
+saves it out as a bitmap file.  Since the source image may have
+multiple colors, and the bitmap file only has two colors, this routine
+saves all pixels of color bg_color as 0's and all other pixels as 1's.
+base_name is the name of the bitmap as used in the bitmap format file,
+and can be an arbitrary C variable name.  A True return status
+indicates success.
+.RE
+.sp
+.SH Restrictions
+.LP
+Little effort has been spent to make this a very fast graphic widget.  No
+fancy buffering tricks are done, or other attempts to speed up redraws. A
+fair amount of memory is required for large images.
+
+There are likely to be many bugs and inadequacies in this code.  The widget
+is fairly complicated.  Please send bug reports and feature requests to the
+email address below.
+.SH Author
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi

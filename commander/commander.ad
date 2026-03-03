@@ -1,0 +1,42 @@
+*foreground: #ecf0f1
+*background: #2c3e50
+*fontName: Sans-12
+
+commander.WcChildren: paned
+
+*weightx: 1
+*weighty: 1
+
+*paned.WcClass: WPaned
+*paned.WcChildren: left_pane right_pane
+*paned.orientation: 0
+*paned.width: 800
+*paned.height: 600
+
+*left_pane.WcClass: WlistMulti
+*left_pane.titleBar: Name	Size	Type
+*left_pane.columnWidths: 200,80,100
+*left_pane.showGrip: True
+*left_pane.min: 100
+*left_pane.translations: #override \
+    <Key>Up: LUA(handle_key, Up) \n\
+    <Key>Down: LUA(handle_key, Down) \n\
+    <Key>Return: LUA(handle_key, Return) \n\
+    <Key>Tab: LUA(handle_key, Tab) \n\
+    <Key>F5: LUA(handle_key, F5)
+
+*right_pane.WcClass: WlistMulti
+*right_pane.titleBar: Name	Size	Type
+*right_pane.columnWidths: 200,80,100
+*right_pane.showGrip: True
+*right_pane.min: 100
+*right_pane.translations: #override \
+    <Key>Up: LUA(handle_key, Up) \n\
+    <Key>Down: LUA(handle_key, Down) \n\
+    <Key>Return: LUA(handle_key, Return) \n\
+    <Key>Tab: LUA(handle_key, Tab) \n\
+    <Key>F5: LUA(handle_key, F5)
+
+*paned*grip.width: 10
+*paned*grip.height: 10
+*paned*grip.background: #34495e

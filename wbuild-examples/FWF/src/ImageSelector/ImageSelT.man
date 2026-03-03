@@ -1,0 +1,29 @@
+'\" t
+.TH "MultiListT" "1" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+ImageSelectorT \- Test Program For The ImageSelector Widget
+.SH SYNOPSIS
+.B ImageSelectorT
+fontname firstcharindex lastcharindex
+.SH DESCRIPTION
+.PP
+.I ImageSelectorT
+is a simple program that creates and test a ImageSelector widget.  The
+source may be useful is seeing how the ImageSelector widget can be used.
+The programs displays a range of character images from a specified font.  The
+test program expects to be called with three arguments: a fontname, and the
+first and last index of characters in the font.  For example, to view the
+images corresponding to 'A' through 'Z' in the 'variable' font, you would
+type:
+.nf
+	ImageSelectorT variable 65 90
+.fi
+.SH AUTHOR
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi

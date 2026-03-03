@@ -1,0 +1,4 @@
+ScrolledWindow3 (superclass: XfwfBoard) A composite widget with two
+	scrollbars, and three labels: along the top, left side and
+	upper left corner, making it ideally suited for displaying
+	tabular data.

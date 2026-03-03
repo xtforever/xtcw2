@@ -1,0 +1,27 @@
+.\"remove .ig hn for full docs
+.de hi
+.ig eh
+..
+.de eh
+..
+.TH "PcBarT" 1 "03 January 1995" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+PcBarT \- Test program for the percentage bar widget
+.SH DESCRIPTION
+.PP
+.I PcBarT
+is a simple program that creates and test a PcBar widget.  The
+source may be useful in seeing how the PcBar widget can be used.  The
+test program shows both a vertical and a horizontal percentage bar.  The value
+displayed can be altered by clicking and holding down the "Increment" or
+"Decrement" buttons.  Clicking on the "Show % Display" button
+toggles the display
+of the percentage value in both widgets.
+
+.SH AUTHOR
+Copyright (C) 1995 by Lachlan Wetherall, lwether@cs.newcastle.edu.au            
+
+    .-_|\\   Department of Computer Science
+   /     \\  University of Newcastle
+   \\.--._*  Callaghan NSW 2308
+        v   Australia

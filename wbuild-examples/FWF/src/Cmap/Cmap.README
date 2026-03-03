@@ -1,0 +1,111 @@
+                            Cmap Widget
+---------------------------------------------------------------------------------
+
+While writing an image processing program, I noticed that I needed a way to access
+the values in a colormap.  Previously I had written a program, xcolormap, that
+showed the values in the default colormap, so I decided to extend it to be a
+widget.  The Cmap widget basically displays the colormap associated with it's
+XtNcolormap resource in a square (nxn) picture.  In the source each square
+is referred to as a "box".  There is one special "selected" box that has
+an indicator square around it, plus the value of it's rgb components are
+displayed in a label at the bottom.
+
+This is the latest version that uses the window`s shell ancestor to decide
+which visual to use.  It also allows a mapping table of indices to pixel
+values which makes it quite useful as a color selector.  See the CmapT
+demo program for an example.
+
+You can use this either as a regular widget or define MOTIF during
+the build and it will behave in a Motif-a-like way.  It should build
+with either Motif 1.2.? or Motif 1.2.?
+
+Resources:           Type:      Default:         Comment:
+
+XtNmargin         : integer  :  2             : minimum margin around widget picture and label
+XtNselected       : integer  :  0             : current box for selection and values 
+XtNchangeCallback : callback : NULL           : callback when any new box is chosen
+XtNfont           : XFontStruct   : XtNdefaultFont : font for label
+XtNforeground     : pixel    : XtNdefaultForeground : color for selected box and label
+XtNboxWidth       : integer  : 0              : maximum box width (0 for calculate/resize)
+XtNboxHeight      : integer  : 0              : maximum box height (0 for calculate/resize)
+XtNfirstIndex     : pixel    : 0              : first pixel in colormap/mapping table to use
+XtNlastIndex      : pixel    : LastIndexDefault :   last pixel in colormap/mapping table to use ( LastIndexDefault for last index in colormap)
+XtNmappingTable   : Pixel *  : NULL              : table to map indices into pixels
+
+For Motif-a-like version:
+
+Inherits from XmPrimitiveWidgetClass plus:
+
+XmNfontList      : FontList  : NULL          :  font for label
+XtNshowUnselectedShadows: Boolean: FALSE     :  whether to show box shadows when unselected
+XtNinvertedShadows: Boolean: FALSE			: whether to change the look of the shadows
+
+The XtNchangeCallback gets back the CmapCallbackStruct:
+
+typedef struct _CmapCallbackStruct
+{
+  int reason;
+  XEvent *event;
+  XColor color; /* of selected box */
+} CmapCallbackStruct, *CmapCallbackPtr;
+
+Reasons:
+CMAP_SELECT
+CMAP_LEFT  
+CMAP_RIGHT
+CMAP_UP
+CMAP_DOWN
+CMAP_VERIFY
+
+Actions:
+select(): key/button/motion event wherever the pointer is at chooses (if able) that box
+left()  
+right()
+up()
+down()
+
+Callable functions:
+
+void CmapCheckSelectedColor(Widget _w, Boolean _notify);
+XColor CmapGetSelected(Widget _w);
+
+Checks to make sure that the label matches the current box's rgb values.
+_notify flags whether or not to invoke the callbacks. 
+
+Default Translations:
+<Key>h:        left()
+<Key>l:        right()
+<Key>k:        up()
+<Key>j:        down()
+<Btn1Down>:    select()
+<Btn1Motion>:  select()
+
+For Motif-a-like, Default Translations:
+
+"~s <Key>osfLeft: left()\n\
+~s <Key>osfRight: right()\n\
+~s <Key>osfUp: up() \n\
+~s <Key>osfDown: down() \n\
+<Btn1Down>: select()\n\
+<Btn1Motion>: select()\n\
+~s ~m ~a <Key>Return: PrimitiveParentActivate()\n\
+<Key>osfActivate: PrimitiveParentActivate()\n\
+<Key>osfCancel:PrimitiveParentCancel()\n\
+<Enter>:PrimitiveEnter()\n\
+<Leave>:PrimitiveLeave()\n\
+s ~m ~a <Key>Tab: PrimitivePrevTabGroup()\n\
+~m ~a <Key>Tab: PrimitiveNextTabGroup()\n\
+Shift<Key>osfUp:PrimitiveTraverseUp()\n\
+Shift<Key>osfDown:PrimitiveTraverseDown()\n\
+Shift<Key>osfLeft:PrimitiveTraverseLeft()\n\
+Shift<Key>osfRight:PrimitiveTraverseRight()\n\
+<FocusIn>:PrimitiveFocusIn()\n\
+<FocusOut>:PrimitiveFocusOut()\n\
+<Unmap>:PrimitiveUnmap()\n\
+<Key>osfHelp:PrimitiveHelp()";
+
+Suggestions always welcome, improvements even better.
+
+John L. Cwikla
+Wolfram Research, Inc
+cwikla@wri.com

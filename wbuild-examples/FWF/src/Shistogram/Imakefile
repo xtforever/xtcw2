@@ -1,0 +1,4 @@
+WIDGET = Shistogram 
+OTHERLIBS = -lm
+
+#include "../StdImakefile"

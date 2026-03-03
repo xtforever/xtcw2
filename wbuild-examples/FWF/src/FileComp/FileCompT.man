@@ -1,0 +1,37 @@
+'\" t
+.TH "FileCompT" "1" "26 Sep 1993" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+FileCompT \- Test Program For The FileComplete File Selector Widget
+.SH DESCRIPTION
+.PP
+.I FileCompT
+is a simple program that creates and tests a FileComplete widget.  The
+manual page for the FileComplete widget will be most useful in
+figuring out how to manipulate the widget.
+
+  When the user selects a file (with double-click or the Ok button) it
+is printed in a message on stdout.  When the user selects Cancel, the
+test program exits.  When the user presses the check button, the
+expanded contents of the text field in the FileComplete widget is
+printed in a message on stdout.
+
+  At the bottom of the window are two menubuttons and a text field
+that are not part of the FileComplete widget.  The filename menu
+button allows the user to set the acceptableFilenameProc to any one of
+the builtins.  The stats menu allows the user to select between no
+acceptableStatsProc, the builtin stats procs and a custom filter that
+removes executable files.  The text field allows the user to specify
+the filenameProcData and statsProcData.  In this case it will be a
+glob expression or regex expression.
+
+  If the FileComplete widget was not compiled with the pattern
+matching features, their menu entries will be insensitive.
+
+.SH AUTHOR
+.sp
+.nf
+Robert Forsman
+thoth@lightning.cis.ufl.edu
+University of Florida
+Department of Computer and Information Science
+.fi

@@ -1,0 +1,3 @@
+XfwfRows (superclass: XfwfBoard) The RowCol widget forces all its
+	children into tightly packed rows. The children keep their
+	preferred size, but the preferred position is ignored.

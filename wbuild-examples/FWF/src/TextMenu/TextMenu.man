@@ -1,0 +1,328 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfTextMenu
+.SH DESCRIPTION
+The TextMenu widget implements a simple menu, consisting of a
+series of labels. It is called `TextMenu' because it has no support
+for anything other than simple strings to be displayed.
+
+The contents of the menu are defined by the \fImenu\fP resource. The
+syntax of the description is given further on. When a menu item is
+selected, a callback function is called with the number of the item
+and the label as \fIcall_data\fP argument (numbering starts at 0).
+
+When the user moves from one menu item to another, another callback is
+called. This callback is called even for inactive (grayed out) items.
+It can be used, for example, to display an explanation of the selected
+item while the mouse is on it.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfTextMenu
+Name	Class	Type	Default
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNforeground	XtCForeground	Pixel 	XtDefaultForeground 
+XtNtablist	XtCTablist	String 	NULL 
+XtNmenu	XtCMenu	String 	"empty"
+XtNactive	XtCActive	long 	0xFFFFFFFF 
+XtNselection	XtCSelection	int 	-1 
+XtNcursor	XtCCursor	Cursor 	"arrow"
+XtNactivate	XtCActivate	Callback	NULL 
+XtNchangeSelection	XtCChangeSelection	Callback	NULL 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNfont"
+Currently, the menu items are all in one font.
+
+	
+
+.TP
+.I "XtNforeground"
+The color of the text is likewise uniform.
+
+	
+
+.TP
+.I "XtNtablist"
+A tablist can be provided for tabbing to particular columns
+within the label. The string consists of numbers separated by one or
+more blanks. Each number is an offset in pixels from the left edge of
+the widget.
+
+	
+
+.TP
+.I "XtNmenu"
+The menu is a string with labels separated by newlines. Each line is
+an item, except when the line consists of nothing but blanks and
+dashes. The menu will show a horizontal line there. Each menu item may
+have a shortcut letter, indicated by an underline in front of the
+letter.  Here is an example:
+
+\fI"_New\\n_Save\\nSave _As\\n----\\nE_xit"\fP
+
+The shortcut letters will be underlined in the menu.  Note that
+neither resources in a resource database nor hardcoded resources in a
+program may contain actual newlines. In a resource file, the newlines
+can be given as \fI\\n\fP, in a C program they must be written as \fI\\\\n\fP.
+The resource manager will automatically convert them to actual
+newlines just before they are assigned to the \fImenu\fP resource.
+
+	
+
+.TP
+.I "XtNactive"
+Item \fIN\fP is active when bit \fIN\fP in \fIactive\fP is set, otherwise it is
+grayed out. There is only room for 32 items in this resource, if there
+are more than 32 items in the menu (a bad idea anyway!) the rest of
+the items will always be active.
+
+	
+
+There should probably be more resources to control placement of the
+labels, such as margins, interline spacing, etc. For the moment, we'll
+keep it simple.
+
+.TP
+.I "XtNselection"
+When an item is selected, either with the mouse or with the
+keyboard, the number of the selected item is stored in \fIselection\fP.
+This resource can also be set by the application to indicate which
+item should be highlighted when the menu opens. (When a mouse is used,
+this has no effect, of course.) Items are numbered starting at 0. The
+value is -1 if no item is selected. If an inactive item is selected,
+the value is stored in \fIselection\fP, but the item is not highlighted.
+
+	
+
+.TP
+.I "XtNcursor"
+The cursor (when not \fINone\fP) is the mouse cursor that is displayed
+when the mouse is over the widget. The value \fINone\fP causes the
+parent's cursor to be used.
+
+	
+
+.TP
+.I "XtNactivate"
+The \fIactivate\fP callback is called when the user has completed a
+selection. Usually that means that he released the mouse on an item or
+pressed Return. When the mouse is released outside the menu or on an
+inactive item, the callback is not called.  The number of the item and
+the label are passed as the \fIcall_data\fP argument (of type
+\fIXfwfTextMenuData*\fP). Items are numbered from 0. Inactive items are
+numbered as well.
+
+	
+
+.TP
+.I "XtNchangeSelection"
+When the user moves from one item to another, the \fIchangeSelection\fP
+callback is called, with the number of the new selection as
+\fIcall_data\fP. This callback is called even when the new selection is an
+inactive (grayed out) item. It is also called when the mouse leaves
+the menu, in which case the first part of the \fIcall_data\fP argument
+will be -1. The \fIcall_data\fP is of type \fIXfwfTextMenuData*\fP.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Shell
+Name	Class	Type	Default
+allowShellResize	XtCAllowShellResize	Boolean 	False 
+createPopupChildProc	XtCCreatePopupChildProc	XTCreatePopupChildProc 	NULL 
+XtNgeometry	XtCGeometry	String 	NULL 
+overrideRedirect	XtCOverrideRedirect	Boolean 	False 
+popdownCallback	XtCPopdownCallback	Callback	NULL 
+popupCallback	XtCPopupCallback	Callback	NULL 
+saveUnder	XtCSaveUnder	Boolean 	False 
+XtNvisual	XtCVisual	Visual *	CopyFromParent 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The \fIcall_data\fP of the callback functions is set to a struct with
+two fields. The first is the number of the item (starting at 0), the
+second is a pointer to the label. Note that it is only a pointer; the
+receiver should make a local copy if the label is to be edited.
+
+	
+
+.nf
+
+.B type
+ XfwfTextMenuData = struct {
+            int n;
+            String label;
+        }
+.fi
+
+.SS "Translations"
+
+The translations react both to the mouse and to key presses. A mouse
+release causes the menu to pop down. If the mouse was on an active
+item at the time, the \fIactivate\fP callback will be called. The Enter
+key also pops down the menu. Mouse movement is translated to changes
+in highlights, ditto for the up and down cursor keys.
+
+	
+
+.nf
+<EnterWindow>: highlight() 
+.fi
+
+.nf
+<LeaveWindow>: highlight() 
+.fi
+
+.nf
+<BtnUp>: XtMenuPopdown() notify() 
+.fi
+
+.nf
+<BtnMotion>: highlight() 
+.fi
+
+.nf
+<Key>Return: XtMenuPopdown() notify() 
+.fi
+
+.nf
+<Key>Escape: XtMenuPopdown() 
+.fi
+
+.nf
+<Key>Up: previous() 
+.fi
+
+.nf
+<Key>Down: next() 
+.fi
+
+.nf
+<Key>: shortcut() 
+.fi
+
+.nf
+<Map>: init() add_keyboard_grab() 
+.fi
+
+.nf
+<Unmap>: remove_keyboard_grab() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "init
+
+When the menu appears because of a key press, one of the items
+should be highlighted. The \fIinit\fP action checks the type of event and
+the \fIselection\fP variable.
+
+.TP
+.I "add_keyboard_grab
+
+.TP
+.I "remove_keyboard_grab
+
+.TP
+.I "highlight
+
+The \fIhighlight\fP action determines which item is selected by looking
+at the coordinates of the mouse. The previous selection, if any, is
+drawn in normal colors again and the new one, if any, is shown in
+reverse. If the selection changed, the \fIchangeSelection\fP callback is
+called.
+
+.TP
+.I "notify
+
+The \fInotify\fP action invokes the \fIactivate\fP callback, unless the
+current selection is inactive or there is no selection.
+
+.TP
+.I "previous
+
+The \fIprev\fP action moves the highlight up one item, skipping inactive
+items. If there are no more items above the current one, the action
+does nothing. The \fIchangeSelection\fP callback is called when there was
+a change in selection.
+
+.TP
+.I "next
+
+The \fInext\fP action is analogous.
+
+.TP
+.I "shortcut
+
+The \fIshortcut\fP action is normally called on a keypress.  The first
+argument (if any) is a number in decimal representation, indicating
+for which item this is a shortcut. If there is nu argument, the
+keypress is taken from the event and looked up in the \fIshortcut\fP
+array. If the keypress is a valid shortcut, the menu pops down and the
+\fIactivate\fP callback will be called, unless the item is not active.
+

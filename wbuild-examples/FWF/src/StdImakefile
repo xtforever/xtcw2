@@ -1,0 +1,55 @@
+#include "../../FWF.tmpl"
+
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+
+#ifndef NOT_SINGLE_OBJECT_FILE
+LIB_OBJS = $(WIDGET).o
+EXT_OBJS = $(WIDGET)T.o
+#endif
+
+SRCS = $(WIDGET).c $(WIDGET)T.c
+OBJS = $(LIB_OBJS) $(EXT_OBJS)
+
+TEST = $(FWF_BINDIR)/$(WIDGET)T
+INCS = $(FWF_INCDIR)/$(WIDGET).h $(FWF_INCDIR)/$(WIDGET)P.h
+MANS = $(FWF_MANDIR)/$(WIDGET).man $(FWF_MANDIR)/$(WIDGET)T.man
+
+OUR_LFLAGS = $(FWF_LFLAGS) $(OTHERLIBS)
+DEPLIBS = XawClientDepLibs $(OTHERDEPLIBS)
+SYSLIBS = XawClientLibs
+
+AddToLibraryTarget(archive,$(FWF_LIBDIR),$(FWF_LIBNAME),$(LIB_OBJS))
+
+ObjectRuleWithFlags($(FWF_CFLAGS))
+
+RequireThisFileForInit($(FWF_INCDIR)/$(WIDGET).h)
+RequireThisFileForInit($(FWF_INCDIR)/$(WIDGET)P.h)
+
+FileCopyWhenNeeded(.,$(WIDGET).h,$(FWF_INCDIR),$(WIDGET).h)
+FileCopyWhenNeeded(.,$(WIDGET)P.h,$(FWF_INCDIR),$(WIDGET)P.h)
+FileCopyWhenNeeded(.,$(WIDGET).man,$(FWF_MANDIR),$(WIDGET).man)
+FileCopyWhenNeeded(.,$(WIDGET)T.man,$(FWF_MANDIR),$(WIDGET)T.man)
+
+LintTarget()
+ 
+NormalProgramTarget($(TEST),$(WIDGET).o $(EXT_OBJS),$(DEPLIBS),$(OUR_LFLAGS),$(SYSLIBS))
+
+InstallProgram($(TEST),$(FWF_INSTALL_BINDIR))
+InstallManPage($(WIDGET),$(FWF_INSTALL_MANDIR))
+InstallManPage($(WIDGET)T,$(FWF_INSTALL_MANDIR))
+InstallMultiple($(INCS),$(FWF_INSTALL_INCDIR))
+
+GatherDescription($(WIDGET).txt,../../README.INDEX);
+
+objects: first objs archive last
+
+first:: $(INCS)
+
+objs: $(OBJS)
+
+last: $(MANS)
+
+execs: $(TEST)
+
+index:
+	

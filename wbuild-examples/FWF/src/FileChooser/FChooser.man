@@ -1,0 +1,192 @@
+'\" t
+.TH "FileChooser" "3" "28 Jan 1993" "Version 1.0" "Free Widget Foundation"
+.SH Name
+FileChooser \- Another widget for choosing a file
+.SH Synopsis
+.nf
+#include <Xfwf/FChooser.h>
+
+widget = XtCreateManagedWidget(name, xfwfFileChooserWidgetClass, ...);
+.fi
+.SH Class Hierarchy
+The following describes the classes from which XfwfFileChooser
+inherits resources:
+.ce
+Core-->Composite-->XfwfFileChooser
+.SH Widget Hierarchy
+.PP
+The XfwfFileChooser widget is a composite widget with the following
+internal structure:
+.RS 5
+.nf
+MenuButton dirMenuButton
+SimpleMenu dirMenu
+Viewport fileViewport
+    List fileList
+.fi
+.RE
+You can use these names to specify resources for FileChooser
+children, or use XtNameToWidget() to locate them programmatically.
+.SH Description
+XfwfFileChooser provides a list of files in the current directory, and
+a dynamically-updated menu of ancestor directories. A file can be
+selected from the list, or a directory can be selected from either the
+list (a sub-directory) or the menu (an ancestor directory). When a
+directory is selected (from the menu or the list), the list is
+re-filled with the contents of the new directory.  Callback procedures
+are called whenever the selected file or directory changes.
+.PP
+This widget is meant to function within, say, a Form, which would
+provide buttons and perhaps a Text item for entering new filenames.
+In this sense, it is different from the XfwfFileSelector widget that
+provides builtin additional functionality but at the cost of more
+screen real estate and some inflexibility in terms of input policy.
+The sample program distributed with the widget presents an example of
+such usage.
+.PP
+The source code in the Dir directory of the FWF distribution contains
+system-independent file listing functions that are required by 
+FileChooser.
+.SH Resources
+In addition to the resources defined by superclasses, this widget
+defines the following:
+.TS
+tab(/) ;
+lB lB lB lB.
+Name/Class/Type/Default
+.T&
+lB l l l.
+XtNwidth/Width/Dimension/250
+XtNheight/Height/Dimension/500
+XtNbackground/Background/Pixel/XtDefaultBackground
+XtNcallback/Callback/Callback/NULL
+XtNcurrentDirectory/Pathname/String/current directory
+XtNcurrentFile/Filename/String/NULL
+XtNsortMode/Int/Int/2
+XtNpattern/Filename/String/NULL
+.TE
+.PP
+The XtNcurrentDirectory and XtNcurrentFile resources can be used to
+specify the initial contents and selection of the XfwfFileChooser
+widget. Changing them after creation results in the contents being
+recomputed appropriately and the callbacks being invoked (see below).
+.PP
+The filter pattern is specified in the string XtNpattern.  The method
+used to sort the file list is specified in XtNsortMode.  The sort mode
+is encoded as an integer.  The integers are defined in the DirMgr.h
+file which is part of the libDir directory management package included
+in the FWF release.  Sample XtNsortMode values are depicted below:
+.RS 5
+.TS
+tab(/) ;
+lB lB lB.
+XtNsortMode Name/Value/Sort By
+.T&
+lB l l.
+SORT_NONE/0/No sorting
+SORT_NAME/1/File name
+SORT_NAME_DIRS_FIRST/2/File name, directories first
+SORT_SIZE_ASCENDING/3/Ascending file size
+SORT_SIZE_DESCENDING/4/Descending file size
+SORT_ACCESS_ASCENDING/5/Ascending access time
+SORT_ACCESS_DESCENDING/6/Descending access time
+.TE
+.RE
+.ne 4
+.SH Callbacks
+.PP
+The XfwfFileChooser widget provides a single callback list,
+XtNcallback. This callback is called whenever the contents of the
+XfwfFileChooser change, either because the user selected a file or
+directory (or selected the background, which unselects any selected
+file) or because the XtNcurrentDirectry or XtNcurrentFile resources
+were changed programmatically. The call_data parameter of the call
+contains an instance of the following structure:
+.sp
+.RS 5
+.nf
+typedef struct _XfwfFileChooserReturnStruct
+{
+        String directory;
+        String file;
+} XfwfFileChooserReturnStruct;
+.fi
+.RE
+.sp
+The "file" member is NULL if no file is selected in the fileList.
+.RE
+.SH Public Functions
+.nf
+.ta 3i
+void XfwfFileChooserChangeDirectory(fcw,dir)
+XfwfFileChooserWidget fcw;
+char *dir;
+.fi
+.sp
+.RS 5
+This routine changes the current directory of the XfwfFileChooser
+widget \fIfcw\fP to be \fIdir\fP, and invokes the callbacks.
+.RE
+.sp
+.nf
+void XfwfFileChooserRefresh(fcw)
+XfwfFileChooserWidget fcw;
+.fi
+.sp
+.RS 5
+This routine causes the XfwfFileChooser widget \fIfcw\fP to re-read
+the current directory, refreshing the widget.  Changes to the file
+system will not automatically propogate to the widget.  This routine
+forces the refresh.
+.RE
+.sp
+.nf
+void XfwfFileChooserCurrentDirectory(fcw)
+XfwfFileChooserWidget fcw;
+.fi
+.sp
+.RS 5
+Returns the value of the XtNcurrentDirectory resource for the
+XfwfFileChooser widget \fIfcw\fP.
+.RE
+.sp
+.nf
+void XfwfFileChooserCurrentFile(fcw)
+XfwfFileChooserWidget fcw;
+.fi
+.sp
+.RS 5
+Returns the value of the XtNcurrentFile resource for the
+XfwfFileChooser widget \fIfcw\fP.
+.RE
+.ne 4
+.SH Restrictions
+.PP
+The filter function is currently limited to shell-style pattern matching,
+even though the underlying directory management functions support arbitrary
+filter functions.
+.PP
+Layout parameters of the XfwfFileChooser widget's children cannot be
+changed, but other resources can using the names described above under
+"Widget Hierarchy".
+.PP
+The slider bars of the viewports do not "snap back" when a smaller
+directory is loaded, and the sliders are down at the bottom.
+.PP
+The stupid List widget doesn't notify when the background is selected,
+although it unhighlights the item. Blech. This means your callbacks
+won't always be called when you think they should.
+.SH Author
+.PP
+George Ferguson, ferguson@cs.rochester.edu.
+.PP
+Based on FileSelector by:
+.RS 5
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi
+.RE

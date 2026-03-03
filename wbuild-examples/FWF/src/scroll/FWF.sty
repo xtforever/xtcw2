@@ -1,0 +1,209 @@
+%%
+%% File: FWF.sty
+%%
+%% Adapted after: bsc.sty
+%%
+%% Version 1.2 (21 April 1993)
+%%
+%% Copyright (c) L.L. Frederiks, 1993                           
+%%     
+%% *******************************************************************
+%% **                         DESCRIPTION                           **
+%% *******************************************************************
+%%     
+%% This style offers you an improved layout for your latex formatted
+%% documents. It contains some redefinitions of the very boring
+%% default document styles.
+%%
+%% Besides the 'normal' \maketitle command, there is now an improved
+%% \FWFtitlepage command.                                                    
+%%
+%% Usage:
+%%
+%% \FWFtitle{ ... } 
+%% \FWFauthor{ ... }
+%% \FWForganization{ ... }
+%% \FWFlocation{ ... }
+%%
+%% \date{ ... } (optional)
+%% \version{ ... } (optional) 
+%% 
+%% \FWFtitlepage
+%%
+%% NOTE: ALL THE ENTRIES MUST BE DEFINED (EXCEPT FOR THE OPTIONAL
+%% ENTRIES) OTHERWISE LATEX WILL GENERATE AN ERROR.
+%%
+%% *******************************************************************
+%% **                        IMPLEMENTATION                         **
+%% *******************************************************************
+%%
+
+\typeout{Document Style 'FWF' <14 December 93>.}
+
+\def\chapter{\cleardoublepage 
+\thispagestyle{plain} \global\@topnum\z@
+\@afterindentfalse \secdef\@chapter\@schapter} 
+                                          
+\font\chapnumber=cmbx10 at 50pt
+\font\chaptitle=cmbx10 scaled\magstep3
+
+\def\bigraggedleft{\leftskip0pt plus1fil\relax}
+
+\newif\ifsettoroman
+
+\newif\ifnewchap
+\newif\ifappendix
+
+\def\@makechapterhead#1{ \vspace*{50pt} { \parindent 0pt 
+\ifnum \c@secnumdepth >\m@ne \hbox to\textwidth{\hfill\chapnumber\thechapter}
+\vskip8pt \hrule height 1.5pt
+\vskip 12pt \fi \bigraggedleft
+\def\\ {\vskip-\parskip}\parfillskip=0pt
+\Huge \bf \def\\ {\vskip-\parskip}#1\vskip1sp
+\nobreak \vskip 40pt } }
+
+\def\@makeschapterhead#1{ \vspace*{50pt} { \parindent 0pt
+\hrule height 1.5pt
+\vskip12pt\vskip-\parskip
+\def\\ {\vskip-\parskip}\parfillskip=0pt
+\bigraggedleft
+\Huge \bf #1\vskip1sp
+\nobreak \vskip 40pt } }
+
+\def\chapter{\clearpage \thispagestyle{plain} \global\@topnum\z@
+\@afterindentfalse \secdef\@chapter\@schapter} 
+\def\@chapter[#1]#2{\ifnum \c@secnumdepth >\m@ne
+ \refstepcounter{chapter}
+ \typeout{\@chapapp\space\thechapter.}
+ \addcontentsline{toc}{chapter}{\protect
+ \numberline{\thechapter}#1}\else
+ \addcontentsline{toc}{chapter}{#1}\fi
+ \chaptermark{#1}
+ \addtocontents{lof}{\protect\addvspace{10pt}}
+\addtocontents{lot}{\protect\addvspace{10pt}} \if@twocolumn
+\@topnewpage[\@makechapterhead{#2}] 
+ \else \@makechapterhead{#2}
+ \@afterheading \fi} 
+\def\@schapter#1{\if@twocolumn \@topnewpage[\@makeschapterhead{#1}]
+ \else \@makeschapterhead{#1} 
+ \@afterheading\fi}
+
+\font\smallcaps=cmcsc10 scaled\magstep1
+
+\def\ps@headings{\let\@mkboth\markboth
+\def\@oddfoot{}
+\let\@evenfoot\@oddfoot
+\def\@evenhead{\vbox{\hbox{\parbox{\textwidth}
+{\bf\thepage\hfill\sl\leftmark}}
+\vspace{1ex}
+\hbox{\rule{\textwidth}{0.02cm}}\vfil }}
+\def\@oddhead{\vbox{\hbox{\parbox{\textwidth}
+{\sl\rightmark\hfill\bf\thepage}}
+\vspace{1ex}
+\hbox{\rule{\textwidth}{0.02cm}}
+\vfil }}
+
+{\let\\ \ %
+\gdef\chaptermark##1{\let\\ \ \markboth 
+{{\smallcaps\@chapapp\ \thechapter}}
+{##1}}}}% 
+
+\def\ps@myheadings{\let\@mkboth\@gobbletwo
+\def\@oddhead{\hbox{}\sl\rightmark \hfil
+\rm\thepage}\def\@oddfoot{}\def\@evenhead{\rm \thepage\hfil\sl\leftmark\hbox
+{}}\def\@evenfoot{}\def\chaptermark##1{}%
+\def\subsectionmark##1{}}
+
+\font\authortitlepagefont=cmssq8 at 24pt
+\font\authorfont=cmssbx10 scaled \magstep1
+\font\FWFauthorfont=cmssbx10 scaled \magstep1
+\font\affilfont=cmssqi8 scaled \magstep2
+\font\booktitle=cmssq8 at 20pt
+\font\todayfont=cmssqi8
+\font\versionfont=cmssqi8
+
+\def\today{\todayfont \ifcase\month\or
+ January\or February\or March\or April\or May\or June\or
+ July\or August\or September\or October\or November\or December\fi
+ \space\number\day, \number\year}
+
+\def\version#1{\gdef\@version{#1}}
+\gdef\@version{}  
+
+\def\FWFtitle#1{
+{\def\\ {{} }\xdef\thetitle{#1}}
+\def\\ {\vskip-\parskip}\xdef\titlepagetitle{\uppercase{#1}}}
+
+\newcount\FWFauthorcount
+\def\FWFauthor#1\FWForganization#2\FWFlocation#3{\def\\ {\vskip3pt\noindent\hfill}
+\global\advance\FWFauthorcount by1
+\expandafter\gdef\csname thebscauthor\the\FWFauthorcount\endcsname{#1}
+\expandafter\gdef\csname thebscorg\the\FWFauthorcount\endcsname{#2}
+\expandafter\gdef\csname thebscloc\the\FWFauthorcount\endcsname{#3}}
+
+%% default values, in case author has not entered above commands.
+\title{Please use {\tt\string\title\string{Your Title\string}} Command!}
+\FWFtitle{Please use {\tt\string\FWFtitle\string{Your Title\string}} Command!}
+\author{Please use {\tt\string\author\string{Your name\string}} Command!}
+\FWFauthor{Please use {\tt\string\FWFauthor\string{Your name\string}} Command!}
+\FWForganization{Please use {\tt\string\FWForganization\string{Your Organization\string}} Command!}
+\FWFlocation{Please use {\tt\string\FWFlocation\string{Your Location\string}} Command!}
+\date{}
+
+\advance\FWFauthorcount by-1
+
+\newcount\loopcount
+\def\FWFtitlepage{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+ \else \newpage \fi \thispagestyle{empty}\c@page\z@
+\null\vskip-6pc
+\vbox to\textheight{\parskip=0pt\vskip72pt
+\hrule height 1.5pt\vskip24pt
+\hyphenpenalty=10000 % No hyphenation in chapter heads
+\parfillskip=0pt
+\bigraggedleft
+{\Huge\authortitlepagefont{\def\\ {\vskip\parskip}\titlepagetitle}
+
+}
+\normalsize
+\vskip24pt
+\hrule height 1.5pt
+\vskip24pt
+\advance \FWFauthorcount by1 
+\loopcount=1
+\loop\expandafter\ifnum\loopcount<\FWFauthorcount
+\ifnum\loopcount=1 \vskip18pt\else
+\vrule height 12pt width12pt depth0pt\vskip12pt\fi
+{\authorfont\csname thebscauthor\the\loopcount\endcsname}\vskip3pt
+{\affilfont\csname thebscorg\the\loopcount\endcsname}\vskip6pt
+{\affilfont\csname thebscloc\the\loopcount\endcsname}
+\vskip12pt \global\advance\loopcount by1 \repeat
+\vskip 2.5em \small \versionfont Version:\  \@version \par
+\vskip 3pt \small \versionfont Last revised on:\  \@date \par
+\vfill
+}
+\newpage}
+
+\def\tableofcontents{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+\fi\chapter*{Contents\@mkboth{Contents}{Contents}}
+\@starttoc{toc}\if@restonecol\twocolumn\fi}
+
+\def\listoffigures{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+\fi\chapter*{List of Figures\@mkboth
+{List of figures}{List of figures}}\@starttoc{lof}\if@restonecol
+\twocolumn\fi}
+
+\def\listoftables{\@restonecolfalse\if@twocolumn\@restonecoltrue\onecolumn
+\fi\chapter*{List of Tables\@mkboth
+{List of tables}{List of tables}}\@starttoc{lot}\if@restonecol
+\twocolumn\fi}
+
+\def\thebibliography#1{\chapter*{Bibliography\@mkboth
+{Bibliography}{Bibliography}}\list
+{[\arabic{enumi}]}{\settowidth\labelwidth{[#1]}\leftmargin\labelwidth
+\advance\leftmargin\labelsep
+\usecounter{enumi}}
+\def\newblock{\hskip .11em plus .33em minus .07em}
+\sloppy\clubpenalty4000\widowpenalty4000
+\sfcode`\.=1000\relax}
+
+\endinput

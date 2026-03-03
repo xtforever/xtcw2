@@ -1,0 +1,40 @@
+This directory contains C source for the Calendar widget.
+
+The Calendar widget shows a calendar for one month.  Buttons in the header
+allow the calendar month to be changed.  Individual dates within the calendar
+can be set to one of 5 different colors. Callbacks are provided for when the
+user changes the displayed month, or clicks on a date in the calendar.
+
+The widget is subclassed from the XfwfBoard widget so that location management
+and framing is possible.  If it is desired to use the Calendar widget 
+independently from the FWF widget set, The following changes are required:
+
+    1. Subclass the widget from Core instead of XfwfBoard. e.g. replace
+          @class XfwfCalendar (XfwfBoard) @file=Calendar
+       with
+          @class XfwfCalendar (Core) @file=Calendar
+
+    2. Wherever a call to "compute_inside" occurs, replace it with
+            wx=wy=0;
+            wh=$width;
+            ww=$width;
+
+    3. In the "expose" method remove the call to the superclass expose
+       method. e.g. remove the line
+          	#expose($,event,region);
+
+Revision History:
+	1.00   18-Dec-95    Original release
+
+Author:
+	Copyright (C) 1995 by Lachlan Wetherall
+	lwether@cs.newcastle.edu.au            
+
+    .-_|\   Department of Computer Science
+   /     \  University of Newcastle
+   \.--._*  Callaghan NSW 2308
+        v   Australia
+
+
+Many thanks are due to the other authors of FWF widgets from whom I have 
+learned much.

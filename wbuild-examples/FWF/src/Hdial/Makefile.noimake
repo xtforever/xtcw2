@@ -1,0 +1,17 @@
+CC = cc
+CFLAGS = -I/usr/local/include -I/usr/local/include/X11 -c -g 
+PROGRAM = HdialT 
+OBJS = HdialT.o Hdial.o
+
+
+LIBS = -lm -L/usr/local/lib -lXt -lX11 
+
+all:	$(PROGRAM) 
+
+$(PROGRAM) :  $(OBJS)
+	      $(CC) -o $@ $(OBJS) $(LIBS)
+
+$(OBJS): HdialP.h Hdial.h 
+
+clean  : 
+	 rm -f $(OBJS) $(PROGRAM)

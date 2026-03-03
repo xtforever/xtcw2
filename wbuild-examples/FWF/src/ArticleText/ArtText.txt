@@ -1,0 +1,5 @@
+ArticleText	The ArticleText widget is subclassed from the TextOut widget.
+		So it allows multi-color, multi-font text display.  This widget
+		has a special user-level function that will parse a buffer
+		and highlight parts of the text in different colors and fonts
+		if it is a News/Mail header line, body line or quoted line.

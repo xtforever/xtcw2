@@ -1,0 +1,5 @@
+WIDGET = SSGML
+SUPERCLASSES = ../FText/FText.w
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

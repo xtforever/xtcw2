@@ -1,0 +1,5 @@
+Alert	(Superclass: TransientShell)
+	The Alert widget can be used for simple messages. It is a
+	popup shell with an icon, a few lines of text and one or more
+	buttons. There is a convenience function XfwfDialog that
+	displays an Alert widget as a modal dialog.

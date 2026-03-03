@@ -1,0 +1,36 @@
+.TH "ScrollWinT" "1" "15 Dec 1993" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+ScrWinT \- Test program for the XfwfScrolledWindow3 widget
+.SH DESCRIPTION
+The \fIScrWinT\fP program creates a window with 6 areas:
+.TP
+.B a MultiList
+Displays a table of values, allows you to select one two or three of
+them (an arbitrary maximum).
+The numbers of the selected rows are printed.
+.TP
+.B a corner title
+Provides a label for the whole list.
+.TP
+.B column headers
+A row of titles along the top for each of the rows in the central
+list.
+.TP
+.B row headers
+A column of titles at the left for each of the rows in the central
+list. Note that you can also select rows by selecting their headers.
+.TP
+.B two scrollbars
+You can scoll the central list with the scrollbars. Note that the
+headers at the left and along the top move in sync with the center.
+.SH AUTHOR
+Rick Richardson <rick@digibd.com>, adapted from ScrollWin source
+by Bert Bos <bert@let.rug.nl>.
+
+
+
+
+
+
+
+

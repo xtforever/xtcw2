@@ -66,7 +66,9 @@ Widget luaxt_nametowidget(char *s)
     if( is_empty(s) || (s[0] == '.' && s[1] == 0) ) return TopLevel;
     if( strlen(s) >= sizeof(buffer)) return 0;
     WcCleanName( s, buffer );
-    return  WcFullNameToWidget( TopLevel, buffer );
+    Widget w = WcFullNameToWidget( TopLevel, buffer );
+    if (!w) printf("luaxt_nametowidget: widget %s (%s) NOT FOUND\n", s, buffer);
+    return w;
 }
 
 void   luaxt_setvalue( char *name, char *res, char *val )

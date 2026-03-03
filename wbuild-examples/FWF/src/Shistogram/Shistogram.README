@@ -1,0 +1,69 @@
+			Shistogram Widget
+--------------------------------------------------------------
+
+This is the simple histogram widget.  It is called simple for
+a couple of reasons: 1) it only accepts unsigned characters
+for data (I do image processing work) 2) most things are
+automatic. 
+
+Resources:                Type:         Default:              Comment:
+
+XtNmargin               : integer     : 5                   : minimum margin
+XtNselectCallback       : callback    : NULL                : callback for select action
+XtNxAxis                : boolean     : TRUE                : show x Axis?
+XtNyAxis                : boolean     : TRUE                : show y Axis?
+XtNtitleFont            : XFontStruct      : XtDefaultFont       : 
+XtNstatisticsFont       : XFontStruct      : XtDefaultFont       :
+XtNaxisFont             : XFontStruct      : XtDefaultFont       :
+XtNtitleForeground      : pixel       : XtDefaultForeground :
+XtNstatisticsForeground : pixel       : XtDefaultForeground :
+XtNaxisForeground       : pixel       : XtDefaultForeground :
+XtNforeground           : pixel       : XtDefaultForeground : for boxes
+XtNshowTitle            : boolean     : TRUE                :
+XtNshowStatistics       : boolean     : TRUE                :
+
+The XtNselectCallback gets back the ShistogramCallbackStruct:
+
+typedef struct _ShistogramCallbackStruct
+{
+  int reason;
+  XEvent *event;
+  int minX;
+  int maxX;
+  int minY; 
+  int maxY; 
+  double mean;
+  double variance;
+  int *count; /* array [0-255] of the value of y per x */
+  int number; /* size of count */
+} ShistogramCallbackStruct, *ShistogramCallbackPtr;
+
+
+where, for now, the reason is always SHISTOGRAM_SELECT;
+
+Actions:
+
+select()
+
+
+Callable functions:
+
+void ShistogramSetData(Widget _w, unsigned char *_data, int _count);
+
+This is the function that sets the actual data to the Shistogram widget.
+
+
+Default Translations:
+
+<Btn1Down>: select()
+
+
+Functionality:
+Auto resize, auto labeling. If it gets too small, the window will
+draw only a plus. 
+
+Suggestions always welcome, improvements even better.
+Job offers highly encouraged.
+
+John L. Cwikla
+cwikla@uimrl7.mrl.uiuc.edu

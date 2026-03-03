@@ -1,0 +1,9 @@
+@class Crash (Constraint)
+
+@constraints
+@var int x = 0
+
+@methods
+@proc initialize
+{
+}

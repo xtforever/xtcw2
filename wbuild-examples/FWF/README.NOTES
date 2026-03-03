@@ -1,0 +1,275 @@
+================================ README.NOTES ================================
+
+1/30/96		VERSION 4.0
+		Changed Imakefile in FileComp to load FileComp.o
+		instead of FileCompT.o into the library; Added
+		$being_destroyed to Common; changed background_pixel
+		to background for Common subclasses; better handling
+		of XCC's in Common; XCC's are now optional;
+		fixed TabString.h
+
+9/4/95		VERSION 3.9
+		Changed _FILESELECTOR_H_ to _FILELISTER_H_ in
+		FileList.h; fixed illegal XSetInputFocus calls in
+		Common (I hope); updates to XmTabs, XmAnsiTerm,
+		MenuBar; added ForAllChildren to EzMenu.c; added
+		widgets ArticleText, TextOut, UserGraf; fixed DirMgr.c
+		(line 226); Added XCC to Common
+
+4/20/95		VERSION 3.8
+		Corrected some type casts and smnall bugs. New:
+		AnsiTerm, Entry, PcBar, SpinLabel, XmAnsiTerm, XmPager
+
+10/12/94	VERSION 3.7
+		(1st release by Bert. Thanks Brian!) Added FileLister,
+		Enforcer, FoldingTree, Rows, XmIcon (for Motif),
+		XmTabs (for Motif). Many bug fixes and small
+		improvements.
+
+6/15/94		VERSION 3.671
+		Added README.XPM to the Imakefile export list, because it
+		was missing before.  Modified README.BUILD to include where
+		to get the XPM files from.
+
+5/22/94		VERSION 3.67
+		Renamed select() to cmap_select() in Cmap.c as suggested by
+		Chris Carlson tp prevent conflict with system select() call.
+		Removed the static attribute for the local declaration of the
+		function split_path_string on line 129 of StrToPmap.c also as
+		suggested by Chris Carlson.  Changed $(RANLIB) with RanLibrary
+		as in Imake.rules to prevent ranlibs for systems whose
+		archivers do it automatically.  Replaced XPointer with
+		XtPointer in converters/Pen.c and Array/Array.c and renamed
+		include of <xpm.h> with <X11/xpm.h> in converters/StrToPmap.c
+		as suggested by Barry Skaggs.  Added comment to FileComp.c
+		and VarArgs.h saying that Xfuncproto.h might need to be
+		changed to proto.h on some systems.
+
+5/15/94		VERSION 3.662
+		Histogram had its floats renamed to doubles for some reason
+		which caused it to break.  We better leave them as floats for
+		compatibility anyway, shouldn't we?  Anyway, Histogram is back
+		using floats again.
+
+5/6/94		VERSION 3.661
+		Received a few bug reports about wbuild.  I didn't understand
+		either of the reports, but perhaps wbuild is being invoked
+		because the web files are newer.  So, I touched all the src/
+		.c, .h, and .man files and retarred stuff to see if that helps.
+
+4/26/94		VERSION 3.66
+		Patched Frame, FileComp, and CanvasT.  Renamed REGEXP (and
+		other Dir inclusion defines) to include FWF to prevent
+		conflicts with system definitions.
+
+4/18/94		VERSION 3.65
+		Applied Bert's patches.  Removed IconBox from src/Imakefile
+		because Bert said it's unstable.  Added .README.INDEX.HEADER
+		to export list in Imakefile.  Included Bob's new Pen.c &
+		StrToPmap.c files to src/converters.  Hacked FWF.rules to
+		make AddToLibrary try to build library only if objects are
+		newer than library.
+
+3/3/94		VERSION 3.64
+		Changed FWF.tmpl as suggested by Mitch D'Souza to define
+		XPM_LIB to use -l instead of explicitly naming the library
+		file.  Added Bert's PieMenu.  Added Bob Forsman's Array
+		widget.  Reorganized converters directory and included Bob's
+		new Pen & Pmap converters.  Added in Bert's new patches.
+		Finally added Xfwf to FChooser.h.  Added dummy "dialog" first
+		argument to XfwfDialog calls in IconBoxT.c.  Removed stray
+		newline from Stack.c.
+
+1/31/94		VERSION 3.63
+		Included Bert's patches to support XPM conditionals.
+		Included ThumbWheel V1.2.
+
+1/24/94		VERSION 3.62
+		Included Bert's ThumbWheel, ThumbWheel2, and Tabs widgets.
+		Included Bert's new index text descriptions.  Applied Bert's
+		patches for test programs and other stuff.
+
+1/22/94		VERSION 3.61
+		Edited FWF.tmpl and README.BUILD to clarify compilation
+		options, stressing how to solve the XPM problems.  Modified
+		README.SUBMISSION to require <Widget>.txt short description
+		file.  Modified build structure to automatically construct
+		index during init.  Incorporated Bob's new FileComp and
+		Canvas widgets.  Added Bert's 'Group and RadioGroup' to
+		build list.  Minor changes to README.SUBMISSION.
+
+1/13/94		VERSION 3.6
+		Installed a new set of Bert's widgets & made the tabstring
+		TextWidth 0 check patch.  Changed the src/Imakefile to include
+		Bert's new widgets.  Changed the build structure to build all
+		objects first, then all execs.  Exec building can be disabled
+		by setting BuildExecs to 0 in FWF.tmpl.  Made some of the bug
+		fixes suggested by Dean Luick (dean@parsifal.natinst.com).
+
+10/16/93	VERSION 3.57
+		Incorporated patches suggested by Klaus Steinberger for SGI
+		portability.  Modified FWF.tmpl to more easily conditionalize
+		XPM usage.  Now the C define NO_XPM is made whenever HaveXpm
+		is set to 0 in FWF.tmpl.  Modified all the Imakefiles to use
+		this change.  Also created FWF_CFLAGS and FWF_LFLAGS to more
+		easily support these changes.
+
+8/26/1993	VERSION 3.56
+		Finally installed John Cwikla's changes, including additions
+		of quickshar and quicktar targets in FWF.rules to make archives
+		without first deleting Makefiles, modifications to Cmap, and
+		the new widgets Stack and Mdial.
+
+7/15/1993	VERSION 3.55
+		Included new version of Joe English's Rheostat widget that
+		he says has two bug fixes.  Enclosed first SURVEY.
+
+7/11/1993	VERSION 3.54
+		Included Rick Richardson's (rick@digibd.com) TabString support,
+		to draw X strings which can include tabs.  Also included his
+		mods to MultiList to support tabs in strings.  Changed
+		FWF.RULES to extract the version number from the VERSION
+		file for automatic inclusion in the shar/tar file name.
+		Unified the shar & tar rules, and updated README.BUILD to
+		expand on packing the code up into shar & tar files.
+
+6/30/1993	VERSION 3.53
+		Added README.OBTAIN describing ways to obtain FWF widgets
+		and made minor modifications to other README files.  Included
+		changes to Bert Bos's Common widget to fix some keyboard
+		traversal bugs, Frame widget which didn't used to take
+		child's border width into account, and RowCol widget, which
+		now contains a shrinkToFit resource.  Modified README.BUILD
+		to discuss pruning the widget library.
+
+5/13/1993	VERSION 3.52
+		Incorporated Bert's changes to Alert, IconBox and Pager to
+		use portable routines instead of ltoa() and strerror(), and
+		to include README files.
+
+5/3/1993	VERSION 3.51
+		Changed HistogramT.c source to demonstrate use of XtSetArg
+		with floating point values, and to change scaleFactor to 10.
+		Also changed Histogram.man to describe the problem with
+		XtSetArg and floats.
+
+4/8/1993	VERSION 3.5
+		Included a zillion widgets from Bert.
+
+3/9/1993	VERSION 3.441
+		Made some changes to FileSelector, mostly in GotoDeepest...
+		because of some crashes observed by Bob Forsman.  I'm not
+		sure why he was getting crashes, but it looks like opendir()
+		was failing for him, and this was never checked for.  Also
+		made changes to the Directory and DirMgr code to make more
+		robust.  Also added Xfwf to FChooser #includes.
+
+3/8/1993	VERSION	3.44
+		There were bugs in MultiList SetValues.  Too many resources
+		were causing DestroyOldData and InitializeNewData to be
+		called.  XtSensitive was one of these.  Since this doesn't
+		change the widget data, it shouldn't cause these routines
+		to be called.  This resource & maxSelectable were removed
+		from the trouble area.  maxSelectable currently can't be
+		dynamically changed.  The sensitive resource applies now to
+		all items.
+
+2/8/1993	VERSION 3.432
+		Added FileChooser.
+
+1/29/1993	VERSION 3.431
+		Patched a few memory leaks in FileSelector Destroy().
+
+1/28/1993	VERSION 3.43
+		Incorporated new FileChooser widget from George Ferguson.
+		Made suggested changes to allow FileSelector sortMode and
+		pattern resources to be changed.  Deleted some unnecessary
+		bitmaps & pixmaps from the PixelEditor subdirectory, freeing
+		up lots of room.  I should have found this stuff earlier.
+
+1/20/1993	VERSION 3.42
+		Incorporated new FileComp from Robert Forsman.
+
+1/19/1993	VERSION 3.41
+		Improved FileSel man page to discuss checkExistence and
+		sortMode.
+
+1/11/1993	VERSION 3.31 & 3.4
+		Fixed FileSel.h to insert missing paren in function
+		prototype.  Removed silly copyrights.  Removed many unused
+		variables.  Worked on ScrolledList to hopefully allow
+		SetValues to change list contents (before SetValues was
+		unimplemented).  Added a sensitiveArray resource to the
+		ScrolledList, and removed the unused font resource.  This
+		code is pretty ugly.  I hope it works.
+
+8/31/1992	VERSION 3.3
+		Incorporated lots of new widgets, modified FWF.tmpl to
+		include MKDIRHIER line (commented out).  Added SqueakyClean
+		stuff to delete Makefiles before making a shar file to
+		reduce the shar size.
+
+6/1/1992	VERSION 3.2
+		Included mkdirhier with release, in new utils subdirectory.
+		Removed FileSelP.h #include from FileSel.h file.
+
+5/25/1992	VERSION 3.1
+		Removed button border width settings from FileSelector,
+		Added fixes to FileComp for new ScrolledList function
+		calling conventions.
+
+5/19/1992	VERSION 3.0
+		Added new FileComplete, ImageSelector, Rheostat, Cmap,
+		Shistogram, Hdial, Slider2 and Canvas widgets.  New
+		Imakefile build system doesn't use makedepend.  A zillion
+		other changes which I can't remember.
+
+1/30/1992	VERSION 2.2
+		Removed XPM2.8 directory, since XPM3.0 shipped with X11R5.
+		Updated PixEditT to load & save XPM3 files.  Changed the
+		PixelEditor SetNewImage routines to always redraw after an
+		image has been set.  Added a sensitivity array argument to
+		the ScrolledListSetList function.
+
+7/14/1991	VERSION 2.14
+		Modified SetValues in PixelEditor so that a change in size
+		of a non-shared image will update the imagePixels resource
+		as well, which is use by some of the user interface routines.
+
+7/5/1991	VERSION 2.13
+		Added XtNpercentMode to Histogram widget to display
+		percentages on Y axis.
+
+		Added #ifdef for broken HP filesystem in FileSel.c to
+		allow stat of .. to act sensibly as suggested by Robert
+		Forsman.  Also added faster check for link to directory
+		in Directory.c.  Old method can be used by a #define of
+		SLOW_DIRLINK_TEST.
+
+6/26/1991	VERSION 2.12
+		Fixed FileSelector "Can't Change XtNfileSelected" error.
+		Made PixelEditor redraw less often.  Still redraws twice
+		when current image doesn't have zoom factor of 1.
+
+6/5/1991	VERSION 2.11
+		As per Gerry Tomlinson's request, the Imakefile for Dir
+		was changed to add semicolons after the cp commands.
+
+5/9/1991	VERSION 2.1
+		The file names of the components have been changed to be
+		<= 14 characters long for System V users.  This causes some
+		confusion between widget names and file names.  The decision
+		was made not to change widget names because it would cause
+		portability problems with existing code, make the names less
+		identifiable, and would be an all around pain to do.  Test
+		programs end in a 'T' rather than '_test' to save file name
+		size as well.
+
+		The PixelEditor_test program (now called PixEditT) had problems
+		when loading large bitmaps into a viewport.  The server would
+		chew up huge amounts of memory and go away for about 10
+		minutes.  This does not occur if the PixelEditor widget is
+		not in a viewport.  Because of this, the viewport can be
+		enabled on the command line now with a -scrollbars option, and
+		loads will turn off the grid & set the zoom factor to 1.
+

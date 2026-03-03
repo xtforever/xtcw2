@@ -1,0 +1,4 @@
+Slider4 (superclass: XfwfSlider2) The widget displays a thumb, that
+	can be moved with the mouse. Applications can use this to move
+	or scroll other objects, via callbacks. The thumb can also be
+	resized with the mouse.

@@ -1,0 +1,22 @@
+.TH "AnsiTermT" "1" "1 Nov 1994" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+AnsiTermT \- Test program for the XfwfAnsiTerm widget
+.SH DESCRIPTION
+.PP
+The programs opens a window and runs `sh' in it, as a child
+process. Apart from using a pipe instead of a pty, this should be very
+similar to an xterm.
+.PP
+All keypresses are translated to (sequences of) characters and passed
+to the child process. Output from the child is displayed. Try
+executing a command that uses ANSI escape sequences to position the
+cursor or to highlight the text.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+

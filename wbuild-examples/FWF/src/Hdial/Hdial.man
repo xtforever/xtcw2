@@ -1,0 +1,98 @@
+.TH Hdial 3 "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+.PP
+Hdial \- Hdial Widget (Half Dial Widget)
+.SH DESCRIPTION
+.PP
+#include "Hdial.h"
+.PP
+The dial widget is an X toolkit compatible widget that
+displays a semi-circle dial, an arrow pointer,
+and a label indicating it's current value.
+.SH WIDGET CLASS
+.PP
+\fIhdialWidgetClass\fP
+.PP
+.SH RESOURCES
+.PP
+.TP
+.B \fIXtNforeground\fP 
+foreground pixel of the widget, default is XtDefaultForeground.
+.TP
+.B \fIXtNlabelForeground\fP
+foreground pixel of the label, default is XtDefaultForeground.
+.TP
+.B \fIXtNminimum\fP
+minimum value of dial (int), default is 0.
+.TP
+.B \fIXtNmaximum\fP
+maximum value of dial (int), default is 65535.
+.TP
+.B \fIXtNvalue\fP
+value of dial (int), default is 0.
+.TP
+.B \fIXtNfont\fP
+font of label (XFontStruct), default is XtDefaultFont.
+.TP
+.B \fIXtNmargin\fP
+minimum margin around widget (int), default is 5.
+.TP
+.B \fIXtNincrementCallback\fP
+increment callback, default is NULL.
+.TP
+.B \fIXtNdecrementCallback\fP
+decrement callback, default is NULL.
+.TP
+.B \fIXtNvalueChangeCallback\fP
+value change callback, default is NULL.
+.SH ACTIONS
+.PP
+.TP
+.B \fIincrement()\fP
+will receive a key/button event to increment
+the value of the dial, can send an integer as an incrmental value.
+.TP  
+.B \fIdecrement()\fP
+will receive a key/button event to decrement the
+value of the dial, can send an integer as a decremental value.
+.TP 
+.B \fIset()\fP 
+will receive a key/button event to set the dial arm to
+the current pointer position.
+.TP 
+.B \fIdrag()\fP 
+will receive a motion event to set the dial arm to the
+current pointer position.
+.SH DEFAULT TRANSLATIONS
+.PP
+.sp
+.nf
+<key>\+: increment(1)
+Shift<key>+: increment(100)
+<key>\-: decrement(1)
+Shift<key>\-: decrement(100)
+<Btn1Down>: set()
+<Btn1Motion>: set() drag()
+.SH CALLBACK STRUCTURE
+.PP
+.sp
+.nf
+typedef struct _HdialCallbackStruct
+{
+  int reason;
+  XEvent *event;
+  int value;
+} HdialCallbackStruct, *HdialCallbackPtr;
+.SH REASONS
+.sp
+.nf
+HDIAL_INCREMENT
+HDIAL_DECREMENT
+HDIAL_SET
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1992
+Materials Research Laboratory Center for Computation
+University of Illinois, Champaign

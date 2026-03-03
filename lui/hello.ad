@@ -1,0 +1,9 @@
+*luiFile: hello_lui.lua
+*title: Hello LUI
+*foreground: #2c3e50
+*background: #ecf0f1
+
+*Wbutton.bg_norm: #e74c3c
+*Wbutton.fg_norm: #ffffff
+*Wbutton.height: 40
+*Wbutton.width: 100

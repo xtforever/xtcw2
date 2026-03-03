@@ -1,0 +1,4 @@
+ScrollWin (Superclass: XfwfBoard) The ScrollWin widget creates a Board
+	widget on which another widget can be placed, that is larger
+	than the ScrollWin itself. Two scrollbars along the sides of
+	the ScrollWin allow the user to scroll the larger widget.

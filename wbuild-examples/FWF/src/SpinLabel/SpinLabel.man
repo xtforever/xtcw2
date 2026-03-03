@@ -1,0 +1,360 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfSpinLabel
+.SH DESCRIPTION
+The \fIXfwfSpinLabel\fP is derived from the \fIXfwfLabel\fP widget.
+It provides nearly the same features as its superclass but
+additionally it is possible to manipulate the labels using
+two arrow buttons. With these the user is able to increase/decrease a 
+numerical value or scroll trough a list of strings. every time one 
+of the arrows is pressed the \fIactivate\fP callback is invoked.
+The \fISpinLabel\fP widget provides a keyboard interface too.
+Using a callback the programmer is free to decide trough what 
+he let the user scroll.
+It is possible to choose various styles using different
+combinations of orientation and side.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfSpinLabel
+Name	Class	Type	Default
+XtNarrowForeground	XtCArrowForeground	Pixel 	copy_background 
+XtNcallback	XtCCallback	Callback	NULL 
+XtNlabelframeWidth	XtCLabelframeWidth	Dimension 	0 
+XtNlabelframeType	XtCLabelframeType	FrameType 	XfwfSunken 
+XtNhorizontal	XtCHorizontal	Boolean 	True 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNarrowForeground"
+The foreground color for the arrows. if not specified the background
+color is used.
+
+	
+
+.TP
+.I "XtNcallback"
+The \fIactivate\fP action is invoked every time the user clicks
+on one of the arrows using the mouse or uses the keyboard interface.
+See Translations for the default keybindings.
+The concrete action (XfwfFirst,XfwfPrev,XfwfNext,XfwfLast) is passed 
+using the \fIcall_data\fP argument.
+
+	
+
+.TP
+.I "XtNtraversalOn"
+In contrast to its superclass \fIXfwfLabel\fP the SpinLabel widget
+provides a keyboard interface. this means traversalOn is set to True.
+
+	
+
+.TP
+.I "XtNframeWidth"
+The default \fIframeWidth\fP of the SpinLabel widget is 0.
+
+	
+
+.TP
+.I "XtNframeType"
+The value of the \fIframeType\fP resource is set to XfwfChiseled.
+
+	
+
+.TP
+.I "XtNlabelframeWidth"
+The \fIlabelframeWidth\fP controls the frame width of the label.
+Defaults to 0.
+
+	
+
+.TP
+.I "XtNlabelframeType"
+The \fIlabelframeType\fP controls the frame type of the label.
+Default values is XfwfSunken.
+
+	
+
+.TP
+.I "XtNhorizontal"
+The \fIhorizontal\fP resource specifies if the arrows should be
+horizontal (\fITrue\fP) or vertical (\fIFalse\fP).
+Default value is \fITrue\fP.
+
+	
+
+.TP
+.I "XtNalignment"
+The \fIside\fP is used to specify where the label should live.
+Possible values are \fI"center"\fP (\fIXfwfCenter\fP), \fI"left"\fP (\fIXfwfLeft\fP)
+and \fI"right"\fP (\fIXfwfRight\fP).
+The default value is \fIXfwfCenter\fP.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfLabel
+Name	Class	Type	Default
+XtNlabel	XtCLabel	String 	NULL 
+XtNtablist	XtCTablist	String 	NULL 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNforeground	XtCForeground	Color 	XtDefaultForeground 
+XtNhlForeground	XtCHlForeground	Color 	XtDefaultForeground 
+XtNalignment	XtCAlignment	Alignment 	0 
+XtNtopMargin	XtCTopMargin	Dimension 	2 
+XtNbottomMargin	XtCBottomMargin	Dimension 	2 
+XtNleftMargin	XtCLeftMargin	Dimension 	2 
+XtNrightMargin	XtCRightMargin	Dimension 	2 
+XtNshrinkToFit	XtCShrinkToFit	Boolean 	False 
+XtNrvStart	XtCRvStart	Int 	0 
+XtNrvLength	XtCRvLength	Int 	0 
+XtNhlStart	XtCHlStart	Int 	0 
+XtNhlLength	XtCHlLength	Int 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+SpinType is used for returning the action.
+
+	
+
+.nf
+
+.B type
+ SpinType = enum {XfwfFirst,XfwfPrev,XfwfNext,XfwfLast}
+.fi
+
+.SS "Translations"
+
+.nf
+<Btn1Down>: traverseCurrent() 
+.fi
+
+.nf
+~Shift<Key>Tab: traverseNext() 
+.fi
+
+.nf
+Shift<Key>Tab: traversePrev() 
+.fi
+
+.nf
+<Key>Home: first() 
+.fi
+
+.nf
+Ctrl<Key>a: first() 
+.fi
+
+.nf
+<Key>Left: prev() 
+.fi
+
+.nf
+<Key>Down: prev() 
+.fi
+
+.nf
+<Key>KP_Subtract: prev() 
+.fi
+
+.nf
+<Key>minus: prev() 
+.fi
+
+.nf
+Ctrl<Key>p: prev() 
+.fi
+
+.nf
+Ctrl<Key>b: prev() 
+.fi
+
+.nf
+<Key>Up: next() 
+.fi
+
+.nf
+<Key>Right: next() 
+.fi
+
+.nf
+Ctrl<Key>n: next() 
+.fi
+
+.nf
+Ctrl<Key>f: next() 
+.fi
+
+.nf
+<Key>plus: next() 
+.fi
+
+.nf
+<Key>KP_Add: next() 
+.fi
+
+.nf
+<Key>End: last() 
+.fi
+
+.nf
+Ctrl<Key>e: last() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "first
+
+The \fIfirst\fP action just calls the \fIcallback\fP function passing
+\fIXfwfFirst\fP in the \fIcall_data\fP argument.
+
+.TP
+.I "prev
+
+The \fIprev\fP action just calls the \fIcallback\fP function passing
+\fIXfwfPrev\fP in the \fIcall_data\fP argument.
+
+.TP
+.I "next
+
+The \fInext\fP action just calls the \fIcallback\fP callback passing
+\fIXfwfNext\fP in the \fIcall_data\fP argument.
+
+.TP
+.I "last
+
+The \fIlast\fP action just calls the \fIcallback\fP function passing
+\fIXfwfLast\fP in the \fIcall_data\fP argument.
+

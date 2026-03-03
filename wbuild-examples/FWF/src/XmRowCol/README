@@ -1,0 +1,106 @@
+
+
+RowCol Widget : 
+
+October 1995/Marc Quinton/STNA/DGAC/France.
+email : quinton@stna7.stna.dgac.fr
+Web   : http://www.stna7.stna.dgac.fr/~quinton/motif/7su/RowCol/
+        http://www.stna7.stna.dgac.fr/~quinton/
+
+Requirements : 
+        X11R4/R5, Motif1.1 or Motif 1.2
+
+Tested  on : 
+
+        SunOs5.2/X11R5/Motif1.2
+    and HPUX9.0/X11R5/Motif1.2
+
+
+Thank to Bert Bos <bert@let.rug.nl> for his RowCol widget which
+this one comes from. He has done main of the work. This widget
+is translated from Rowcol.w code and adapted to Motif includes
+and libraries.
+
+
+The RowCol widget aligns all its children in rows and columns.
+They are aligned on a grid that is coarse enough to
+hold the largest of the children.
+he position of each children can be manage with a new ressource
+named XmNPosition. This ressource is a constraint ressource and is
+inherited from parent (RowCol) to child.
+ 
+
+If XmPosition is set to :
+
+ . 0 : positione child to the end of the list,
+ . 1 : child is the fist in the RowCol list,
+ . 1 to num-child : take the specified position,
+ . others values are identical as 0.
+
+
+Here is a simple example to see how it works :
+
+
+        #include <Xm.h>
+        #include "RowCol.h"
+
+        ...
+
+        /* Create RowCol Widget container */
+        rc = XtVaCreateManagedWidget( "rowcol"
+             rowColWidgetClass,       parent,
+             NULL);
+
+
+        /* insert one child : the first one */
+        child1 = XtVaCreateManagedWidget( "child1"
+             someWidgetClass,       rc,
+             NULL);
+
+        /* insert to the end of the list */
+        child2 = XtVaCreateManagedWidget( "child2"
+             someWidgetClass,       rc,
+             XmNposition,           0,    /* Last position */
+             NULL);
+
+
+        /* insert to position 2 */
+        child3 = XtVaCreateManagedWidget( "child3"
+             someWidgetClass,       rc,
+             XmNposition,           2,    /* position 2*/
+             NULL);
+
+        ...
+
+
+You can get position of a child width this code :
+
+
+        Position pos;
+
+        XtVaGetValues(child3
+             XmNposition,           &pos,    /* get position */
+             NULL);
+
+        /* pos = 2 */
+
+
+You can set position of a child width this code :
+
+        Position pos;
+
+        XtVaSetValues(child3
+             XmNposition,           &pos,    /* get position */
+             NULL);
+
+
+Send problemes to quinton@stna7.stna.dgac.fr
+General GNU licencing can be applied to this code :
+
+ . no garanty, if your computer explode because of this widget, this is not my
+   probleme.
+ . you can not make money with this code,
+ . if you make significant changes just tell me,
+ . you are free to redistribute or to change this program 
+   Just leave this notice copyright.
+ 

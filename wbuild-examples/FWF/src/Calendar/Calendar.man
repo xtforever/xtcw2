@@ -1,0 +1,373 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfCalendar
+.SH DESCRIPTION
+The \fIXfwfCalendar\fP widget shows a calendar for one month.  Buttons in the header
+allow the calendar month to be changed.  Individual dates within the calendar
+can be set to one of 5 different colors. Callbacks are provided for when the
+user changes the displayed month, or clicks on a date in the calendar.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCalendar
+Name	Class	Type	Default
+XtNcalendarFont	XtCCalendarFont	FontStruct	XtDefaultFont 
+XtNheadingFont	XtCHeadingFont	FontStruct	XtDefaultFont 
+XtNcolor1	XtCColor1	Pixel 	XtDefaultForeground 
+XtNcolor2	XtCColor2	Pixel 	XtDefaultForeground 
+XtNcolor3	XtCColor3	Pixel 	XtDefaultForeground 
+XtNcolor4	XtCColor4	Pixel 	XtDefaultForeground 
+XtNcolor5	XtCColor5	Pixel 	XtDefaultForeground 
+XtNheadingColor	XtCHeadingColor	Pixel 	XtDefaultForeground 
+XtNboxColor	XtCBoxColor	Pixel 	XtDefaultForeground 
+XtNweekdayColor	XtCWeekdayColor	Pixel 	XtDefaultForeground 
+XtNdayColors	XtCDayColors	int *	NULL 
+XtNinternalOffset	XtCInternalOffset	Dimension 	2 
+XtNmonth	XtCMonth	int 	0 
+XtNyear	XtCYear	int 	0 
+XtNboxed	XtCBoxed	Boolean 	False 
+XtNwrapped	XtCWrapped	Boolean 	False 
+XtNheading	XtCHeading	Boolean 	True 
+XtNdateCallback	XtCDateCallback	Callback	NULL 
+XtNchangeCallback	XtCChangeCallback	Callback	NULL 
+XtNinitialDelay	XtCInitialDelay	int 	500 
+XtNrepeatDelay	XtCRepeatDelay	int 	150 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNcalendarFont"
+The day numbers in the calendar are drawn using this font.
+
+	
+
+.TP
+.I "XtNheadingFont"
+The heading text is drawn using this font.
+
+	
+
+.TP
+.I "XtNcolor1"
+The \fIcolor1-5\fP resources in conjunctions with the \fIdayColors\fP resource
+specify the colors used for writing the calendar dates.
+
+        
+
+.TP
+.I "XtNcolor2"
+
+.TP
+.I "XtNcolor3"
+
+.TP
+.I "XtNcolor4"
+
+.TP
+.I "XtNcolor5"
+
+.TP
+.I "XtNheadingColor"
+The color to be used for drawing the heading text and buttons.
+
+	
+
+.TP
+.I "XtNboxColor"
+The color to be used for drawing boxes around the dates.
+
+	
+
+.TP
+.I "XtNweekdayColor"
+The color to be used for writing the weekday abbreviations.
+
+	
+
+.TP
+.I "XtNdayColors"
+This resource is a 32 element array of integers.  Array elements 1-31 contain
+a number 0-5 to specify what color the corresponding date will be, a value of
+zero specifies the default color which is indicated in array element 0.  
+Additionally, if the symbolic constant \fIXfwfReverseDate\fP is or'ed with the
+integer, the corresponding date will be shown in reverse video.
+
+There
+is no type convertor for this resource (yet) so it is only settable via
+the application calling Xt(Va)SetValues or preferably calling the convenience
+function \fIXfwfSetDayColors\fP.
+
+	
+
+.TP
+.I "XtNinternalOffset"
+This resource determines how much open space the widget will have. 
+It determines things like the distance between the calendar and the outside 
+edge of the widgets window, the gap between lines, the gap between the
+widget buttons etc.
+
+        
+
+.TP
+.I "XtNmonth"
+The month that the calendar is displaying. It defaults to the current month.
+
+	
+
+.TP
+.I "XtNyear"
+The year that the calendar is displaying. It defaults to the current year.
+
+	
+
+.TP
+.I "XtNboxed"
+If this resource is set to True, then the the calendar dates will
+appear inside a grid. The default value is False.
+
+	
+
+.TP
+.I "XtNwrapped"
+If this resource is set to True, then the calendar dates will
+appear on 5 lines with any excess dates required beyond the 5th line being
+wrapped to the first line. If the resource is set to False, 
+no wrapping will take place and 6 lines will
+always be used. The default value is False.
+
+	
+
+.TP
+.I "XtNheading"
+If this resource is True, the widget will have a heading containing the
+month and year, as well as four buttons for changing the displayed month.
+Setting this resource to False will remove the heading. This allows
+the applcation program to provide its own style of heading and/or
+month change buttons. The default value is True.
+
+	
+
+.TP
+.I "XtNdateCallback"
+The \fIdateCallback\fP is called by the \fIbuttonpress\fP action if the user clicked
+on a valid date within the calendar. The \fIcall_data\fP argument will contain
+a pointer to a \fIXfwfDate\fP structure which contains the date clicked on.
+
+        
+
+.TP
+.I "XtNchangeCallback"
+The \fIchangeCallback\fP is called when the date displayed in the calendar is changed
+by a mouseclick on one of the buttons or by the \fIchangeMonth\fP action. 
+If the month is changed by a mouseclick on one of the headeing buttons,
+the callback will be invoked for each new month displayed.
+The \fIcall_data\fP argument will contain
+a pointer to a \fIXfwfDate\fP structure which contains the new displayed month.
+(The \fIday\fP member will be undefined.)
+
+        
+
+.TP
+.I "XtNinitialDelay"
+When the user presses and holds the mouse for longer than
+\fIinitialDelay\fP milliseconds on the calendar buttons, the month is changed
+repeatedly every \fIrepeatDelay\fP milliseconds.
+
+        
+
+.TP
+.I "XtNrepeatDelay"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+.nf
+
+.B type
+ XfwfDate = struct {
+            int day;
+            int month;
+            int year;
+        }
+.fi
+
+\fBdef\fP XfwfReverseDate = 0x80 
+
+This function sets the colors of each date in the calendar.  It expects an
+array of 32 integers where elements 1-31 give the color (1-5) for that day.
+Element 0 contains the default color.  Using this convenience function is
+preferable to using a call to XtVaSetValues, since this function will only
+redraw any changes, whereas using XtVaSetValues causes the entire widget to
+be redrawn.
+
+.nf
+XfwfSetDayColors( $, int  colors[])
+.fi
+
+.SS "Translations"
+
+.nf
+<Btn1Down>: buttonpress() 
+.fi
+
+.nf
+<BtnUp>: buttonrelease() 
+.fi
+
+.nf
+<Key>Up: monthChange(+12) 
+.fi
+
+.nf
+<Key>Down: monthChange(-12) 
+.fi
+
+.nf
+<Key>Right: monthChange(+1) 
+.fi
+
+.nf
+<Key>Left: monthChange(-1) 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "monthChange
+
+Move the calendar display by the specified number of months.
+
+.TP
+.I "buttonrelease
+
+If one of the the widget buttons is auto-repeating, the \fIbuttonrelease\fP 
+action stops the auto-repeating.
+
+.TP
+.I "buttonpress
+
+The \fIbuttonpress\fP action selects the date under the mouse cursor, or if the
+mouse cursor is over a button it will increment or decrement the month or year
+as appropriate.
+

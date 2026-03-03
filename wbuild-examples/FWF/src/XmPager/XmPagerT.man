@@ -1,0 +1,41 @@
+.TH "XmPagerT" "1" "13 Feb 1995" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+PagerT \- Test program for the XmPager widget
+.SH SYNOPSIS
+PagerT [file]
+.SH DESCRIPTION
+.PP
+The program displays the contents of the
+.I file
+if it was present, otherwise it executes
+.B ls -l.
+The text is
+paginated and with the help of the "dog's ear" in the lower right
+corner the pages can be flipped.
+.PP
+The name of the file is shown along the top of the window.
+.PP
+Two buttons at the bottom serve to stop the program or to choose a
+different file. The
+.B Open
+button starts a file selector dialog.
+.PP
+The default configuration is set up to show pages of 25 lines each,
+regardless of the size of the window. The program will try to load
+an Times scalable font, so that the letters grow when the window
+is enlarged. Set the resource 
+.B PagerT.board.pager.lines
+to -1 in order to keep constant size fonts and make the widget adjust
+the number of lines automatically.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+
+
+

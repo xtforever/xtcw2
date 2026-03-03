@@ -1,0 +1,17 @@
+.TH "RowColT" "1" "11 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+RowColT \- Test program for the RowCol widget
+.SH DESCRIPTION
+The
+.I RowColT
+program creates a rowcol widget with 22 buttons. The last two are
+"row/col" and "quit". "row/col" toggles the resource "XtNstoreByRow"
+and "quit" stops the program. The first 20 buttons have numbers from 0
+to 19. Clicking on a button causes the "XtNcolumns" resource to be set
+to that number. Thus, clicking on "5" causes the rowcol widget to
+arrange the buttons in 5 columns, clicking on "0" causes the widget to
+create as many columns as will fit.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

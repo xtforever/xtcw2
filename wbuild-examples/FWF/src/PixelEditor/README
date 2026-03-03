@@ -1,0 +1,35 @@
+			     MAY 9, 1991
+
+	This is the PixelEditor widget package, which is currently under
+development.  The goal is to provide a useful building block for pixel
+editing applications, so people do not have to constantly reinvent the
+wheel.
+
+	This is currently a Beta version of this package.  Many features
+still need to be added and bugs most likely will need to be ironed out.
+What I ask is that you try to use this widget and give me feedback as to
+how well it works and what things are difficult to do.  This feedback is
+essential.
+
+
+	This package currently contains the following files:
+
+	README				This file
+	PixEdit.doc			Initial ASCII documentation
+	PixEdit.man			Man page for the PixelEditor widget
+
+	PixEdit.c			Widget source code
+	PixEditP.h			Widget private include file
+	PixEdit.h			Widget public include file
+	PixEdit.brush			Brush shape files
+
+	PixEdit_test.c			Sample pixel editor application
+	
+
+		Brian Totty
+		Department Of Computer Science
+		University Of Illinois at Urbana-Champaign
+		1304 W. Springfield Avenue
+		Urbana, IL 61801
+
+		email: totty@cs.uiuc.edu

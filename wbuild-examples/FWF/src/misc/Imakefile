@@ -1,0 +1,36 @@
+#include "../../FWF.tmpl"
+
+#define PassCDebugFlags 'CDEBUGFLAGS=$(CDEBUGFLAGS)'
+
+MISCSRC = VarArgs.c
+MISCOBJ = $(MISCSRC:.c=.o)
+
+LIB_OBJS = $(MISCOBJ)
+
+INCS = $(FWF_INCDIR)/VarArgs.h
+SRCS = $(MISCSRC)
+OBJS = $(MISCOBJ)
+
+LIBS_NEEDED = $(FWF_LIB) $(OTHERLIBS)
+LOCALLIBS = $(LIBS_NEEDED)
+/* DEPLIBS = XawClientDepLibs $(OTHERDEPLIBS) */
+DEPLIBS = $(OTHERDEPLIBS)
+/* SYSLIBS = XawClientLibs */
+
+RequireThisFileForInit($(FWF_INCDIR)/VarArgs.h)
+
+FileCopyWhenNeeded(.,VarArgs.h,$(FWF_INCDIR),VarArgs.h)
+
+AddToLibraryTarget(archive,$(FWF_LIBDIR),$(FWF_LIBNAME),$(MISCOBJ))
+ObjectRuleWithFlags($(FWF_CFLAGS))
+InstallMultiple($(INCS),$(FWF_INSTALL_INCDIR))
+
+GatherDescription(misc.txt,../../README.INDEX);
+
+objects: first objs archive
+
+first: $(INCS)
+
+objs: $(OBJS)
+
+execs:

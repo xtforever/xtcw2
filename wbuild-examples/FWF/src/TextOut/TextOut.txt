@@ -1,0 +1,3 @@
+TextOut		The TextOut widget is a multi-color, multi-font text display
+		widget.  Chunks of text can be added in upto 8 colors and
+		4 fonts, each selecatble by resources.

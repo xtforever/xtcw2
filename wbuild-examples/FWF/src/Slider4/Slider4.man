@@ -1,0 +1,316 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfSlider4
+.SH DESCRIPTION
+The Slider4 class is equal to the Slider2 class, except for the
+addition of a sash in the lower right corner of the thumb, with which
+the thumb can be resized. Since this adds two more dgrees of freedom
+to the widget (viz., width and height in addition to horizontal and
+vertical position), the name becomes ``Slider4.'' A callback function
+is called when the thumb is being resized and another one when the
+resizing has finished.
+
+The control area in the lower right corner of the thumb looks like a
+triangular button. The actions that already existed in the Slider2
+class now also check if the mouse is on that button and resize instead
+of drag the button in response.
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfSlider4
+Name	Class	Type	Default
+XtNsashColor	XtCSashColor	Color 	XtDefaultBackground 
+XtNsashPixmap	XtCSashPixmap	Pixmap 	NULL 
+XtNsashFrameType	XtCSashFrameType	FrameType 	XfwfRaised 
+XtNsashFrameWidth	XtCSashFrameWidth	Dimension 	2 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNsashColor"
+The existence of another area in the widget means that that there
+are additional resources needed for determining how it will look. The
+first of these resources is \fItriangleColor\fP, which gives the color of
+the triangle, unless \fItrianglePixmap\fP is also defined. In that case
+the pixmap will be used to tile the triangle with.
+
+	
+
+
+
+
+.TP
+.I "XtNsashPixmap"
+When the \fIsashPixmap\fP resource is set, it overrides the \fIsashColor\fP
+resource and causes the triangle to be tiled with a pixmap.
+
+	
+
+
+
+
+.TP
+.I "XtNsashFrameType"
+The triangle also has a frame in one of the four types \fIXfwfRaised\fP,
+\fIXfwfSunken\fP, \fIXfwfLedged\fP or \fIXfwfChiseled\fP. This frame is also influenced
+by the setting of the \fIshadowScheme\fP, \fItopShadowColor\fP, etc., resources
+(see the Frame class). The type of frame is set with \fIsashFrameType\fP.
+
+	
+
+
+
+
+.TP
+.I "XtNsashFrameWidth"
+The width of the frame around the sash:
+
+	
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfSlider2
+Name	Class	Type	Default
+XtNthumbColor	XtCThumbColor	Color 	XtDefaultBackground 
+XtNthumbPixmap	XtCThumbPixmap	Pixmap 	NULL 
+XtNminsize	XtCMinsize	Dimension 	20 
+XtNthumbFrameWidth	XtCThumbFrameWidth	Dimension 	2 
+XtNthumbFrameType	XtCThumbFrameType	FrameType 	XfwfRaised 
+XtNscrollCallback	XtCScrollCallback	Callback	NULL 
+XtNscrollResponse	XtCScrollResponse	XTCallbackProc 	scroll_response 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfLabel
+Name	Class	Type	Default
+XtNlabel	XtCLabel	String 	NULL 
+XtNtablist	XtCTablist	String 	NULL 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNforeground	XtCForeground	Color 	XtDefaultForeground 
+XtNhlForeground	XtCHlForeground	Color 	XtDefaultForeground 
+XtNalignment	XtCAlignment	Alignment 	0 
+XtNtopMargin	XtCTopMargin	Dimension 	2 
+XtNbottomMargin	XtCBottomMargin	Dimension 	2 
+XtNleftMargin	XtCLeftMargin	Dimension 	2 
+XtNrightMargin	XtCRightMargin	Dimension 	2 
+XtNshrinkToFit	XtCShrinkToFit	Boolean 	False 
+XtNrvStart	XtCRvStart	Int 	0 
+XtNrvLength	XtCRvLength	Int 	0 
+XtNhlStart	XtCHlStart	Int 	0 
+XtNhlLength	XtCHlLength	Int 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+The default translations are the same as in the Slider2 widget, but
+the actions have added functionality.
+
+	
+
+
+.nf
+<Btn1Down>: start() 
+.fi
+
+
+
+.nf
+<Btn1Motion>: drag() 
+.fi
+
+
+
+.nf
+<Btn1Up>: finish() 
+.fi
+
+
+.SS "Actions"
+
+
+.TP
+.I "start
+
+The \fIstart\fP action checks where the mouse is and does one of three
+things depending on the mouse position. If the mouse is outside the
+thumb, the \fIscrollCallback\fP list is called with as \fIcall_data\fP argument
+the direction in which the mouse click occurred. If the mouse is on
+the thumb, but not in the triangle, a drag operation is started and
+\fIstart\fP sets some private variables for use by the next action. If the
+mouse is on the triangle, a resize operation is started and the
+private variables are set accordingly.
+
+
+
+
+
+
+.TP
+.I "finish
+
+The \fIfinish\fP action checks what type of action just finished and
+either does nothing (if the action was a click outside the thumb),
+invokes the drop callbacks (if the mouse was dragging the thumb) or
+invokes the resize callbacks (if the mouse was pulling the sash). The
+callbacks get a pointer to a \fIXfwfScrollInfo\fP structure as \fIcall_data\fP
+argument.
+
+
+
+
+
+
+.TP
+.I "drag
+
+The \fIdrag\fP action moves the thumb if a drag is in progress or
+resizes the thumb if a resize operation is in progress; otherwise, it
+does nothing. It also calls the \fIscrollCallback\fPs.  Moving the thumb
+is done by calling the \fImove_thumb\fP method, resizing is done by
+calling \fIexpose\fP.
+
+
+
+
+

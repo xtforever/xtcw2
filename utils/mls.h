@@ -147,8 +147,7 @@ static inline char *m_str(int m) { return m && m_len(m) ? m_buf(m) : ""; };
 // these functions will:
 // show the caller (function, file, line) and
 // show the possible cause of the error
-// in mls.c each function that need this error tracing
-// has to be implemented before #undef MLS_DEBUG_DISABLE
+//
 // ********************************************
 
 int _m_init();
@@ -167,8 +166,7 @@ void _m_clear( int ln, const char *fn, const char *fun,
 	      int h );
 void* _m_buf(int ln, const char *fn, const char *fun,
 	      int m );
-int _vas_printf(int ln, const char *fn, const char *fun,
-	       int m, int p, const char *format, va_list argptr );
+
 // ********************************************
 //
 // some defines to make life more fun
@@ -374,12 +372,5 @@ enum {
 	_m_clear(__LINE__, \
 	__FILE__,__FUNCTION__,(m))
 
-/*
-#define vas_printf(m,p,format,argptr)		\
-  _vas_printf( __LINE__,__FILE__,__FUNCTION__,	\
-	       (m),(p),(format),(argptr) )
-*/
 #endif // MLS_DEBUG
 #endif // MLS_DEBUG_DISABLE
-
-int m_cmp_int(const void *a0, const void *b0);

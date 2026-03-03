@@ -1,0 +1,2 @@
+Toggle	(superclass: XfwfButton) A button that maintains an "on/off"
+	state and displays an icon corresponding to that state.

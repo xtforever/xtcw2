@@ -1,0 +1,263 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfPieMenu
+.SH DESCRIPTION
+A PieMenu is normally used as a pop-up menu. It is a circular menu
+with labeled pie segements. The menu pops up with the mouse pointer in
+the center. The user moves the mouse into one of the segments and
+releases the mouse button. The advantage of this kind of menu is that
+-- after some practice -- it can be used without having to look at the
+screen. The disadvantage is that there is only room for a few items.
+This implementation works with up to 6 items.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfPieMenu
+Name	Class	Type	Default
+XtNholeRadius	XtCHoleRadius	Dimension 	8 
+XtNmenu	XtCMenu	String 	NULL 
+XtNbackground1	XtCBackground1	Pixel 	copy_bg 
+XtNbackground2	XtCBackground2	Pixel 	copy_bg 
+XtNbackground3	XtCBackground3	Pixel 	copy_bg 
+XtNbackground4	XtCBackground4	Pixel 	copy_bg 
+XtNbackground5	XtCBackground5	Pixel 	copy_bg 
+XtNbackground6	XtCBackground6	Pixel 	copy_bg 
+XtNforeground	XtCForeground	Pixel 	XtDefaultForeground 
+XtNforeground1	XtCForeground1	Pixel 	copy_fg 
+XtNforeground2	XtCForeground2	Pixel 	copy_fg 
+XtNforeground3	XtCForeground3	Pixel 	copy_fg 
+XtNforeground4	XtCForeground4	Pixel 	copy_fg 
+XtNforeground5	XtCForeground5	Pixel 	copy_fg 
+XtNforeground6	XtCForeground6	Pixel 	copy_fg 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNfont1	XtCFont1	FontStruct	copy_font 
+XtNfont2	XtCFont2	FontStruct	copy_font 
+XtNfont3	XtCFont3	FontStruct	copy_font 
+XtNfont4	XtCFont4	FontStruct	copy_font 
+XtNfont5	XtCFont5	FontStruct	copy_font 
+XtNfont6	XtCFont6	FontStruct	copy_font 
+XtNframeWidth	XtCFrameWidth	Dimension 	4 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNholeRadius"
+The size of the menu is determined with \fIwidth\fP and \fIheight\fP. If
+they are unequal, the widget tries to set the smallest equal to the
+largest, to arrive at a circle. In the middle of the circle is a
+`hole' (an inactive area), the size of which is set with \fIholeRadius\fP.
+When the \fIwidth\fP is less than the diameter of the hole plus 10, the
+width is automatically increased.
+
+	
+
+.TP
+.I "XtNmenu"
+The labels and the corresponding actions are contained in the \fImenu\fP
+String. The menu looks like this (example):
+
+	\fIOpen...    -> open()\\n\\\fP
+
+	\fISave       -> save()\\n\\\fP
+
+	\fIOptions    -> set(options)\\n\\\fP
+
+	\fIExit       -> quit(0)\fP
+
+Each newline-seperated item has a label and an action. NB. the current
+implementation only supports up to six items, up to 6 actions per item
+and up to 6 arguments per action.
+
+	
+
+.TP
+.I "XtNbackground1"
+The background of the pie segments can be set individually for each
+of the segments. If some are left unspecified, the color of core
+resource \fIbackground\fP is used. Note that there is currently no support
+for stippled backgrounds or background pixmaps.
+
+	
+
+.TP
+.I "XtNbackground2"
+
+.TP
+.I "XtNbackground3"
+
+.TP
+.I "XtNbackground4"
+
+.TP
+.I "XtNbackground5"
+
+.TP
+.I "XtNbackground6"
+
+.TP
+.I "XtNforeground"
+The foreground colors are set similarly. The resource \fIforeground\fP
+is used for the lines between the segments and the central `hole'.
+When the other colors are left unspecified, the \fIforeground\fP color is
+used.
+
+	
+
+.TP
+.I "XtNforeground1"
+
+.TP
+.I "XtNforeground2"
+
+.TP
+.I "XtNforeground3"
+
+.TP
+.I "XtNforeground4"
+
+.TP
+.I "XtNforeground5"
+
+.TP
+.I "XtNforeground6"
+
+.TP
+.I "XtNfont"
+For the fonts the same technique is used, although in this case
+\fIfont\fP is purely used as the default for the other fonts, since
+nothing is drawnd directly with it.
+
+	
+
+.TP
+.I "XtNfont1"
+
+.TP
+.I "XtNfont2"
+
+.TP
+.I "XtNfont3"
+
+.TP
+.I "XtNfont4"
+
+.TP
+.I "XtNfont5"
+
+.TP
+.I "XtNfont6"
+
+.TP
+.I "XtNframeWidth"
+The widget can be given a 3D shadow with the \fIframeWidth\fP resource.
+Note that there is currently no way to influence the colors chosen for
+the shadow.
+
+	
+
+.TP
+.I "XtNborder_width"
+Because the widget has its own decoration, the border width is by
+default set to 0.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Shell
+Name	Class	Type	Default
+allowShellResize	XtCAllowShellResize	Boolean 	False 
+createPopupChildProc	XtCCreatePopupChildProc	XTCreatePopupChildProc 	NULL 
+XtNgeometry	XtCGeometry	String 	NULL 
+overrideRedirect	XtCOverrideRedirect	Boolean 	False 
+popdownCallback	XtCPopdownCallback	Callback	NULL 
+popupCallback	XtCPopupCallback	Callback	NULL 
+saveUnder	XtCSaveUnder	Boolean 	False 
+XtNvisual	XtCVisual	Visual *	CopyFromParent 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+The only translation is for a mouse button release. The mouse press
+would have popped up the widget. The release calls the action
+associated with the segment and then pops the widget down again.
+
+.nf
+<BtnUp>: select_item() XtMenuPopdown() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "select_item
+
+The \fIselect_item\fP action is normally called when the mouse button is
+released. It checks where the mouse is released and if it is inside
+the widget and not over the central hole, it calls the action function
+that is associated with that segment of the menu.
+
+The \fIaction\fP string is not yet parsed. It is copied to a temporary
+string and split into action name and parameter list. The
+implementation currently assumes that there are no more than 100
+arguments and that the length of the original \fIaction\fP string does not
+exceed 500 characters.
+

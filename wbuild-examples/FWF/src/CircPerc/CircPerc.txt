@@ -1,0 +1,7 @@
+CircPerc    A small widget, subclassed from Core, that can be used to indicate
+	    the progress that is made by an application, for example in a
+	    lengthy computation. This is done by displaying a circle, in which
+	    a colored pie-slice indicates the amount of work already done, and
+	    in which the remainder of the circle, filled in with another
+	    color, indicates the amount of work yet to be done. The percentage
+	    done can be indicated with a two decimal accuracy.

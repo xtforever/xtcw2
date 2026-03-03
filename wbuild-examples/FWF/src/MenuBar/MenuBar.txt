@@ -1,0 +1,4 @@
+MenuBar	(Superclass: XfwfRowCol) A menubar displays buttons in a
+	horizontal row. It assumes the buttons control drop-down menus
+	and it makes it possible to drag the mouse from one menu to
+	another.

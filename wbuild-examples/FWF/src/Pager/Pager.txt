@@ -1,0 +1,4 @@
+Pager	(Superclass: XfwfBoard) A Pager is an alternative to a
+	scrolled window. It displays text one page at a time. The
+	pages can be flipped by means of a `dog's ear' in the corner.
+	The widget has support for scalable fonts.

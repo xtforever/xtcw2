@@ -1,0 +1,6 @@
+WIDGET = ArtText
+SUPERCLASSES = ../Common/Common.w ../TextOut/TextOut.w
+OTHERLIBS = -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

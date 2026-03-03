@@ -1,0 +1,86 @@
+.\"remove .ig hn for full docs
+.de hi
+.ig eh
+..
+.de eh
+..
+.TH "PcBar" 3 "03 January 1995" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+PcBar \- A percentage bar widget
+.SH DESCRIPTION
+The XfwfPcBar widget is used to display a horizontal (or vertical) rectangular box 
+in which a percentage from 0% to 100% is indicated by a bar that extends
+across (or up) the box.  The actual percentage value can optionally be
+displayed in text form, centered in the box.
+
+The widget is derived from the core widget class and is compatible with
+the Athena widget set.
+
+.SS "New Resources"
+The following table shows the resources used by the programmer
+to control the XfwfPcBar widget.
+
+.TS
+center;
+cBp7 ssss
+lBp6 lBp6 lBp6 lBp6
+lp6 lp6 lp6 lp6.
+XfwfPcBar Resources
+Name	Class	Type	Default
+_
+XtNforeground	XtCForeground	Pixel	XtDefaultForeground
+XtNpercentage	XtNPercentage	Int	0
+XtNdisplaypc	XtCDisplaypc	Boolean	False 
+XtNshowzero	XtCShowzero	Boolean	False
+XtNvertical	XtCVertical	Boolean	False
+XtNfont	XtCfont	FontStruct	XtDefaultFont
+.TE
+
+.TP
+.I "XtNforeground"
+The colour of the percent bar.
+
+.TP
+.I "XtNpercentage"
+An integer between 0 and 100 indicating the percentage value to
+be displayed.
+
+.TP
+.I "XtNdisplaypc"
+A boolean value saying whether the percentage value should be displayed
+as text in the middle of the widget.
+
+.TP
+.I "XtNshowzero"
+A boolean value saying whether a percentage value of zero should be displayed
+as text.  If the \fIdisplaypc\fP resource is False, this resource has no effect.
+
+.TP
+.I "XtNvertical"
+A boolean value specifying the orientation of the percent bar. If this resource
+is false, the percent bar is drawn from left to right; if true, it is drawn
+from bottom to top.
+
+.TP
+.I "XtNfont"
+The font to be used to display the percentage value if the 
+\fIdisplaypc\fP resource is set.
+
+	
+.SS "New Functions"
+There is one utility function provided.
+
+.TP 
+void XfwfPcBarSetPercentage(Widget, int)
+This function sets the percentage to be displayed.  It is preferable
+to use this function rather than call XtSetValues() since calling XtSetValues()
+causes the widget to be cleared which results in flicker if the 
+percentage value is changed frequently.
+
+.SH AUTHOR
+Copyright (C) 1995 by Lachlan Wetherall, lwether@cs.newcastle.edu.au            
+
+    .-_|\\   Department of Computer Science
+   /     \\  University of Newcastle
+   \\.--._*  Callaghan NSW 2308
+        v   Australia

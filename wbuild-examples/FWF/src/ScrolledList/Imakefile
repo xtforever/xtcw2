@@ -1,0 +1,3 @@
+WIDGET = ScrList
+
+#include "../StdImakefile"

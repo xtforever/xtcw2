@@ -1,0 +1,578 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfFormattedText
+.SH DESCRIPTION
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFormattedText
+Name	Class	Type	Default
+XtNfontFamily1	XtCFontFamily1	String 	"times"
+XtNfontCharset1	XtCFontCharset1	String 	"iso8859-1"
+XtNfontSlant1	XtCFontSlant1	String 	"i"
+XtNfontBold1	XtCFontBold1	String 	"bold"
+XtNfontSizes1	XtCFontSizes1	String 	"72 80 100 120 140 180 240"
+XtNfontFamily2	XtCFontFamily2	String 	"helvetica"
+XtNfontCharset2	XtCFontCharset2	String 	"iso8859-1"
+XtNfontSlant2	XtCFontSlant2	String 	"o"
+XtNfontBold2	XtCFontBold2	String 	"bold"
+XtNfontSizes2	XtCFontSizes2	String 	"72 80 100 120 140 180 240"
+XtNfontFamily3	XtCFontFamily3	String 	"courier"
+XtNfontCharset3	XtCFontCharset3	String 	"iso8859-1"
+XtNfontSlant3	XtCFontSlant3	String 	"o"
+XtNfontBold3	XtCFontBold3	String 	"bold"
+XtNfontSizes3	XtCFontSizes3	String 	"72 80 100 120 140 180 240"
+XtNfontFamily4	XtCFontFamily4	String 	"wwwicons"
+XtNfontCharset4	XtCFontCharset4	String 	"*"
+XtNfontSlant4	XtCFontSlant4	String 	"*"
+XtNfontBold4	XtCFontBold4	String 	"*"
+XtNfontSizes4	XtCFontSizes4	String 	"72 80 100 120 140 180 240"
+XtNfontFamily5	XtCFontFamily5	String 	"symbol"
+XtNfontCharset5	XtCFontCharset5	String 	"*"
+XtNfontSlant5	XtCFontSlant5	String 	"*"
+XtNfontBold5	XtCFontBold5	String 	"*"
+XtNfontSizes5	XtCFontSizes5	String 	"72 80 100 120 140 180 240"
+XtNactivate	XtCActivate	Callback	NULL 
+XtNenter	XtCEnter	Callback	NULL 
+XtNleave	XtCLeave	Callback	NULL 
+XtNactiveCursor	XtCActiveCursor	Cursor 	NULL 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNfontFamily1"
+The widget maintains 5 sets of fonts. Each font is available in 6
+sizes and in styles normal, bold, italic and both (not every one of
+them may be available). The fonts are selected with resources.
+
+\fIsizes1\fP contains 7 numbers, giving the sizes of the
+fonts from family 1, from smallest to largest, in decipoints.
+
+	
+
+.TP
+.I "XtNfontCharset1"
+
+.TP
+.I "XtNfontSlant1"
+
+.TP
+.I "XtNfontBold1"
+
+.TP
+.I "XtNfontSizes1"
+
+.TP
+.I "XtNfontFamily2"
+
+.TP
+.I "XtNfontCharset2"
+
+.TP
+.I "XtNfontSlant2"
+
+.TP
+.I "XtNfontBold2"
+
+.TP
+.I "XtNfontSizes2"
+
+.TP
+.I "XtNfontFamily3"
+
+.TP
+.I "XtNfontCharset3"
+
+.TP
+.I "XtNfontSlant3"
+
+.TP
+.I "XtNfontBold3"
+
+.TP
+.I "XtNfontSizes3"
+
+.TP
+.I "XtNfontFamily4"
+
+.TP
+.I "XtNfontCharset4"
+
+.TP
+.I "XtNfontSlant4"
+
+.TP
+.I "XtNfontBold4"
+
+.TP
+.I "XtNfontSizes4"
+
+.TP
+.I "XtNfontFamily5"
+
+.TP
+.I "XtNfontCharset5"
+
+.TP
+.I "XtNfontSlant5"
+
+.TP
+.I "XtNfontBold5"
+
+.TP
+.I "XtNfontSizes5"
+
+.TP
+.I "XtNactivate"
+The \fIactivate\fP callback is called when the user clicks the mouse on
+something (any area occupied by a chunk of text, or something else)
+with a non-null \fIdata\fP field. The \fIcall_data\fP argument contains a
+pointer to an \fIXfwfFTextCallbackStruct\fP, with the event and the \fIdata\fP
+pointer of that chunk. The \fIreason\fP passed in that struct is
+\fIXfwfActivate\fP.
+
+	
+
+.TP
+.I "XtNenter"
+The \fIenter\fP callback is called when the mouse pointer enters the
+area occupied by a chunk with a non-null \fIdata\fP field. It is passed a
+pointer to an \fIXfwfFTextCallbackStruct\fP, containing the event and the
+\fIdata\fP of that chunk. The \fIreason\fP passed in that struct is
+\fIXfwfEnter\fP.
+
+	
+
+.TP
+.I "XtNleave"
+The \fIleave\fP callback is called when the mouse leaves a chunk with a
+non-null \fIdata\fP field. It has the same arguments as \fIactivate\fP, but
+the reason is \fIXfwfLeave\fP.
+
+	
+
+.TP
+.I "XtNactiveCursor"
+The cursor to use over text that has \fIdata\fP associated with
+it. Default is the same cursor as the rest of the widget.
+
+	
+
+.TP
+.I "XtNwidth"
+Provide defaults for the size of the widget.
+
+	
+
+.TP
+.I "XtNheight"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XmManager
+Name	Class	Type	Default
+XtNbottom_shadow_color	XtCBottom_shadow_color	Pixel 	0 
+XtNbottom_shadow_pixmap	XtCBottom_shadow_pixmap	Pixmap 	0 
+XtNforeground	XtCForeground	Pixel 	0 
+XtNhelp_callback	XtCHelp_callback	Callback	NULL 
+XtNhighlight_color	XtCHighlight_color	Pixel 	0 
+XtNhighlight_pixmap	XtCHighlight_pixmap	Pixmap 	None 
+XtNinitial_focus	XtCInitial_focus	Widget 	NULL 
+navigationType	XtCNavigationType	NavigationType	XmTAB_GROUP 
+XtNshadow_thickness	XtCShadow_thickness	Dimension 	0 
+XtNstring_direction	XtCString_direction	XMStringDirection 	0 
+XtNtop_shadow_color	XtCTop_shadow_color	Pixel 	0 
+XtNtop_shadow_pixmap	XtCTop_shadow_pixmap	Pixmap 	None 
+XtNtraversal_on	XtCTraversal_on	Boolean 	True 
+XtNunit_type	XtCUnit_type	Unsigned  char 	XmPIXELS 
+XtNuser_data	XtCUser_data	XTPointer 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The \fIXfwfFTextCallbackStruct\fP is passed as the \fIcall_data\fP argument
+in callbacks. It contains a pointer to the event that caused the
+callback and the \fIdata\fP field of the chunk over which the event
+occurred. The \fIreason\fP is \fIXfwfActivate\fP, \fIXfwfEnter\fP or \fIXfwfLeave\fP.
+If the \fIevent\fP field is \fINULL\fP, this was a synthetic event, coming
+from \fIpass_click\fP (or \fIXfwfPassClick\fP). \fIx\fP and \fIy\fP are the same
+values as in \fIevent\fP, but possibly corrected for scrolling. If \fIevent\fP
+is \fINULL\fP they are the arguments passed to \fIpass_click\fP.
+
+	
+
+\fBdef\fP XfwfActivate = 1 
+
+\fBdef\fP XfwfEnter = 2 
+
+\fBdef\fP XfwfLeave = 3 
+
+.nf
+
+.B type
+ XfwfFTextCallbackStruct = struct {
+            int reason;
+            XEvent *event;
+            int x, y;
+            XtPointer data;
+        }
+.fi
+
+\fITextStyle\fP is a set of flags, which determine the style of text.
+Bits 0-2 give the size (0-6, size 7 is not used).
+
+Bits 2-4 select the font family (0-4). Bits 4-6 select 4 levels of
+superscript, from 0 (no superscript) to 3 (raise to 3rd position above
+baseline). Bits 7-8 do the same for subscript.
+
+\fIFtUNDERSCORE\fP puts a line under the text. \fIFtUNDERSCORE2\fP puts 2
+underscores under the text. \fIFtSTRIKE\fP puts a line through the text.
+
+\fIFtHIDEWIDTH\fP causes the text to be written as if it didn't take up
+horizontal space. The next word will start at the same x position (and
+thereby overwrite the first word, unless some horizontal space is
+inserted).
+
+	
+
+.nf
+
+.B type
+ TextStyle = long 
+.fi
+
+\fBdef\fP FtSMALLEST = 0 
+
+\fBdef\fP FtSMALLER = 1 
+
+\fBdef\fP FtSMALL = 2 
+
+\fBdef\fP FtNORMALSIZE = 3 
+
+\fBdef\fP FtLARGE = 4 
+
+\fBdef\fP FtLARGER = 5 
+
+\fBdef\fP FtLARGEST = 6 
+
+\fBdef\fP FtSIZESHIFT = 0 
+
+\fBdef\fP FtSIZEMASK = 07 
+
+\fBdef\fP FtFAMILYSHIFT = 3 
+
+\fBdef\fP FtFAMILYMASK = (7 <<FtFAMILYSHIFT )
+
+\fBdef\fP FtFAMILY1 = (0 <<FtFAMILYSHIFT )
+
+\fBdef\fP FtFAMILY2 = (1 <<FtFAMILYSHIFT )
+
+\fBdef\fP FtFAMILY3 = (2 <<FtFAMILYSHIFT )
+
+\fBdef\fP FtFAMILY4 = (3 <<FtFAMILYSHIFT )
+
+\fBdef\fP FtFAMILY5 = (4 <<FtFAMILYSHIFT )
+
+\fBdef\fP FtSUPERSHIFT = 6 
+
+\fBdef\fP FtSUPERMASK = (3 <<FtSUPERSHIFT )
+
+\fBdef\fP FtSUBSHIFT = 8 
+
+\fBdef\fP FtSUBMASK = (3 <<FtSUBSHIFT )
+
+\fBdef\fP FtBOLD = (1 <<10 )
+
+\fBdef\fP FtITALIC = (1 <<11 )
+
+\fBdef\fP FtSTYLESHIFT = 10 
+
+\fBdef\fP FtSTYLEMASK = (3 <<FtSTYLESHIFT )
+
+\fBdef\fP FtSTRIKE = (1 <<12 )
+
+\fBdef\fP FtHIDEWIDTH = (1 <<13 )
+
+\fBdef\fP FtUNDERSCORE = (1 <<14 )
+
+\fBdef\fP FtUNDERSCORE2 = (1 <<15 )
+
+Additional flags for an FtInline chunk.
+
+	
+
+\fBdef\fP FtALIGNSHIFT = 16 
+
+\fBdef\fP FtALIGNTOP = 00 
+
+\fBdef\fP FtALIGNBOTTOM = (1 <<FtALIGNSHIFT )
+
+\fBdef\fP FtALIGNMIDDLE = (2 <<FtALIGNSHIFT )
+
+\fBdef\fP FtALIGNDEPTH = (3 <<FtALIGNSHIFT )
+
+\fBdef\fP FtALIGNMASK = (3 <<FtALIGNSHIFT )
+
+\fBdef\fP FtALIGNFIXEDHEIGHT = (1 <<18 )
+
+\fBdef\fP FtALIGNFIXEDWIDTH = (1 <<19 )
+
+The next flags are used in the \fImode\fP field of an FtParShape chunk.
+
+	
+
+\fBdef\fP FtJUSTIFYSHIFT = 0 
+
+\fBdef\fP FtJUSTIFYMASK = 3 
+
+\fBdef\fP FtJUSTIFYBOTH = 0 
+
+\fBdef\fP FtJUSTIFYLEFT = (1 <<FtJUSTIFYSHIFT )
+
+\fBdef\fP FtJUSTIFYRIGHT = (2 <<FtJUSTIFYSHIFT )
+
+\fBdef\fP FtJUSTIFYCENTER = (3 <<FtJUSTIFYSHIFT )
+
+\fBdef\fP FtPOSITIONSHIFT = 3 
+
+\fBdef\fP FtPOSITIONMASK = (3 <<FtPOSITIONSHIFT )
+
+\fBdef\fP FtNORMALPARA = 0 
+
+\fBdef\fP FtLEFTFLOAT = (1 <<FtPOSITIONSHIFT )
+
+\fBdef\fP FtRIGHTFLOAT = (2 <<FtPOSITIONSHIFT )
+
+\fBdef\fP FtNOCLEAR = 0 
+
+\fBdef\fP FtCLEARLEFT = (1 <<6 )
+
+\fBdef\fP FtCLEARRIGHT = (1 <<7 )
+
+\fBdef\fP FtKEEPWIDTH = (1 <<8 )
+
+The `color' \fITRANSPARENT\fP is not a real color, but a special code to
+signal that nothing should be drawn. It is often used as the
+background color for text.
+
+	
+
+\fBdef\fP TRANSPARENT = ((Pixel )-1 )
+
+CONVENIENCE FUNCTIONS
+
+The following functions are convenience functions to access the
+methods of the widget. Note that none of these functions actually draw
+the text on the screen. To achieve that, the calling application must
+cause an expose event to be generated (or call \fIexpose\fP directly).
+
+This is for efficiency reasons. Subclasses or application, that draw
+larger amounts of text at once can better decide when to make the
+output appear.
+
+\fIXfwfAddWord\fP adds a text string to the end of the existing text. The
+string is considered a single word and won't be broken across
+lines. The word is copied to private storage.
+
+\fIfg\fP and \fIbg\fP are the colors of the foreground and background. The
+special value \fITRANSPARENT\fP is allowed for the background. \fIsty\fP
+contains the relative font size, style, and underlining.
+
+\fIdata\fP is a pointer that will be passed in the \fIcall_data\fP argument of
+the \fIactivate\fP or \fIenter\fP callback, when the user clicks on this word
+or moves the mouse pointer over it.
+
+.nf
+XfwfAddWord( $, const  String  word, Cardinal  len, Pixel  fg, Pixel  bg, TextStyle  style, XtPointer  data)
+.fi
+
+\fIXfwfAddHSpace\fP adds a horizontal space, which implies a possible break
+point. The width of the space is \fIspacefactor/1000\fP times the normal
+width of a space. The space can stretch or shrink if \fIstretch\fP is
+\fITRUE\fP.
+
+\fIspacefactor\fP can be negative, the effect is to move the next word to
+the left (possibly overwriting anything already there). Negative
+spaces do not stretch or shrink.
+
+\fIdata\fP is a pointer that will be passed in the \fIcall_data\fP argument of
+the \fIactivate\fP or \fIenter\fP callback, when the user clicks on this space
+or moves the mouse pointer over it.
+
+.nf
+XfwfAddHSpace( $, int  spacefactor, Bool  stretchable, Bool  breakable, Pixel  fg, Pixel  bg, TextStyle  style, XtPointer  data)
+.fi
+
+\fIXfwfAddVSpace\fP ends the current paragraph and adds vertical space. If
+\fIadd_vspace\fP is called more than once without other intervening calls,
+the resulting vertical space is not the sum of the spaces, but the
+maximum of them. The amount of space is \fIlinefactor/1000\fP times the
+normal line height of the
+
+.nf
+XfwfAddVSpace( $, int  pixels)
+.fi
+
+\fIXfwfAddInline\fP adds a widget at the end of the text. It is inserted as
+if it was a word. The size of the widget is taken from its \fIwidth\fP and
+\fIheight\fP fields.
+
+\fImode\fP determines how much the widget extends below the baseline. If
+\fImode\fP is \fIFtALIGNDEPTH\fP, the \fIdepth\fP gives the number of pixels to
+lower it. If \fImode\fP is \fIFtALIGNTOP\fP, \fIftALIGNMIDDLE\fP or
+\fIFtALIGNBOTTOM\fP, the widget is aligned with the current line's top,
+bottom or middle.
+
+\fIstyle\fP is used to check if the widget should raised to superscript
+position.
+
+Note: there is a shortcoming in the current implementation, in that
+the height and depth of the chunk are estimated based on the height
+and depth of only a part of the current line. This may mean that too
+much space is left above or below the widget, especially if the widget
+is the first chunk in the current line.
+
+.nf
+XfwfAddInline( $, Widget  w, TextStyle  style, int  wd, int  ht, int  dp, int  hmargin, int  vmargin, XtPointer  data)
+.fi
+
+\fIXfwfAddParShape\fP ends the current paragraph and then sets the margins
+and the justification mode for the all subsequent ones, until the next
+call.
+
+\fIleft\fP and \fIright\fP are the new margins, \fImode\fP contains the justification
+style (\fIFtJUSTIFYLEFT\fP, \fIFtJUSTIFYRIGHT\fP, \fIFtJUSTIFYBOTH\fP, \fIFtJUSTIFYCENTER\fP),
+and other flags: \fIFtCLEARLEFT\fP and \fIFtCLEARRIGHT\fP
+mean that the paragraph should start below any floats in the left
+and/or right margin, \fIFtLEFTFLOAT\fP and \fIFtRIGHTFLOAT\fP mean that the
+paragraph is itself a floating paragraph and should go in the left
+resp. right margin. \fIFtKEEPWIDTH\fP means that the following text is a
+caption and should have the same width as the preceeding line (which
+presumably consisted of an in-line image).
+
+.nf
+XfwfAddParShape( $, int  left, int  right, int  width, int  mode, double  leading)
+.fi
+
+\fIXfwfAddHRrule\fP ends the current paragraph and draws a horizontal
+rule. The rule extends to the current left and right margins.
+
+.nf
+XfwfAddHRule( $)
+.fi
+
+When no more data is forthcoming, \fIXfwfAddEOD\fP can be used to finish
+the current paragraph and any pending operations. Without it, some
+data may be kept undisplayed, waiting for the end of the paragraph to
+come.
+
+.nf
+XfwfAddEOD( $)
+.fi
+
+The function \fIXfwfPassClick\fP is used to pass a click on one of the
+child windows on to the FormattedText widget. The function actually
+calls the \fIpass_click\fP method, which looks through the list of
+children to see if this one has a \fIdata\fP field and if so, calls the
+\fIactivate\fP callback, just as if the user clicked on a chunk without an
+inline widget.
+
+.nf
+XfwfPassClick( $, Widget  child, int  x, int  y)
+.fi
+
+.SS "Translations"
+
+.nf
+<Btn1Down>,<Btn1Up>: activate() 
+.fi
+
+.nf
+<Motion>: motion() 
+.fi
+
+.nf
+<Enter>: motion() 
+.fi
+
+.nf
+<Leave>: motion() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "activate
+
+\fIactivate\fP finds the chunk over which the event (must be a pointer
+event) occurred and if it has a non-null \fIdata\fP field, calls the
+\fIactivate\fP callback.
+
+.TP
+.I "motion
+
+\fImotion\fP finds the chunk over which the event (must be a pointer
+event) occurred and if this is a different chunk from the last time,
+it calls the \fIleave\fP callback for the chunk just left and the \fIenter\fP
+callback for the chunk entered. The callbacks are not called if the
+chunks have a \fINULL\fP \fIdata\fP field.
+

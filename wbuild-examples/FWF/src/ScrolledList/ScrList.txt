@@ -1,0 +1,2 @@
+ScrolledList	 A vertically scrolling list of text items, allowing
+		multiple selection and desensitizing, build from MultiList.

@@ -1,0 +1,57 @@
+#include <../../../FWF.tmpl>
+HMP = cyrilc.h gothgbt.h gothgrt.h gothitt.h greekc.h \
+	greekcs.h greekp.h greeks.h italicc.h italiccs.h \
+	italict.h math.h misc.h romanc.h romancs.h \
+	romand.h romanp.h romans.h romant.h scriptc.h \
+	scripts.h
+
+init:: ../Occidental.c ../Oriental.c $(HMP)
+
+NormalProgramTarget(fcompile,fcompile.o,,,)
+
+NormalProgramTarget(hcompile,hcompile.o,,,)
+
+../Occidental.c: hcompile
+	./hcompile -N Occidental Occidental.c < hershey.oc
+	cp Occidental.c ..
+
+clean::
+	$(RM) Occidental.c ../Occidental.c $(HMP)
+
+../Oriental.c: hcompile
+	./hcompile -N Oriental Oriental.c < hershey.or
+	cp Oriental.c ..
+
+clean:: 
+	$(RM) Oriental.c ../Oriental.c
+
+$(HMP): fcompile
+	./fcompile hmp/`echo $@ | sed s/[.]h/.hmp/` > $@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

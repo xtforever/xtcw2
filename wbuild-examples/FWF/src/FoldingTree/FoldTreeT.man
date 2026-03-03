@@ -1,0 +1,27 @@
+.TH "FoldTreeT" "1" "28 Aug 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+FoldTreeT \- Test program for the XfwfFoldingTree widget
+.SH DESCRIPTION
+.PP
+The program shows an XfwfTree widget with two XfwfButton and two
+XfwfFoldingTree children. The label in the buttons is a number that
+counts how often the mouse is clicked on that button. Instead of the
+mouse, the keyboard
+can also be used.
+.SH AUTHOR
+.sp
+.nf
+Ray Bellis <rpb@psy.ox.ac.uk>
+MRC Centre in Brain and Behaviour,
+Dept of Experimental Psychology,
+University of Oxford,
+England
+
+Original source by:
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+

@@ -1,0 +1,20 @@
+.TH "BoardT" "1" "28 Aug 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+BoardT \- Test program for the XfwfBoard widget
+.SH DESCRIPTION
+.PP
+The program shows an XfwfBoard widget with three XfwfBoard widget
+children. The location of the children can be controlled with
+resources. The example resources in BoardT.ad show how the three areas
+can be made dependent on the size of the parent window in different
+ways. They also show how the cursor resource can be used to display
+different cursors in the different widgets.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+

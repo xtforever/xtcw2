@@ -1,0 +1,41 @@
+.\" @(#)cp.1 1.19 90/02/15 SMI; from UCB 4.1
+.TH CanvasT 1 "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+CanvasT \- test out the Canvas Widget
+.SH SYNOPSIS
+.B CanvasT
+[
+.B \-c1
+.I color
+] [
+.B \-c2
+.I color
+] [
+.B \-c3
+.I color
+] [
+\fB\-lw\fIlinewidth\fP
+]
+.SH DESCRIPTION
+.LP
+
+\fBCanvasT\fP opens up a window that the user can click and drag on to
+draw lines.  Each button is a different color.
+.SH OPTIONS
+.TP
+.B \-c[1\-3]
+The user can choose the colors that each of the buttons draws at
+startup time using these flags.
+.TP
+.B \-lw
+The user can adjust the width of the drawn lines with this flag.
+.SH "SEE ALSO"
+.BR Canvas (3),
+.SH BUGS
+The lines are not refreshed in the order they are drawn.  The
+exposeproc draws all the lines of a certain color first so that the
+graphics context gets changed as little as possible.
+
+This program clearly specifies that the default color for button one
+should be blue, but it consistently comes up yellow for me.  I don't
+know exactly what's wrong...

@@ -1,0 +1,366 @@
+================================ README.INDEX ================================
+
+This file attempts to briefly describe the widgets in the Free Widget
+Foundation release.  This file has a historic tendency of being
+out-of-date, so this list should be viewed as a subset of the widgets
+actually available.
+
+Alert (Superclass: TransientShell)
+
+	The Alert widget can be used for simple messages. It is a
+	popup shell with an icon, a few lines of text and one or more
+	buttons. There is a convenience function XfwfDialog that
+	displays an Alert widget as a modal dialog.
+
+Animator (Superclass: XfwfBoard)
+
+	The Animator widget cycles through a set of images at a fixed
+	rate. The images are usually read from XPM files.
+
+XmAnsiTerm (superclass XmManager)
+
+	A widget to display text with embedded ANSI escape sequences,
+	like an ANSI terminal would. It has a blinking cursor.
+
+Arrow (Superclass: XfwfBoard)
+
+	The Arrow widget displays a triangle, pointing in one of four
+	directions. It is usually part of a scrollbar. It calls a
+	callback repeatedly while a mouse is kept pressed.
+
+ArticleText (Superclass: TextOut)
+
+	The ArticleText widget is subclassed from the TextOut
+	widget. So it allows multi-color, multi-font text
+	display. This widget has a special user-level function that
+	will parse a buffer and highlight parts of the text in
+	different colors and fonts if it is a News/Mail header line,
+	body line or quoted line.
+
+XfwfBoard (superclass: XfwfFrame)
+
+	A widget that can be used as the parent for other widgets.
+	Children can be any size and anywhere. The `location' resource
+	also provides a more powerful way of specifying size and
+	position than the `geometry'.
+
+XfwfButton (superclass: XfwfLabel)
+
+	This is simply an XfwfLabel with a callback for mouse clicks.
+
+CircPerc
+
+	A small widget, subclassed from Core, that can be used to
+	indicate the progress that is made by an application, for
+	example in a lengthy computation. This is done by displaying a
+	circle, in which a colored pie-slice indicates the amount of
+	work already done, and in which the remainder of the circle,
+	filled in with another color, indicates the amount of work yet
+	to be done. The percentage done can be indicated with a two
+	decimal accuracy.
+
+Common (superclass: Composite)
+
+	Common superclass for many other widgets. Defines some
+	resources, types, converters, etc. and implements keyboard
+	traversal.
+
+XfwfEnforcer (superclass XfwfBoard)
+
+	The Enforcer widget can be used to apply location resources to
+	a widget that is not a subclass of XfwfBoard. The Widget
+	accepts a single child and forces that child to the same size
+	as itself (minus the frame).
+
+Entry (superclass: XfwfBoard)
+
+	use it for reading a single line of text it lets you specify
+	the maximal length, set the allowed characters and disable
+	displaying of the entered text
+
+XfwfFormattedText (superclass: XmManager)
+
+	Formats text, using different fonts, colors, floating images,
+	etc. Mainly used as superclass for XfwfSimpleSGML and
+	XfwfHTML2.
+
+FileChooser
+
+	Another (simpler) hierachical file chooser widget, based on
+	FileSelector. It has no buttons or text widgets, just a list
+	of files and a menu for ancestor directories, similar to the
+	Macintosh (tm) interface.
+
+FileLister
+
+	this widget is a modification of Brian Totty's FileSelector
+	widget.  Besides the functionality provided by FileSelector,
+	the FileLister provides the capability of generating a list of
+	files, as well as their paths.  The FileLister returns a count
+	of the selected files, and pointers to two arrays of String:
+	one for the paths, and one for the files.
+
+FoldingTree
+
+	This widget shows a tree drawing of its child widgets which
+	can be expanded and collapsed by the user.
+
+Frame (superclass: Commmon)
+
+	The Frame widget can be used to put four types of 3D frames
+	around other widgets.
+
+Group (superclass: XfwfRowCol)
+
+	Arranges children in rows and columns with a frame around it
+	and a title. It has special support for XfwfToggleButtons,
+	optionally turning them into radio buttons.
+
+HScrollbar (Superclass: XfwfScrollbar)
+
+	This widget is no different from Scrollbar, except that it has
+	translations for the Left and Right keys and the default value
+	of the `vertical' resource is `False'.
+
+XfwfHTML2 (superclass: XfwfSimpleSGML)
+
+	Adds heuristic rules to the SGML parser in its superclass to
+	deal with omitted tags in HTML. Doesn't yet implement forms.
+
+Icon (Superclass: XfwfBoard)
+
+	The Icon widget is used to display an icon, which is normally
+	read from an XPM file. There are also a few built-in
+	icons. The widget uses the shape extension to create icons
+	that are non-rectangular or transparent.
+
+IconBox (Superclass: XfwfBoard)
+
+	An IconBox is a surface on which labeled icons are
+	displayed. The icons can be dragged and dropped. The icons and
+	the labels are given as a resource. An IconBox could be used,
+	e.g., in a file manager.
+
+Label (superclass: XfwfBoard)
+
+	The widget displays a text of one or more lines, optionally
+	aligned with one of the sides.
+
+MenuBar (Superclass: XfwfRowCol)
+
+	A menubar displays buttons in a horizontal row. It assumes the
+	buttons control drop-down menus and it makes it possible to
+	drag the mouse from one menu to another.
+
+OptButton (Superclass: XfwfPullDown)
+
+	An OptButton is a button with a drop-down menu that displays
+	options from which only one can be chosen. The most recently
+	chosen option remains visible after the menu is closed.
+
+Pager (Superclass: XfwfBoard)
+
+	A Pager is an alternative to a scrolled window. It displays
+	text one page at a time. The pages can be flipped by means of
+	a `dog's ear' in the corner.  The widget has support for
+	scalable fonts.
+
+PcBar
+
+	A small widget, subclassed from Core, that can be used to
+        indicate the progress that is made by an application.  The
+        widget displays a percentage from 0 to 100 by means of a
+        horizontal or vertical bar drawn in a window.  The actual
+        percentage value may optionally be displayed as text in the
+        middle of the window.
+
+XfwfPieMenu (superclass: OverrideShell)
+
+	A disk-like pop-up menu with menu items as pie segments.
+	Probably the fastest type of menu.
+
+Prompt (Superclass: XfwfLabel)
+
+	The Prompt widget is a text field for inputting short
+	texts. It can also use templates such as "date: __/__/__"
+	where the user can type only on the "_". The input can be
+	further constrained with patterns or callback functions.
+
+PullDown (Superclass: XfwfButton)
+
+	A PullDown button is a button with a pull-down menu. The menu
+	is given as a string resource. There is also support for a
+	hotkey, but it doesn't work yet.
+
+RadioGroup (superclass: XfwfGroup)
+
+	A specialization of the Group widget for the case that the
+	group contains only toggle buttons.
+
+Rheostat
+
+	A round, dial-like valuator widget that may be used for input
+	and/or output of integer values.  It is especially useful for
+	displaying and entering angles.  Vanilla and Motif versions
+	are available.
+
+RowCol (SuperClass: XfwfBoard)
+
+	The RowCol widget aligns all its children in rows and columns,
+	in the order in which they were created. They are aligned on a
+	grid that is coarse enough to hold the largest of the
+	children.
+
+XfwfRows (superclass: XfwfBoard)
+
+	The RowCol widget forces all its children into tightly packed
+	rows. The children keep their preferred size, but the
+	preferred position is ignored.
+
+XfwfSimpleSGML (superclass: XfwfFormattedText)
+
+	Parses simple SGML document and uses a style sheet to format
+	them. See <http://www.let.rug.nl/~bert/stylesheets.html> for
+	info on the style sheet syntax.
+
+ScrollWin (Superclass: XfwfBoard)
+
+	The ScrollWin widget creates a Board widget on which another
+	widget can be placed, that is larger than the ScrollWin
+	itself. Two scrollbars along the sides of the ScrollWin allow
+	the user to scroll the larger widget.
+
+ScrolledWindow3 (superclass: XfwfBoard)
+
+	A composite widget with two scrollbars, and three labels:
+	along the top, left side and upper left corner, making it
+	ideally suited for displaying tabular data.
+
+Scrollbar (Superclass: XfwfBoard)
+
+	A Scrollbar widget has four parts: a trough in which a slider
+	moves up and down (or left and right) and two arrows. Clicking
+	and dragging on the different parts causes a callback to be
+	invoked with different arguments, which presumably causes
+	another widget to scroll.
+
+ScrolledList
+
+	A vertically scrolling list of text items, allowing multiple
+	selection and desensitizing, build from MultiList.
+
+Shistogram
+
+	This is the simple histogram widget.  It is called simple for
+	a couple of reasons: 1) it only accepts unsigned characters
+	for data (I do image processing work) 2) most things are
+	automatic.
+
+Slider2 (superclass: XfwfLabel)
+
+	The widget displays a thumb, that can be moved with the
+	mouse. Applications can use this to move or scroll other
+	objects, via callbacks.
+
+Slider4 (superclass: XfwfSlider2)
+
+	The widget displays a thumb, that can be moved with the
+	mouse. Applications can use this to move or scroll other
+	objects, via callbacks. The thumb can also be resized with the
+	mouse.
+
+Stack
+
+	The stack widget is an X toolkit (and Motif if compiled right)
+	compatible widget that is a subclass of constraint.  The stack
+	widget allows only one child to be managed at a time.
+
+Tabs (superclass: XfwfBoard)
+
+	A series of tabs similar to the alphabet tabs along the top of
+	index cards.
+
+TextMenu (superclass: OverrideShell)
+
+	The TextMenu widget implements a simple menu, consisting of a
+	series of labels. It is called `TextMenu' because it has no
+	support for anything other than simple strings.
+
+TextOut
+
+	The TextOut widget is a multi-color, multi-font text display
+	widget.  Chunks of text can be added in upto 8 colors and 4
+	fonts, each selecatble by resources.
+
+ThumbWheel (superclass: Core)
+
+	A vertical thumb wheel that can be turned up or down. It can
+	serve as a scroller or valuator. The turning effect is
+	achieved by showing a series of prepared images one after the
+	other.
+
+ThumbWheel2 (superclass: Core)
+
+	ThumbWheel that doesn't require XPM.
+
+Toggle (superclass: XfwfButton)
+
+	A button that maintains an "on/off" state and displays an icon
+	corresponding to that state.
+
+UGraf
+
+	The UGraf widget provides a simple 2D and 3D graphics library
+	that is suitable for developing simple data visualization
+	tools.  It can be used do draw simple graphics that might be
+	done with a package similar to GKS.
+
+VScrollbar (Superclass: XfwfScrollbar)
+
+	A VScrollbar is exactly the same as a (vertical) Scrollbar,
+	except that it has translations for Up, Down, PageUp and
+	PageDown keys.
+
+XmAnsiTerm (superclass: XmPrimitive)
+
+	The AnsiTerm widget emulates an ANSI terminal in an X
+	Window. It displays lines of text and scrolls them if
+	necessary. It displays a cursor, to indicate where the next
+	text will appear and it interprets the ANSI escape codes to
+	position the cursor or highlight the text.
+
+XmIcon (Superclass: XmPrimitive)
+
+	The Icon widget is used to display an icon, which is normally
+	read from an XPM file. There are also a few built-in
+	icons. The widget uses the shape extension to create icons
+	that are non-rectangular or transparent.
+
+XmPager (superclass: XmManager)
+
+	The Pager widget displays one page from a long text. A dog's
+	ear in the corner allows flipping pages. This is an
+	alternative to scrolled texts, meant for material that is
+	preferrably read a page at a time.
+
+XmTabs (superclass: XmPrimitive)
+
+	A series of tabs similar to the alphabet tabs along the top of
+	index cards.
+
+converters
+
+	Assorted data types, resource converters, and utilities.
+
+misc
+
+	Miscellaneous support routines.
+
+scroll
+
+	A description of the FWF scrolling interface protocol (SWIP).
+
+tabstring
+
+	These are extended versions of X's DrawString functions which
+	allow tabs to be in the strings.

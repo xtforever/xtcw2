@@ -1,0 +1,13 @@
+.TH "RowsT" "1" "26 April 1994" "Version 3.65" "Free Widget Foundation"
+.SH NAME
+RowsT \- Test program for the Rows widget
+.SH DESCRIPTION
+The
+.I RowsT
+program creates a rows widget with 21 buttons. The last one is
+"quit". "quit" stops the program. The first 20 buttons have numbers from 0
+to 19. Resizing the window should change the number of buttons on each row.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

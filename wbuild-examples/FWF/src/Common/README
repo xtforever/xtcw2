@@ -1,0 +1,56 @@
+Common
+
+History
+1.1	Fixed keyboard traversal. Errors included:
+	- widgets sometimes refused to release focus
+	- in some cases programs crashed when iconified
+	Visibility and unmap actions removed (they were not needed);
+	highlighting is now only done when the focus is set
+	explicitly; improved conditions in focusIn and focusOut.
+
+1.2	(Oct '93) Added type Icon + converters; strncasecmp() replaced
+	with XMuCompareISOLatin1().
+1.3	(Apr '95) Added cache_by_display and cvtIconDestructor to
+	class_initialize.
+1.4	(Jul '95) Added visible_interest = TRUE, so that $visible
+	is valid. Fixed bug in set_values: $traversal_focus wasn't set
+	to FALSE when $sensitive became FALSE
+	(MARKUS@Melaten.IHF.RWTH-Aachen.DE)
+1.5	(Dec '95) Added "if ($being_destroyed) return;" to
+	traverse(). Thanks to Lachlan Wetherall
+	<lwether@sol.newcastle.edu.au>
+1.6	(14 Feb '96) changed order of resources, to make sure xcc is
+	created before any colors; xcc now created with a resource
+	default proc, for same reason; xcc is copied from parent if
+	the parent is a subclass of common, otherwise new xcc is
+	created; background is now copied to background_pixel; XCC is
+	now optional and can be turned off with resource useXCC;
+
+
+Copyright
+
+	Copyright 1995 Bert Bos (hereafter `the author')
+
+Conditions of use
+
+	Permission to use, copy, modify, distribute, and sell this
+	software and its documentation for any purpose is hereby
+	granted without fee, provided that the above copyright notice
+	appears in all copies and that both that copyright notice and
+	this permission notice appear in supporting documentation, and
+	that the name of the author not be used in advertising or
+	publicity pertaining to distribution of the software without
+	specific, written prior permission. The author makes no
+	representations about the suitability of this software for any
+	purpose.  It is provided "as is" without express or implied
+	warranty.
+
+	The author disclaims all warranties with regard to this
+	software, including all implied warranties of merchantability
+	and fitness, in no event shall The author be liable for any
+	special, indirect or consequential damages or any damages
+	whatsoever resulting from loss of use, data or profits,
+	whether in an action of contract, negligence or other tortuous
+	action, arising out of or in connection with the use or
+	performance of this software.
+

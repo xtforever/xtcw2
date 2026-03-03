@@ -1,0 +1,3 @@
+RadioGroup (superclass: XfwfGroup) A specialization of the Group
+	widget for the case that the group contains only toggle
+	buttons.

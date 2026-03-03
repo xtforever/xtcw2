@@ -1,0 +1,25 @@
+.TH "fwf" "1" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.ad b
+.ne 4
+.SH NAME
+fwf \- The ``Free Widget Foundation'' Widgets
+.ne 4
+.SH DESCRIPTION
+.br
+The \fIFree Widget Foundation\fP is an attempt to collect a group of
+flexible widgets together for use without fee by the X user community.  The
+name ``Free Widget Foundation'' is completely independent from the Free
+Software Foundation, but shares some of the same goals.
+
+The source is rooted at the FWF directory.  Read the README* files for
+information about building the system.  To subscribe to the FWF
+mailing lists, a forum for discussing the construction of a free
+widget set, send mail with the single line
+
+.nf
+    help
+.fi
+
+to listserv@let.rug.nl.
+.ne 4
+.fi

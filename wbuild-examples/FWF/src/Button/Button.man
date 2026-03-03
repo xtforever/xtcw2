@@ -1,0 +1,259 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfButton
+.SH DESCRIPTION
+The \fIXfwfButton\fP widget is a simple button with a
+single callback \fIactivate_callback\fP. Except for that
+callback, all resources are inherited from the
+\fIXfwfLabel\fP widget. Subclasses provide buttons of
+other, more specialized types.  \fIXfwfButton\fP inherits
+its 3D frame from \fIXfwfFrame\fP, the location
+specification resources from \fIXfwfBoard\fP and the
+multi-line label from \fIXfwfLabel\fP.
+
+The implementation is also very simple, since nearly
+all code is inherited from \fIXfwfLabel\fP. There are no
+new or redefined methods. In fact, just six lines of
+actual code suffice to implement the widget: Object
+Oriented Programming at its best!
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfButton
+Name	Class	Type	Default
+XtNactivate	XtCActivate	Callback	NULL 
+XtNenter	XtCEnter	Callback	NULL 
+XtNleave	XtCLeave	Callback	NULL 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNactivate"
+The \fIactivate\fP is invoked from the \fIactivate\fP
+action, which is normally bound to a mouse click. The
+\fIcall_data\fP argument of the callbacks routines is
+filled with a pointer to the event that triggered the
+action.
+
+	
+
+.TP
+.I "XtNenter"
+The \fIenter\fP callback is invoked on an EnterNotify event.
+
+	
+
+.TP
+.I "XtNleave"
+The \fIleave\fP callback is invoked on an LeaveNotify event.
+
+	
+
+.TP
+.I "XtNframeWidth"
+The default \fIframeWidth\fP is set to 2 pixels.
+
+	
+
+.TP
+.I "XtNtraversalOn"
+In contrast to its superclass XfwfLabel, a button
+usually takes part in keyboard traversal.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfLabel
+Name	Class	Type	Default
+XtNlabel	XtCLabel	String 	NULL 
+XtNtablist	XtCTablist	String 	NULL 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNforeground	XtCForeground	Color 	XtDefaultForeground 
+XtNhlForeground	XtCHlForeground	Color 	XtDefaultForeground 
+XtNalignment	XtCAlignment	Alignment 	0 
+XtNtopMargin	XtCTopMargin	Dimension 	2 
+XtNbottomMargin	XtCBottomMargin	Dimension 	2 
+XtNleftMargin	XtCLeftMargin	Dimension 	2 
+XtNrightMargin	XtCRightMargin	Dimension 	2 
+XtNshrinkToFit	XtCShrinkToFit	Boolean 	False 
+XtNrvStart	XtCRvStart	Int 	0 
+XtNrvLength	XtCRvLength	Int 	0 
+XtNhlStart	XtCHlStart	Int 	0 
+XtNhlLength	XtCHlLength	Int 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Translations"
+
+By default, the \fIactivate\fP action is bound to a
+mouse click and to the Enter key.
+
+	
+
+.nf
+<Btn1Down>: set_shadow(sunken) 
+.fi
+
+.nf
+<Btn1Down>,<Btn1Up>: activate() set_shadow() 
+.fi
+
+.nf
+Button1<Leave>: set_shadow() leave() 
+.fi
+
+.nf
+<Key>Return: set_shadow(sunken) activate() set_shadow() 
+.fi
+
+.nf
+<EnterNotify>: enter() 
+.fi
+
+.nf
+<LeaveNotify>: leave() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "activate
+
+The \fIactivate\fP action just calls the \fIactivate\fP
+callback functions, passing the \fIXEvent\fP pointer in
+the \fIcall_data\fP argument.
+
+.TP
+.I "enter
+
+.TP
+.I "leave
+

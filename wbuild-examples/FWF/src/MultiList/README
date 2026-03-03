@@ -1,0 +1,21 @@
+	This directory contains the C source for the MultiList widget, which
+	is a widget, similar to the Athena List widget, but with the
+	following significant differences:
+
+		* Multiple items can be selected at one time.
+		* Colors can be specified for highlighting.
+		* In addition to setting and unsetting items with the
+		  Set() and Unset() actions, MultiList also supports toggling
+		  (selected item becomes unselected, unselected item becomes
+		  selected) with Toggle() and opening of objects (e.g.
+		  might be used with a double-click) with Open().
+		* The return structure is now more complicated, listing
+		  what type of operation generated the callback (highlighting
+		  an item, unhighlighting an item, opening an item, requesting
+		  the current status), what item was clicked on to produce this
+		  callback, and the list of what items are currently
+		  selected.
+		* Items can be individually disabled, by setting the
+		  sensitivity array.
+		* internalWidth and internalHeight resources have been
+		  removed.

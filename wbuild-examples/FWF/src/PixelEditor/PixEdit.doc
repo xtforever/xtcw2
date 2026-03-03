@@ -1,0 +1,85 @@
+/*
+ * Author:
+ * 	Brian Totty
+ * 	Department of Computer Science
+ * 	University Of Illinois at Urbana-Champaign
+ *	1304 West Springfield Avenue
+ * 	Urbana, IL 61801
+ * 
+ * 	totty@cs.uiuc.edu
+ * 	
+ */ 
+
+	This file provides some extra information on the use of the
+PixelEditor widget in addition to the PixEdit.man man page.
+Hopefully this file can be expanded into some real full-scale
+documentation in the future.
+
+MOTIVATION
+
+	The PixelEditor widget is an attempt to provide a convenient
+building block that pixel editing applications can build on top of.
+The large amount of code necessary to implement interactive graphic
+editors has been built into this widget with the hopes that others
+will not have to start from scratch.  As new functions need to be
+added to the PixelEditor widget, I will try to add them or to provide
+hooks so the user can customize functionality.
+
+FUNCTIONALITY
+
+	The pixel editor consists of a grid of colored pixels, where
+each pixel is square, and the size of the squares is determined by the
+magnification (or "zoom" factor) currently in effect.  The user can
+modify the pixel data through a set of drawing tools and a set of
+routines.
+
+TOOLS
+	There are 5 tools currently supported by the PixelEditor
+widget.  These are:
+
+	Pencil		Left button sets a pixel
+			Right button erases a pixel
+			Middle buddle toggles a pixel on and off
+	Brush		Draws a brush shape in the foreground color
+	Eraser		Draws a brush shape in the background color
+	Region		Selects a rectangular region of pixels
+	Paster		Places data from a paste buffer to the image.
+			A click will drop a floating image.  Future
+			clicks before the tool is changed will move
+			the location of the pasted image.
+
+Each of these tools has a unique corresponding number as shown in
+PixEdit.h, as well as an ASCII text name which can be sent to a
+resource converter to convert it into a tool number.  Tools can be set
+by changing the XtNtool resource of the widget.
+
+BRUSHES
+
+	There are numerous brush shapes currently defined, as listed
+in PixEdit.h.  These range from boxes to circles to lines.  A user
+definable brush shape is also allowed for.  As with tools, both
+integer and ASCII names are defined for the brush shapes, and resource
+converters convert from text to integer names.
+
+SAMPLE CODE
+
+	The PixEditT.c file contains a very simple program
+which uses this widget, and can be a starting place for finding how
+to use this widget.
+
+PERFORMANCE
+
+	Changes in zoom, clippers, width, height, image, etc. require
+a redraw of the window.  Redraws are asynchronous.  If you call XtSetValues
+to change the zoom, and then call PixelEditorSetImage to change the image,
+you will get 2 expose events which X will not combine.  These will be delayed
+until the next event loop cycle, which can cause your new image to be drawn
+twice.  This can be avoided by changing the zoom (etc.) & image at the same
+time with the same XtSetValues call.
+
+FUTURE PLANS
+
+	In the ideal case, people will find this widget useful, and I
+will get suggestions for improvement, and release it into the public.
+Hopefully this will become part of a standard set of useful widgets
+released into the general public.

@@ -1,5 +1,5 @@
-#ifndef SIG_XT
-#define SIG_XT
+#ifndef SIG_XT_H
+#define SIG_XT_H
 
 /***********************************************************
 
@@ -33,7 +33,9 @@ typedef int sig_receive_t (Widget w, Widget from, int type, void *class, void *d
 
 struct SIG_XT {
   int widgets; // SIG_XT_RECV[][] 
-} SIG;
+};
+
+extern struct SIG_XT SIG;
 
 struct SIG_XT_RECV {
   Widget wid;

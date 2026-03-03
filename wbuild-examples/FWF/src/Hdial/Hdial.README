@@ -1,0 +1,57 @@
+                                Hdial Widget
+-----------------------------------------------------------------------------
+
+Based roughly on the one by Doug Young, this dial widget is a half circle
+and has an arrowhead, selections, label, etc.  This was my first attempt at a 
+widget, so it probably ain't great.
+
+ Resources:               Type:                Defaults:
+
+XtNforeground          : pixel    : XtNDefaultForeground
+XtNlabelForeground     : pixel    : XtNDefaultForeground
+XtNminimum             : int      : 0
+XtNmaximum             : int      : 65535
+XtNvalue               : int      : 0
+XtNfont                : XFontStruct   : XtNDefaultFont
+XtNmargin              : int      : 5
+XtNimcrementCallback   : callback : NULL
+XtNdecrementCallbacki  : callback : NULL
+XtNvalueChangeCallback : callback : NULL
+
+Actions:
+
+increment()    : can have a numeric value as a paramater 
+decrement()    : can have a numeric value as a paramater
+set()         
+drag()
+
+Default Translations:
+
+<key>+: increment(1)
+Shift<key>+: increment(100)
+<key>-: decrement(1)
+Shift<key>-: decrement(100)
+<Btn1Down>: set()
+<Btn1Motion>: set() drag()
+
+Callback Struct:
+
+typedef struct _HdialCallbackStruct
+{
+  int reason;
+  XEvent *event;
+  int value;
+} HdialCallbackStruct, *HdialCallbackPtr;
+
+where reason can be:
+HDIAL_INCREMENT
+HDIAL_DECREMENT
+HDIAL_SET
+
+/* Note ** Drag calls the set action */
+
+Suggestions always welcome, improvements even better.
+Job offers highly encouraged.
+
+John L. Cwikla
+cwikla@uimrl7.mrl.uiuc.edu

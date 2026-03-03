@@ -1,0 +1,3 @@
+WIDGET = FileList
+
+#include "../StdImakefile"

@@ -1,0 +1,40 @@
+================================ README.IMAKE ================================
+
+	-------------------------------------------------------------------
+
+	This file describes some implementation details about the FWF Imake
+	system.  If you want to just compile the system, read the README.BUILD
+	file, which provides instructions on how to build the FWF release.
+
+	-------------------------------------------------------------------
+
+	The Imake system loads in the fwf project configuration files by
+	putting in #include statements in the subdirectory Imakefiles.  This
+	means that the fwf configuration files are placed after the Imake.tmpl
+	and Imake.rules files.
+
+	Project rules are placed in the FWF.rules file.  Project configuration
+	parameters are placed in FWF.tmpl.
+
+	Most of the simple widgets #include the StdImakefile which
+	contains the real Imake code.  As the build system matures, we might
+	want to consider providing some rules which will support a wide
+	variety of widget requirements, but make the constructing of Imakefiles
+	easy.  The StdImakefile could then be replaced by a StandardMakefile()
+	type of rule.
+
+	The system builds libraries incrementally rather than after all
+	objects have been compiled.  This gives a better opportunity to keep
+	some subdirectory autonomy.  Also, certain widgets contain other
+	widgets, so subdirectory order is important.
+
+	The system places binaries, includes and libs into directories
+	within the FWF directory tree.  This allows people to conveniently
+	use the package, even if they don't install it into the system.  If
+	desired, a 'make install', will place the files in the standard
+	system locations.
+
+	Because not all vendor's makes have library component list dependence
+	checks, I had to rip out the library dependence analysis.  This means
+	that some files will be unnecessarily re-added to libraries is a make
+	is repeated.

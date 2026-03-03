@@ -1,0 +1,18 @@
+.TH "EnforcerT" "1" "26 April 1994" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+EnforcerT \- Test program for the XfwfEnforcer widget
+.SH DESCRIPTION
+.PP
+The program shows an XfwfBoard widget.
+Inside this board there is an Enforcer widget that enforces its
+size on the Athena Label widget. Resizing the window will make the
+label change size in accordance with its parent widget.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+

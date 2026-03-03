@@ -1,0 +1,6 @@
+WIDGET = ScrollWin
+OTHERLIBS = -lm
+SUPERCLASSES = ../Common/Common.w ../Frame/Frame.w ../Board/Board.w
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

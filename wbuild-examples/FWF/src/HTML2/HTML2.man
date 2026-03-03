@@ -1,0 +1,237 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfHTML2
+.SH DESCRIPTION
+The HTML2 widget is a subclass of the SimpleSGML widget. It
+overrides the methods for handling start and end tags, in order to
+insert the tags that may be omitted in HTML. It also recognizes more
+entities, in particular the WWW icon entities.
+
+TO DO: forms.
+
+
+
+
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfHTML2
+Name	Class	Type	Default
+XtNbase	XtCBase	String 	NULL 
+XtNresolveURL	XtCResolveURL	Callback	NULL 
+XtNactivateForm	XtCActivateForm	Callback	NULL 
+
+.TE
+.ps +2
+
+
+.TP
+.I "XtNbase"
+To be able to process forms without an ACTION attribute, the widget
+must know the URL of the document itself.
+
+	
+
+
+
+
+.TP
+.I "XtNresolveURL"
+The \fIresolveURL\fP callback is called when the formatter encounters an
+inline image. It calls the callback function with a pointer to a
+\fIXfwfResolveRec\fP as \fIcall_data\fP. The \fIresolveRec\fP contains two fields:
+a string \fIurl\fP and a widget. The callback should set up things so that
+the referent of \fIurl\fP is drawn into the widget.
+
+	
+
+
+
+
+.TP
+.I "XtNactivateForm"
+The \fIactivateForm\fP callback is called when the user clicks the mouse on
+a submit button in a form. The \fIcall_data\fP field is set to a pointer
+to an \fIXfwfActivateFormInfo\fP struct.
+
+	
+
+
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfSimpleSGML
+Name	Class	Type	Default
+XtNstyle	XtCStyle	String 	NULL 
+XtNtitle	XtCTitle	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFormattedText
+Name	Class	Type	Default
+XtNfontFamily1	XtCFontFamily1	String 	"times"
+XtNfontCharset1	XtCFontCharset1	String 	"iso8859-1"
+XtNfontSlant1	XtCFontSlant1	String 	"i"
+XtNfontBold1	XtCFontBold1	String 	"bold"
+XtNfontSizes1	XtCFontSizes1	String 	"72 80 100 120 140 180 240"
+XtNfontFamily2	XtCFontFamily2	String 	"helvetica"
+XtNfontCharset2	XtCFontCharset2	String 	"iso8859-1"
+XtNfontSlant2	XtCFontSlant2	String 	"o"
+XtNfontBold2	XtCFontBold2	String 	"bold"
+XtNfontSizes2	XtCFontSizes2	String 	"72 80 100 120 140 180 240"
+XtNfontFamily3	XtCFontFamily3	String 	"courier"
+XtNfontCharset3	XtCFontCharset3	String 	"iso8859-1"
+XtNfontSlant3	XtCFontSlant3	String 	"o"
+XtNfontBold3	XtCFontBold3	String 	"bold"
+XtNfontSizes3	XtCFontSizes3	String 	"72 80 100 120 140 180 240"
+XtNfontFamily4	XtCFontFamily4	String 	"wwwicons"
+XtNfontCharset4	XtCFontCharset4	String 	"*"
+XtNfontSlant4	XtCFontSlant4	String 	"*"
+XtNfontBold4	XtCFontBold4	String 	"*"
+XtNfontSizes4	XtCFontSizes4	String 	"72 80 100 120 140 180 240"
+XtNfontFamily5	XtCFontFamily5	String 	"symbol"
+XtNfontCharset5	XtCFontCharset5	String 	"*"
+XtNfontSlant5	XtCFontSlant5	String 	"*"
+XtNfontBold5	XtCFontBold5	String 	"*"
+XtNfontSizes5	XtCFontSizes5	String 	"72 80 100 120 140 180 240"
+XtNactivate	XtCActivate	Callback	NULL 
+XtNenter	XtCEnter	Callback	NULL 
+XtNleave	XtCLeave	Callback	NULL 
+XtNactiveCursor	XtCActiveCursor	Cursor 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XmManager
+Name	Class	Type	Default
+XtNbottom_shadow_color	XtCBottom_shadow_color	Pixel 	0 
+XtNbottom_shadow_pixmap	XtCBottom_shadow_pixmap	Pixmap 	0 
+XtNforeground	XtCForeground	Pixel 	0 
+XtNhelp_callback	XtCHelp_callback	Callback	NULL 
+XtNhighlight_color	XtCHighlight_color	Pixel 	0 
+XtNhighlight_pixmap	XtCHighlight_pixmap	Pixmap 	None 
+XtNinitial_focus	XtCInitial_focus	Widget 	NULL 
+navigationType	XtCNavigationType	NavigationType	XmTAB_GROUP 
+XtNshadow_thickness	XtCShadow_thickness	Dimension 	0 
+XtNstring_direction	XtCString_direction	XMStringDirection 	0 
+XtNtop_shadow_color	XtCTop_shadow_color	Pixel 	0 
+XtNtop_shadow_pixmap	XtCTop_shadow_pixmap	Pixmap 	None 
+XtNtraversal_on	XtCTraversal_on	Boolean 	True 
+XtNunit_type	XtCUnit_type	Unsigned  char 	XmPIXELS 
+XtNuser_data	XtCUser_data	XTPointer 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+
+.nf
+
+.B type
+ XfwfResolveRec = struct {
+            String url;
+            Widget widget;
+        }
+.fi
+
+
+
+.nf
+
+.B type
+ XfwfActivateFormInfo = struct {
+            String url;
+            String data;
+            int length;                                /* # bytes in data */
+            int method;                                /* GET = 0, POST = 2 */
+        }
+.fi
+
+
+.SS "Translations"
+
+The same translations as in the superclass.
+
+
+
+
+.nf
+<Btn1Down>,<Btn1Up>: activate() 
+.fi
+
+
+
+.nf
+<Motion>: motion() 
+.fi
+

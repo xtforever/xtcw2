@@ -1,0 +1,18 @@
+*WclResFiles: menu_demo.ad
+*luiFile: menu_demo.lua
+*title: lui Wmenu Demo
+*foreground: #ecf0f1
+*background: #34495e
+*fontName: Sans-12
+
+*Wmenu.bg_norm: #2980b9
+*Wmenu.fg_norm: #ffffff
+*Wmenu.borderWidth: 0
+*Wmenu.height: 30
+
+*Wmenu*menu_shell.background: #2c3e50
+*Wmenu*menu_list.bg_norm: #2c3e50
+*Wmenu*menu_list.fg_norm: #ecf0f1
+*Wmenu*menu_list.bg_sel: #3498db
+*Wmenu*menu_list.fg_sel: #ffffff
+*Wmenu*menu_list.cursorColor: #e74c3c

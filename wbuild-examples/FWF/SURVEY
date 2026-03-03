@@ -1,0 +1,127 @@
+                        The Free Widget Foundation
+
+                           User Feedback Survey
+
+                               July 15, 1993
+
+Please send this short survey back to free-widgets-info@let.rug.nl.
+
+We will focus work on areas that are priorities to FWF users.  Please check
+the boxes indicated, or provide short answers where requested.
+
+===============================================================================
+
+(1) FWF Publicity
+
+ (a) Approximately when did you first hear about the FWF? ___________________
+ (b) Where did you first hear about the FWF? ________________________________
+     ________________________________________________________________________
+
+===============================================================================
+
+(2) Release File Format
+
+We have traditionally made the FWF source release available as a compressed
+shar file.  Some people have expressed interest in using a tar file instead,
+because file dates are preserved.  Other people wish to replace the 'compress'
+program with 'GNU zip' (gzip), because of some program benefits, and recent
+legal issues pertaining to the compression algorithm used in compress.  Since
+many sites don't have 'gzip' installed, others are opposed to the change.
+
+                                                    Like   Don't Care    Oppose
+
+ (a) How do you feel about switching to tar format?  [ ]  [ ]  [ ]  [ ]  [ ]
+ (b) How do you feel about switching to gzip?        [ ]  [ ]  [ ]  [ ]  [ ]
+ (c) If you have any comments, please indicate below
+
+===============================================================================
+
+(3) Motif Compatibility
+
+Some people are very interested in having the FWF widgets more "Motif-like",
+in appearance and/or functionality.  Others prefer the simplicity, efficiency,
+and portability of other toolkits.  We want to provide the option to have our
+widgets work and look more like Motif widgets, while not requiring the users
+to have Motif.  Before we decide how to handle this, and what priority to give
+to the project, we need to know the user interest level.
+
+                                                   Very    Don't Care    Not
+
+ (a) How important is "Motif" appearance?            [ ]  [ ]  [ ]  [ ]  [ ]
+ (b) How important is "Motif-like" functionality?    [ ]  [ ]  [ ]  [ ]  [ ]
+ (c) How important is interaction with "Motif"?      [ ]  [ ]  [ ]  [ ]  [ ]
+ (d) If you have any comments, please indicate below
+
+===============================================================================
+
+(4) FWF Widget Usage
+
+People often asks for enhancements to FWF widgets.  To prioritize these
+requests, we need to know which FWF widgets people use, and which they would
+most like work done to.
+
+ (a) Please check the FWF widgets/packages below that you use/have used:
+     [ ] Alert          [ ] FileChooser    [ ] MenuBar        [ ] ScrolledList
+     [ ] Animator       [ ] FileComp       [ ] MultiList      [ ] Shistogram
+     [ ] Arrow          [ ] FileSelector   [ ] OptButton      [ ] Slider2
+     [ ] Board          [ ] Frame          [ ] Pager          [ ] Slider4
+     [ ] Button         [ ] HScrollb       [ ] PixelEditor    [ ] Toggle
+     [ ] Canvas         [ ] Hdial          [ ] Prompt         [ ] VScrollb
+     [ ] CircPerc       [ ] Histogram      [ ] PullDown       [ ] scroll
+     [ ] Cmap           [ ] Icon           [ ] Rheostat       [ ] tabstring
+     [ ] Common         [ ] IconBox        [ ] RowCol
+     [ ] Dir            [ ] ImageSelector  [ ] ScrollWin
+     [ ] EzMenu         [ ] Label          [ ] Scrollbar
+
+ (b) Please check the FWF widgets/packages below that you would most like
+     benefit from improvements:
+
+     [ ] Alert          [ ] FileChooser    [ ] MenuBar        [ ] ScrolledList
+     [ ] Animator       [ ] FileComp       [ ] MultiList      [ ] Shistogram
+     [ ] Arrow          [ ] FileSelector   [ ] OptButton      [ ] Slider2
+     [ ] Board          [ ] Frame          [ ] Pager          [ ] Slider4
+     [ ] Button         [ ] HScrollb       [ ] PixelEditor    [ ] Toggle
+     [ ] Canvas         [ ] Hdial          [ ] Prompt         [ ] VScrollb
+     [ ] CircPerc       [ ] Histogram      [ ] PullDown       [ ] scroll
+     [ ] Cmap           [ ] Icon           [ ] Rheostat       [ ] tabstring
+     [ ] Common         [ ] IconBox        [ ] RowCol
+     [ ] Dir            [ ] ImageSelector  [ ] ScrollWin
+     [ ] EzMenu         [ ] Label          [ ] Scrollbar
+
+ (c) If there are FWF widgets not mentioned in this survey release, or other
+     comments you want to make, please do so below:
+
+===============================================================================
+
+(5) FWF Documentation
+                                               Excellent  Satisfactory   Poor
+ (a) The quality of the FWF documentation is:         [ ]  [ ]  [ ]  [ ]  [ ]
+
+===============================================================================
+
+(6) New Widgets
+
+Please take the time below to indicate what widgets would be important to
+you to have in the FWF widget set.  (Of course, the odds of us creating your
+personal super-custom-wysiwyg-3d-hypertext-foobar widget are bery slim, but
+modest suggestions may very well have action taken on them.)
+
+===============================================================================
+
+(7) Encouraging Volunteers
+
+The FWF depends solely on volunteer effort, which is not-surprisingly hard to
+find.  If you have any suggestions on how to increase our volunteer labor pool,
+please mention below:
+
+===============================================================================
+
+(8) Other Comments Or Suggestions
+
+Please make any other comments or suggestions below:
+
+===============================================================================
+
+END OF SURVEY
+
+Please email responses to free-widgets-info@let.rug.nl.

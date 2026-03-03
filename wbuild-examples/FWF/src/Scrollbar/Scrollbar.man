@@ -1,0 +1,317 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfScrollbar
+.SH DESCRIPTION
+The scrollbar widget helps the user to view data that is too large
+to be displayed all at once.  They are often used through a
+ScrolledWindow (see there), where they are put next to and/or below
+the widget that contains the data. The scrollbar controls which part
+is visible. By manipulating the scrollbar the user can move (`scroll')
+the data within the other widget.
+
+A scrollbar consists of two arrows placed at each end of a rectangle,
+either at the top and bottom or at the left and right. The former is
+called a vertical scrollbar, the latter a horizontal one.  A smaller
+rectangle, called the thumb or slider, is placed within the larger
+one. It can move up and down (vertical scrollbar) or left/right
+(horizontal scrollbar). Clicking an arrow moves the data in that
+direction. Pressing the mouse button on an arrow and holding it, moves
+the data by small increments as long as the mouse button is down.
+Dragging the slider moves the data proportionally with the slider,
+either along with the movement of the mouse, or all at once when the
+mouse button is released. Pressing the mouse button onthe rectangle
+outside the slider moves the data in larger increments.
+
+The ratio of the slider size to the scroll region size typically
+corresponds to the relationship between the size of the visible data
+and the total size of the data.  For example, if 10 percent of the
+data is visible, the slider typically occupies 10 percent of the
+scroll region.  This provides the user with a visual clue to the size
+of the invisible data.
+
+The scrollbar widget can be configured as either horizontal or
+vertical. It is made up of two XfwfArrow widgets and an XfwfSlider2
+widget. Therefore, many of the scrollbar's resources are actually
+resources for these, nameless, widgets. The scrollbar has the
+same callback list as the slider.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfScrollbar
+Name	Class	Type	Default
+XtNvertical	XtCVertical	Boolean 	True 
+XtNscrollCallback	XtCScrollCallback	Callback	NULL 
+XtNscrollResponse	XtCScrollResponse	XtCallbackProc 	scroll_response 
+XtNinitialDelay	XtCInitialDelay	Cardinal 	500 
+XtNrepeatDelay	XtCRepeatDelay	Cardinal 	50 
+XtNincrement	XtCIncrement	float 	"0.05"
+XtNscrollbarForeground	XtCScrollbarForeground	Color 	copy_background 
+XtNshadow	XtCShadow	Dimension 	2 
+XtNminsize	XtCMinsize	Dimension 	20 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNvertical"
+The orientation of the scrollbar is set with the \fIvertical\fP
+resource. \fITrue\fP means vertical, \fIFalse\fP horizontal. This resource may
+only be set during initialization. Any changes via \fIXtVaSetValues\fP
+result in a warning and are then ignored.
+
+	
+
+.TP
+.I "XtNscrollCallback"
+The user can interact with the scrollbar in many ways, but there is
+only a single callback list: \fIscrollCallback\fP. The callback uses the
+\fIcall_data\fP parameter to pass a pointer to an \fIXfwfScrollInfo\fP
+structure: \fIstruct {XfwfSReason reason; XfwfSFlags flags; float vpos,
+vsize, hpos, hsize;}\fP The \fIflags\fP field is a bitwise combination of
+\fIXFWF_VPOS\fP, \fIXFWF_HPOS\fP, \fIXFWF_VSIZE\fP and \fIXFWF_HSIZE\fP.  The
+structure contains a field \fIreason\fP, which can have the following
+values (there exist other values, but they are not used by the
+scrollbar):
+
+\item{-} \fIXfwfSUp\fP: if the user clicked (or holds) the up arrow.
+\item{-} \fIXfwfSLeft\fP: ditto left arrow.
+\item{-} \fIXfwfSDown\fP: ditto down arrow.
+\item{-} \fIXfwfSRight\fP: ditto right arrow.
+\item{-} \fIXfwfSPageUp\fP: ditto area above thumb.
+\item{-} \fIXfwfSPageDown\fP: ditto area below thumb.
+\item{-} \fIXfwfSPageLeft\fP: ditto area left of thumb.
+\item{-} \fIXfwfSPageRight\fP: ditto area right of thumb.
+\item{-} \fIXfwfSDrag\fP: if the user drags the thumb.
+\item{-} \fIXfwfSMove\fP: if the user stops dragging the thumb.
+
+The other four fields contain the new position of the thumb, as
+numbers between 0.0 and 1.0 inclusive.  In the case of drag and drop
+actions, the position and size reflect the thumb's {\em actual}
+position at the end of the dragging.  In the other cases, the position
+is the {\em suggested} new position. In these latter cases, the
+callback routine should compute the new position and use a call to the
+function in the \fIScrollResponse\fP resource (or, more conveniently, to
+\fIXfwfSetScrollbar\fP) to update the scrollbar.
+
+	
+
+.TP
+.I "XtNscrollResponse"
+The standard way to update the scrollbar is with a call to the
+function that is knwon as the \fIscrollResponse\fP function. To get a
+pointer to that function, you should use \fIXtGetValues\fP or
+\fIXtVaGetValues\fP on the \fIXtNscrollResponse\fP resource. But from an
+application it might be easier to use the \fIXfwfSetScrollbar\fP
+convenience function instead.
+
+The \fIscrollResponse\fP routine has the same format as a callback
+procedure. The first argument is a widget, this argument is ignored.
+The second argument is \fIXtPointer client_data\fP, it must point to the
+scrollbar that is to be updated. The third argument is \fIXtPointer
+call_data\fP, it must be a pointer to an \fIXfwfScrollInfo\fP structure (see
+above).
+
+	
+
+.TP
+.I "XtNinitialDelay"
+When the user presses and then holds the mouse button on an arrow or
+on an area outside the thumb, the scrollbar waits some milliseconds
+before it starts repeating the callbacks.
+
+	
+
+.TP
+.I "XtNrepeatDelay"
+Between repeated calls to the callback routines, the scrollbar will
+wait a few milliseconds.
+
+	
+
+.TP
+.I "XtNincrement"
+Some widgets may be simple enough that they can scroll a fixed
+amount whenever the user clicks on one of the arrow buttons. If that
+is the case, they can let the scrollbar compute the new position. It
+will be passed in the \fIXfwfScrollInfo\fP structure as the suggested new
+position. Any receiver is free to ignore the suggestion, however. The
+default is to add or subtract 0.05.
+
+	
+
+.TP
+.I "XtNscrollbarForeground"
+The color of the arrow and the thumb also determines the color of
+the 3D shadow, at least if \fIshadowScheme\fP is set to \fIXfwfAuto\fP, as it
+is by default. The default value is determined dynamically, it is
+copied from the \fIbackground\fP resource.
+
+	
+
+.TP
+.I "XtNshadow"
+The width of the arrow's and thumb's shadow is by default 2 pixels.
+
+	
+
+.TP
+.I "XtNminsize"
+The minimum size of the thumb is by default 20 pixels. It can be set
+with the \fIminsize\fP resource.
+
+	
+
+.TP
+.I "XtNframeWidth"
+The slider and the two arrows frame will be forced to 0 pixels. The
+only frame is that of the whole scrollbar.  The default frame width is
+changed from 0 to 2.
+
+	
+
+.TP
+.I "XtNframeType"
+The default frame type is now \fIXfwfSunken\fP.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The \fIXfwfSetScrollbar\fP convenience function can be used to set the
+position and size of a scrollbar. The two arguments must be between
+0.0 and 1.0 (inclusive).
+
+.nf
+XfwfSetScrollbar( $, double  pos, double  size)
+.fi
+
+.SS "Actions"
+
+.TP
+.I "Scroll
+
+The following action is not used by default, but it is defined here,
+because someone might want to bind it to keys. For example, the
+subclasses \fIXfwfVScrollbar\fP and \fIXfwfHScrollbar\fP do that.
+

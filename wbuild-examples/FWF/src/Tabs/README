@@ -1,0 +1,46 @@
+Tabs
+
+N.B.
+	The widget files are computer-generated. The real source is
+	*.w. It has been processed with Wbuild (available by
+	anonymous ftp from ftp.let.rug.nl)
+
+Author
+	Bert Bos <bert@let.rug.nl>
+	Alfa-informatica, Rijksuniversiteit Groningen, The Netherlands
+	January 1994
+
+History:
+17 Jan '94: first version
+15 Jun '94: version 2.0. Moved definition of type StringArray to
+	    `converters because StringArray was also used in RadioGroup
+	    (discovered by Vladimir T. Romanovski)
+2.1	(14 Aug '95) Added #resize to resize.
+2.2	(12 Feb '96) background_pixel replaced by background (see Common)
+
+Copyright
+
+	Copyright 1995 Bert Bos (hereafter `the author')
+
+Conditions of use
+
+	Permission to use, copy, modify, distribute, and sell this
+	software and its documentation for any purpose is hereby
+	granted without fee, provided that the above copyright notice
+	appears in all copies and that both that copyright notice and
+	this permission notice appear in supporting documentation, and
+	that the name of the author not be used in advertising or
+	publicity pertaining to distribution of the software without
+	specific, written prior permission. The author makes no
+	representations about the suitability of this software for any
+	purpose. It is provided "as is" without express or implied
+	warranty.
+
+	The author disclaims all warranties with regard to this
+	software, including all implied warranties of merchantability
+	and fitness, in no event shall the author be liable for any
+	special, indirect or consequential damages or any damages
+	whatsoever resulting from loss of use, data or profits,
+	whether in an action of contract, negligence or other tortuous
+	action, arising out of or in connection with the use or
+	performance of this software.

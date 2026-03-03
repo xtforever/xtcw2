@@ -1,0 +1,26 @@
+.TH "Slider4T" "1" "28 Aug 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+Slider4T \- Test program for the XfwfSlider4 widget
+.SH DESCRIPTION
+.PP
+The program opens a window with a large, insensitive slider
+(XfwfSlider2 widget) on the left, a small, resizable slider
+(XfwfSlider4 widget) in the bottom right corner and a label (XfwfLabel
+widget) in the top right corner. When the small thumb is dragged with
+the mouse, the large one is moved proportionally along with it.
+Clicking the mouse next to the thumb will cause both thumbs to jump in
+that direction. The label shows the current position.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+
+
+
+
+

@@ -1,0 +1,62 @@
+			README for FileChooser
+				   
+			   George Ferguson
+		      ferguson@cs.rochester.edu
+				   
+		       Last Change: 28 Jan 1993
+
+
+Description
+
+    This file documents the FileChooser widget, which provides an
+    interface like that shown below (in ASCII) for selecting a file from a
+    directory:
+
+	    +==================================+
+	    |+--------------------------------+|
+	    ||     /parent/parent/dir         ||
+	    |+--------------------------------+|
+	    ||# File1                         ||
+	    ||# File2                         ||
+	    ||# Subdir/                       ||
+	    ||# File3                         ||
+	    ||#                               ||
+	    |+--------------------------------+|
+	    +==================================+
+
+    The top component is a MenuButton that, when clicked on, presents a
+    menu of the ancestor directories of the current directory. The bottom
+    component is List that presents the contents of the current directory.
+    The FileChooser widget's callbacks are called whenever the selection
+    changes. Selecting a subdirectory causes its contents to be displayed.
+
+    This widget is meant to function within, say, a Form, which would
+    provide buttons and perhaps a Text item for entering new filenames.
+    The test program FChooserT.c illustrates such usage.
+
+    Use of the FileChooser widget requires the Dir package from the
+    Free Widget Foundation (free-widgets-request@kazoo.cs.uiuc.edu).
+
+Implementation Notes
+
+    FileChooser is based on the FileSelector widget by Brian Totty
+    (totty@cs.uiuc.edu). The major differences are as follows:
+	- FileChooser does not provide any buttons or Text widgets,
+	  just the directory menu and list of files. Thus it is meant
+	  to be used within a larger application, for example, to
+	  allow new filenames to be entered. Because of this, it does
+	  not enforce any particular policy regarding selections.
+	- FileChooser uses a MenuButton and a dynamically generated
+	  SimpleMenu to present the ancestor directories, similar to
+	  the Macintosh (tm) interface. This results in about a 50%
+	  saving in screen real estate.
+
+    FileChooser attempts to resize its children whenever it is
+    resized. It makes both the MenuButton and the List as wide as the
+    FileChooser, and makes the List occupy the entire bottom of the
+    FileChooser (with a small gap below the MenuButton). The string
+    being displayed in the MenuButton (the current directory) is
+    adjusted if it is too long to fit in the given width: it is
+    right-aligned, with a "<" at the left edge to indicate truncation.
+    It would be nice if the "justify" resource of the MenuButton
+    looked after this, but c'est la vie.

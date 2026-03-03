@@ -1,0 +1,13 @@
+.TH "MenuBarT" "1" "12 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+MenuBarT \- Test program for the XfwfMenuBar widget
+.SH DESCRIPTION
+The \fIMenuBarT\fP program creates a menubar with three buttons: two
+pulldown buttons and an option button. Each button has an associated
+"drop down" menu. Most actions in the menu are not bound to anything,
+only the "quit" action works.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands

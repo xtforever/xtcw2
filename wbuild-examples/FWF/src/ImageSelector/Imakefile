@@ -1,0 +1,4 @@
+WIDGET = ImageSel
+OTHERLIBS = -lm
+
+#include "../StdImakefile"

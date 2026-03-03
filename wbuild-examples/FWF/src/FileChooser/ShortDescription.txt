@@ -1,0 +1,4 @@
+FileChooser  Another (simpler) hierachical file chooser widget, based
+	     on FileSelector. It has no buttons or text widgets, just
+	     a list of files and a menu for ancestor directories,
+	     similar to the Macintosh (tm) interface.

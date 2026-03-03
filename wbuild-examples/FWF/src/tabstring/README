@@ -1,0 +1,16 @@
+These are extended versions of X's DrawString primitives which
+allow tabs to be in the strings.
+
+I'd eventually like to see all the FWF widgets have XfwfString's with
+both the font change capabilities of Motif strings, and these tabbing
+capabilities.  Right now, the tabbing capability has been added to
+only the Label widget and the MultiList widget, and there is no
+concept of font changes.
+
+-Rick Richardson (rick@digibd.com)
+
+History
+
+27 Mar '96: Changed incorrect `XtabDrawString' in TabString.h to
+`XfwfDrawString' (found by Steven M. Harrington <harringt@eskimo.com>)
+[BB]

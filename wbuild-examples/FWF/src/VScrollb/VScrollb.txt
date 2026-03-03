@@ -1,0 +1,3 @@
+VScrollbar (Superclass: XfwfScrollbar) A VScrollbar is exactly the
+	same as a (vertical) Scrollbar, except that it has
+	translations for Up, Down, PageUp and PageDown keys.

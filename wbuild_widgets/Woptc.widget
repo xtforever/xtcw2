@@ -57,6 +57,14 @@ var compress_motion = True
   calc_slider( $, $height, 0 );
 }
 
+@proc query_geometry
+{
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = $sliderWidth;
+    reply->height = 10;
+    return XtGeometryAlmost;
+}
+
 @proc set_values
 {
   return True; /* redraw */

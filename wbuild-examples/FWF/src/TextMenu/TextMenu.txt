@@ -1,0 +1,4 @@
+TextMenu (superclass: OverrideShell) The TextMenu widget implements a
+	simple menu, consisting of a series of labels. It is called
+	`TextMenu' because it has no support for anything other than
+	simple strings.

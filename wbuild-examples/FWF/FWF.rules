@@ -1,0 +1,285 @@
+/****************************************************************************
+
+	FWF.rules
+
+	This file contains additional rules used by the Free Widget
+	Foundation imake build system.
+
+ ****************************************************************************/
+
+#ifndef NullParameter
+#define NullParameter
+#endif
+
+/*
+ * AddToLibraryTarget(libdir,libname,objlist)
+ *
+ */
+
+#ifndef AddToLibraryTarget
+#define	AddToLibraryTarget(target,libdir,libname,objlist)		@@\
+target:: libdir/libname							@@\
+									@@\
+libdir/libname:: objlist						@@\
+	-@(if [ ! -f libdir/libname ]; then \				@@\
+		$(MKDIRHIER) libdir ; \					@@\
+		echo Creating Library libdir/libname ; \		@@\
+		$(AR) libdir/libname ; \				@@\
+		RanLibrary(libdir/libname) ; \				@@\
+	fi; exit 0)							@@\
+	@echo Adding objlist To Library libdir/libname			@@\
+	$(ARMERGE) libdir/libname objlist				@@\
+	RanLibrary(libdir/libname)
+#endif /* AddToLibraryTarget */
+
+/*
+ * FileCopyWhenNeeded(fromdir,fromname,todir,toname)
+ *
+ */
+#ifndef FileCopyWhenNeeded
+#define FileCopyWhenNeeded(fromdir,fromname,todir,toname)		@@\
+todir/toname: fromdir/fromname						@@\
+	@$(MKDIRHIER) todir						@@\
+	$(CP) fromdir/fromname todir/toname
+#endif /* FileCopyWhenNeeded */
+
+/*
+ * RequireThisFileForDepend(file)
+ *
+ */
+#ifndef RequireThisFileForDepend
+#define RequireThisFileForDepend(file)					@@\
+depend:: file								@@\
+
+#endif /* RequireThisFileForDepend */
+
+/*
+ * RequireThisFileForInit(file)
+ *
+ */
+#ifndef RequireThisFileForInit
+#define RequireThisFileForInit(file)					@@\
+init:: file								@@\
+
+#endif /* RequireThisFileForInit */
+
+/*
+ * InitSubdirs(dirs)
+ *
+ */
+#ifndef InitSubdirs
+#define InitSubdirs(dirs)						@@\
+NamedTargetSubdirs(init,dirs,"initializing build tree",NullParameter,init)
+#endif /* InitSubdirs */
+
+/*
+ * MakeObjectsSubdirs(dirs)
+ *
+ */
+#ifndef MakeObjectsSubdirs
+#define MakeObjectsSubdirs(dirs)					@@\
+NamedTargetSubdirs(objects,dirs,"building objects",NullParameter,objects)
+#endif /* MakeObjectsSubdirs */
+
+/*
+ * MakeExecsSubdirs(dirs)
+ *
+ */
+#ifndef MakeExecsSubdirs
+#define MakeExecsSubdirs(dirs)						@@\
+NamedTargetSubdirs(execs,dirs,"building executables",NullParameter,execs)
+#endif /* MakeExecsSubdirs */
+
+/*
+ * GatherDescriptionSubdirs(dirs)
+ *
+ */
+#ifndef GatherDescriptionSubdirs
+#define GatherDescriptionSubdirs(dirs)					@@\
+NamedTargetSubdirs(gather,dirs,"gathering index entries",NullParameter,gather)
+#endif /* GatherDescriptionSubdirs */
+
+/*
+ * GatherDescription(from,to)
+ *
+ */
+#ifndef GatherDescription
+#define GatherDescription(from,to)					@@\
+gather::								@@\
+	-@(if [ -f from ]; then \					@@\
+		echo >> to ; \						@@\
+		cat from >> to ; \					@@\
+		echo accumulated index entry from ; \			@@\
+	fi; exit 0)
+#endif /* GatherDescription */
+
+/*
+ * ConstructIndex(target)
+ *
+ */
+#ifndef ConstructIndex
+#define ConstructIndex(target)						@@\
+target:: initindex gather						@@\
+									@@\
+initindex:								@@\
+	-@rm -f README.INDEX						@@\
+	@cat .README.INDEX.HEADER > README.INDEX
+#endif /* ConstructIndex */
+
+/*
+ * DeleteWhenCleaning(names)
+ *
+ */
+#ifndef DeleteWhenCleaning
+#define DeleteWhenCleaning(names)					@@\
+clean::									@@\
+	$(RM) -rf names							@@\
+									@@\
+squeakyclean::								@@\
+	$(RM) -rf names
+#endif /* DeleteWhenCleaning */
+
+/*
+ * InstallLibraryFile(srcdir,lib,destdir)
+ *
+ */
+#ifndef InstallLibraryFile
+#define InstallLibraryFile(srcdir,lib,destdir)				@@\
+install:: srcdir/lib							@@\
+	$(INSTALL) -c $(INSTLIBFLAGS) srcdir/lib destdir		@@\
+	RanLibrary($(RANLIBINSTFLAGS) destdir/lib)
+#endif /* InstallLibraryFile */
+
+/*
+ * CreateExportStructure(exportdir,root)
+ *
+ */
+#ifndef CreateExportStructure
+#define CreateExportStructure(exporttop,root)				@@\
+exporttop/root::							@@\
+	$(MKDIRHIER) exporttop/root
+#endif /* CreateExportStructure */
+
+/*
+ * ExportFile(exportdir,relolddir,filename)
+ *
+ */
+#ifndef ExportFile
+#define ExportFile(exportdir,relolddir,filename)			@@\
+exportsetup: exportdir/filename						@@\
+exportdir/filename: exportdir						@@\
+	( cd exportdir; $(RM) filename; $(LN) relolddir/filename filename )
+#endif /* ExportFile */
+
+/*
+ * ExportDirectory(exportdir,relolddir,dirname)
+ *
+ */
+#ifndef ExportDir
+#define ExportDir(exportdir,relolddir,dirname)				@@\
+subdirclean:: exportdir/dirname						@@\
+	@echo "Squeaky cleaning (you can re-make Makefiles later)"	@@\
+NamedSqueakyCleanSubdirs(subdirclean,exportdir/dirname)		@@\
+									@@\
+exportsetup: exportdir/dirname						@@\
+exportdir/dirname: exportdir						@@\
+	( cd exportdir; $(RM) dirname; $(LN) relolddir/dirname dirname )
+#endif /* ExportDir */
+
+/*
+ * BuildSharForExport(exportdir,root,sharfile)
+ *
+ */
+#ifndef BuildSharForExport
+#define BuildSharForExport(exportdir,root,basename)			@@\
+shar: subdirclean exportsetup						@@\
+	@echo "Building shar file.  Do 'make Makefiles' first if fails"	@@\
+	@( cd exportdir; shar -a root > basename-`sed -e "s/.*Version \([^,]*\),.*/\1/" < FWF/VERSION`.shar ) @@\
+	@echo "Placed shar file in export"
+#endif /* BuildSharForExport */
+
+/*
+ * BuildQuickSharForExport(exportdir,root,sharfile)
+ *
+ */
+#ifndef BuildQuickSharForExport
+#define BuildQuickSharForExport(exportdir,root,basename)         @@\
+quickshar: exportsetup                       @@\
+	@( cd exportdir; shar -h -a root > basename-`sed -e "s/.*Version \([^,]*\),.*/\1/" < FWF/VERSION`.shar ) @@\
+	@echo "Placed shar file in export"
+#endif /* BuildQuickSharForExport */
+
+
+/*
+ * BuildTarForExport(exportdir,root,tarfile)
+ *
+ */
+#ifndef BuildTarForExport
+#define BuildTarForExport(exportdir,root,basename)			@@\
+tar: subdirclean exportsetup 						@@\
+	@echo "Building tar file.  Do 'make Makefiles' first if fails"	@@\
+	@( cd exportdir; find . -name '*.[ch]' -exec touch {} \;; tar chvf basename-`sed -e "s/.*Version \([^,]*\),.*/\1/" < FWF/VERSION`.tar root ) @@\
+	@echo "Placed tar file in export"
+#endif /* BuildTarForExport */
+
+/*
+ * BuildQuickTarForExport(exportdir,root,tarfile)
+ *
+ */
+#ifndef BuildQuickTarForExport
+#define BuildQuickTarForExport(exportdir,root,basename)          @@\
+quicktar: exportsetup                        @@\
+	@( cd exportdir; tar chvf basename-`sed -e "s/.*Version \([^,]*\),.*/\1/" < FWF/VERSION`.tar root ) @@\
+	@echo "Placed tar file in export"
+#endif /* BuildQuickTarForExport */
+
+
+/*
+ * ObjectRuleWithFlags
+ */
+#ifndef ObjectRuleWithFlags
+#define	ObjectRuleWithFlags(flags)					@@\
+.c.o:									@@\
+	$(RM) $@							@@\
+	$(CC) -c flags $*.c
+#endif /* ObjectRuleWithFlags */
+
+/*
+ * DependTargetWithFlags(flags,sources)
+ *
+ */
+#ifndef DependTargetWithFlags
+#define	DependTargetWithFlags(flags,sources)				@@\
+DependDependency()							@@\
+									@@\
+depend::								@@\
+	$(DEPEND) -s "# DO NOT DELETE" -- flags -- sources
+#endif /* DependTargetWithFlags */
+
+/*
+ * SqueakyCleanTarget()
+ *
+ */
+#ifndef SqueakyCleanTarget
+#define	SqueakyCleanTarget()						@@\
+squeakyclean::								@@\
+	$(SQUEAKY_RM_CMD) "#"*
+#endif /* SqueakyCleanTarget */
+
+/*
+ * NamedSqueakyCleanSubdirs(name,dirs)
+ *
+ */
+#ifndef NamedSqueakyCleanSubdirs
+#define NamedSqueakyCleanSubdirs(name,dirs)				@@\
+NamedTargetSubdirs(name,dirs,"squeaky cleaning",SQUEAKY_RM_CMD='$(SQUEAKY_RM_CMD)',squeakyclean)
+#endif /* NamedSqueakyCleanSubdirs */
+
+/*
+ * SqueakyCleanSubdirs(dirs)
+ *
+ */
+#ifndef SqueakyCleanSubdirs
+#define SqueakyCleanSubdirs(dirs)					@@\
+NamedSqueakyCleanSubdirs(squeakyclean,dirs)
+#endif

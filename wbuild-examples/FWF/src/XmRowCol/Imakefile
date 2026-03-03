@@ -1,0 +1,6 @@
+WIDGET = XmRowCol
+SUPERCLASSES =
+OTHERLIBS = $(XMLIB)
+EXTRA_INCLUDES = $(MOTIFINC)
+
+#include "../StdImakefile"

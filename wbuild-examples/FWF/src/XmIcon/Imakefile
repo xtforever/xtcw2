@@ -1,0 +1,7 @@
+WIDGET = XmIcon
+SUPERCLASSES =
+OTHERLIBS = -L/usr/lib/Motif1.2 -lXm
+EXTRA_INCLUDES = -I/usr/include/Motif1.2 -I.
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

@@ -175,7 +175,23 @@ To avoid manually updating `makefile_library` for every new widget:
 -   **@ACTIONS**: Functions defined here are added to the widget's action table. They always have the signature `(Widget self, XEvent* event, String* params, Cardinal* num_params)`.
 -   **Crucial**: If you define a method like `set_values` outside the `@METHODS` block, `wbuild` might treat it as an action, leading to "undeclared identifier 'old'" errors during compilation.
 
-
+### 5. Color Handling and Inheritance
+-   **Superclass Access**: In `wbuild`, all instance variables from superclasses are directly accessible in subclasses using the `$` prefix (e.g., `$state`, `$gc`, `$xft_col`). This applies to variables in `@PUBLIC`, `@PRIVATE`, and other blocks. No extra scoping or prefixes (like `$wheel$`) are needed.
+-   **re-tex Color Integration**:
+    -   The `Backend` struct (in `re-tex/src/backend.h`) includes a `set_color(Backend *self, uint32_t color)` method for setting the current ARGB color.
+    -   Backends like `backend_xpixmap.c` and `backend_cairo.c` implement this and use the set color in `draw_char`.
+    -   To use `Wheel` colors in a `re-tex` widget, convert `XftColor` to ARGB:
+        ```c
+        @proc uint32_t xftcolor_to_argb($, int index) {
+            XftColor *xc = &$xft_col[index];
+            uint32_t r = xc->color.red >> 8;
+            uint32_t g = xc->color.green >> 8;
+            uint32_t b = xc->color.blue >> 8;
+            uint32_t a = xc->color.alpha >> 8;
+            return (a << 24) | (r << 16) | (g << 8) | b;
+        }
+        ```
+    -   Widgets like `Wlabel` and `WlistMulti` use `$state` to select the correct `Wheel` color index (`COLOR_FG_NORM + $state` or `COLOR_BG_NORM + $state`).
 
 ## todomgr Implementation Details
 -   **Data Storage**: Tasks are stored in `todo.txt`. Each line is prepended with a status character (`.`, `+`, `-`).

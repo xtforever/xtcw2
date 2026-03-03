@@ -1,0 +1,640 @@
+@CLASS XfwfTextMenu (OverrideShell)  @file = TextMenu
+
+@ The TextMenu widget implements a simple menu, consisting of a
+series of labels. It is called `TextMenu' because it has no support
+for anything other than simple strings to be displayed.
+
+The contents of the menu are defined by the |menu| resource. The
+syntax of the description is given further on. When a menu item is
+selected, a callback function is called with the number of the item
+and the label as |call_data| argument (numbering starts at 0).
+
+When the user moves from one menu item to another, another callback is
+called. This callback is called even for inactive (grayed out) items.
+It can be used, for example, to display an explanation of the selected
+item while the mouse is on it.
+
+@PUBLIC
+
+@ Currently, the menu items are all in one font.
+
+	@var <FontStruct> XFontStruct *font = <String> XtDefaultFont
+
+@ The color of the text is likewise uniform.
+
+	@var Pixel foreground = <String> XtDefaultForeground
+
+@ A tablist can be provided for tabbing to particular columns
+within the label. The string consists of numbers separated by one or
+more blanks. Each number is an offset in pixels from the left edge of
+the widget.
+
+	@var String tablist = NULL
+
+@ The menu is a string with labels separated by newlines. Each line is
+an item, except when the line consists of nothing but blanks and
+dashes. The menu will show a horizontal line there. Each menu item may
+have a shortcut letter, indicated by an underline in front of the
+letter.  Here is an example:
+
+|"_New\n_Save\nSave _As\n----\nE_xit"|
+
+The shortcut letters will be underlined in the menu.  Note that
+neither resources in a resource database nor hardcoded resources in a
+program may contain actual newlines. In a resource file, the newlines
+can be given as |\n|, in a C program they must be written as |\\n|.
+The resource manager will automatically convert them to actual
+newlines just before they are assigned to the |menu| resource.
+
+	@var String menu = "empty"
+
+@ Item |N| is active when bit |N| in |active| is set, otherwise it is
+grayed out. There is only room for 32 items in this resource, if there
+are more than 32 items in the menu (a bad idea anyway!) the rest of
+the items will always be active.
+
+	@var long active = 0xFFFFFFFF
+
+@ There should probably be more resources to control placement of the
+labels, such as margins, interline spacing, etc. For the moment, we'll
+keep it simple.
+
+@ When an item is selected, either with the mouse or with the
+keyboard, the number of the selected item is stored in |selection|.
+This resource can also be set by the application to indicate which
+item should be highlighted when the menu opens. (When a mouse is used,
+this has no effect, of course.) Items are numbered starting at 0. The
+value is -1 if no item is selected. If an inactive item is selected,
+the value is stored in |selection|, but the item is not highlighted.
+
+	@var int selection = -1
+
+@ The cursor (when not |None|) is the mouse cursor that is displayed
+when the mouse is over the widget. The value |None| causes the
+parent's cursor to be used.
+
+	@var Cursor cursor = <String> "arrow"
+
+@ The |activate| callback is called when the user has completed a
+selection. Usually that means that he released the mouse on an item or
+pressed Return. When the mouse is released outside the menu or on an
+inactive item, the callback is not called.  The number of the item and
+the label are passed as the |call_data| argument (of type
+|XfwfTextMenuData*|). Items are numbered from 0. Inactive items are
+numbered as well.
+
+	@var <Callback> XtCallbackList activate = NULL
+
+@ When the user moves from one item to another, the |changeSelection|
+callback is called, with the number of the new selection as
+|call_data|. This callback is called even when the new selection is an
+inactive (grayed out) item. It is also called when the mouse leaves
+the menu, in which case the first part of the |call_data| argument
+will be -1. The |call_data| is of type |XfwfTextMenuData*|.
+
+	@var <Callback> XtCallbackList changeSelection = NULL
+
+@EXPORTS
+
+@ The |call_data| of the callback functions is set to a struct with
+two fields. The first is the number of the item (starting at 0), the
+second is a pointer to the label. Note that it is only a pointer; the
+receiver should make a local copy if the label is to be edited.
+
+	@type XfwfTextMenuData = struct {
+	    int n;
+	    String label;
+	}
+
+@PRIVATE
+
+@ The number of items is kept in |nitems|.
+
+	@var Cardinal nitems
+
+@ The shortcut letters for each item are collected in the |shortcut|
+array.
+
+	@var char *shortcut
+
+@ The vertical offsets of each of the menu items is computed and
+stored in an array |offset|.
+
+	@var Position *offset
+
+@ The labels in the |menu| string are put into an array |item|.
+
+	@var String *item
+
+@ The positions of the horizontal lines are stored in a
+null-terminated array |line|
+
+	@var Position *line
+
+@ The GC |gc| holds the font, foreground and background for active
+items that are not selected. It is also used for the horizontal lines.
+
+	@var GC gc
+
+@ |rvgc| is for items that are highlighted, which is achieved by
+swapping foreground and background.
+
+	@var GC rvgc
+
+@ For graying out the text, another GC is used.
+
+	@var GC graygc
+
+@ The tablist is converted from string format to a list of int's for speed.
+
+	@var int *tabs
+
+@ The height of each line is also stored in a private variable.
+Currently it is just the font ascent plus the font descent, but in
+future it may be something else.
+
+	@var int itemheight
+
+@METHODS
+
+@ The conversion from string to long is needed for the |active|
+resource.
+
+@proc class_initialize
+{
+    XtAddConverter(XtRString, XtRLong, XmuCvtStringToLong, NULL, 0);
+    XtSetTypeConverter(XtRLong, XtRString, XfwfCvtLongToString,
+		       NULL, 0, XtCacheNone, NULL);
+}
+
+@ The |initialize| methods creates the first GC's and initializes the
+private variables. It sets the GC's to |NULL| and then calls utility
+routines to actually create them.
+
+The |tabs| and |itemheight| variables must be given values before
+|parse_item| is called.
+
+@proc initialize
+{
+    if ($menu) $menu = XtNewString($menu);
+    $itemheight = $font->ascent + $font->descent;
+    $tablist = XtNewString($tablist);
+    $tabs = XfwfTablist2Tabs($tablist);
+    $offset = NULL;
+    $item = NULL;
+    $line = NULL;
+    $shortcut = NULL;
+    parse_menu($);
+    $gc = NULL; make_gc($);
+    $rvgc = NULL; make_rvgc($);
+    $graygc = NULL; make_graygc($);
+    XtAddCallback($, XtNpopupCallback, add_cursor_cb, NULL);
+}
+
+@ The |set_values| method checks if any of the resources changed. If
+the menu changed, it is parsed again to set the private variables. The
+|tablist| is also parsed.
+
+@proc set_values
+{
+    Boolean need_redraw = False;
+
+    if ($old$font != $font) {
+	$itemheight = $font->ascent + $font->descent;
+	need_redraw = True;
+    }
+    if ($old$foreground != $foreground) {
+	need_redraw = True;
+    }
+    if ($old$tablist != $tablist) {
+	myfree($old$tablist);
+	$tablist = XtNewString($tablist);
+	myfree($old$tabs);
+	$tabs = XfwfTablist2Tabs($tablist);
+	need_redraw = True;
+    }
+    if ($old$menu != $menu) {
+	myfree($old$menu);
+	$menu = XtNewString($menu);
+	parse_menu($);
+	need_redraw = True;
+    }
+    if ($old$active != $active) {
+	need_redraw = True;
+    }
+    if ($old$selection != $selection) {
+	need_redraw = True;
+    }
+    return need_redraw;
+}
+
+@ The |expose| method simply draws each of the labels, using the
+appropriate utility function. Horizontal lines are drawn between items
+that are separated by dashes in the |menu|.
+
+@proc expose
+{
+    Cardinal i;
+
+    if (! XtIsRealized($)) return;
+    for (i = 0; i < $nitems; i++)
+	if (! is_active(i)) draw_grayed($, i);
+	else if (i == $selection) draw_highlight($, i);
+	else draw_label($, i, $gc);
+    if ($line)
+	for (i = 0; $line[i]; i++)
+	    XDrawLine(XtDisplay($), XtWindow($), $gc, 0, $line[i],
+		      $width, $line[i]);
+}
+
+@ The |destroy| method is needed to reclaim heap memory when the
+widget is destroyed. The widget has allocated a few strings and
+arrays, which must be freed again. (|destroy| is upward chained, we
+only need to dispose of heap space thas has been allocated in the
+TextMenu class itself.)
+
+@proc destroy
+{
+    int i;
+
+    for (i = 0; i < $nitems; i++) myfree($item[i]);
+    myfree($tablist); myfree($tabs); myfree($menu); myfree($shortcut);
+    myfree($offset); myfree($item); myfree($line);
+    XtReleaseGC($, $gc); XtReleaseGC($, $rvgc); XtReleaseGC($, $graygc);
+}
+
+@TRANSLATIONS
+
+@ The translations react both to the mouse and to key presses. A mouse
+release causes the menu to pop down. If the mouse was on an active
+item at the time, the |activate| callback will be called. The Enter
+key also pops down the menu. Mouse movement is translated to changes
+in highlights, ditto for the up and down cursor keys.
+
+	@trans <EnterWindow>: highlight()
+	@trans <LeaveWindow>: highlight()
+	@trans <BtnUp>: XtMenuPopdown() notify()
+	@trans <BtnMotion>: highlight()
+	@trans <Key>Return: XtMenuPopdown() notify()
+	@trans <Key>Escape: XtMenuPopdown()
+	@trans <Key>Up: previous()
+	@trans <Key>Down: next()
+	@trans <Key>: shortcut()
+	@trans <Map>: init() add_keyboard_grab()
+	@trans <Unmap>: remove_keyboard_grab()
+
+@ACTIONS
+
+@ When the menu appears because of a key press, one of the items
+should be highlighted. The |init| action checks the type of event and
+the |selection| variable.
+
+@proc init
+{
+    if ($selection < 0) XtVaSetValues($, XtNselection, 0, NULL);
+}
+
+@proc add_keyboard_grab
+{
+    XtGrabKeyboard($, False, GrabModeAsync, GrabModeAsync, CurrentTime);
+}
+
+@proc remove_keyboard_grab
+{
+    XtUngrabKeyboard($, CurrentTime);
+}
+
+@ The |highlight| action determines which item is selected by looking
+at the coordinates of the mouse. The previous selection, if any, is
+drawn in normal colors again and the new one, if any, is shown in
+reverse. If the selection changed, the |changeSelection| callback is
+called.
+
+@proc highlight
+{
+    int newsel, x = event->xbutton.x, y = event->xbutton.y;
+    XfwfTextMenuData data;
+
+    if (x < 0 || x >= $width)			/* Pointer outside menu */
+	newsel = -1;
+    else					/* Pointer inside menu */
+	for (newsel = $nitems - 1; newsel >= 0; newsel--)
+	    if ($offset[newsel] <= y && y < $offset[newsel] + $itemheight)
+		break;
+    if (newsel != $selection) {
+	if ($selection >= 0 && is_active($selection))
+	    draw_normal($, $selection);
+	if (newsel >= 0 && is_active(newsel))
+	    draw_highlight($, newsel);
+	$selection = newsel;
+	data.n = $selection;
+	data.label = $item[$selection];
+	XtCallCallbackList($, $changeSelection, &data);
+    }
+}
+
+@ The |notify| action invokes the |activate| callback, unless the
+current selection is inactive or there is no selection.
+
+@proc notify
+{
+    XfwfTextMenuData data;
+
+    if ($selection >= 0 && is_active($selection)) {
+	data.n = $selection;
+	data.label = $item[$selection];
+	XtCallCallbackList($, $activate, &data);
+    }
+}
+
+@ The |prev| action moves the highlight up one item, skipping inactive
+items. If there are no more items above the current one, the action
+does nothing. The |changeSelection| callback is called when there was
+a change in selection.
+
+@proc previous
+{
+    int newsel;
+    XfwfTextMenuData data;
+
+    for (newsel = $selection - 1; newsel >= 0; newsel--)
+	if (is_active(newsel)) break;
+    if (newsel >= 0) {
+	if (is_active($selection)) draw_normal($, $selection);
+	draw_highlight($, newsel);
+	$selection = newsel;
+	data.n = $selection;
+	data.label = $item[$selection];
+	XtCallCallbackList($, $changeSelection, &data);
+    }
+}
+
+@ The |next| action is analogous.
+
+@proc next
+{
+    int newsel;
+    XfwfTextMenuData data;
+
+    for (newsel = $selection + 1; newsel < $nitems; newsel++)
+	if (is_active(newsel)) break;
+    if (newsel < $nitems) {
+	if ($selection >= 0 && is_active($selection))
+	    draw_normal($, $selection);
+	draw_highlight($, newsel);
+	$selection = newsel;
+	data.n = $selection;
+	data.label = $item[$selection];
+	XtCallCallbackList($, $changeSelection, &data);
+    }
+}
+
+@ The |shortcut| action is normally called on a keypress.  The first
+argument (if any) is a number in decimal representation, indicating
+for which item this is a shortcut. If there is nu argument, the
+keypress is taken from the event and looked up in the |shortcut|
+array. If the keypress is a valid shortcut, the menu pops down and the
+|activate| callback will be called, unless the item is not active.
+
+@proc shortcut
+{
+    int newsel, n;
+    XfwfTextMenuData data;
+    char buf[3];
+
+    if (*num_params == 1) {
+	newsel = atol(params[0]);
+	if (newsel < 0 || newsel >= $nitems) {
+	    XtWarning("Incorrect arguments for shortcut action");
+	    return;
+	}
+	if (newsel == $selection || ! is_active(newsel)) return;
+    } else if (*num_params == 0) {
+	n = XLookupString(&event->xkey, buf, sizeof(buf), NULL, NULL);
+	if (n != 1) return;
+	for (newsel = 0; newsel < $nitems; newsel++)
+	    if (toupper($shortcut[newsel]) == toupper(buf[0])) break;
+	if (newsel == $nitems || ! is_active(newsel)) return;
+    } else {
+	XtWarning("Incorrect arguments for shortcut action");
+	return;
+    }
+    $selection = newsel;
+    XtPopdown($);
+    data.n = $selection;
+    data.label = $item[$selection];
+    XtCallCallbackList($, $activate, &data);
+}
+
+@UTILITIES
+
+@ The |is_active| macro returns true if item |n| is active.
+
+@def is_active(n) =
+    (n >= 8 * sizeof($active) || ($active & (1 << n)))
+
+@ The |XtRealloc| function wants to see |char*| arguments, which is
+rather inconvenient.
+
+@def myrealloc(p, size) = ((XtPointer) XtRealloc((char*) p, size))
+@def mymalloc(size) = ((XtPointer) XtMalloc(size))
+@def myfree(p) = XtFree((XtPointer) p)
+
+@ The margin between the frame and the text is given by the constant
+|MARGIN|.  It may in future be replaced by a resource.
+
+@def MARGIN = 5
+
+@ The |draw_label| routine draws the text of item |n| with the given
+GC and underlines the shortcut key.
+
+@proc draw_label($, int n, GC gc)
+{
+    Cardinal i, j;
+    Dimension w, w1;
+    Position y;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    String s;
+
+    y = $offset[n] + $font->ascent;
+    i = 0;
+    s = $item[n];
+    for (j = i; s[j] && s[j] != '\n' && s[j] != '_'; j++) ;
+    XfwfDrawImageString(dpy, win, gc, MARGIN, y, s, j - i, $tabs);
+    if (s[j] == '_') {
+	w = XfwfTextWidth($font, s, j - i, $tabs);
+	i = j + 1;
+	w1 = XTextWidth($font, s + i, 1);
+	for (j = i; s[j] && s[j] != '\n'; j++) ;
+	XfwfDrawImageString(dpy, win, gc, MARGIN + w, y, s + i, j - i,
+			    $tabs);
+	XDrawLine(dpy, win, gc, MARGIN + w, y + 2, MARGIN + w + w1 - 1,
+		  y + 2);
+    }
+}
+
+@ The |draw_normal| routine draws item |n| in normal colors.  Note
+that this routine first clears the area, to remove any previous
+highlighting. It should therefore notbe used from |expose|, since that
+method always draws on a window that is already cleared.
+
+@proc draw_normal($, int n)
+{
+    XFillRectangle(XtDisplay($), XtWindow($), $rvgc, MARGIN,
+		   $offset[n], $width - 2 * MARGIN, $itemheight);
+    draw_label($, n, $gc);
+}
+
+@ The |draw_highlight| routine draws item |n| in reversed colors.
+
+@proc draw_highlight($, int n)
+{
+    XFillRectangle(XtDisplay($), XtWindow($), $gc, MARGIN,
+		   $offset[n], $width - 2 * MARGIN, $itemheight);
+    draw_label($, n, $rvgc);
+}
+
+@ The |draw_grayed| routine draws item |n| grayed out.
+
+@proc draw_grayed($, int n)
+{
+    draw_label($, n, $gc);
+    XFillRectangle(XtDisplay($), XtWindow($), $graygc, MARGIN,
+		   $offset[n], $width - 2 * MARGIN, $itemheight);
+}
+
+@ The menu string is parsed and the result is stored in a number of
+private variables by the |parse_menu| routine. The string is split
+into lines, each line is either a label or a horizontal line. If it is
+a label it may have a shortcut key, indicated by an underline in front
+of the letter.
+
+|parse_menu| also sets the |width| and |height| of the widget. This is
+allowed, since the funtion is only called inside |initialize| and
+|set_values|.
+
+The shortcut keys are collected and put into an array and into the
+translations resource and the accelerators resource.
+
+@def LINEWD = 2
+
+@proc parse_menu($)
+{
+    Cardinal i, j, nlines = 0, p, q, n;
+    Boolean is_line;
+    char key, h[100];
+    Position y = MARGIN;
+    Dimension w;
+
+    $width = 1;
+    n = 0;
+    i = 0;
+    while ($menu[i]) {
+	is_line = True;
+	key = '\0';
+	for (; isspace($menu[i]); i++) ;
+	for (j = i; $menu[j] != '\0' && $menu[j] != '\n'; j++)
+	    if ($menu[j] == '_')
+		key = $menu[j+1];
+	    else if ($menu[j] != '-' && $menu[j] != ' ')
+		is_line = False;
+	if (is_line) {
+	    nlines++;
+	    $line = myrealloc($line, (nlines + 1) * sizeof(*$line));
+	    $line[nlines-1] = y + MARGIN;
+	    y += LINEWD + 2 * MARGIN;
+	    $line[nlines] = 0;
+	} else {
+	    n++;
+	    $item = myrealloc($item, n * sizeof(*$item));
+	    $item[n-1] = mymalloc((j - i + 1) * sizeof(*$item[n-1]));
+	    $item[n-1][0] = '\0'; strncat($item[n-1], &$menu[i], j - i);
+	    w = XfwfTextWidth($font, &$menu[i], j - i, $tabs);
+	    /* The width includes an extra '_'; is that serious? */
+	    if (w > $width) $width = w;
+	    $offset = myrealloc($offset, n * sizeof(*$offset));
+	    $offset[n-1] = y;
+	    y += $itemheight;
+	    $shortcut = myrealloc($shortcut, n * sizeof(*$shortcut));
+	    $shortcut[n-1] = key;
+	}
+	i = $menu[j] == '\0' ? j : j + 1;
+    }
+    $nitems = n;
+    $height = y + MARGIN;
+    $width += 2 * MARGIN;
+}
+
+@ The |make_gc| routine creates the GC for the normal, unhighlighted
+text and for the horizontal lines.
+
+@proc make_gc($)
+{
+    XtGCMask mask;
+    XGCValues values;
+
+    if ($gc != NULL) XtReleaseGC($, $gc);
+    values.background = $background_pixel;
+    values.foreground = $foreground;
+    values.font = $font->fid;
+    values.line_width = LINEWD;
+    mask = GCFont | GCBackground | GCForeground | GCLineWidth;
+    $gc = XtGetGC($, mask, &values);
+}
+
+@ The |make_rvgc| routine creates the GC for the highlighted text.
+
+@proc make_rvgc($)
+{
+    XtGCMask mask;
+    XGCValues values;
+
+    if ($rvgc != NULL) XtReleaseGC($, $rvgc);
+    values.foreground = $background_pixel;
+    values.background = $foreground;
+    values.font = $font->fid;
+    mask = GCFont | GCBackground | GCForeground;
+    $rvgc = XtGetGC($, mask, &values);
+}
+
+@ The |make_graygc| routine creates a GC for graying out the text. It
+contains a stipple in the background color, that will be applied over
+the text.
+
+@proc make_graygc($)
+{
+    XtGCMask mask;
+    XGCValues values;
+
+    if ($graygc != NULL) XtReleaseGC($, $graygc);
+    values.foreground = $background_pixel;
+    values.stipple =
+	XCreateBitmapFromData(XtDisplay($),
+			      RootWindowOfScreen(XtScreen($)),
+			      stip4_bits, stip4_width, stip4_height);
+    values.fill_style = FillStippled;
+    mask = GCForeground | GCStipple | GCFillStyle;
+    $graygc = XtGetGC($, mask, &values);
+}
+
+@ The |add_cursor_cb| callback routine is attached to the
+|popupCallback|. It will set the cursor in the menu.
+
+@proc add_cursor_cb($, XtPointer client_data, XtPointer call_data)
+{
+    XChangeActivePointerGrab(XtDisplay($), ButtonPressMask |
+			     ButtonReleaseMask | EnterWindowMask |
+			     LeaveWindowMask | PointerMotionMask, $cursor,
+			     XtLastTimestampProcessed(XtDisplay($)));
+}
+
+@IMPORTS
+
+@incl <X11/Xmu/CharSet.h>
+@incl "stip4.bm"
+@incl <stdio.h>
+@incl <Xfwf/TabString.h>
+@incl <Xfwf/Converters.h>
+@incl <X11/Xmu/Converters.h>
+@incl <ctype.h>

@@ -1,0 +1,13 @@
+WIDGET = Rheostat
+OTHERLIBS = -lm
+
+/* uncomment the following to get Motif version: */
+/* EXTRA_DEFINES = -DMOTIF=1 */
+
+#ifdef HPArchitecture
+SYS_LIBRARIES = $(XMLIB) -lPW
+#else
+SYS_LIBRARIES = $(XMLIB)
+#endif
+
+#include "../StdImakefile"

@@ -1,0 +1,3 @@
+XfwfHTML2 (superclass: XfwfSimpleSGML)
+	Adds heuristic rules to the SGML parser in its superclass to
+	deal with omitted tags in HTML. Doesn't yet implement forms.

@@ -1,0 +1,5 @@
+XfwfEnforcer (superclass XfwfBoard)
+	 The Enforcer widget can be used to apply location resources
+	 to a widget that is not a subclass of XfwfBoard. The Widget
+	 accepts a single child and forces that child to the same size
+	 as itself (minus the frame).

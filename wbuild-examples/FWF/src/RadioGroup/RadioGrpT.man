@@ -1,0 +1,20 @@
+.TH "RadioGroupT" "1" "5 Jul 1993" "Version 3.53" "Free Widget Foundation"
+.SH NAME
+RadioGroupT \- Test program for the RadioGroup widget
+.SH SYNOPSIS
+RadioGroupT
+.SH DESCRIPTION
+The
+.I RadioGroupT
+program creates a window with a RadioGroup widget, which contains a number
+of radio buttons. In the lower right corner is a quit button. The
+Group widget (with default resources) makes sure that at most one of
+the toggle buttons is "on".
+
+Clicking on the quit button stops the program and causes a message to
+be printed on standard output, containing the number of the
+selected toggle button, if any.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

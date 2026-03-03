@@ -43,7 +43,7 @@ endif
 CFLAGS+= -DCOMPTAG=$(COMPTAG)
 
 
-ALL: build_lib build_tools build_experimental
+ALL: build_lib build_tools build_experimental build_clean
 
 make_dirs:
 	$(MKDIR) -p $(bindir)  $(docdir)  $(PKGDATADIR)  $(incdir) $(libdir) $(srcdir)
@@ -77,6 +77,10 @@ build_lib: copy_files wbuild_widgets
 build_experimental:
 	$(MAKE) -C experimental
 
+build_clean:
+	$(MAKE) -C clean-build
+
 clean:
 	${RMDIR} build
 	$(MAKE) -C wbuild clean
+	$(MAKE) -C clean-build clean

@@ -1,0 +1,59 @@
+Hello Clark,
+
+I compiled the UserGraf widget, but I found some problems:
+
+1. The Imakefile in Hershey_Fonts doesn't include FWF.tmpl, which
+   means that C flags and other things that have been set there are
+   not passed on.
+** DONE: FWF.tmpl now included in Imakefile.
+
+2. The hershey files use ANSI C, which not everybody can
+   compile. Function main() in UGrafT.c also has an ANSI C prototype.
+** DONE: All of the ANSI I've found has been expurgated.
+
+3. Some compilers (including HP's) have trouble with functions that
+   are first declared with an ANSI prototype and later defined with an
+   old style header if one of the parameters is float (or another
+   `short' type)
+** DONE: All functions with floats have been declared with both ansi
+and k&r.  The code will now compile with gcc -traditional.
+
+4. XfwfUGLines(), XfwfUGFill(), DrawOnNormalization(),
+   XfwfUG3BreakLine() declare an array XPoint s[n] where n is not a
+   constant. I guess gcc knows what to do with it, but most other
+   compilers don't. I moved "#define MaxLineSegments" and "#define
+   MaxSegments" from UGrafTrans3 to UGrafP.h and used the product as
+   the array length, I hope that is OK.
+** DONE: Fixed by mallocing the array as needed.
+
+5. UGrafT.c uses non-existent skgeom.h and ranf.h. I removed them and
+   they don't seem to be missed.
+** Done: Removed the extra include statements.
+
+6. DefinePalette() used XStoreColors to allocate 160 (I think)
+   colors. Even after closing all windows that could be closed, I
+   still didn't have 160 free color cells. For testing, I reduced
+   MaxHues and MaxValues. (I'm experimenting with versions of my own
+   widgets that preallocate a palette as well, that made the problem
+   even worse.)
+
+8. When starting, some warnings are displayed about actions not
+   found.
+** Can't reproduce:
+
+9. Pressing `0' `1' or `2' in the test program only has an effect if
+   followed by `3'. (It produces various views of stars). This is
+   probably intended, but it took me some time to figure it out. Maybe
+   you can add a line to the manual.
+** Done: Modified the update action to have a callback, and added a
+	line to the manual. 
+
+10. Resizing the widget produces very interesting patterns :-). After
+   pressing `3' or `t', the display is redrawn in the new size.
+** DONE: Resize now clears the widget the calls the updateCallback.
+
+Bert
+-- 
+                          Bert Bos                      Alfa-informatica
+                 <bert@let.rug.nl>           Rijksuniversiteit Groningen
+    <http://www.let.rug.nl/~bert/>     Postbus 716, NL-9700 AS GRONINGEN

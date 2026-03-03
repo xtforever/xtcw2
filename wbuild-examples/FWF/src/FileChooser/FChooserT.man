@@ -1,0 +1,33 @@
+.TH "FChooserT" "1" "28 Jan 1993" "Version 1.0" "Free Widget Foundation"
+.SH NAME
+FChooserT \- Test Program For The FileChooser Widget
+.SH DESCRIPTION
+.PP
+.I FChooserT
+is a simple program that creates and tests a FileChooser widget in a
+Form with some other buttons to indicate typical usage.  The source
+may be useful is seeing how the FileChooser widget can be used.
+.PP
+The test program allows you to traverse the directory hierarchy by
+selecting files or directories from the FileChooser by clicking on
+them with the mouse. A message is printed each time the selection
+changes. The current directory is shown in the FileChooser on the
+MenuButton above the list of files. Clicking on it pops up a menu from
+which an ancestor directory can be selected if you want to go up the
+tree. This functionality is all part of the FileChooser itself.
+.PP
+The test program provides some other things to allow you to experiemnt
+with the functionality and to provide usage examples. The Text item
+below the FileChooser labelled "File" is updated whenever you select a
+file, and it can be edited, for example to enter new filenames. The
+"Ok" button exits the program, printing the current directory (from
+the FileChooser) and current file (from the Text item, in case you
+edited it). Hitting Return in the Text item is like clicking on "Ok".
+The "Cancel" button exits without printing anything. The "Sort Mode"
+button allows you change the sorting of files in the FileChooser by
+selecting a different sort mode from the menu. You can change the
+FileChooser's filter pattern (a shell-like "globbing" pattern) by
+typing in the Text item labelled "Filter" and hitting Return.
+.SH AUTHOR
+.PP
+George Ferguson, ferguson@cs.rochester.edu.

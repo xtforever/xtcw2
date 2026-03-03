@@ -1,0 +1,18 @@
+.TH "TextMenuT" "1" "12 Aug 1993" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+TextMenuT \- Test program for the XfwfTextMenu widget
+.SH DESCRIPTION
+.PP
+
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+
+
+

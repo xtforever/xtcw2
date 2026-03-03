@@ -1,0 +1,22 @@
+.TH "FrameT" "1" "28 Aug 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+FrameT \- Test program for the XfwfFrame widget
+.SH DESCRIPTION
+.PP
+.I FrameT
+opens a window with four buttons above each other.
+Each button is actually a combination of a Frame widget and an Athena
+Command widget. The Frame widgets show four different types of frames.
+The label in each button describes what you should see. Clicking on
+any of the buttons will stop the program.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+
+

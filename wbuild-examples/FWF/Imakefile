@@ -1,0 +1,61 @@
+#define IHaveSubdirs
+#define PassCDebugFlags CDEBUGFLAGS='$(CDEBUGFLAGS)'
+
+SUBDIRS = utils src
+ALLDIRS = $(INITIALDIRS) include/Xfwf bin lib man
+
+#include "FWF.tmpl"
+
+MakeDirectories(all,$(ALLDIRS))
+
+InitSubdirs($(SUBDIRS))
+MakeObjectsSubdirs($(SUBDIRS))
+MakeExecsSubdirs($(SUBDIRS))
+GatherDescriptionSubdirs($(SUBDIRS))
+
+#if BuildExecs
+AllTarget(init objects execs $(FWF_MANDIR)/fwf.man)
+#else
+AllTarget(init objects $(FWF_MANDIR)/fwf.man)
+#endif
+
+ConstructIndex(index)
+
+FileCopyWhenNeeded(.,fwf.man,$(FWF_MANDIR),fwf.man)
+InstallManPage(fwf,$(FWF_INSTALL_MANDIR))
+
+DeleteWhenCleaning(include bin lib man)
+
+CreateExportStructure(export,FWF)
+ExportDir(export/FWF,../..,utils)
+ExportDir(export/FWF,../..,src)
+ExportFile(export/FWF,../..,FWF.rules)
+ExportFile(export/FWF,../..,FWF.tmpl)
+ExportFile(export/FWF,../..,Imakefile)
+ExportFile(export/FWF,../..,.README.INDEX.HEADER)
+ExportFile(export/FWF,../..,README)
+ExportFile(export/FWF,../..,README.BUILD)
+ExportFile(export/FWF,../..,README.FWF)
+ExportFile(export/FWF,../..,README.XPM)
+ExportFile(export/FWF,../..,README.IMAKE)
+ExportFile(export/FWF,../..,README.INDEX)
+ExportFile(export/FWF,../..,README.NOTES)
+ExportFile(export/FWF,../..,README.OBTAIN)
+ExportFile(export/FWF,../..,README.TODO)
+ExportFile(export/FWF,../..,README.SUBMISSION)
+ExportFile(export/FWF,../..,BUGREPORT)
+ExportFile(export/FWF,../..,IAFA-PACKAGE)
+ExportFile(export/FWF,../..,SURVEY)
+ExportFile(export/FWF,../..,VERSION)
+ExportFile(export/FWF,../..,fwf.man)
+
+InstallLibraryFile($(FWF_LIBDIR),$(FWF_LIBNAME),$(FWF_INSTALL_LIBDIR))
+InstallLibraryFile($(FWF_LIBDIR),$(DIR_LIBNAME),$(FWF_INSTALL_LIBDIR))
+
+BuildSharForExport(export,./FWF,fwf)
+BuildTarForExport(export,./FWF,fwf)
+
+World:
+	make Makefiles
+	make clean
+	make

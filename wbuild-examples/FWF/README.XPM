@@ -1,0 +1,53 @@
+================================= README.XPM  =================================
+
+6/15/94		Version 3.671
+
+You can obtain XPM via anonymous FTP from export.lcs.mit.edu in the contrib
+directory, or from avahi.inria.fr in the pub directory.
+
+10/16/93	Version 3.57
+
+If you have the X pixmap library installed in the standard X library and
+include locations, you do not need to do anything special to use XPM.
+
+If Xpm is installed in a different location, edit FWF.tmpl to specify the
+location of the library and include file.
+
+If you do not have the library, and you don't want to use it, then set the
+HaveXpm flag to 0 in FWF.tmpl.  This will disable the XPM support.  As a
+result, certain widgets and test programs may not be as flexible, and other
+widgets may not be placed in the library altogether.
+
+8/26/1993	Version 3.56
+
+Several FWF users have noted that the FWF release doesn't build on their
+system because they do not have the Xpm libraries installed on their system.
+(Xpm is the X Pixmap color image libraries from Groupe Bull in France)
+
+In the past, FWF included a version of the xpm library with the FWF release,
+but it was removed when most versions of X11 were shipped with the Xpm library
+and include files as part of the basic distribution.  Apparently, many vendors
+do not ship Xpm with their X release, and we are discussing ways to properly
+fix the situation.
+
+In the mean time, there are two approaches to resolve this problem.
+
+(1) Get the XPM library and include files and install them on your machine.
+    Put them in the standard X include and library search path so they can
+    be found.
+(2) Do not build the sections of the library which use the Xpm support.
+    For version 3.56, this involves:
+	(a) editing FWF/src/PixelEditor/PixEditT.h to #define NO_XPM
+	(b) editing FWF/src/Imakefile to remove the following widgets from
+	    the SUBDIRS list:
+		Animator
+		Icon
+		IconBox
+		Pager
+	(c) Some widgets may include these widgets now, or in the future.  If
+	    the system won't build because a widget includes one of these above
+	    widgets, then remove that widget from the SUBDIRS list also.  Trial
+	    and error is best here.  Hopefully you won't have to do anything
+	    for this step, or at most very little.
+
+We'll try to get a real fix for this problem in the next release.

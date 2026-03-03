@@ -1,0 +1,16 @@
+.TH "VScrollbarT" "1" "11 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+VScrollbarT \- Test program for the VScrollbar widget
+.SH DESCRIPTION
+The
+.I ScrollbarT
+program creates two scrollbars, one of type
+.I XfwfScrollbar
+and one of type
+.I XfwfVScrollbar,
+which control a slider2 widget.
+Clicking and dragging the scrollbars should cause the slider to move along.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

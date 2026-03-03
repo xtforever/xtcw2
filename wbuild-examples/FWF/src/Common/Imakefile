@@ -1,0 +1,6 @@
+WIDGET =	Common
+SUPERCLASSES =
+OTHERLIBS = $(XPM_LIB) -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

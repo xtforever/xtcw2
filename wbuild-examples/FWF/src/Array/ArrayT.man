@@ -1,0 +1,36 @@
+./"" ArrayT.3  1.0  Feb 10, 1994
+./""  Copyright 94 Robert Forsman
+./""  Gnu General Public License version 2.0
+./""
+./""
+.TH ArrayT 3 "10 February 1994" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+ArrayT - Test of the Array tabular layout widget.
+
+  Just squish the ``random'' button a million times.  You'll get the
+idea.
+
+  If you really want to play, fill in the 6 blank text thingies to
+control the resources of widgets created from the ``create'' button.
+From top to bottom they are: row, column, rowspan, columnspan,
+horizontaljustify, verticaljustify.
+
+  The ``appendc'' and ``appendr'' buttons append to columns and rows
+respectively.
+
+  The ``samewidth'' and ``sameheight'' toggle the Array's samewidth
+and sameheight resources.
+
+  The two activate boxes set the expandable rows and columns (top and
+bottom), just place two integers in the proper text widget and click
+the button to the left of it.  The first integer is the row (or
+column) and the second is whether to turn the expandability on or off.
+
+  testmenu shows how broken the Ez menu widget set is.  Don't worry,
+I've written another set that works like a charm as a pulldown.  It's
+not as easy to use, but I don't see why you can't write a convenience
+procedure that builds a menu heirarchy from a string without embedding
+it in the widget code.  I don't know how the new widget family copes
+with pop-up yet, I'm working on it.
+
+  The destroy button self-destructs.  I forget why.

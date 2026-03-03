@@ -1,0 +1,99 @@
+.TH Shistogram 3 "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+.PP
+Shistogram \- Shistogram Widget (Simple Histogram Widget)
+.SH DESCRIPTION
+.PP
+#include "Shistogram.h"
+.PP
+The shistogram widget is an X toolkit compatible widget that
+displays data in a histogram.  The data must be unsigned chars
+(values 0\-255).  The widget is autoscaling, and can display a
+title and statistics.
+.SH WIDGET CLASS
+.PP
+\fIshistogramWidgetClass\fP
+.PP
+.SH RESOURCES
+.PP
+.TP
+.B \fIXtNforeground\fP 
+foreground pixel of the widget, default is XtDefaultForeground.
+.TP
+.B \fIXtNmargin\fP
+minimum margin around widget (int), default is 5.
+.TP
+.B \fIXtNselectCallback\fP
+select callback, default is NULL.
+.TP
+.B \fIXtNxAxis\fP
+show the x axis? (Boolean)
+.TP
+.B \fIXtNyAxis\fP
+show the y axis? (Boolean)
+.TP
+.B \fIXtNtitleFont\fP
+font of title (XFontStruct), default is XtDefaultFont
+.TP
+.B \fIXtNstatisticsFont\fP
+font of statistics labels (XFontStruct), default is XtDefaultFont
+.TP
+.B \fIXtNaxisFont\fP
+font of axis labels (XFontStruct), default is XtDefaultFont
+.TP
+.B \fIXtNtitleForeground\fP
+foreground pixel of title label
+.TP
+.B \fIXtNstatisticsForeground\fP
+foreground pixel of statistics label
+.TP
+.B \fIXtNaxisForeground\fP
+foreground pixel of axis labels
+.TP
+.B \fIXtNshowTitle\fP
+show title label? (Boolean)
+.TP
+.B \fIXtNshowStatistics\fP
+show statistics label? (Boolean)
+.SH ACTIONS
+.PP
+.TP
+.B \fIselect()\fP
+accpets any event
+.SH DEFAULT TRANSLATIONS
+.PP
+.sp
+.nf
+<Btn1Down>: select()
+.SH CALLBACK STRUCTURE
+.PP
+.sp
+.nf
+typedef struct _ShistogramCallbackStruct
+{
+  int reason;
+  XEvent *event;
+  int minX;
+  int maxX;
+  int minY;
+  int maxY;
+  double mean;
+  double variance;
+  int *count;
+  int number;
+} ShistogramCallbackStruct, *ShistogramCallbackPtr;
+.SH REASONS
+.sp
+.nf
+SHISTOGRAM_SELECT
+.SH CALLABLE FUNCTIONS
+.TP
+.B \fIvoid ShistogramSetData(Widget _w, unsigned char *_data, int _count);
+sets the shistogram widget's data.  
+.SH AUTHOR
+.PP
+.sp
+.nf
+John L. Cwikla, 1992
+Materials Research Laboratory Center for Computation
+University of Illinois, Champaign

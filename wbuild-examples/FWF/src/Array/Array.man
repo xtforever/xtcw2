@@ -1,0 +1,338 @@
+./"" Array.3  1.0  Jan 10, 1994
+./""  Copyright 1993,94 Robert Forsman
+./""  Gnu Library General Public License version 2.0
+./""
+./""
+.TH Array 3 "10 January 1994" "Version 3.x" "Free Widget Foundation"
+.SH NAME
+Array - a Widget that performs tabular multi-cell layout of Widget and
+RectObj children
+
+.SH VITAL STATS
+.nf
+.TA 3.0i
+Application Header file		<Xfwf/Array.h>
+Class Header file			<Xfwf/ArrayP.h>
+Class				xfwfArrayWidgetClass
+Class Name			Array
+Superclass			Constraint
+.fi
+
+  The Array widget is useful for most constraint situations.  The
+programmer has a flexible table containing as many rows and columns as
+necessary.  Each child occupies either one cell or several cells in a
+rectangular array.  The Array widget has robust geometry management
+and can usually recover from psychotic parental constraints better
+than most constraint widgets.
+
+  The Array widget can accept RectObj children and forwards expose
+events to these children as appropriate.
+
+.SH PROGRAMMER INFORMATION
+
+  The Array widget has an ideal tabular layout.  This layout is
+calculated by examining children to determine the minimum width of
+each column and minimum height of each row.  Compromises are handled
+by distributing the adjustments evenly among the columns, unless there
+are certain rows or columns designated as ``expandable''.
+
+  The following resources are specific to the Array widget:
+
+.TS H
+lw(1i) lw(1i) lw(1i) lw(1i).
+_
+.sp .6
+.TB
+Name	Class	Type	Default Value
+.sp .6
+_
+numRows	NumRows	int	0
+numColumns	NumColumns	int	0
+verticalSpacing	VerticalSpacing	Dimension	0
+horizontalSpacing	HorizontalSpacing	Dimension	0
+verticalSpacingArray	VerticalSpacingArray	DimensionList	{}
+horizontalSpacingArray	HorizontalSpacingArray	DimensionList	{}
+sameWidth	SameWidth	Boolean	False
+sameHeight	SameHeight	Boolean	False
+drawShadows	DrawShadows	Boolean	False
+topShadowPen	TopShadowPen	XfwfPenPtr	XtDefaultTopShadowPen
+bottomShadowPen	BottomShadowPen	XfwfPenPtr	XtDefaultBottomShadowPen
+.sp .6
+_
+.TE
+
+.IP \fBnumRows\fP
+A read-only resource that counts up how many rows exist in the table.
+This is calculated by scanning the children and adding one to the
+maximum cell row number occupied by a managed child.
+.IP \fBnumColumns\fP
+A read-only resource that counts up how many columns exist in the table.
+This is calculated by scanning the children and adding one to the
+maximum cell column number occupied by a managed child.
+.IP \fBverticalSpacing\fP
+The default vertical spacing around a child widget.  The distance
+between adjacent children is twice this.  When a child is added to the
+bottom of the Array parent, the default vertical spacing is used to
+fill the verticalSpacingArray.
+.IP \fBhorizontalSpacing\fP
+The default horizontal spacing around a child widget.  The distance
+between adjacent children is twice this.  When a child is added to the
+bottom of the Array parent, the default horizontal spacing is used to
+fill the horizontalSpacingArray.
+.IP \fBverticalSpacingArray\fP
+An array of Dimensions that give the spacing between rows.  If this
+resource is unmodified by the programmer its first and last entries
+are the value of \fBverticalSpacing\fP and the values in between are
+twice \fBverticalSpacing\fP.  This resource is not modifiable via
+XtSetValues.
+.IP \fBhorizontalSpacingArray\fP
+An array of Dimensions that give the spacing between columns.  If this
+resource is unmodified by the programmer its first and last entries
+are the value of \fBhorizontalSpacing\fP and the values in between are
+twice \fBhorizontalSpacing\fP.  This resource is not modifiable via
+XtSetValues.
+.IP \fBsameWidth\fP
+Enabling this boolean resource forces all the cells to be the same width.
+.IP \fBsameHeight\fP
+Enabling this boolean resource forces all the cells to be the same height.
+.IP \fBdrawShadows\fP
+Enabling this boolean resource turns on the drawing of 3-d shadows
+around the cells.  These shadows are drawn before any RectObj
+children's redisplay methods are called, so children drawing on the
+parent's window could overwrite the borders.
+.IP \fBtopShadowPen\fP
+This is an XfwfPenPtr used to draw the top shadow.
+.IP \fBbottomShadowPen\fP
+This is an XfwfPenPtr used to draw the bottom shadow.
+
+The following constraint resources are used by the Array widget to
+place its children
+
+.TS H
+lw(1i) lw(1i) lw(1i) lw(1i).
+_
+.sp .6
+.TB
+Name	Class	Type	Default Value
+.sp .6
+_
+row	Row	int	0
+column	Column	int	0
+rowSpan	RowSpan	int	1
+columnSpan	ColumnSpan	int	1
+verticalJustify	VerticalJustify	XfwfVerticalJustify	XfwfVJcenter
+horizontalJustify	HorizontalJustify	XfwfHorizontalJustify	XfwfHJcenter
+.sp .6
+_
+.TE
+
+.IP \fBrow\fP
+Specifies the starting row of the child's cell span
+.IP \fBcolumn\fP
+Specifies the starting column of the child's cell span
+.IP \fBrowSpan\fP
+Specifies how many rows the child will span.  A value of
+\fBXfwfArrayHorizon\fP will cause the child to span all the rows
+beneath it in the Array widget.  A value of \fBXfwfArrayInfinity\fP
+will have a similar effect, but the child will stretch beyond the
+tabular array.
+.IP \fBcolumnSpan
+Specifies how many columns the child will span.  A value of
+\fBXfwfArrayHorizon\fP will cause the child to span all the columns to
+the left of it in the Array widget.  A value of
+\fBXfwfArrayInfinity\fP will have a similar effect, but the child will
+stretch beyond the tabular array.
+
+The difference between \fBXfwfArrayHorizon\fP and
+\fBXfwfArrayInfinity\fP deserves a little more explanation.  Horizon
+means that the child takes up as many columns/rows as there are.
+Infinity means it stretches beyond this.
+
+If the Array widget is larger than the ideal size and there are no
+infinite-span children, all cells will expand to fill up the space.
+
+If there is an infinite-span child, it will expand to fill the extra
+space, but the tabular array will \fBnot\fP.  The child will extend
+beyond the end of the table and the cells will maintain their ideal
+widths or heights.
+
+.SH TYPEDEFS
+
+  The following types are defined in the public header file for the
+programmer's use.
+
+.nf
+.TA 0.5i
+typedef	Dimension	*DimensionList;
+
+typedef enum _XfwfVerticalJustify {
+	XfwfVJtop,
+	XfwfVJbottom,
+	XfwfVJcenter,
+	XfwfVJfill,
+} XfwfVerticalJustify;
+
+typedef enum _XfwfHorizontalJustify {
+	XfwfHJleft,
+	XfwfHJright,
+	XfwfHJcenter,
+	XfwfHJfill,
+} XfwfHorizontalJustify;
+.fi
+
+.SH FUNCTIONS
+
+  The following functions are defined for the programmer's convenience:
+
+.nf
+Widget XfwfArray_AppendWidgetToRow (
+	_Xconst char*	/* name */,
+	WidgetClass	/* wclass */,
+	Widget	/* parent */,
+	ArgList	/* args */,
+	Cardinal	/* nargs */);
+
+Widget XfwfArray_VanlAppendWidgetToRow (
+	_Xconst char*	/* name */,
+	WidgetClass	/* wclass */,
+	Widget	/* parent */,
+	XtVarArgsList	/* args */);
+
+Widget XfwfArray_VaAppendWidgetToRow (
+	_Xconst char*	/* name */,
+	WidgetClass	/* wclass */,
+	Widget	/* parent */,
+	...);
+.fi
+
+  These functions all append a widget to the table beyond the last
+column of a row.  If, for example, there were two widgets in the
+array, one in column 2 spanning 2 columns, but not in the row of the
+new child, and one in column 0 spanning to the \fBHorizon\fP or
+\fBInfinity\fP in the same row as the new child then the last column
+in the row would be column 3 (because the horizon-extent sibling
+extends to column 3).  The widget would be added in column 4, and the
+sibling with \fBHorizon\fP or \fBInfinite\fP extent would now extend
+to column 4.
+
+
+.nf
+Widget XfwfArray_AppendWidgetToColumn (
+	_Xconst char*	/* name */,
+	WidgetClass	/* wclass */,
+	Widget	/* parent */,
+	ArgList	/* args */,
+	Cardinal	/* nargs */);
+
+Widget XfwfArray_VanlAppendWidgetToColumn (
+	_Xconst char*	/* name */,
+	WidgetClass	/* wclass */,
+	Widget	/* parent */,
+	XtVarArgsList	/* args */);
+
+Widget XfwfArray_VaAppendWidgetToColumn (
+	_Xconst char*	/* name */,
+	WidgetClass	/* wclass */,
+	Widget	/* parent */,
+	...);
+.fi
+
+  These functions all append a widget to the table beyond the last row
+of a particular column.  If, for example, there were 3 widgets in a
+column, one in row 0 spanning 1 row, one in row 1 spanning 1 row, and
+1 in row 1 spanning 2 rows, the last row in the table would be row 2
+(the third widget spans rows 1-2).  A widget appended to this column
+would start at row 3.
+
+.nf
+void XfwfArray_SetHorizontalSpacing (
+	Widget	/* w */,
+	int	/* column */,
+	int	/* spacing */ );
+
+void XfwfArray_SetVerticalSpacing (
+	Widget	/* w */,
+	int	/* row */,
+	int	/* spacing */ );
+.fi
+
+  These functions set the spacing before rows or columns.
+\fIspacing\fP refers to the total space between adjacent cells.
+Seting the spacing of row \fIn\fP affects the distance between cells
+in row \fIn\fP and row \fIn-1\fP.
+
+.nf
+
+void XfwfArray_AppendHorizontalSpacing (
+	Widget	/* w */,
+	Dimension	/* spacing */ );
+
+void XfwfArray_AppendVerticalSpacing (
+	Widget	/* w */,
+	Dimension	/* spacing */ );
+
+.fi
+
+  These functions set the spacing between the last row/column and the
+edge of the Array widget.
+
+.nf
+void XfwfArray_SetExpandableColumn (
+	Widget	/*w*/,
+	int	/*column*/,
+	int	/*expandableP*/ );
+
+void XfwfArray_SetExpandableRow (
+	Widget	/*w*/,
+	int	/*row*/,
+	int	/*expandableP*/ );
+.fi
+
+  These functions alter whether a row or column is expandable.
+Expandable rows and columns will be preferred to increase in size when
+the Array is larger than its ideal size.
+
+.SH PROBLEMS
+
+  This constraint widget should respond sanely to insane parental
+constraints.  If you can ever trick the Array into misbehaving, I want
+to know about it.
+
+  As of February 1994 this widget has not been tested by anyone but
+the widget author.  If you have \fBany\fP problems at all with this
+widget, contact the author.  He has a debugging version of libXt.a and
+is not afraid to use it.
+
+.SH "COPYRIGHT"
+Copyright (C) 1993,94 Robert Forsman
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free
+Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+.SH "ACKNOWLEDGMENTS"
+
+  Thanks to Brian Totty for creating the Free Widget Foundation and
+maintaining the distribution.
+
+  Thanks to the Navy and Airforce whose grants paid for some of the
+time it took to enhance this software from my original version.
+
+.SH "AUTHOR"
+.nf
+Robert Forsman
+thoth@cis.ufl.edu
+http://www.cis.ufl.edu/~thoth
+University of Florida
+Department of Computer and Information Science
+.fi

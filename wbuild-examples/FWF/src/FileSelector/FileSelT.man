@@ -1,0 +1,18 @@
+'\" t
+.TH "FileSelT" "1" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+FileSelT \- Test Program For The FileSelector Widget
+.SH DESCRIPTION
+.PP
+.I FileSelT
+is a simple program that creates and test a FileSelector widget.  The
+source may be useful is seeing how the FileSelector widget can be used.
+.SH AUTHOR
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi

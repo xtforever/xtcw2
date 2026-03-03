@@ -1,0 +1,136 @@
+.\"remove .ig hn for full docs
+.de hi
+.ig eh
+..
+.de eh
+..
+.TH "" 3 "" "Version 1.0" "RowCol Widget"
+.SH NAME
+RowCol Widget
+.SH DESCRIPTION
+The RowCol widget forces all its children into rows and columns. The
+children keep their preferred size, position is managed by XmNpositon resource.
+Resources determine how many rows or columns their should be
+(or as many as will fit) and if the children should be layed out in
+rows or in columns. In both methods, the children are placed on a
+grid, the size of which is determined by the width (height) of the
+widest (tallest) child.
+
+The children can be aligned in several ways: they can be placed in the
+center of their grid cell or against the edges. This is controlled by
+a resource of type \fIAlignment\fP.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+RowCol
+Name	Class	Type	Default
+XmNstoreByRow	XmCStoreByRow	Boolean 	True 
+XmNrows	XtCRows	int 	0 
+XmNcolumns	XmCColumns	int 	0 
+XmNalignment	XmCAlignment	Alignment 	XmNopLeft 
+XmNshrinkToFit	XmCShrinkToFit	Boolean 	False
+.TE
+.ps +2
+
+.SS "Inherited resources"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+RowCol
+Name	Class	Type	Default
+XmNposition	XmCposition	Position 	0 
+.TE
+.ps +2
+
+
+.TP
+.I "XmNstoreByRow"
+The child widgets can be layed out in rows (left to right) or in
+columns (top to bottom). The resource \fIstoreByRow\fP can be \fITrue\fP or
+\fIFalse\fP. \fITrue\fP means children are added to the right of the previous
+one until the row is full, like words are added to a text. \fIFalse\fP
+means children are added below the previous one, until the column is
+full.
+
+.hi
+Boolean  storeByRow = True 
+.eh
+
+.TP
+.I "XmNrows"
+The number of rows can be set with \fIrows\fP, or the number of columns
+can be set with \fIcolumns\fP. If both are non-zero, \fIrows\fP will be
+ignored.  If \fIrows\fP is zero, there will be as many rows as needed. If
+\fIcolumns\fP is zero, there will be as many columns as needed. However,
+if both are zero, there will be as many columns as will fit in the
+current width of the RowCol widget. By default, both \fIrows\fP and
+\fIcolumns\fP are zero.
+
+.hi
+int  rows = 0 
+.eh
+
+.TP
+.I "XmNcolumns"
+
+.hi
+int  columns = 0 
+.eh
+Number of columns in RowCol widget. See \fIXmNrows\fP for more details
+.TP
+.I "XmNalignment"
+The area of the RowCol widget is partitioned into rectangular cells
+(a grid). The cells are just large enough to contain the widest and
+the tallest of the children. Within the cell, the children can be put
+in the top left corner (the default) or against one of the edges or in
+the center.  This is set with the \fIalignment\fP resource. The type
+\fIAlignment\fP is defined in the ancestor class `Common'.
+
+.hi
+Alignment  alignment = XmTopLeft 
+.eh
+
+.TP
+.I "XmNshrinkToFit"
+The resource \fIXmshrinkToFit\fP determines how the size of the RowCol
+widget itself is computed. When it is \fIFalse\fP (default), the
+\fIlocation\fP resource is used to compute the widget's preferred size.
+When the value is \fITrue\fP, the preferred size is computed fromthe total
+width and height of the children. For example, when the widest child
+has a width of \fIw\fP and \fIcolumns > 0\fP, the preferred width will be
+\fIcolumns * w +\fP frame width. A similar computation is used for the
+height. If \fIcolumns > 0\fP, only the height is computed this way. If
+\fIcolumns = 0, rows > 0\fP, only the width is computed.
+
+.hi
+Boolean  shrinkToFit = False 
+.eh
+
+
+.SS "Constraint resources"
+
+.TP
+.I "XmNposition"
+If XmPosition is set to :
+
+ . 0 : positione child to the end of the list,
+ . 1 : child is the fist in the RowCol list,
+ . 1 to num-child : take the specified position,
+ . others values are identical as 0.
+
+.SS "Autor"
+ . Marc Quinton/STNA/DGAC/France,
+ . email : quinton@stna7.stna.dgac.fr,
+ . url   :,
+   .http://www.stna7.stna.dgac.fr/~quinton/motif/7su/Rowcol/, 
+   .http://www.stna7.stna.dgac.fr/~quinton/

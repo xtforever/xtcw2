@@ -1,0 +1,3 @@
+Frame	(superclass: Composite)
+	The Frame widget can be used to put four types of 3D frames
+	around other widgets.

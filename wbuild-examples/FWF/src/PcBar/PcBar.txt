@@ -1,0 +1,6 @@
+PcBar   A small widget, subclassed from Core, that can be used to indicate
+        the progress that is made by an application.  The widget displays 
+        a percentage from 0 to 100 by means of a horizontal or vertical bar
+        drawn in a window.  The actual percentage value may optionally 
+        be displayed as text in the middle of the window.
+

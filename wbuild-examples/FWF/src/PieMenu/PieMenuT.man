@@ -1,0 +1,20 @@
+.TH "PieMenuT" "1" "14 Feb 1994" "" "Free Widget Foundation"
+.SH NAME
+PieMenuT \- Test program for the XfwfPieMenu widget
+.SH DESCRIPTION
+.PP
+When a mouse button is pressed on the label, a pie menu appears. The
+Quit item stops the program, the other items merely print their label.
+The four items should each have a different background color.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+
+
+

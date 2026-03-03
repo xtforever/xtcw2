@@ -1,0 +1,120 @@
+.TH "Histogram" "3" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH Name
+Histogram \- histogramming widget
+.SH Synopsis
+#include <X11/Intrinsic.h>
+#include <X11/Histogram.h>
+
+widget = XtCreateManagedWidget(name, histogramWidgetClass, ...);
+.SH Class Hierarchy
+Core->Histogram
+.SH Description
+Histogram displays data in a histogram display (vertical bars).  The
+widget is flexible in terms of auto-scaling and labeling.
+.SH Resources
+This widget uses several floating point resources.  Note that there is a
+problem using the XtSetArg macro with floating point values.  Using floating
+point values with XtSetArg will cause the floats to be inadvertently converted
+to integers by the macro.  It is suggested that programmers first assign the
+floating point value to a variable which is a union of both float and int data
+types.  The data can be assigned to the variable via the float tag, and then
+passed to XtSetArg via the int tag to bypass the accidental type conversion.
+This is demonstrated in the HistogramT.c source.
+
+In addition to the resources defined by superclasses, this widget
+defines the following:
+.TS
+tab(/) ;
+lB lB lB lB.
+Name/Class/Type/Default
+.T&
+lB l l l.
+XtNwidth,XtCWidth,XtRDimension,600
+XtNheight,XtCHeight,XtRDimension,250
+XtNbackground,XtCBackground,XtRPixel,white
+XtNbinWidth,XtCValue,XtRFloat,0.5
+XtNorigin,XtCValue,XtRFloat,0.0
+XtNbinCount,XtCValue,XtRInt,20
+XtNscale,XtCValue,XtRInt,10
+XtNscaleFactor,XtCValue,XtRFloat,2.0
+XtNshowBinInfo,XtCBoolean,XtRBoolean,False
+XtNshowXAxis,XtCBoolean,XtRBoolean,True
+XtNshowYAxis,XtCBoolean,XtRBoolean,True
+XtNshowAxisLabels,XtCBoolean,XtRBoolean,True
+XtNautoscale,XtCBoolean,XtRBoolean,True
+XtNautobins,XtCBoolean,XtRBoolean,False
+XtNshowOutliers,XtCBoolean,XtRBoolean,False
+XtNdiscrete,XtCBoolean,XtRBoolean,False
+XtNshowStats,XtCBoolean,XtRBoolean,False
+XtNpercentMode,XtCBoolean,XtRBoolean,True
+XtNverticalTicks,XtCValue,XtRInt,10
+XtNbar,XtCForeground,XtRPixel,Blue
+XtNaxis,XtCForeground,XtRPixel,Black
+XtNtext,XtCForeground,XtRPixel,Brown
+XtNaxisLabel,XtCForeground,XtRPixel,Black
+XtNtextFont,XtCFont,XtRFontStruct,variable
+XtNaxisFont,XtCFont,XtRFontStruct,6x13
+XtNcallback,XtCCallback,XtRCallback,NULL
+XtNtitle,XtCLabel,XtRString,NULL
+.SH Callbacks
+The callback named "callback" is triggered when button one (by default)
+is clicked on the widget.  The callback is called from within
+an action called "Click" so the translation can be modified.
+
+The callback functions on this callback list are passed a pointer to a
+HistogramReturnStruct as call_data.  HistogramReturnStruct is as
+follows:
+
+typedef struct _HistogramReturnStruct
+{
+    int bin_number;
+    int count;
+} HistogramReturnStruct;
+
+The bin number and count in the structure correspond to the
+bin where the button was clicked.
+.SH Public Functions
+void HistogramAddSample(widget, value)
+	HistogramWidget widget;
+	float sample;
+
+HistogramAddSample adds the sample
+point <sample> to the widget, redrawing it as necessary.
+
+void HistogramAddMultipleSamples(widget, sample_count, sample_array)
+	HistogramWidget widget;
+	int sample_count;
+	float *sample_array;
+
+HistogramAddMultipleSamples and adds <sample_count>
+samples from the array <sample_array> to the histogram widget <widget>
+and then redraws the entire widget.  This is intended to be more
+efficient than redrawing the widget after adding each sample.
+
+int HistogramGetBinCount(widget, bin_num)
+	HistogramWidget widget;
+	int bin_num;
+
+HistogramGetBinCount returns the count of samples withing the bin
+numbered <bin_num> of the histogram widget <widget>.  -1 is returned
+on error.
+
+void HistogramDumpWidgetState(fp, widget)
+	FILE *fp;
+	HistogramWidget widget;
+
+HistogramDumpWidgetState prints out parts of
+the widget state to the file pointer <fp>.
+.SH Restrictions
+This widget is not complete.  Resources can not be dynamically changed, and
+many features have been omitted.  It is included in the FWF package because
+several people have found it useful for quick data display.
+.SH AUTHOR
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi

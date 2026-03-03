@@ -1,0 +1,53 @@
+Tabs
+
+N.B.
+	The widget files are computer-generated. The real source is
+	*.w. It has been processed with Wbuild (available by
+	anonymous ftp from ftp.let.rug.nl)
+
+Author
+	Bert Bos <bert@let.rug.nl>
+	Alfa-informatica, Rijksuniversiteit Groningen, The Netherlands
+	July 1994
+
+	rotated.c & rotated.h are copyright Alan Richardson
+	(mppa3@syma.sussex.ac.uk), see, e.g.,
+	<ftp://hpux.csc.liv.ac.uk/hpux/X11/Misc/xvertext-5.0/> for the
+	full package and the manuals.
+
+History:
+
+1.0	(29 Jul '94) first version (copied from XfwfTabs, v2.0)
+1.1	(9 Feb '95) The main tab is now larger than the
+	others. textMargin resource added.
+2.0	(9 Jun '95) Added $orientation, $skew, $tabWidthPercentage;
+	added clipping to rotated.c. Added #resize and XClearArea to
+	resize.
+2.1	(10 Apr '96) fixed division by zero when there is only one tab (thanks to 
+
+Copyright
+
+	Copyright 1995 Bert Bos (hereafter `the author')
+
+Conditions of use
+
+	Permission to use, copy, modify, distribute, and sell this
+	software and its documentation for any purpose is hereby
+	granted without fee, provided that the above copyright notice
+	appears in all copies and that both that copyright notice and
+	this permission notice appear in supporting documentation, and
+	that the name of the author not be used in advertising or
+	publicity pertaining to distribution of the software without
+	specific, written prior permission. The author makes no
+	representations about the suitability of this software for any
+	purpose. It is provided "as is" without express or implied
+	warranty.
+
+	The author disclaims all warranties with regard to this
+	software, including all implied warranties of merchantability
+	and fitness, in no event shall the author be liable for any
+	special, indirect or consequential damages or any damages
+	whatsoever resulting from loss of use, data or profits,
+	whether in an action of contract, negligence or other tortuous
+	action, arising out of or in connection with the use or
+	performance of this software.

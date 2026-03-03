@@ -1,0 +1,74 @@
+
+CHANGES to XfwfRheostat widget:
+
+    11-Oct-1994
+	Modified RheostatT test program:
+	it now has a 'quit' button, and has two dial widgets 
+	whose values are linked together.
+
+	By a suggestion from Daniel V. Klein, 
+	in Motif version, set keyboard focus to the widget
+	on Set() action (if caused by ButtonPress event).
+
+	Added Rheostat.txt as per FWF submission guidelines.
+
+	Updated manpage to include tickThickness resource,
+	acknowledgments.
+
+    26-Sep-1994
+	(Rheostat.c r1.6->r1.6.1.1; some parts merged into r1.8)
+	Daniel V. Klein (dvk@lonewolf.com) made several improvements:
+
+	Most notable is that the widget does not erase and redraw
+	itself when the value changes; this has made a tremendous
+	performance increase.
+
+	Some changes to geometry calculation, including a
+	QueryGeometry method.
+
+	Dials can have reversed ranges (i.e., largest value clockwise
+	of the smallest).
+
+	Some changes to drawing parameters: Tick marks and arc are
+	now CapButt instead of CapRound and the indicator is now JoinRound
+	instead of JoinMiter.  These gave problems with thick lines.
+
+	Added a meta-resource called "foreground", which sets all of
+	arrow_color, tick_color, and dial_color.
+
+    14-Sep-1993
+	(Rheostat.c r1.6->r1.7)
+	BUGFIX: With tick gravity on, clicking near a tick corresponding to
+	a *negative* value caused the indicator to jump one tick to the
+	right of the correct tick.  Thanks to Greg Janee <greg@cs.ucsb.edu>
+	for this fix.
+
+    15-Jul-1993
+	(Rheostat.c r1.5->r1.6)
+	In Set() action, peg the indicator to one side if the value
+	is out of range instead of just freezing.
+
+
+    07-Jul-1993
+	Rheostat.man didn't format right using groff (probably
+	didn't work with nroff either.)
+
+    25-Jun-1993
+	BUGFIX: (Rheostat.c) calculate_position was ignoring minimumValue.
+	(thanks to James R. R. Service for this fix)
+
+    21-Sep-92
+	Renamed all global widget type and structure names to begin
+	with [Xx]fwf.
+
+	The width/height/radius initialization logic has been cleaned
+	up some; it now checks the radius against the arrow dimensions.
+
+	RheostatT now has command-line options.
+
+	*fillArrow is now OFF by default.  It was just too slow on
+	some servers.
+
+	Uses the '#include <Xfwf/...>' convention.
+	XDrawArrow() is now XfwfDrawArrow(), and is public.
+

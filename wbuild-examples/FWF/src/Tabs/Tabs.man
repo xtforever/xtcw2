@@ -1,0 +1,287 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfTabs
+.SH DESCRIPTION
+The \fIXfwfTabs\fP widget displays a series of tabs, similar to the
+alphabet tabs along the top of index cards. One tab, the front one, is
+completely visible, the others are partially hidden behind it. Each of
+the tabs can be clicked on with the mouse.
+
+Although \fIXfwfTabs\fP is a descendant of \fIXfwfBoard\fP, \fIXfwfFrame\fP and
+\fIXfwfCommon\fP, it does not currently use many of the resources defined
+by those classes. In particular, this implementation does not take
+part in keyboard traversal, and it has no 3D frame. The only resources
+that it uses are the location resources defined in \fIXfwfBoard\fP.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfTabs
+Name	Class	Type	Default
+XtNforeground	XtCForeground	Pixel 	XtDefaultForeground 
+XtNorientation	XtCOrientation	TabsOrientation 	XfwfUpTabs 
+XtNlefttabs	XtCLefttabs	int 	0 
+XtNrighttabs	XtCRighttabs	int 	0 
+XtNlabels	XtCLabels	StringArray 	NULL 
+XtNtabWidthPercentage	XtCTabWidthPercentage	int 	50 
+XtNcornerwidth	XtCCornerwidth	int 	3 
+XtNcornerheight	XtCCornerheight	int 	3 
+XtNtextmargin	XtCTextmargin	int 	3 
+XtNtabcolor	XtCTabcolor	Pixel 	copy_bg 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNactivate	XtCActivate	Callback	NULL 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNforeground"
+The foreground color is the color used to draw the
+text. \fIhlForeground\fP is the foreground for highlighted text.
+
+	
+
+.TP
+.I "XtNorientation"
+The orientation of the tabs can be \fIXfwfUpTabs\fP, \fIXfwfDownTabs\fP,
+\fIXfwfLeftTabs\fP or \fIXfwfRightTabs\fP. In the case of \fIXfwfLeftTabs\fP the
+text is rotated 90 degress counterclockwise before being drawn, in
+the case of \fIXfwfRightTabs\fP the labels are rotated clockwise.
+
+There are converters that convert to and from strings \fI"up"\fP,
+\fI"uptabs"\fP, \fI"left"\fP, \fI"lefttabs"\fP, etc, upper and lower case.
+
+	
+
+.TP
+.I "XtNlefttabs"
+\fIlefttabs\fP is the number of partially visible tabs to the left of
+the main one. (or above the main one, if the orientation is left or
+right.)
+
+	
+
+.TP
+.I "XtNrighttabs"
+The number of tabs to the right of the main one.
+
+	
+
+.TP
+.I "XtNlabels"
+The labels on each of the tabs must be simple strings. There is no
+support for multiline labels or different fonts in this version of
+\fIXfwfTabs\fP. The array \fIlabels\fP should contain no less than \fIlefttabs +
+righttabs + 1\fP strings. The widget makes private copies of the array
+and of the strings.
+
+The leftmost tab displays \fIlabels[0]\fP. Note that the labels may be too
+large to fit in the tab. In that case they are clipped. The left tabs
+show only the initial part of the labels, the right tabs show the last
+part of their labels and the main (front) tab shows the middle part of
+its label.
+
+	
+
+.TP
+.I "XtNtabWidthPercentage"
+The width of the tabs is given as a percentage of the total width
+(or height, in case of left or right oriented tabs). Default is 50
+percent. To make sure that the tabs don't overlap, use a
+\fItabWidthPercentage\fP less than 100 divided by the number of tabs
+(i.e., \fIlefttabs + righttabs + 1\fP).
+
+	
+
+.TP
+.I "XtNcornerwidth"
+The tabs have diagonal corners, the size of which is given with the
+\fIcornerwidth\fP and \fIcornerheight\fP resources. \fIcornerwidth\fP is the size
+of the corner in the direction parallel to the text.
+
+	
+
+.TP
+.I "XtNcornerheight"
+The \fIcornerheight\fP resource is the size of the corner in the
+direction perpendicular to the text.
+
+	
+
+.TP
+.I "XtNtextmargin"
+In case the \fItabWidthPercentage\fP is 0, some extra space can be added
+between the edge of each tab and the label.
+
+	
+
+.TP
+.I "XtNtabcolor"
+The color of the left and right tabs. The main (front) tab is drawn
+in the \fIbackground\fP color. Unless the \fItabcolor\fP has been specified
+explicitly, the left and right tabs have the same color as the main
+tab.
+
+	
+
+.TP
+.I "XtNfont"
+The text is drawn in the font which is given as the \fIfont\fP resource.
+
+	
+
+.TP
+.I "XtNactivate"
+When the user clicks on a tab, a callback function is called. The
+\fIcall_data\fP argument to the callback will be a relative number: 0 if
+the user clicked on the main tab, -1 if he clicked on the tab
+immediately to the left, +1 if he clicked on the first right tab, and
+higher numbers for tabs that are further removed from the main one.
+
+	
+
+.TP
+.I "XtNtraversalOn"
+Currently no keyboard traversal.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Pixel 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Pixel 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Pixel 	XtDefaultForeground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNuserData	XtCUserData	Pointer	NULL 
+XtNxcc	XtCXCc	XCC 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+.nf
+
+.B type
+ TabsOrientation = enum {
+            XfwfUpTabs, XfwfDownTabs, XfwfLeftTabs, XfwfRightTabs,
+        }
+.fi
+
+.SS "Translations"
+
+.nf
+<Btn1Down>,<Btn1Up>: activate() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "activate
+

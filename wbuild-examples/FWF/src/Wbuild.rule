@@ -1,0 +1,28 @@
+#if HaveWbuild
+
+/*
+Rules for Wbuild
+include this file after WIDGET and SUPERCLASSES are defined
+*/
+
+/**/# -h .	- header files generated in this directory
+/**/# -p Xfwf	- include directives of the form <Xfwf/headerfile>
+/**/# -n	- generate Nroff docs, rather than TeX
+
+WBUILD = wbuild -h . -p Xfwf -n
+
+WIDGETDOC = `echo $(WIDGET)|cut -c1-8`.doc
+
+XCOMM Command to squeeze multiple blank lines into a single one;
+XCOMM ssp works, if you have it, cat -s works on some systems;
+XCOMM more -s works on some others...
+SSP = more -s
+
+/* RequireThisFileForInit($(WIDGET).c) */
+
+./$(WIDGET).man ./$(WIDGET).h $(WIDGET)P.h $(WIDGET).c: $(SUPERCLASSES) $(WIDGET).w
+	$(WBUILD) -o $(WIDGET) $(SUPERCLASSES) $(WIDGET).w
+	$(SSP) <$(WIDGETDOC) >$(WIDGET).man
+	$(RM) $(WIDGETDOC)
+
+#endif /* HaveWbuild */

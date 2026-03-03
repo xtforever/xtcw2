@@ -1,0 +1,2 @@
+XfwfButton (superclass: XfwfLabel)
+	This is simply an XfwfLabel with a callback for mouse clicks.

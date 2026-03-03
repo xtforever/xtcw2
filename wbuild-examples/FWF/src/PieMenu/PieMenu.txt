@@ -1,0 +1,3 @@
+XfwfPieMenu (superclass: OverrideShell)
+	A disk-like pop-up menu with menu items as pie segments.
+	Probably the fastest type of menu.

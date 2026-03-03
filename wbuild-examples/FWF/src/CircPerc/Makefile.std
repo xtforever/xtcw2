@@ -1,0 +1,15 @@
+OBJS= CircPercT.o CircPerc.o
+CFLAGS=-I/usr/include/X11R4 -I.. -Aa
+LFLAGS=-L/usr/lib/X11R4
+
+all: CircPercT
+	ls -l CircPercT
+
+CircPercT: $(OBJS)
+	cc -o $@ $(OBJS) $(LFLAGS) -lXt -lX11
+
+CircPercT.o: CircPercT.c
+	cc -c $(CFLAGS) -o $@ CircPercT.c
+
+CircPerc.o: CircPerc.c CircPerc.h CircPercP.h
+	cc -c $(CFLAGS) -o $@ CircPerc.c

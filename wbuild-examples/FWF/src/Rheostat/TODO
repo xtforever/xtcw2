@@ -1,0 +1,20 @@
+
+OUTSTANDING BUGS:
+
+    There is some confusion with respect to the callback names.
+    One is called XtNset*Callback*,  the other is called XtNnotify.
+    Should rename the latter to XtNnotifyCallback, or at least
+    make an alias.
+
+    Need a more comprehensive demo, and better documentation.
+
+    Need to make it easier to generate the Motif version.
+    (Check how others do this... I think some of Bert Bos' and John
+    Cwikla's widgets are dual-version widgets too.)
+
+    Add textual indicator?
+
+    Add tick labels?
+
+    Add major ticks?
+

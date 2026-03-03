@@ -1,0 +1,489 @@
+./"" UGraf.3  1.1  Jan 14, 1994
+./""  Copyright 1995 Clark McGrew
+./""  Gnu Library General Public License version 2.0
+./""
+./""
+.TH UGraf 3 "Mar 13 1995" "Version 0.0" "Free Widget Foundation"
+.SH NAME
+UGraf - Simplified X graphics for data visualization.
+
+.SH DESCRIPTION
+
+.nf
+Application Header file         <UGraf.h>
+Class Header file               <UGrafP.h>
+Class                           xfwfUGrafWidgetClass
+Class Name                      UGraf
+Superclass                      Core
+.fi
+
+The UGraf widget provides a simple 2D and 3D graphics library that is
+suitable for developing simple data visualization tools.  It can be
+used do draw simple graphics that might be done with a package similar
+to GKS.  The most important function of the UGraf widget is to provide
+a mapping from real coordinates (in 2 or 3 dimensions) to X window
+pixel coordinates.  The widget provides a standard right handed
+coordinate system.  The X coordinate increase from left to right and
+the Y coordinate increases from bottom to top.  It also provides
+simple text and marker plotting routines.  The 3D routines can be used
+to plot simple 3 dimensional data with the important feature that the
+programer can define the mapping from 3D to 2D coordinates.  This
+routine was designed to help visualize scientific data.
+
+Besides providing convenient mappings from real coordinates to
+XPoints, UGraf provides a simple interface to the X window color
+system.  This is designed to facilitate data visualization.  Eight
+shades of gray, eight independent colors, and a color wheel of shades
+and hues are defined.
+
+.SH PROGRAMMER INFORMATION
+
+The UGraf widget is designed to provide a simple "high" level
+interface to X windows and let the programmer concentrate on plotting
+the data.  However, it does not try to completely hide X.  It provides
+a set of primatives that are useful in data visualization as well as
+3D plotting routines.  It also provides a very simple way to specify
+colors.  Arbitrary colors can not be defined, but a wide range of hues
+and shades can be use to visualize data.
+
+.SH USER ROUTINES 
+
+The following types are defined in the public header file for the
+programmer's enlightenment.
+
+.nf
+.TA 1i
+typedef struct {
+   float x, y, z;    /* Specify a three dimensional point */
+} Point3;
+
+typedef struct {
+   float x, y;       /* Specify a two dimensional point */
+} Point;
+
+typedef struct {
+   float x, y, X, Y; /* Define a rectangle */
+} Rectangle;
+.fi
+
+After a UGraf widget has been realized, the user program is provided
+with several calls which make doing data plotting much easier.  These
+calls only operate inside the window given to the widget by X.  If the
+window is resized, the UGraf will deal with the resizing, but there
+are no facilities to resize the window from inside the widget.  In
+fact, there are no facilities to affect anything outside of the
+widget.
+
+UGraf routines divide into two dimensional routines, and three
+dimesional routines.  Once transforms are defined, the routines can be
+used similtaneously.  The two dimensional routines are discribed
+first.
+
+.SH TWO DIMENSIONAL GRAPHICS.
+
+The first set of routines provided to do two dimensional graphics
+define the drawing space.  The extent of the widget window on the 
+screen is defined by X.  The drawing space inside the widget window
+can be set by UGraf user routines.  
+
+The virtual size of the drawing space is set using 
+
+.nf
+void XfwfUGNormal(UGrafWidget pw, float x, float y);
+.fi
+
+This defines the "size" of the drawing space for all other routines.
+It does not affect the actual size of the window.  For instance, the
+user program wants to treat the drawing space as if it were a 10cm by
+10cm box, the this routine would be called with x equal to 10 and y
+equal to 10.  If the user program wishes to treat the drawing space as
+a 8.5 by 11 inch page, the it is called with x equal to 8.5 and y
+equal to 11.  The coordinates of the window will be coordinates
+(0.0-x, 0.0-y).  The x coordinate increases from left to right.  The y
+coordinate increases from bottom to top (like a graph).  This routine
+will define a transform so that the requested area will be centered in
+the available window and such that the unit direction in the x and y
+directions are equal.  This may lead to spaces of the widget window
+that are unused.  (User programs can access areas outside of the
+(0.0-x, 0.0-y) window simply by giving coordinates outside of that
+range).  Coordinates outside of the requested ranges may result in
+points that are not inside the widget window and hence won't be drawn.
+
+The routine XfwfUGWindow defines a coordinate transform within the
+space defined by XfwfUGNormal.
+
+.nf
+void XfwfUGWindow(UGrafWidget pw, int w, 
+                  Rectangle *space, Rectangle *window);
+.fi
+
+The variable w defines the index of the window being defined.  It is
+used to refer to this window definition by subsequent routines.  The
+rectangle space defines the space that this window will be mapped onto
+in the drawing area defined by XfwfUGNormal.  The rectangle window
+defines the range of coordinates that are mapped onto the "space".
+The transform from window to space does not preserve the unit length.
+
+The current window transform is set using the routine
+
+.nf
+int XfwfUGCurrent(UGrafWidget pw, int transform);
+.fi
+
+This sets the transform to the one defined with the same transform
+number by XfwfUGWindow.  The index of the current transformation is
+returned. 
+
+There are three routines to manage windows defined by XfwfUGWindow.
+Two of the routines clear the drawing spaces.
+
+.nf
+void XfwfUGClear(UGrafWidget pw);
+void XfwfUGClearWindow(UGrafWidget pw);
+.fi
+
+The first clears the entire widget window.  The second only clears the
+window of the current transformation.
+
+The routine
+
+.nf
+void XfwfUGUpdate(UGrafWidget pw);
+.fi
+
+forces all saved drawing actions to be made visible on the screen.
+
+There are several routines defined to specify drawing color.  These
+were for both the two dimensional and three dimensional routines.  The
+color can not be arbitrarily set, but is limited to a number of
+predefined shades.  The shades have been picked to provide useful
+colors for drawing scientific graphs.
+
+The routine XfwfUGColor provides 8 distinct colors and is called
+
+.nf
+void XfwfUGColor(UGrafWidget pw, int color);
+.fi
+
+Color zero is black, and color one is white.  The remaining six colors
+are guaranteed to be distinct.
+
+The routine XfwfUGGray provides a gray scale.  It is called.
+
+.nf
+void XfwfUGGray(UGrafWidget pw, float gray);
+.fi
+
+A value of zero set the color to pure black.  A value of one sets to
+color to pure white.  Intermediate values set intermediate shades.
+
+The routine XfwfUGShade sets a color shade defined by two floating
+point numbers.  The routine is called:
+
+.nf
+void XfwfUGShade(UGrafWidget pw, float hue, float value);
+.fi
+
+The colors are chosen such that the "hue" and "value" are
+"orthongonal" color axises.  This is designed to show the value of
+two variables by the color of the drawing.
+
+There are several routines to draw two dimensional lines, points,
+fills, and text on the window.  There are two routines to draw lines.
+
+.nf
+void XfwfUGLine(UGrafWidget pw, float x, float y, int d);
+void XfwfUGLines(UGrafWidget pw, Point *p, int *d, int n);
+.fi
+
+These routine work as if there were a plotting pen which is controlled
+by the integer value of d.  If d is 0 the pen is up if d is non-zero
+the pen is down.  The first routine connects the last point with the
+new point.  The second routine takes a vector of points and drawing
+values d, and connects the points accordingly.
+
+The routine 
+
+.nf
+void XfwfUGFill(UGrafWidget pw, Point *p, int n);
+.fi
+fills a region outlined by the points p.
+
+The routine 
+
+.nf
+void XfwfUGMark(UGrafWidget pw, float x, float y,
+                int mark, float scale);
+.fi
+
+draws a mark (chosen from the hershey character misc. set) at (x, y).
+The scale is defined but the normalization transform set in
+XfwfUGNormal.
+
+The routine 
+
+.nf
+XfwfUGText(UGrafWidget pw, float x, float y, char *text);
+.fi
+
+Draws text at (x, y).  
+
+The routines:
+
+.nf
+void XfwfUG3Line(UGrafWidget pw, 
+                 float x, float y, float z, int d);
+void XfwfUG3Lines(UGrafWidget pw, Point3 *p, 
+                                    int *d, int n);
+void XfwfUG3Fill(UGrafWidget pw, Point3 *p, int n);
+void XfwfUG3Mark(UGrafWidget pw, 
+                 Point3 *p, Point3 *u, Point3 *h,
+		 int mark, float scale);
+void XfwfUG3Text(UGrafWidget pw, 
+                 Point3 *p, Point3 *u, Point3 *h,
+                 char *text);
+.fi
+
+Are directly analogous to their two dimensional counterparts.
+
+The attributes of the text are set with the routines:
+
+.nf
+void XfwfUGFontDefault(UGrafWidget pw);
+void XfwfUGFontType(UGrafWidget pw, int type);
+void XfwfUGFontFamily(UGrafWidget pw, int family);
+void XfwfUGFontSize(UGrafWidget pw, float size);
+void XfwfUGFontAngle(UGrafWidget pw, float angle);
+void XfwfUGFontJustification(UGrafWidget pw, 
+                             int justification);
+.fi
+
+The routine XfwfUGFontDefault returns the font attributes to their
+default setting.  The routine XfwfUGFontType sets the font type.  The
+possible font types are ROMAN, ITALIC, SCRIPT, or GREEK.  The routine
+XfwfUGFontFamily sets the font family.  The possible font families are
+SIMPLEX, DUPLEX, COMPLEX, TRIPLEX, PLAIN, SMALL, GOTHIC, or SPECIAL.
+The routine XfwfUGFontSize sets the font size in units defined by
+XfwfUGNormal.  The routine XfwfUGFontAngle sets the angle at which the
+font will be drawn.  The angle is specified in degrees.  The routine
+XfwfUGJustification sets the font justification.  The possible
+justifications are RIGHT_JUSTIFICATION, CENTER_JUSTIFICATION, or
+LEFT_JUSTIFICATION.
+
+.SH DEFINING A THREE DIMENSIONAL TRANSFORM
+
+The three dimensional transform is defined by several routines that
+allow the programer to control several features of the transform.  The
+transform is defined by a reference point, a view direction from that
+reference point, an horizontal direction to control the rotation of
+the view, and an up direction.  Typically the horizontal and up
+directions are perpendicular and provide redundant information, but
+it is possible (in some projections) that they can be used to define
+"skewed" views.  The location and directions of the transform are
+controlled by the following routines:
+
+.nf
+void XfwfUG3Reference(UGrafWidget pw, 
+                                Point3 *refp, Bool set);
+void XfwfUG3ViewDirection(UGrafWidget pw, 
+                                Point3 *vdir, Bool set);
+void XfwfUG3UpDirection(UGrafWidget pw, 
+                                Point3 *udir, Bool set);
+void XfwfUG3HorizontalDirection(UGrafWidget pw, 
+                                Point3 *hdir, Bool set);
+.fi
+
+The boolean "set" controls whether the value is set or returned.  If
+"set" is true (non-zero), then the value is set.  If "set" is false
+(zero), then the value is returned.
+
+The aperature of the view is set using the routine,
+.nf
+float XfwfUG3Aperture(UGrafWidget pw, float aperture, 
+                                           Bool set);
+.fi
+The aperature controls the opening angle of the view.  Typically the
+useful values are 0.0 to 1.0, but any positive value is allowed.  A
+value of 0.0 means that the transform views a very narrow opening
+angle.  The larger the value of the aperature, the larger the opening
+angle of the view.
+
+The current transform is set using the routine XfwfUG3Current.  It is
+called:
+.nf
+int XfwfUG3Current(UGrafWidget pw, int transform);
+.fi
+There are eight possible transforms that can be controlled separately.
+Any operation is performed on the current transform.  
+
+The type of transform is controlled by the transformation methods.
+These are a set of routines that actually preform the transformation.
+Programers can add new methods to or change the methods of a
+transform using the routine
+.nf
+Methods3 *XfwfUG3SetMethods(UGrafWidget pw, Methods3 *m);
+.fi
+
+The Methods3 structure contains pointers to several routines that are
+called to perform the manipulations necessary for the transformation.
+Any or all of these can be NULL pointers, but a transform won't be
+useful unless at least "From3D" is defined.
+
+.nf
+typedef struct {
+   Bool (*To3D)(Point *d2, Point3 *d3, Transform3 *this); 
+				/* Transform from 2D to 3D. (unit 3D) */
+   Bool (*From3D)(Point *d2, Point3 *d3, Transform3 *this); 
+				/* Transform from 3D to 2D. */
+   int (*Outline)(Point *d2, int *draw, Transform3 *this); 
+				/* return points to outline transform. */
+   void (*SetTransform)(Transform3 *this);
+				/* Make this transform valid. */
+   void (*FreeTransform)(Transform3 *this);
+				/* Free any local data. */
+} Methods3;
+.fi
+
+.SH RESOURCES
+The following resources are specific to the UGraf widget
+
+.nf
+Name        Class       Type       Default Value
+------------------------------------------------
+lowHue      LowHue      int           0
+highHue     HighHue     int           360
+lowShade    LowShade    int           30
+highShade   HighShade   int           100
+lowValue    LowValue    int           25
+highValue   HighValue   int           100
+gamma       Gamma       float         1.3
+redGamma    RedGamma    float         1.0
+greenGamma  GreenGamma  float         1.0
+blueGamma   BlueGamma   float         1.0
+tolerance   Tolerance   float         0.1
+minDepth    MinDepth    int           1
+maxDepth    MaxDepth    int           7
+updateCallback UpdateCallback callback NULL
+locationCallback LocationCallback callback NULL
+------------------------------------------------
+.fi
+
+.IP \fBlowHue,highHue,lowShade,highShade,lowValue,highValue\fP
+A particular shade of color is specified by two floating point numbers
+between zero and one.  These resources specify the mapping of those
+two numbers onto the color wheel.  The low and high Hue resources
+specify the range of angles (in degrees from zero to 360) on the color
+wheel.  The low and high Shade resources specify a saturation of a
+particular hue (zero to 100).  A shade of zero is a gray.  A shade of
+100 is a fully saturated hue.  The low and high Value resources
+specify the maximum and minimum value parameters.  This set of
+parameters is used to construct a "2D" color wheel.
+.IP \fBgamma\fP
+This specifies the gamma of the display.  Typically color monitors are
+not linear in their ability to display colors.  The gamma of a display
+is an attempt to make a monitor appear more linear.  For a better
+discription of gamma, see a good graphics program like ImageMagick or xv.
+.IP \fBredGamma,greenGamma,blueGamma\fP
+Specify the red, green, and blue gamma of the screen.  The overall
+gamma is multiplied by the color gamma to determine the gamma for each
+of the color guns in a color monitor.
+.IP \fBtolerance\fP
+Define the plotting accuracy for the 3D plotting routines.  The
+smaller the tolerance value the more accurately lines are plotted, but
+at the expense of speed.
+.IP \fBminDepth,mxDepth\fP
+The minimum and maximum number of divisions used to draw lines by the
+3D plotting routines.  In many transformations from 3D to 2D
+coordinates straight lines become curves.  This determines the minimum
+and maximum number of straight line segments that will be used to
+approximate the curves in a 2D projection.
+.IP \fBupdateCallback\fP
+This is called whenever the ug-update action is triggered.  It is also
+called when the widget is resized. There is no callback data.
+.IP \fBlocationCallback\fP
+This is called whenever the location action is triggered.  It exports
+the structure XfwfUGLocationCallbackReturn which is defined:
+
+.nf
+typedef struct {
+	/* The position of the pointer in */
+	/* X coordinates. */
+	XPoint xpoint;
+	/* The position of the pointer in the */
+	/* Current Window. */
+	Point  point;
+	/* The direction to the pointer in the */
+	/* Current 3D transformation. */
+	Point3 point3;
+	/* flag for a valid 3d point. */
+	Boolean valid3;
+} XfwfUGLocationCallbackReturn;
+.fi
+
+.SH ACTIONS
+
+The UGraf Widget defines several actions and default translations.
+
+.nf
+<Key>KP_Divide:     narrower()
+		- Make the view narrower.
+<Key>KP_Multiply:   wider()
+		- Make the view wider.
+<Key>KP_5:          move()
+		- Move in the current direction.
+<Key>KP_Add:        reverse()
+		- Reverse the current direction.
+<Key>KP_0:          increase-step()
+		- Increase the movement step size.
+<Key>KP_Decimal:    decrease-step()
+		- Decrease the movement step size.
+<Key>KP_9:          move-up()
+		- Move along the UP direction.
+<Key>KP_7:          move-down()
+		- Move along the DOWN direction.
+<Key>KP_1:          move-left()
+		- Move along the LEFT direction.
+<Key>KP_7:          move-right()
+		- Move along the RIGHT direction.
+<Key>KP_4:          dir-left()
+		- Move direction LEFT.
+<Key>KP_6:          dir-right()
+		- Move direction RIGHT.
+<Key>KP_8:          dir-up()
+		- Move direction UP.
+<Key>KP_2:          dir-down()
+		- Move direction DOWN.
+<Key>Left:          clockwise()
+		- Roll the view clockwise.
+<Key>Right:         counter-clockwise()
+		- Roll the view counter clockwise.
+<BtnDown>:          location()
+		- Return the pointer location.
+<Key>KP_Enter	    ug-update()
+		- Update the screen.  This calls the XtNupdateCallback.
+.fi
+
+.SH COPYRIGHT
+Copyright (C) 1995 Clark McGrew
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Library General Public
+License as published by the Free Software Foundation; either
+version 2 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Library General Public License for more details.
+
+You should have received a copy of the GNU Library General Public
+License along with this library; if not, write to the Free
+Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+.SH "AUTHOR"
+.nf
+Clark McGrew
+mcgrew@sksol1.physics.sunysb.edu
+SUNY at Stony Brook
+Department Physics
+.fi

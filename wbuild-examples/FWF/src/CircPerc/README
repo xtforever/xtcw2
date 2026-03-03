@@ -1,0 +1,7 @@
+This directory contains the sources for a progress meter widget: CircPerc.
+This widget can be used to display the progress an application is making, for
+instance when during lengthy computations. This is done by displaying a
+circle, divided in two different colored parts. One part indicates the
+percentage completed, the complementary part the percentage not yet completed.
+Percentages can be specified with a two decimal accuracy. The widget tries to
+minimize the amount of drawing needed.

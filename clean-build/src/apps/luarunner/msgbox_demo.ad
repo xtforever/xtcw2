@@ -1,0 +1,11 @@
+*WclResFiles: msgbox_demo.ad
+*luiFile: msgbox_demo.lua
+*title: lui MessageBox Demo
+*foreground: #ecf0f1
+*background: #34495e
+*fontName: Sans-12
+
+*Wbutton.bg_norm: #2980b9
+*Wbutton.fg_norm: #ffffff
+*Wbutton.height: 40
+*Wbutton.width: 150

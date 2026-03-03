@@ -1,0 +1,5 @@
+luarunner.WcChildren: main
+*main.wcClass: Gridbox
+*main.WcChildren: dummy
+*dummy.wcClass: Wlabel
+*dummy.label: Loading...

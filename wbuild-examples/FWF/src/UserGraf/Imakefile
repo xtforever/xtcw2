@@ -1,0 +1,16 @@
+#define NOT_SINGLE_OBJECT_FILE
+#define IHaveSubdirs
+
+WIDGET = UGraf
+LIB_OBJS = UGraf.o UGrafColor.o UGrafDraw.o UGrafHershey.o \
+	UGrafTrans3.o UGrafTransforms.o \
+	XfwfHersheyGlyphs.o Occidental.o Oriental.o
+EXT_OBJS = UGrafT.o
+
+OTHERLIBS = -lm
+
+SUBDIRS = Hershey_Fonts
+
+#include "../StdImakefile"
+
+InitSubdirs($(SUBDIRS))

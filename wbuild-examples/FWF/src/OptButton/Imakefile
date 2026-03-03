@@ -1,0 +1,12 @@
+WIDGET = OptButton
+SUPERCLASSES = \
+	../Common/Common.w\
+	../Frame/Frame.w\
+	../Board/Board.w\
+	../Label/Label.w\
+	../Button/Button.w\
+	../PullDown/PullDown.w
+OTHERLIBS = -lm
+
+#include "../StdImakefile"
+#include "../Wbuild.rule"

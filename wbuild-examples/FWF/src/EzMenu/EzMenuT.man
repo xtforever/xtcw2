@@ -1,0 +1,20 @@
+'\" t
+.TH "EzMenuT" "1" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+EzMenuT \- A Test Program For The EzMenu Widget
+.SH DESCRIPTION
+.PP
+.I EzMenuT
+is a short test program to demonstrate the EzMenu capabilities.  You first
+need to load in the description of the menu by merging the resource file
+EzMenuT.res into your current X resource database.  This can be done with
+the command line:
+
+xrdb -display unix:0 -merge EzMenuT.res.
+
+The test program can then be executed by running EzMenuT.
+.SH AUTHOR
+.sp
+.nf
+Dirk Grunwald, \fIgrunwald@foobar.colorado.edu\fR
+.fi

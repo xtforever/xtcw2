@@ -1,0 +1,756 @@
+.\"remove .ig hn for full docs
+.de hi
+.ig eh
+..
+.de eh
+..
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfThumbWheel2
+.SH DESCRIPTION
+This widget differs from ThumbWheel only in the fact that it uses by
+default bitmaps instead of pixmaps when the \fIpictures\fP resource has
+not been set. (It doesn't need XPM.)
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfThumbWheel2
+Name	Class	Type	Default
+XtNnumberOfPictures	XtCNumberOfPictures	int 	0 
+XtNpictures	XtCPictures	XImageArray 	NULL 
+XtNclickArea	XtCClickArea	Dimension 	7 
+XtNminValue	XtCMinValue	int 	0 
+XtNmaxValue	XtCMaxValue	int 	100 
+XtNvalue	XtCValue	int 	0 
+XtNstep	XtCStep	int 	1 
+XtNinitialDelay	XtCInitialDelay	int 	500 
+XtNrepeatDelay	XtCRepeatDelay	int 	50 
+XtNsensitivity	XtCSensitivity	int 	2 
+XtNscrollCallback	XtCScrollCallback	Callback	NULL 
+XtNscrollResponse	XtCScrollResponse	XtCallbackProc 	scroll_response 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNnumberOfPictures"
+The widget is formed by the images that represents the wheel. The
+wheel includes areas where the mouse can be clicked for small,
+discrete movements. The size of the image thus determines the size of
+the widget. There can be any number of images, but for realisticly
+looking movement at least three slightly different pictures are
+needed. \fInumberOfPictures\fP gives the number of imagess, \fIpictures\fP
+must be an array of at least that many images.
+
+A default set of pictures is provided when the \fIpictures\fP array is
+left undefined.
+
+Note for application programmers: the array is not copied to private
+memory, so the array must stay valid for as long as the widget exists
+and changes to elements of the array have unpredictable results.
+
+In the current implementation, these resources cannot be set with
+\fIXtSetValues\fP.
+
+	
+
+.hi
+int  numberOfPictures = 0 
+.eh
+
+.TP
+.I "XtNpictures"
+
+.hi
+XImageArray  pictures = NULL 
+.eh
+
+.TP
+.I "XtNclickArea"
+A small area along the top and bottom of the widget is reserved for
+clicking the mouse, in order to get discrete movements. \fIclickArea\fP is
+the number of pixels to reserve for this area.
+
+	
+
+.hi
+Dimension  clickArea = 7 
+.eh
+
+.TP
+.I "XtNminValue"
+The wheel can be turned through a range of values (integers),
+indicated by \fIminValue\fP and \fImaxValue\fP. By default they are 0 and 100.
+\fIvalue\fP is the current value, which must lie between the two
+(inclusive).  Note that \fIminValue\fP may be greater than \fImaxValue\fP, but
+in that case \fIstep\fP (see below) should be negative.
+
+Note for programmers: the information that is passed to callback
+function always contains a value between 0 and 1, regardless of
+\fIminValue\fP and \fImaxValue\fP.
+
+	
+
+.hi
+int  minValue = 0 
+.eh
+
+.TP
+.I "XtNmaxValue"
+
+.hi
+int  maxValue = 100 
+.eh
+
+.TP
+.I "XtNvalue"
+
+.hi
+int  value = 0 
+.eh
+
+.TP
+.I "XtNstep"
+When the user clicks on the areas below or above the wheel itself,
+or when the user drags the wheel with the mouse, the wheel is turned
+in fixed increments (or fractions thereof, see the translations). The
+default step size is 1.
+
+	
+
+.hi
+int  step = 1 
+.eh
+
+.TP
+.I "XtNinitialDelay"
+When the user presses and holds the mouse for longer than
+\fIinitialDelay\fP milliseconds in the areas above or below the wheel, the
+wheel is turned repeatedly every \fIrepeatDelay\fP milliseconds.
+
+	
+
+.hi
+int  initialDelay = 500 
+.eh
+
+.TP
+.I "XtNrepeatDelay"
+
+.hi
+int  repeatDelay = 50 
+.eh
+
+.TP
+.I "XtNsensitivity"
+The \fIsensitivity\fP is the number of pixels the mouse has to move
+before the wheel turns. A small value such as 3, 2 (the default) or 1
+is usually best.
+
+	
+
+.hi
+int  sensitivity = 2 
+.eh
+
+.TP
+.I "XtNscrollCallback"
+When the wheel is turned, the ThumbWheel widget calls the callback
+functions on the \fIscrollCallback\fP list. It does so with every change,
+but the information in the \fIcall_data\fP argument is different depending
+on the event that caused the change. The \fIcall_data\fP argument is a
+pointer to an \fIXfwfScrollInfo\fP structure. For a full explanation of
+this structure, refer to `SWIP', the Scrolling Widgets Interface
+Policy. The field that are of interest here are \fIreason\fP, \fIflags\fP and
+\fIvpos\fP.
+
+The field \fIreason\fP can be either \fIXfwfSDrag\fP, \fIXfwfSMove\fP, \fIXfwfSUp\fP or
+\fIXfwfSDown\fP. Callbacks with \fIreason = XfwfSDrag\fP are repeatedly called
+when the user drags the wheel up or down. An application may ignore
+them (to save time), because at the end of the drag there will always
+be a callback with \fIreason = XfwfSMove\fP. The reasons \fIXfwfSUp\fP and
+\fIXfwfSDown\fP are used when the user clicks on the areas above or below
+the wheel (repeatedly, if he holds the button down.)
+
+In all cases, the \fIflags\fP field has the value \fIXFWF_VPOS\fP.
+
+The \fIvpos\fP field is a real number between 0 and 1. It indicates what
+the ThumbWheel widget suggests as the new vertical position after the
+event. This value is computed by adding or subtracting the \fIstep\fP from
+the current \fIvalue\fP and dividing by the total range.
+
+When the callback is called, the \fIvalue\fP resource has already been
+updated, so applications may use the \fIvalue\fP resource directly instead
+of the \fIvpos\fP field.
+
+	
+
+.hi
+<Callback> XtCallbackList  scrollCallback = NULL 
+.eh
+
+.TP
+.I "XtNscrollResponse"
+In the SWIP there is a provision for scrollee widgets (i.e., the
+widgets that are controlled by the wheel widget) to call back to the
+wheel with their reaction to the scroll request as given by the
+\fIscrollCallback\fP above. The \fIscrollResponse\fP resource (which is
+read-only!) holds a pointer to a method function inside the wheel
+widget. Calling this function with an appropriate \fIXfwfScrollInfo\fP
+structure has the effect of updating the wheel to the values provided
+by the scrollee. For more information, see the SWIP.
+
+	
+
+.hi
+XtCallbackProc  scrollResponse = scroll_response 
+.eh
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+The \fIscroll.h\fP file contains the definition of \fIXfwfScrollInfo\fP and
+some other things. It is exported so that applications do not have to
+import it.
+
+	
+
+.nf
+
+.B incl
+ <Xfwf/scroll.h>
+.fi
+
+The type \fIXImageArray\fP represents an array of pointers to \fIXImage\fPs.
+
+	
+
+.nf
+
+.B type
+ XImageArray = XImage **
+.fi
+
+.SS "Translations"
+
+Presses of each of the three mouse buttons are translated to calls
+to the \fIturn\fP action. The argument indicates how fast to turn as a
+percentage of the step size. An omitted argument is equivalent to 100
+percent.
+
+	
+
+.nf
+<Btn1Down>: turn() 
+.fi
+
+.nf
+<Btn2Down>: turn(50) 
+.fi
+
+.nf
+<Btn3Down>: turn(25) 
+.fi
+
+.nf
+<BtnUp>: stop_turning() 
+.fi
+
+.nf
+None<Key>Up: up() 
+.fi
+
+.nf
+!Shift<Key>Up: up(50) 
+.fi
+
+.nf
+!Ctrl<Key>Up: up(25) 
+.fi
+
+.nf
+None<Key>Down: down() 
+.fi
+
+.nf
+!Shift<Key>Down: down(50) 
+.fi
+
+.nf
+!Ctrl<Key>Down: down(25) 
+.fi
+
+.hi
+.SS "Actions"
+
+.TP
+.I "up
+
+The \fIup\fP action has an optional argument \fIpercentage\fP. It subtracts
+\fIstep*percentage\fP from the \fIvalue\fP resource and changes the displayed
+picture. The change in picture is not (yet) related to the change in
+\fIvalue\fP.
+
+.hi
+
+.nf
+void up($, XEvent* event, String* params, Cardinal* num_params)
+{
+    int percentage, d, newval, a, b;
+    XfwfScrollInfo info;
+
+    if (*num_params == 0 || sscanf(params[0], "%d", percentage) != 1)
+	percentage = 100;
+    newval = $value - ($step * percentage + 99)/100; /* Round up */
+    a = min($minValue, $maxValue);
+    b = max($minValue, $maxValue);
+    newval = min(b, max(a, newval));
+
+    if (newval == $value) return;		/* No change */
+
+    $value = newval;
+
+    $curpic = ($curpic + $numberOfPictures - 1) % $numberOfPictures;
+    XtVaSetValues($, XtNbackgroundPixmap, $pix[$curpic], NULL);
+
+    info.reason = XfwfSUp;
+    info.flags = XFWF_VPOS;
+    info.vpos = 1.0 * ($value - $minValue)/($maxValue - $minValue);
+    XtCallCallbackList($, $scrollCallback, info);
+}
+.fi
+
+.eh
+
+.TP
+.I "down
+
+The \fIdown\fP action adds \fIstep*percentage\fP to the \fIvalue\fP resource.
+
+.hi
+
+.nf
+void down($, XEvent* event, String* params, Cardinal* num_params)
+{
+    int percentage, d, newval, a, b;
+    XfwfScrollInfo info;
+
+    if (*num_params == 0 || sscanf(params[0], "%d", percentage) != 1)
+	percentage = 100;
+
+    newval = $value + ($step * percentage + 99)/100; /* Round up */
+    a = min($minValue, $maxValue);
+    b = max($minValue, $maxValue);
+    newval = min(b, max(a, newval));
+
+    if (newval == $value) return;		/* No change */
+
+    $value = newval;
+
+    $curpic = ($curpic + 1) % $numberOfPictures;
+    XtVaSetValues($, XtNbackgroundPixmap, $pix[$curpic], NULL);
+
+    info.reason = XfwfSDown;
+    info.flags = XFWF_VPOS;
+    info.vpos = 1.0 * ($value - $minValue)/($maxValue - $minValue);
+    XtCallCallbackList($, $scrollCallback, info);
+}
+.fi
+
+.eh
+
+The \fIturn\fP action looks at the position of the mouse and if it is in
+the top or bottom area of the widget it turns the wheel in discrete,
+timed steps, as long as the button remains pressed. If the mouse is
+elsewhere, the position is remembered and while the mouse remains
+pressed, the wheel is turned an amount proportional to the distance
+that the mouse moves from its initial position.
+
+The optional argument gives the percentage of the \fIstep\fP that the
+wheel is turned with every event.
+
+.hi
+\fBdef\fP BMask = (Button1Mask |Button2Mask |Button3Mask |Button4Mask |Button5Mask )
+.eh
+
+.TP
+.I "turn
+
+.hi
+
+.nf
+void turn($, XEvent* event, String* params, Cardinal* num_params)
+{
+    int percentage, d, mousey, rx, ry, x, y, y1, oldvalue, newval, a, b;
+    Window root, child;
+    unsigned int mask;
+    XfwfScrollInfo info;
+
+    if (*num_params == 0 || sscanf(params[0], "%d", percentage) != 1)
+	percentage = 100;
+    d = ($step * percentage + 99)/100;
+
+    mousey = event->xbutton.y;			/* Starting mouse pos. */
+
+    if (mousey >= $clickArea  mousey < $height - $clickArea) {
+	/* Middle area */
+	y1 = mousey;				/* Previous mouse pos. */
+	oldvalue = $value;
+	while (XQueryPointer(XtDisplay($), XtWindow($), root, child,
+			     rx, ry, x, y, mask)
+	        (mask  BMask)) {
+	    if (y != y1) {
+		y1 = y;
+
+		newval = oldvalue + (y - mousey)/$sensitivity * d;
+		a = min($minValue, $maxValue);
+		b = max($minValue, $maxValue);
+		newval = min(b, max(a, newval));
+		if (newval == $value) continue;	/* No change */
+
+		$value = newval;
+
+		$curpic = ((y - mousey)/$sensitivity % $numberOfPictures
+			   + $numberOfPictures) % $numberOfPictures;
+		XtVaSetValues($, XtNbackgroundPixmap, $pix[$curpic], NULL);
+
+		info.reason = XfwfSDrag;
+		info.flags = XFWF_VPOS;
+		info.vpos = 1.0 * ($value - $minValue)/($maxValue - $minValue);
+		XtCallCallbackList($, $scrollCallback, info);
+	    }
+	}
+	info.reason = XfwfSMove;
+	info.flags = XFWF_VPOS;
+	info.vpos = 1.0 * ($value - $minValue)/($maxValue - $minValue);
+	XtCallCallbackList($, $scrollCallback, info);
+    } else {
+	/* Upper or lower click area */
+	$delta = mousey < $clickArea ? -d : d;
+	$reason = mousey < $clickArea ? XfwfSUp : XfwfSDown;
+	newval = $value + $delta;
+	a = min($minValue, $maxValue);
+	b = max($minValue, $maxValue);
+	newval = min(b, max(a, newval));
+	if (newval == $value) return;		/* No change */
+
+	$curpic += mousey < $clickArea ? $numberOfPictures - 1 : 1;
+	$curpic = $curpic % $numberOfPictures;
+	XtVaSetValues($, XtNbackgroundPixmap, $pix[$curpic], NULL);
+
+	$value = newval;
+
+	info.reason = $reason;
+	info.flags = XFWF_VPOS;
+	info.vpos = 1.0 * ($value - $minValue)/($maxValue - $minValue);
+	XtCallCallbackList($, $scrollCallback, info);
+
+	$timer_on = True;
+	$timer = XtAppAddTimeOut(XtWidgetToApplicationContext($),
+				 $initialDelay, timer_callback, $);
+    }
+}
+.fi
+
+.eh
+
+.TP
+.I "stop_turning
+
+The \fIstop_turning\fP action removes the timer.
+
+.hi
+
+.nf
+void stop_turning($, XEvent* event, String* params, Cardinal* num_params)
+{
+    if ($timer_on) {
+	$timer_on = False;
+	XtRemoveTimeOut($timer);
+    }
+}
+.fi
+
+.eh
+
+.hi
+
+.hi
+.SH "Importss"
+
+Three different images of a thumbwheel.
+
+.nf
+
+.B incl
+ "wheel0.bm"
+.fi
+
+.nf
+
+.B incl
+ "wheel1.bm"
+.fi
+
+.nf
+
+.B incl
+ "wheel2.bm"
+.fi
+
+.nf
+
+.B incl
+ "wheel3.bm"
+.fi
+
+.nf
+
+.B incl
+ <stdio.h>
+.fi
+
+.hi
+
+.hi
+.SS "Private variables"
+
+The IDs of the pictures after they have been converted to Pixmaps.
+
+	
+
+.nf
+Pixmap * pix
+.fi
+
+The currenttly displayed picture (0 to \fINumberOfPictures\fP-1).
+
+	
+
+.nf
+int  curpic
+.fi
+
+A Graphics Context is needed to draw the images.
+
+	
+
+.nf
+GC  gc
+.fi
+
+A timer
+
+	
+
+.nf
+XtIntervalId  timer
+.fi
+
+The amount to turn when a timed event occurs
+
+	
+
+.nf
+int  delta
+.fi
+
+The reason to give when a timed event occurs.
+
+	
+
+.nf
+XfwfSReason  reason
+.fi
+
+Whether a timer is currently running
+
+	
+
+.nf
+Boolean  timer_on
+.fi
+
+.hi
+
+.hi
+.SS "Methods"
+
+When the \fIpictures\fP resource has been left \fINULL\fP, a default set of
+three Images is installed. The images are converted to Pixmaps in the
+\fIrealize\fP method, where the first of them is installed as the
+background of the widget. The size of the widget is set to the size
+of the first image.
+
+Maybe this should be moved to \fIrealize\fP, because using the default
+depth of the screen instead of the actual depth of the window might
+cause problems someday. On the other hand, it is nice to be able to
+set the width and height in \fIinitialize\fP.
+
+.nf
+initialize(Widget  request, $, ArgList  args, Cardinal * num_args)
+{
+    XGCValues values;
+    int stat;
+
+    if (! $pictures) $numberOfPictures = 4;	/* Built-in pictures */
+    $gc = XtGetGC($, 0, values);
+    $width = $pictures ? $pictures[0]->width : wheel0_width;
+    $height = $pictures ? $pictures[0]->height : wheel0_height;
+    $timer_on = False;
+}
+.fi
+
+.nf
+realize($, XtValueMask * mask, XSetWindowAttributes * attributes)
+{
+    int i;
+
+    #realize($, mask, attributes);
+    $pix = (Pixmap*) XtMalloc($numberOfPictures * sizeof($pix[0]));
+    if ($pictures) {
+	for (i = 0; i < $numberOfPictures; i++) {
+	    $pix[i] = XCreatePixmap
+		(XtDisplay($), XtWindow($), $pictures[i]->width,
+		 $pictures[i]->height, $depth);
+	    XPutImage(XtDisplay($), $pix[i], $gc, $pictures[i], 0, 0, 0, 0,
+		      $pictures[i]->width, $pictures[i]->height);
+	}
+    } else {					/* Built-in pictures */
+	$pix[0] = XCreatePixmapFromBitmapData
+	    (XtDisplay($), XtWindow($), wheel0_bits, wheel0_width,
+	     wheel0_height, BlackPixelOfScreen(XtScreen($)),
+	     WhitePixelOfScreen(XtScreen($)), $depth);
+	$pix[1] = XCreatePixmapFromBitmapData
+	    (XtDisplay($), XtWindow($), wheel1_bits, wheel1_width,
+	     wheel1_height, BlackPixelOfScreen(XtScreen($)),
+	     WhitePixelOfScreen(XtScreen($)), $depth);
+	$pix[2] = XCreatePixmapFromBitmapData
+	    (XtDisplay($), XtWindow($), wheel2_bits, wheel2_width,
+	     wheel2_height, BlackPixelOfScreen(XtScreen($)),
+	     WhitePixelOfScreen(XtScreen($)), $depth);
+	$pix[3] = XCreatePixmapFromBitmapData
+	    (XtDisplay($), XtWindow($), wheel3_bits, wheel3_width,
+	     wheel3_height, BlackPixelOfScreen(XtScreen($)),
+	     WhitePixelOfScreen(XtScreen($)), $depth);
+    }
+
+    XtVaSetValues($, XtNbackgroundPixmap, $pix[0], NULL);
+    $curpic = 0;
+}
+.fi
+
+There is no \fIset_values\fP method yet.
+
+There is no need for an \fIexpose\fP method, since the X server will
+take care of drawing the background pixmap of the widget.
+
+The \fIscroll_response\fP method can be called by scrollees that want to
+synchronize the thumbwheel to themselves. It sets the thumbwheel's
+\fIvalue\fP according to the \fIvpos\fP field. When the \fIreason\fP was a request
+and not a notification, the thumbwheel in turn calls its
+\fIscrollCallback\fP to notify scrollees that the thumbwheel has changed.
+
+.nf
+scroll_response(Widget  w, XtPointer  client_data, XtPointer  call_data)
+{
+    Widget $ = (Widget) client_data;
+    XfwfScrollInfo *info = (XfwfScrollInfo *) call_data;
+    XfwfScrollInfo new_info;
+
+    if (info->flags  XFWF_VPOS)
+	$value = ($maxValue - $minValue) * info->vpos + $minValue + 0.5;
+
+    if (info->reason != XfwfSNotify) {
+	new_info = *info;
+	new_info.reason = XfwfSNotify;
+	XtCallCallbackList($, $scrollCallback, new_info);
+    }
+}
+.fi
+
+.hi
+
+.hi
+.SH "Utilities"
+
+\fBdef\fP abs(a) =
+((a )<0 ?-(a ):(a ))
+
+\fBdef\fP min(a, b) =
+((a )<(b )?(a ):(b ))
+
+\fBdef\fP max(a, b) =
+((a )>(b )?(a ):(b ))
+
+The \fItimer_callback\fP is called when a certain interval passes
+without the user releasing the mouse button. The wheel is turned
+another step and another time-out event is started.
+
+.nf
+timer_callback(XtPointer  call_data, XtIntervalId * id)
+{
+    Widget $ = (Widget) call_data;
+    XfwfScrollInfo info;
+    int newval, a, b;
+
+    newval = $value + $delta;
+    a = min($minValue, $maxValue);
+    b = max($minValue, $maxValue);
+    newval = min(b, max(a, newval));
+    if (newval == $value) {			/* No further changes */
+	$timer_on = False;
+	return;
+    }
+    $value = newval;
+
+    $curpic += $reason == XfwfSUp ? $numberOfPictures - 1 : 1;
+    $curpic = $curpic % $numberOfPictures;
+    XtVaSetValues($, XtNbackgroundPixmap, $pix[$curpic], NULL);
+
+    info.reason = $reason;
+    info.flags = XFWF_VPOS;
+    info.vpos = 1.0 * ($value - $minValue)/($maxValue - $minValue);
+    XtCallCallbackList($, $scrollCallback, info);
+
+    $timer = XtAppAddTimeOut(XtWidgetToApplicationContext($),
+			     $repeatDelay, timer_callback, $);
+}
+.fi
+
+.hi

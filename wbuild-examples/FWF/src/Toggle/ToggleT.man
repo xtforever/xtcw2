@@ -1,0 +1,28 @@
+.TH "ToggleT" "1" "28 Aug 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+ToggleT \- Test program for the XfwfToggle widget
+.SH DESCRIPTION
+.PP
+The program shows two toggle button of which at most one can be `on'
+at any time. The two buttons control in an unrealistically complex
+interaction whether the third button,
+.I Quit,
+is active or not. Note that the keyboard can be used as well as the
+mouse. The keyboard focus can not be set to the 
+.I Quit
+button when the button is inactive ("insensitive").
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+
+
+
+
+
+

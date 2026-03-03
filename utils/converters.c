@@ -421,7 +421,7 @@ _CvtStringToStringMArray(dpy, args, num_args, fromVal, toVal, data)
 	return False ;
     }
 
-    int m_array = m_split(0,str, ',', 1 );
+    int m_array = s_split(0,str, ',', 1 );
     done( int, m_array );
 }
 

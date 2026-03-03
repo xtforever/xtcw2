@@ -1,0 +1,13 @@
+.TH "ArrowT" "1" "11 Nov 1992" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+ArrowT \- Test program for the Arrow widget
+.SH DESCRIPTION
+The
+.I ArrowT
+program creates an arrow widget. The direction of the arrow depends on
+a resource, but is by default up. Clicking on the widget causes the
+string "do something" to be printed.
+.SH AUTHOR
+Bert Bos <bert@let.rug.nl>, Alfa-informatica, Rijksuniversiteit
+Groningen.
+

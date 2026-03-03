@@ -1,0 +1,22 @@
+.TH "XmTabsT" "1" "29 Jul 1994" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XmTabsT \- Test program for the XmTabs widget
+.SH DESCRIPTION
+.PP
+The program shows a text with a number of tabs above it. Clicking on
+the tabs displays the corresponding text. The rightmost tab is a Quit
+button.
+.PP
+Note that the XfwfTabs widget is not in any way managing the texts.
+All it does is call a callback function in the TabsT program, which
+then changes a number of resources.
+.SH AUTHOR
+.sp
+.nf
+Bert Bos <bert@let.rug.nl>
+Alfa-informatica, Rijksuniversiteit Groningen,
+Groningen,
+The Netherlands
+.fi
+
+

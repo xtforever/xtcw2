@@ -1066,6 +1066,7 @@ layoutChild(gb, w, rwid,rhgt, rx,ry)
     Dimension	width, height;
     int		margin ;
     int		excess ;
+    int         iwidth, iheight;
 
     if( !XtIsManaged(w) )
       return ;
@@ -1074,7 +1075,7 @@ layoutChild(gb, w, rwid,rhgt, rx,ry)
 
     /* Correct for preferred fill & alignment */
     if( !(gc->gridbox.fill & FillWidth)  &&
-	(excess = width - gc->gridbox.prefWidth) > 0 )
+	(excess = (int)width - (int)gc->gridbox.prefWidth) > 0 )
     {
       switch( gc->gridbox.gravity ) {
 	case CenterGravity: case NorthGravity: case SouthGravity:
@@ -1088,7 +1089,7 @@ layoutChild(gb, w, rwid,rhgt, rx,ry)
     }
 
     if( !(gc->gridbox.fill & FillHeight)  &&
-	(excess = height - gc->gridbox.prefHeight) > 0 )
+	(excess = (int)height - (int)gc->gridbox.prefHeight) > 0 )
     {
       switch( gc->gridbox.gravity ) {
 	case CenterGravity: case WestGravity: case EastGravity:
@@ -1103,10 +1104,10 @@ layoutChild(gb, w, rwid,rhgt, rx,ry)
 
     margin = gc->gridbox.margin ;
 
-    width -= 2 * w->core.border_width + 2 * margin ;
-    height -= 2 * w->core.border_width + 2 * margin ;
-    *rwid = max(width,1) ;
-    *rhgt = max(height,1) ;
+    iwidth = (int)width - (2 * (int)w->core.border_width + 2 * margin) ;
+    iheight = (int)height - (2 * (int)w->core.border_width + 2 * margin) ;
+    *rwid = (Dimension)max(iwidth,1) ;
+    *rhgt = (Dimension)max(iheight,1) ;
 }
 
 

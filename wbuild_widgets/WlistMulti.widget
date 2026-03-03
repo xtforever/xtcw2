@@ -90,6 +90,7 @@
 @var int line_bh = 0
 @var ArrayChar titleBar = 0
 @var Pixel titleBarCol = <String> "#101010"
+@var int key_cursor = -1
 @def relgc(var) = do if( var ) { XtReleaseGC($, var ); var=0; } while(0)
 
 @translations
@@ -102,7 +103,6 @@
 @def AUTO_SCROLL_TIME_MS = 200
 @def PREFETCH_BUFFER   = 4
 @var void *backend
-@var int key_cursor
 @var int key_cursor_drawn
 @var int key_cursor_state
 @var int titleBarHeight
@@ -342,14 +342,23 @@ zusätzlich wird der |notify| Handler aufgerufen.
   $backend = NULL;
   $gc_copy =  XtGetGC($, 0,0 );
   $draw = NULL;
+  
+  /* Ensure xftFont matches fontSize/fontFace */
+  char font_buf[128];
+  snprintf(font_buf, sizeof(font_buf), "%s-%d", $fontFace, $fontSize);
+  $xftFont = XftFontOpenName($dpy, DefaultScreen($dpy), font_buf);
+  if (!$xftFont) {
+      $xftFont = XftFontOpenName($dpy, DefaultScreen($dpy), "Sans-22");
+  }
+
   /* trennlinie ist 2 pixel hoch */
-  $line_height = $xftFont->height * $multiline + $line_distance + 2;
+  $line_height = ($xftFont ? $xftFont->height : 22) * $multiline + $line_distance + 2;
   $line_state = m_create(100,1);
   
 
   update_tabs($);
   if( $titleBar ) {
-      $titleBarHeight = $xftFont->height+3;
+      $titleBarHeight = ($xftFont ? $xftFont->height : 22) + 3;
       $titleBarWidth = tabbed_str_width($dpy, $tab_pos, $xftFont, m_buf($titleBar));
    }
    else {
@@ -361,7 +370,6 @@ zusätzlich wird der |notify| Handler aufgerufen.
   $line_width = $width;
 
   $key_cursor_drawn = -1;
-  $key_cursor = -1;
 
   XtGCMask mask;
   XGCValues values;
@@ -405,7 +413,8 @@ zusätzlich wird der |notify| Handler aufgerufen.
 {
 	if( !XtIsRealized($)) return;
         if( $titleBar ) update_titlebar($);
-        $list_height = $height - $titleBarHeight;
+        int h = (int)$height - (int)$titleBarHeight;
+        $list_height = (Dimension)Max(h, 1);
         update_list($);
 }
 
@@ -432,7 +441,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
 @proc set_values
 {
 	int n = *num_args;
-
+    int font_changed = 0;
 
 	TRACE(2, "Wlist Widget %s", XtName($) );
 
@@ -440,7 +449,6 @@ zusätzlich wird der |notify| Handler aufgerufen.
            muss der cache aktualisiert werden
          */
 
-         if( XtIsRealized($) )
 	 while( n-- )
 	 {
                  if(strncmp( args[n].name, "tableS",6 ) == 0 )
@@ -450,7 +458,6 @@ zusätzlich wird der |notify| Handler aufgerufen.
                    break;
                  }
 
-
                  if( ( strncmp( args[n].name, "bg_",3 ) == 0 )
 		     || ( strncmp( args[n].name, "fg", 2 ) == 0 )
 		     || ( strncmp( args[n].name, "xftFont", 7 ) == 0 ) )
@@ -458,8 +465,25 @@ zusätzlich wird der |notify| Handler aufgerufen.
 			update_pixmap_complete($);
 			break;
 		  }
+          
+          if (strncmp(args[n].name, "fontSize", 8) == 0 ||
+              strncmp(args[n].name, "fontFace", 8) == 0) {
+              font_changed = 1;
+          }
 	 }
 
+    if (font_changed) {
+        char font_buf[128];
+        snprintf(font_buf, sizeof(font_buf), "%s-%d", $fontFace, $fontSize);
+        XftFont *nf = XftFontOpenName($dpy, DefaultScreen($dpy), font_buf);
+        if (nf) {
+            if ($xftFont) XftFontClose($dpy, $xftFont);
+            $xftFont = nf;
+            $line_height = $xftFont->height * $multiline + $line_distance + 2;
+            init_graphics($);
+            update_pixmap_complete($);
+        }
+    }
 
 	return True; /* im zweifelsfall ist ein expose() immer richtig */
 }
@@ -478,6 +502,16 @@ zusätzlich wird der |notify| Handler aufgerufen.
         return dpi;
     }
     return 96.0;
+}
+
+@proc uint32_t xftcolor_to_argb($, int index)
+{
+    XftColor *xc = &$xft_col[index];
+    uint32_t r = xc->color.red >> 8;
+    uint32_t g = xc->color.green >> 8;
+    uint32_t b = xc->color.blue >> 8;
+    uint32_t a = xc->color.alpha >> 8;
+    return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
 @proc double pt2px($, double pt)
@@ -575,57 +609,85 @@ zusätzlich wird der |notify| Handler aufgerufen.
                        XftDraw *draw, XftColor *col, XftFont *font,
                        int x, int y, char *s )
 {
-  int subs=m_split(0,s, '\n', 0 );
+  int m_list = m_create(10, sizeof(char*));
+  s_split(m_list, s, '\n', 0 );
   int p;
   char **str;
-  m_foreach( subs, p, str ) {
+  m_foreach( m_list, p, str ) {
              render_mstr($,tabs,draw,col,font,x,y + $xftFont->ascent,*str);
              y += $xftFont->height;
   }
-  m_free_strings(subs,0);
+  m_free_strings(m_list, 1);
+  m_free(m_list);
 }
 
-@ schreibe die zeile |line| in die Puffer |pixmap| an die Zeilen-position |ypos|. Die Hintergrundfarbe wird durch state bestimmt, wobei 0=norm,1=sel,2=hi bedeutet.
-falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
-
-@proc render_retex_row($, int x, int y, int h, char *s)
+@proc render_retex_row($, int x, int y, int h, char *s, int col_idx_wheel)
 {
-    int columns = m_split(0, s, '\t', 0);
+    int columns = m_create(10, sizeof(char*));
+    s_split(columns, s, '\t', 0);
     int p;
     char **cell_text;
     int cur_x = x;
     int col_idx = 0;
     Backend *be = (Backend*)$backend;
 
+    if (!be) return;
+    be->set_color(be, xftcolor_to_argb($, col_idx_wheel));
+
+    /* Calculate scaling factor if widget is wider than sum of columnWidths */
+    double scale = 1.0;
+    int total_fixed_w = 0;
+    if ($columnWidths > 0) {
+        for(int i=0; i<m_len($columnWidths); i++) total_fixed_w += INT($columnWidths, i);
+        if (total_fixed_w > 0 && $width > total_fixed_w) {
+            scale = (double)$width / total_fixed_w;
+        }
+    }
+
     m_foreach(columns, p, cell_text) {
         int cell_w_px = 100;
-        if ($columnWidths && col_idx < m_len($columnWidths)) {
-            cell_w_px = INT($columnWidths, col_idx);
+        if ($columnWidths > 0 && col_idx < m_len($columnWidths)) {
+            cell_w_px = (int)(INT($columnWidths, col_idx) * scale);
         }
         
         if (*cell_text && **cell_text) {
             double cell_w_pt = px2pt($, cell_w_px);
-            RetexParagraph *para = retex_layout(be, *cell_text, cell_w_pt, $fontFace, $fontSize, 0);
+            double cell_h_pt = px2pt($, h);
+            
+            /* Apply cell-level clipping for retex */
+            be->set_clip(be, px2pt($, cur_x), px2pt($, y), cell_w_pt, cell_h_pt, 1);
+
+            /* Wrap in \hbox to prevent any wrapping/linebreaking within the cell */
+            int hbox_handle = s_printf(0, 0, "\\hbox{%s}", *cell_text);
+            RetexParagraph *para = retex_layout(be, m_str(hbox_handle), 100000.0, $fontFace, $fontSize, 0);
+            m_free(hbox_handle);
+
             if (para) {
-                double text_h_pt = retex_paragraph_get_height(para);
                 double cell_h_pt = px2pt($, h);
-                double y_off_pt = (cell_h_pt - text_h_pt) / 2.0;
+                
+                /* Use a fixed baseline offset based on the widget's nominal font metrics 
+                   to ensure all cells in a row align their baselines. */
+                double nominal_ascent_pt = px2pt($, $xftFont->ascent);
+                double nominal_height_pt = px2pt($, $xftFont->height);
+                double y_off_pt = (cell_h_pt - nominal_height_pt) / 2.0;
                 if (y_off_pt < 0) y_off_pt = 0;
 
-                /* Center logic in points */
                 double cur_x_pt = px2pt($, cur_x);
                 double cur_y_pt = px2pt($, y);
-                
-                /* Adjust y for baseline: retex starts at baseline, so shift down by ascent */
-                /* For now we approximate ascent as 80% of fontSize */
-                retex_paragraph_render(para, be, cur_x_pt, cur_y_pt + y_off_pt + $fontSize * 0.8);
+                double y_render_pt = cur_y_pt + y_off_pt + nominal_ascent_pt;
+
+                retex_paragraph_render(para, be, cur_x_pt, y_render_pt);
                 retex_paragraph_free(para);
             }
+            
+            /* Clear clipping */
+            be->set_clip(be, 0, 0, 0, 0, 0);
         }
         cur_x += cell_w_px;
         col_idx++;
     }
-    m_free_strings(columns, 0);
+    m_free_strings(columns, 1);
+    m_free(columns);
 }
 
 @proc print_pixmap( $, int line, int ypos )
@@ -652,27 +714,28 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   w=$buf.width;
   h=$line_height;
 
-  int font_height = $xftFont->ascent +  $xftFont->descent;
-  int font_y_off  = (h - font_height-2) / 2 + $xftFont->ascent;
-
   /* zeile zeichnen: Rect( x,y, w,h ) Inhalt: s, Farbe: gc */
-  /*  XFillRectangle($dpy, $pixmap, $gc_copy, x,y,w,h ); */
-  XFillRectangle($dpy, $pixmap, $gc[col], x,y,w,h );
+  /*  XFillRectangle($dpy, $pixmap, $gc[col], x,y,w,h ); */
+  if ($pixmap) {
+      XFillRectangle($dpy, $pixmap, $gc[col], x,y,w,h );
+  }
 
   if ($retexCells && $backend) {
-      render_retex_row($, x, y, h, s);
-  } else {
+      render_retex_row($, x, y, h, s, col);
+  } else if ($draw) {
       render_multiline($, $tab_pos, $draw, $xft_col+col, $xftFont,
                       x, y + $line_distance/2, s);
   }
 
-  XDrawLine($dpy, $pixmap, $gc[1], x,y + h -2, w, y+h-2 );
+  if ($pixmap) {
+      XDrawLine($dpy, $pixmap, $gc[1], x,y + h -2, w, y+h-2 );
+  }
   TRACE(2, "Update Line: %d\n", line );
 }
 
 @proc print($, int x, int y, char *s)
 {
-  if( s && *s )
+  if ($draw && s && *s )
     XftDrawStringUtf8($draw, $xft_col+0, $xftFont, x,y, (FcChar8*)s,strlen(s) );
 }
 
@@ -683,7 +746,9 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
 
   /* berechnen der puffer Größe: 4-Zeilen größer als das fenster */
   int height;
-  height = ((int)($height / $line_height) + PREFETCH_BUFFER) * $line_height;
+  int h_px = (int)$height;
+  if (h_px < 1) h_px = 1;
+  height = (int)((h_px / $line_height) + PREFETCH_BUFFER) * $line_height;
   $buf.height = height;
   $buf.width  = $line_width;
   $buf.x = 0;
@@ -697,6 +762,12 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
       $pixmap = 0;
   }
   if( $pixmap ) XFreePixmap( $dpy, $pixmap );
+  
+  if ($buf.width > 4000) $buf.width = 4000;
+  if ($buf.height > 4000) $buf.height = 4000;
+  if ($buf.width < 1) $buf.width = 1;
+  if ($buf.height < 1) $buf.height = 1;
+
   $backend = backend_xpixmap_create($dpy, XtWindow($), $buf.width, $buf.height);
   if ($backend) {
       $pixmap = backend_xpixmap_get_pixmap((Backend*)$backend);
@@ -706,8 +777,10 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   }
 
   if( $draw) XftDrawDestroy( $draw );
-  $draw = XftDrawCreate($dpy, $pixmap,
-                       DefaultVisual($dpy, DefaultScreen($dpy)), None);
+  if ($pixmap) {
+      $draw = XftDrawCreate($dpy, $pixmap,
+                           DefaultVisual($dpy, DefaultScreen($dpy)), None);
+  }
 }
 
 @proc update_pixmap_complete($)
@@ -722,8 +795,10 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
 	    max = ($line_max - line_no);
 	    int h = $buf.height - max * $line_height;
 	    int w = $buf.width;
-	    XFillRectangle( $dpy, $pixmap, $gc[0],
+	    if ($pixmap) {
+	        XFillRectangle( $dpy, $pixmap, $gc[0],
 	    		    0, max * $line_height, w, h );
+	    }
 	}
 
 	while( i< max ) {
@@ -743,20 +818,20 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   list_h = $line_max * $line_height;
   /* top_y, top_x korrigieren */
   /* falls der x-offset zu groß ist, verkleinern */
-  if( $top_x &&  ($top_x + $width > $line_width) ) {
-    if( $width < $line_width ) $top_x = $line_width - $width;
+  if( $top_x &&  ($top_x + (int)$width > $line_width) ) {
+    if( (int)$width < $line_width ) $top_x = $line_width - (int)$width;
     else 	     		   $top_x = 0;
   }
   /* falls die liste vollständig angezeigt werden kann, */
   /* falls die liste vollständig angezeigt werden kann, */
   /* oder der rest der liste das fenster nicht füllt */
-  if( $top_y + $list_height > list_h ) {
-    if( $list_height >= list_h ) $top_y = 0;
-    else                    $top_y = list_h - $list_height;
+  if( $top_y + (int)$list_height > list_h ) {
+    if( (int)$list_height >= list_h ) $top_y = 0;
+    else                    $top_y = list_h - (int)$list_height;
   }
 
   /* anzuzeigender bereich liegt im puffer */
-  if( $top_y + $height <= $buf.y + $buf.height &&
+  if( $top_y + (int)$height <= $buf.y + $buf.height &&
       $top_y >= $buf.y ) return;
 
   buf_h = $buf.height / $line_height;	/* anzahl zeilen im Puffer */
@@ -823,7 +898,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
 
 	int new_y = $top_y + $pixel_to_scroll;
 
-	if( new_y > 0 && new_y + $height < $line_max * $line_height && $autoscroll_cnt > 0 )
+	if( new_y > 0 && new_y + (int)$height < $line_max * $line_height && $autoscroll_cnt > 0 )
 	{
 		$autoscroll_id =
 	  	   XtAppAddTimeOut( XtWidgetToApplicationContext( self ), 100, autoscroll_cb, self );
@@ -893,10 +968,11 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   int p,
       cur_x = 0,
       cur_tab = 0;
-  int subs=m_split(0,buf, '\t', 1 );
-  int last_substr = m_len(subs) > 0 ? m_len(subs)-1 : 0;
+  int m_list = m_create(10, sizeof(char*));
+  s_split(m_list, buf, '\t', 1 );
+  int last_substr = m_len(m_list) > 0 ? m_len(m_list)-1 : 0;
 
-  m_foreach( subs, p, str ) {
+  m_foreach( m_list, p, str ) {
     cur_x +=  xft_textwidth( dpy, font, *str );
 
     if( p != last_substr && tabs ) {
@@ -910,7 +986,8 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
         }
     }
   }
-  m_free_strings(subs,0);
+  m_free_strings(m_list, 1);
+  m_free(m_list);
   return cur_x;
 }
 
@@ -935,13 +1012,37 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   int cur_tab = 0; /* index des nächsten tab */
   int xoff;        /* größe des teil-str. in pixel */
   int cur_x = 0;   /* x-pos. des nächsten str. in pixel */
-  int subs=m_split(0,buf, '\t', 0 );
+  int m_list = m_create(10, sizeof(char*));
+  s_split(m_list, buf, '\t', 0 );
   int p;
   char **str;
-  m_foreach( subs, p, str ) {
+
+  /* Calculate scaling factor if widget is wider than sum of columnWidths */
+  double scale = 1.0;
+  int total_fixed_w = 0;
+  if ($columnWidths > 0) {
+      for(int i=0; i<m_len($columnWidths); i++) total_fixed_w += INT($columnWidths, i);
+      if (total_fixed_w > 0 && $width > total_fixed_w) {
+          scale = (double)$width / total_fixed_w;
+      }
+  }
+
+  m_foreach( m_list, p, str ) {
     if( cur_x >= $buf.width ) break;
+    
+    int cell_w = 100;
+    if ($columnWidths > 0 && p < m_len($columnWidths)) {
+        cell_w = (int)(INT($columnWidths, p) * scale);
+    }
+
+    /* Apply per-cell clipping for Xft */
+    XRectangle clip;
+    clip.x = pix_x + cur_x; clip.y = pix_y - font->ascent; clip.width = cell_w; clip.height = font->height;
+    XftDrawSetClipRectangles(draw, 0, 0, &clip, 1);
+
     xoff = render_substr($, draw,col,font, pix_x + cur_x, pix_y, *str);
-    cur_x += xoff;
+    cur_x += cell_w;
+
     if( tabs ) {
         while( cur_tab < m_len(tabs) ) {
            if( INT(tabs,cur_tab) > cur_x )
@@ -953,8 +1054,12 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
         }
     }
   }
+  
+  /* Reset clipping */
+  XftDrawSetClip(draw, None);
 
-  m_free_strings(subs,0);
+  m_free_strings(m_list, 1);
+  m_free(m_list);
 }
 
 @proc update_widget_state($)
@@ -968,10 +1073,12 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
 {
 
   uint y = $titleBarHeight;
-  XFillRectangle( $dpy,XtWindow($),$titleBarGC, 0,0,$width,y);
-  XDrawLine( $dpy,XtWindow($),$gc[1],0,y-2,$width, y-2 );
-  render_mstr( $, $tab_pos, $draw_title, $xft_col, $xftFont,
-               0, $xftFont->ascent, m_buf($titleBar) );
+  if ($draw_title) {
+      XFillRectangle( $dpy,XtWindow($),$titleBarGC, 0,0,$width,y);
+      XDrawLine( $dpy,XtWindow($),$gc[1],0,y-2,$width, y-2 );
+      render_mstr( $, $tab_pos, $draw_title, $xft_col, $xftFont,
+                   0, $xftFont->ascent, m_buf($titleBar) );
+  }
 }
 
 
@@ -1014,11 +1121,11 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
     $key_cursor_drawn = $key_cursor;
     redraw_line($,$key_cursor);
     dirty = 1;
-    int last_visible_line = ($top_y + $list_height) / $line_height;
+    int last_visible_line = ($top_y + (int)$list_height) / $line_height;
     TRACE(2, "crsr:%d Vis:%d", $key_cursor, last_visible_line );
 
     if( $key_cursor >= last_visible_line ) {
-      int y=($key_cursor+1) * $line_height - $list_height;
+      int y=($key_cursor+1) * $line_height - (int)$list_height;
       $gotoxy($,-1,y); dirty=0;
     }
     else if( $key_cursor < ($top_y / $line_height) )
@@ -1042,9 +1149,11 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   uint bx = 1;
   uint by = $titleBarHeight;
   update_cache($);
-  XCopyArea($dpy,$pixmap,XtWindow($), $gc_copy,
-            $top_x, $top_y - $buf.y, $width -2*bx, $height-by,
-	    bx, by );
+  if ($pixmap) {
+      XCopyArea($dpy,$pixmap,XtWindow($), $gc_copy,
+                $top_x, $top_y - $buf.y, $width -2*bx, $height-by,
+    	    bx, by );
+  }
 
   XtCallCallbackList( $, $updatecb, NULL );
 }

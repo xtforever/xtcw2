@@ -1,0 +1,7 @@
+FileLister
+	this widget is a modification of Brian Totty's FileSelector
+	widget.  Besides the functionality provided by FileSelector,
+	the FileLister provides the capability of generating a list of
+	files, as well as their paths.  The FileLister returns a count
+	of the selected files, and pointers to two arrays of String:
+	one for the paths, and one for the files.

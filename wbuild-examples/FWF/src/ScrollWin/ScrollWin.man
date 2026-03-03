@@ -1,0 +1,270 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfScrolledWindow
+.SH DESCRIPTION
+The ScrolledWindow widget is a composite widget composed of two
+Scrollbars and a Board within a Frame, and presumably a
+grandgrandchild which is a child of the Board. The grandgrandchild is
+called the `controlled widget' (CW). Usually, the controlled widget is
+larger than the Board, and its origin will have negative x and y
+coordinates. It is moved about inside the Board by the ScrolledWindow,
+in reaction to the user clicking on the scrollbars. The controlled
+widget is therefore clipped by the Board.
+
+The ScrolledWindow provides a callback, but most application will not
+need it, since the ScrolledWindow already moves the CW. The callback
+is invoked {\em after} the CW is moved.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfScrolledWindow
+Name	Class	Type	Default
+XtNspacing	XtCSpacing	Dimension 	4 
+XtNscrollbarWidth	XtCScrollbarWidth	Dimension 	22 
+XtNshadowWidth	XtCShadowWidth	Dimension 	2 
+XtNhideHScrollbar	XtCHideHScrollbar	Boolean 	False 
+XtNhideVScrollbar	XtCHideVScrollbar	Boolean 	False 
+XtNvScrollAmount	XtCVScrollAmount	int 	20 
+XtNhScrollAmount	XtCHScrollAmount	int 	copy_vScrollAmount 
+XtNinitialX	XtCInitialX	Position 	0 
+XtNinitialY	XtCInitialY	Position 	0 
+XtNscrollCallback	XtCScrollCallback	Callback	NULL 
+XtNscrollResponse	XtCScrollResponse	XtCallbackProc 	scroll_response 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNspacing"
+By default, the Frame widget and the Scrollbars are placed 4 pixels
+from each other and from the edges of the ScrolledWindow itself.
+
+	
+
+.TP
+.I "XtNscrollbarWidth"
+The width of the scrollbars can be set with the \fIscrollbarWidth\fP
+resource. The default is 22 pixels.
+
+	
+
+.TP
+.I "XtNshadowWidth"
+The scrollbars and the frame have the same shadow frame. (The board
+has no border or frame.) The width of both is set with a single
+resource: \fIshadowWidth\fP. The style of the shadow cannot be changed. It
+will always be \fIXfwfSunken\fP.
+
+	
+
+.TP
+.I "XtNhideHScrollbar"
+It is possible to switch off the display of the scrollbars, with the
+following two resources: \fIhideHScrollbar\fP is by default \fIFalse\fP.
+
+	
+
+.TP
+.I "XtNhideVScrollbar"
+\fIhideVScrollbar\fP is also by default \fIFalse\fP.
+
+	
+
+.TP
+.I "XtNvScrollAmount"
+When the arrows of the scrollbars are clicked, the controlled widget
+will be moved a fixed number of pixels in the indicated direction. The
+distance can be set separately for horizontal and vertical movement.
+E.g., if the controlled widget displays text, it is a good idea to set
+the vertical scroll distance to the height of one line of text.
+
+	
+
+.TP
+.I "XtNhScrollAmount"
+The horizontal amount is by default copied from the vertical amount.
+
+	
+
+.TP
+.I "XtNinitialX"
+The initial position of the CW can be set with the resources
+\fIinitialX\fP and \fIinitialY\fP. Both are given in pixels and must be zero
+or negative.
+
+	
+
+.TP
+.I "XtNinitialY"
+\fIinitialY\fP is for the vertical position.
+
+	
+
+.TP
+.I "XtNscrollCallback"
+The callback is passed a pointer to an \fIXfwfScrollInfo\fP structure,
+which is defined as \fIstruct { XfwfSReason reason; XfwfSFlags flags;
+float vpos, vsize, hpos, hsize; }\fP The \fIreason\fP can be:
+
+* \fIXfwfSUp\fP: if the user clicked (or holds) the up arrow.
+
+* \fIXfwfSLeft\fP: ditto left arrow.
+
+* \fIXfwfSDown\fP: ditto down arrow.
+
+* \fIXfwfSRight\fP: ditto right arrow.
+
+* \fIXfwfSPageUp\fP: ditto area above thumb.
+
+* \fIXfwfSPageDown\fP: ditto area below thumb.
+
+* \fIXfwfSPageLeft\fP: ditto area left of thumb.
+
+* \fIXfwfSPageRight\fP: ditto area right of thumb.
+
+* \fIXfwfSDrag\fP: if the user drags one of the thumbs.
+
+* \fIXfwfSMove\fP: if the user stops dragging the thumb.
+
+* \fIXfwfSTop\fP: if the user requests to scroll all the way up.
+
+* \fIXfwfSBottom\fP: same all the way down.
+
+* \fIXfwfSLeftSide\fP: same to the left side.
+
+* \fIXfwfSRightSide\fP: same to the right side.
+
+Note that when the callback is called, the controlled window has
+already been moved.
+
+	
+
+.TP
+.I "XtNscrollResponse"
+To set the scrolled window toaparticular position, the
+scrollResponse function must be used. The function has the type
+of a callback function and it must be retrieved with a call to
+\fIXtGetValues\fP.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2

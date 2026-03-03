@@ -1,0 +1,361 @@
+'\" t
+.TH "" 3 "" "Version 3.0" "Free Widget Foundation"
+.SH NAME
+XfwfEntry
+.SH DESCRIPTION
+The \fIXfwfEntry\fP widget is used to read a single line of text.
+You can restrict the total length of the input string using the 
+variable \fImax\fP . The default value is 0 (characters).
+Using the \fIvalid\fP resource it is possible to control the users input.
+The user can only enter the specified characters.
+Setting this ressource to NULL (default) let the users imput all
+characters between 0x20 (SPACE) and 0xff.
+The \fIecho\fP resource enables/disables displaying of the entered text.
+You can use this for things like password boxes.
+
+.SS "Public variables"
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfEntry
+Name	Class	Type	Default
+XtNtext	XtCText	String 	NULL 
+XtNvalid	XtCValid	String 	NULL 
+XtNmax	XtCMax	int 	0 
+XtNecho	XtCEcho	Boolean 	True 
+XtNactivate	XtCActivate	Callback	NULL 
+XtNfont	XtCFont	FontStruct	XtDefaultFont 
+XtNforeground	XtCForeground	Pixel 	XtDefaultForeground 
+
+.TE
+.ps +2
+
+.TP
+.I "XtNtext"
+The variable \fItext\fP holds the string modified by the user.
+
+	
+
+.TP
+.I "XtNvalid"
+Using the \fIvalid\fP ressource it is possible to limit the characters the user 
+is allowed to enter. With a value of NULL the allowed characters ranges
+from 0x20 (SPACE) to 0xff.
+
+	
+
+.TP
+.I "XtNmax"
+The \fImax\fP ressource holds the number of maximal allowed characters.
+It defaults to 0.
+
+	
+
+.TP
+.I "XtNecho"
+The \fIecho\fP flag enables/disables displaying of the entered text.
+
+	
+
+.TP
+.I "XtNactivate"
+The \fIactivate\fP callback is called if the activate action is executed,
+bound by default to the <Return> key. entered text is passed in the 
+\fIcall_data\fP argument.
+
+	
+
+.TP
+.I "XtNfont"
+The text is drawn using the font given in the \fIfont\fP resource.
+
+	
+
+.TP
+.I "XtNforeground"
+The \fIforeground\fP resource specifies the color used for drawing the text.
+
+	
+
+.TP
+.I "XtNcursor"
+The \fIcursor\fP ressource is by default a vertical bar.
+
+	
+
+.TP
+.I "XtNtraversalOn"
+this widget receives keyboard events, \fItraversalOn\fP is set to \fITrue\fP.
+
+	
+
+.TP
+.I "XtNframeWidth"
+The default frame width is set to 2
+
+	
+
+.TP
+.I "XtNframeType"
+the \fIframeType\fP resource defaults to \fI"sunken"\fP.
+
+	
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfBoard
+Name	Class	Type	Default
+XtNabs_x	XtCAbs_x	Position 	0 
+XtNrel_x	XtCRel_x	Float 	"0.0"
+XtNabs_y	XtCAbs_y	Position 	0 
+XtNrel_y	XtCRel_y	Float 	"0.0"
+XtNabs_width	XtCAbs_width	Position 	0 
+XtNrel_width	XtCRel_width	Float 	"1.0"
+XtNabs_height	XtCAbs_height	Position 	0 
+XtNrel_height	XtCRel_height	Float 	"1.0"
+XtNhunit	XtCHunit	Float 	"1.0"
+XtNvunit	XtCVunit	Float 	"1.0"
+XtNlocation	XtCLocation	String 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfFrame
+Name	Class	Type	Default
+XtNcursor	XtCCursor	Cursor 	None 
+XtNframeType	XtCFrameType	FrameType 	XfwfRaised 
+XtNframeWidth	XtCFrameWidth	Dimension 	0 
+XtNouterOffset	XtCOuterOffset	Dimension 	0 
+XtNinnerOffset	XtCInnerOffset	Dimension 	0 
+XtNshadowScheme	XtCShadowScheme	ShadowScheme 	XfwfAuto 
+XtNtopShadowColor	XtCTopShadowColor	Color 	compute_topcolor 
+XtNbottomShadowColor	XtCBottomShadowColor	Color 	compute_bottomcolor 
+XtNtopShadowStipple	XtCTopShadowStipple	Bitmap 	NULL 
+XtNbottomShadowStipple	XtCBottomShadowStipple	Bitmap 	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+XfwfCommon
+Name	Class	Type	Default
+XtNuseXCC	XtCUseXCC	Boolean 	TRUE 
+XtNusePrivateColormap	XtCUsePrivateColormap	Boolean 	FALSE 
+XtNuseStandardColormaps	XtCUseStandardColormaps	Boolean 	TRUE 
+XtNstandardColormap	XtCStandardColormap	Atom 	0 
+XtNxcc	XtCXCc	XCC 	create_xcc 
+XtNtraversalOn	XtCTraversalOn	Boolean 	True 
+XtNhighlightThickness	XtCHighlightThickness	Dimension 	2 
+XtNhighlightColor	XtCHighlightColor	Color 	XtDefaultForeground 
+XtNbackground	XtCBackground	Color 	XtDefaultBackground 
+XtNhighlightPixmap	XtCHighlightPixmap	Pixmap 	None 
+XtNnextTop	XtCNextTop	Callback	NULL 
+XtNuserData	XtCUserData	Pointer	NULL 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Composite
+Name	Class	Type	Default
+XtNchildren	XtCChildren	WidgetList 	NULL 
+insertPosition	XtCInsertPosition	XTOrderProc 	NULL 
+numChildren	XtCNumChildren	Cardinal 	0 
+
+.TE
+.ps +2
+
+.ps -2
+.TS
+center box;
+cBsss
+lB|lB|lB|lB
+l|l|l|l.
+Core
+Name	Class	Type	Default
+XtNx	XtCX	Position 	0 
+XtNy	XtCY	Position 	0 
+XtNwidth	XtCWidth	Dimension 	0 
+XtNheight	XtCHeight	Dimension 	0 
+borderWidth	XtCBorderWidth	Dimension 	0 
+XtNcolormap	XtCColormap	Colormap 	NULL 
+XtNdepth	XtCDepth	Int 	0 
+destroyCallback	XtCDestroyCallback	XTCallbackList 	NULL 
+XtNsensitive	XtCSensitive	Boolean 	True 
+XtNtm	XtCTm	XTTMRec 	NULL 
+ancestorSensitive	XtCAncestorSensitive	Boolean 	False 
+accelerators	XtCAccelerators	XTTranslations 	NULL 
+borderColor	XtCBorderColor	Pixel 	0 
+borderPixmap	XtCBorderPixmap	Pixmap 	NULL 
+background	XtCBackground	Pixel 	0 
+backgroundPixmap	XtCBackgroundPixmap	Pixmap 	NULL 
+mappedWhenManaged	XtCMappedWhenManaged	Boolean 	True 
+XtNscreen	XtCScreen	Screen *	NULL 
+
+.TE
+.ps +2
+
+.SS "Exports"
+
+.nf
+void  XfwfEntryClear( $)
+.fi
+
+.SS "Translations"
+
+.nf
+<FocusIn>: focusIn() mouse_in() 
+.fi
+
+.nf
+<FocusOut>: mouse_out() focusOut() 
+.fi
+
+.nf
+<Btn1Down>: traverseCurrent() mclick() 
+.fi
+
+.nf
+<Key>Up: traverseUp() 
+.fi
+
+.nf
+<Key>Down: traverseDown() 
+.fi
+
+.nf
+Shift<Key>Tab: traversePrev() 
+.fi
+
+.nf
+~Shift<Key>Tab: traverseNext() 
+.fi
+
+.nf
+<Key>BackSpace: backspace() 
+.fi
+
+.nf
+<Key>Right: right() 
+.fi
+
+.nf
+<Key>Left: left() 
+.fi
+
+.nf
+<Key>Home: bol() 
+.fi
+
+.nf
+<Key>End: eol() 
+.fi
+
+.nf
+Ctrl<Key>a: bol() 
+.fi
+
+.nf
+Ctrl<Key>d: del_char() 
+.fi
+
+.nf
+Ctrl<Key>e: eol() 
+.fi
+
+.nf
+Ctrl<Key>b: left() 
+.fi
+
+.nf
+Ctrl<Key>f: right() 
+.fi
+
+.nf
+Ctrl<Key>h: backspace() 
+.fi
+
+.nf
+Ctrl<Key>k: kill() 
+.fi
+
+.nf
+Ctrl<Key>l: redraw() 
+.fi
+
+.nf
+<Key>Return: activate() 
+.fi
+
+.nf
+~Ctrl<Key>: self_insert() 
+.fi
+
+.SS "Actions"
+
+.TP
+.I "activate
+
+The \fIactivate\fP action calls the \fIactivate\fP callback with the current
+\fItext\fP as \fIcall_data\fP.
+
+.TP
+.I "self_insert
+
+.TP
+.I "del_char
+
+.TP
+.I "backspace
+
+.TP
+.I "kill
+
+.TP
+.I "redraw
+
+.TP
+.I "mclick
+
+.TP
+.I "mouse_in
+
+.TP
+.I "mouse_out
+
+.TP
+.I "bol
+
+.TP
+.I "eol
+
+.TP
+.I "left
+
+.TP
+.I "right
+

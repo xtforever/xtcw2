@@ -1,0 +1,18 @@
+.TH "ArtTextT" "1" "31 Aug 1995" "Version 1.0" "Free Widget Foundation"
+.SH NAME
+ArtTextT \- Test program for the XfwfArticleText widget
+.SH DESCRIPTION
+.PP
+.I ArtTextT
+opens a window with a scrolling window widget in it and inside that is an
+ArticleText widget.  The program takes as an argument the filename of a news
+article to display.  Headers, header values, body lines and quoted text are
+displayed in different fonts and different colors.
+.SH AUTHOR
+.sp
+.nf
+Paul Kendall <paul@kcbbs.gen.nz>
+.fi
+
+
+

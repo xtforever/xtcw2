@@ -1,0 +1,94 @@
+'\" t
+.TH "ImageSelector" "3" "19 May 1992" "Version 3.0" "Free Widget Foundation"
+.SH Name
+ImageSelector \- Grid of pixmaps from which images can be selected
+.SH Synopsis
+#include <X11/Intrinsic.h>
+#include <X11/ImageSelector.h>
+
+widget = XtCreateManagedWidget(name, imageSelectorWidgetClass, ...);
+.SH Class Hierarchy
+Core-->Simple-->ImageSelector
+.SH Description
+
+ImageSelector is a two dimensional grid of images.  The images can bew viewed
+and selected by the user.  Layout options can be specified, as can graphic
+attributes.  The selectability of the images can be controlled, and optional
+textula labelling of the images is supported.
+
+.SH Resources
+In addition to the resources defined by superclasses, this widget
+defines the following:
+.TS
+tab(/) ;
+lB lB lB lB.
+Name/Class/Type/Default
+.T&
+lB l l l.
+XtNpreferredNumRows/Value/Int/0
+XtNpreferredNumCols/Value/Int/0
+XtNnumSelectable/Value/Int/-1
+XtNimagePadding/Value/Int/7
+XtNcursor/Cursor/Cursor/left_ptr
+XtNgridColor/Color/Pixel/XtDefaultForeground
+XtNinfoColor/Color/Pixel/XtDefaultForeground
+XtNimagePaddingColor/Color/Pixel/XtDefaultBackground
+XtNselectedImagePaddingColor/Color/Pixel/XtDefaultForeground
+XtNshowInfo/Boolean/Boolean/False
+XtNallowPartialCells/Boolean/Boolean/True
+XtNcomputePixmapSizes/Boolean/Boolean/True
+XtNselectionChangeCallback/Callback/Callback/NULL 
+XtNinfoFont/Font/XFontStruct/XtDefaultFont
+XtNpadPixmap/Pixmap/Pixmap/None
+XtNimages/Value/Image */NULL
+XtNnumImages/Value/Int/0
+XtNnumRows/ReadOnly/Int
+XtNnumCols/ReadOnly/Int
+XtNnumSelected/ReadOnly/Int
+.TE
+.ne 4
+.SH Public Functions
+.nf
+.ta 3i
+void ImageSelectorGetSelectedData(isw,ret)
+ImageSelectorWidget isw;
+ImageSelectorReturnStruct *ret;
+.fi
+.sp
+.RS 5
+This routine returns, in an ImageSelectorReturnStruct, the number of images
+selected, and a dynamically allocated array of integer indices of these
+selected images.  The array has length equal to the number of selected
+images.  The array should be deallocated by the user.
+.SH Callbacks
+.LP
+Whenever the selection status of the widget changes, the callbacks on
+the XtNselectionChangeCallback callback list are called.  They receive data
+in an ImageSelectorReturnStruct, identically to the format of the
+ImageSelectorGetSelectedData call, except that the data will be deallocated
+by the widget, so that callbacks that need the data array, must copy the data
+accordingly.
+.sp
+.RS 5
+.nf
+typedef struct _ImageSelectorReturnStruct
+{
+	int num_selected;
+	int *selected_items;
+} ImageSelectorReturnStruct;
+.fi
+.RE
+.SH Restrictions
+.LP
+There are likely to be many bugs and inadequacies in this code.  It
+has only been tested on Sparcs and DECstations.  Please send bug
+reports and feature requests to the email address below.
+.SH Author
+.sp
+.nf
+Brian Totty, \fItotty@cs.uiuc.edu\fR
+Department of Computer Science,
+University of Illinois at Urbana-Champaign
+1304 W. Springfield Avenue
+Urbana, IL 61801
+.fi
