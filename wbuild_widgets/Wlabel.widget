@@ -266,6 +266,10 @@
             *w = (int)pt2px($, retex_paragraph_get_width(p)) + 4;
         }
         double h_px = pt2px($, retex_paragraph_get_height(p)) + 4;
+        
+        /* If a height was explicitly set (e.g. via LUI), respect it if it's larger */
+        if ($height > h_px) h_px = $height;
+
         /* SAFETY: Cap pixel height to prevent XCreatePixmap BadAlloc (max 4000px) */
         if (h_px > 4000) h_px = 4000;
         *h = (int)h_px;
