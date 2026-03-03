@@ -11,7 +11,10 @@
 @var String fontFace = "Sans"
 @ default size
 @var int fontSize = 12
-@var int vSpace = 0
+@var int topGap = 0
+@var int bottomGap = 0
+@var int leftGap = 0
+@var int rightGap = 0
 @var Boolean autoHeight = FALSE
 @var int cornerRoundPercent = 0
 @var int leftOffsetPercent = 5
@@ -97,7 +100,9 @@
     if ($fg_norm != $old$fg_norm || $bg_norm != $old$bg_norm ||
         $fg_sel != $old$fg_sel || $bg_sel != $old$bg_sel ||
         $fg_hi != $old$fg_hi || $bg_hi != $old$bg_hi ||
-        $state != $old$state || $vSpace != $old$vSpace ) {
+        $state != $old$state || 
+        $topGap != $old$topGap || $bottomGap != $old$bottomGap ||
+        $leftGap != $old$leftGap || $rightGap != $old$rightGap ) {
         redraw_flag = 1;
     }
 
@@ -177,29 +182,31 @@
 
     Backend *be = (Backend*)$backend;
     
-    /* Layout */
-    double layout_width_pt = ($width > 0) ? px2pt($, $width) : 10000.0;
-    if (layout_width_pt < 10.0) layout_width_pt = 10.0; /* SAFETY */
+    /* Calculate available width for layout after gaps */
+    int avail_w = (int)$width - ($leftGap + $rightGap);
+    if (avail_w < 10) avail_w = 10;
+    double layout_width_pt = px2pt($, avail_w);
+
     $para = retex_layout(be, $label, layout_width_pt, $fontFace, $fontSize, $alignment);
     if (!$para) return;
 
     /* Clear background */
-    /* draw_rect expects points if we are using the scaled backend. */
-    /* So we convert widget pixels to points. */
     be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), xftcolor_to_argb($, COLOR_BG_NORM + $state));
 
-    /* Render centered */
+    /* Render centered in the available area defined by gaps */
     double text_h_pt = retex_paragraph_get_height($para);
     double text_w_pt = retex_paragraph_get_width($para);
     
-    double width_pt = px2pt($, $width);
-    double height_pt = px2pt($, $height);
+    int avail_h = (int)$height - ($topGap + $bottomGap);
+    if (avail_h < 1) avail_h = 1;
+    double avail_h_pt = px2pt($, avail_h);
+    double avail_w_pt = px2pt($, avail_w);
 
-    /* Center logic in points */
-    double x = (width_pt - text_w_pt) / 2.0;
-    double y = (height_pt - text_h_pt) / 2.0;
-    if (x < 0) x = 0;
-    if (y < 0) y = 0;
+    /* Center logic in points within available sub-rect */
+    double x = px2pt($, $leftGap) + (avail_w_pt - text_w_pt) / 2.0;
+    double y = px2pt($, $topGap) + (avail_h_pt - text_h_pt) / 2.0;
+    if (x < px2pt($, $leftGap)) x = px2pt($, $leftGap);
+    if (y < px2pt($, $topGap)) y = px2pt($, $topGap);
 
     /* Add baseline offset (in points) */
     y += retex_paragraph_get_first_line_height($para);
@@ -250,8 +257,10 @@
     Backend *be = backend_xpixmap_create(dpy, root, 10, 10);
     if (!be) { *w=10; *h=10; return; }
     
-    double target_width_pt = (tw > 0) ? px2pt($, tw) : 10000.0;
-    if (target_width_pt < 10.0) target_width_pt = 10.0;
+    /* Use current gaps for measurement */
+    int adj_tw = (tw > 0) ? (tw - ($leftGap + $rightGap)) : 10000;
+    if (adj_tw < 10) adj_tw = 10;
+    double target_width_pt = px2pt($, adj_tw);
 
     RetexParagraph *p = retex_layout(be, $label, target_width_pt, $fontFace, $fontSize, $alignment);
     
@@ -259,9 +268,9 @@
         if (tw > 0) {
             *w = tw;
         } else {
-            *w = (int)pt2px($, retex_paragraph_get_width(p)) + 4;
+            *w = (int)pt2px($, retex_paragraph_get_width(p)) + 4 + $leftGap + $rightGap;
         }
-        double h_px = pt2px($, retex_paragraph_get_height(p)) + 4 + $vSpace * 2;
+        double h_px = pt2px($, retex_paragraph_get_height(p)) + 4 + $topGap + $bottomGap;
         
         /* If not autoHeight, respect explicitly set height if larger */
         if (!$autoHeight && $height > h_px) h_px = $height;
@@ -271,7 +280,8 @@
         *h = (int)h_px;
         retex_paragraph_free(p);
     } else {
-        *w = 50; *h = 20;
+        *w = 50 + $leftGap + $rightGap;
+        *h = 20 + $topGap + $bottomGap;
     }
     
     be->destroy(be);

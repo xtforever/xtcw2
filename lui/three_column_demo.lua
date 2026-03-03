@@ -34,7 +34,8 @@ local lui_source = [[(window :title "Three Column Demo" :width 600 :height 500
   (grid
     (label :label "System Process Monitor" 
            :gridx 0 :gridy 0 :weightx 100 :weighty 0 :fontSize 28 
-           :vSpace 40 :autoHeight true :alignment 1)
+           :topGap 40 :bottomGap 40 :leftGap 20 :rightGap 20 
+           :autoHeight true :alignment 1)
     
     (list-view :id "processes" :model $list_handle 
                :gridx 0 :gridy 1 :weightx 100 :weighty 100 :fill 3
