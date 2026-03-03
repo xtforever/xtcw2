@@ -202,14 +202,19 @@
     double avail_h_pt = px2pt($, avail_h);
     double avail_w_pt = px2pt($, avail_w);
 
-    /* Center logic in points within available sub-rect */
-    double x = px2pt($, $leftGap) + (avail_w_pt - text_w_pt) / 2.0;
-    double y = px2pt($, $topGap) + (avail_h_pt - text_h_pt) / 2.0;
-    if (x < px2pt($, $leftGap)) x = px2pt($, $leftGap);
-    if (y < px2pt($, $topGap)) y = px2pt($, $topGap);
+    /* Centering offset (in points) within the available gap-adjusted area */
+    double v_off_pt = (avail_h_pt - text_h_pt) / 2.0;
+    double h_off_pt = (avail_w_pt - text_w_pt) / 2.0;
+    if (v_off_pt < 0) v_off_pt = 0;
+    if (h_off_pt < 0) h_off_pt = 0;
 
-    /* VBox renderer expects y to be the baseline of the first line. */
-    y += retex_paragraph_get_first_line_height($para);
+    /* re-tex renderer expects y to be the baseline of the first line. 
+       Baseline = WidgetTop + topGap + vertical_offset + first_line_height. */
+    double x = px2pt($, $leftGap) + h_off_pt;
+    double y = px2pt($, $topGap) + v_off_pt + retex_paragraph_get_first_line_height($para);
+
+    TRACE(2, "Wlabel %s: h=%d, text_h=%.1fpt, topGap=%d, v_off=%.1fpt, y=%.1fpt\n", 
+          $name, $height, text_h_pt, $topGap, v_off_pt, y);
 
     be->set_color(be, xftcolor_to_argb($, COLOR_FG_NORM + $state));
     retex_paragraph_render($para, be, x, y);
@@ -268,9 +273,9 @@
         if (tw > 0) {
             *w = tw;
         } else {
-            *w = (int)pt2px($, retex_paragraph_get_width(p)) + 4 + $leftGap + $rightGap;
+            *w = (int)pt2px($, retex_paragraph_get_width(p)) + $leftGap + $rightGap;
         }
-        double h_px = pt2px($, retex_paragraph_get_height(p)) + 4 + $topGap + $bottomGap;
+        double h_px = pt2px($, retex_paragraph_get_height(p)) + $topGap + $bottomGap;
         
         /* If not autoHeight, respect explicitly set height if larger */
         if (!$autoHeight && $height > h_px) h_px = $height;
