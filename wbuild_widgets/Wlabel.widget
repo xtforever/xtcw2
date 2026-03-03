@@ -194,30 +194,29 @@
     be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), xftcolor_to_argb($, COLOR_BG_NORM + $state));
 
     /* Render centered in the available area defined by gaps */
-    double text_h_pt = retex_paragraph_get_height($para);
-    double text_w_pt = retex_paragraph_get_width($para);
+    double text_h_px = pt2px($, retex_paragraph_get_height($para));
+    double text_w_px = pt2px($, retex_paragraph_get_width($para));
     
-    int avail_h = (int)$height - ($topGap + $bottomGap);
-    if (avail_h < 1) avail_h = 1;
-    double avail_h_pt = px2pt($, avail_h);
-    double avail_w_pt = px2pt($, avail_w);
+    double avail_h_px = (double)$height - ($topGap + $bottomGap);
+    double avail_w_px = (double)$width - ($leftGap + $rightGap);
+    if (avail_h_px < 1.0) avail_h_px = 1.0;
+    if (avail_w_px < 1.0) avail_w_px = 1.0;
 
-    /* Centering offset (in points) within the available gap-adjusted area */
-    double v_off_pt = (avail_h_pt - text_h_pt) / 2.0;
-    double h_off_pt = (avail_w_pt - text_w_pt) / 2.0;
-    if (v_off_pt < 0) v_off_pt = 0;
-    if (h_off_pt < 0) h_off_pt = 0;
+    /* Centering offset (in pixels) within the available gap-adjusted area */
+    double v_off_px = (avail_h_px - text_h_px) / 2.0;
+    double h_off_px = (avail_w_px - text_w_px) / 2.0;
+    if (v_off_px < 0) v_off_px = 0;
+    if (h_off_px < 0) h_off_px = 0;
 
-    /* re-tex renderer expects y to be the baseline of the first line. 
-       Baseline = WidgetTop + topGap + vertical_offset + first_line_height. */
-    double x = px2pt($, $leftGap) + h_off_pt;
-    double y = px2pt($, $topGap) + v_off_pt + retex_paragraph_get_first_line_height($para);
+    /* re-tex renderer expects y to be the baseline of the first line (in points). */
+    double x_pt = px2pt($, (double)$leftGap + h_off_px);
+    double y_pt = px2pt($, (double)$topGap + v_off_px) + retex_paragraph_get_first_line_height($para);
 
-    TRACE(2, "Wlabel %s: h=%d, text_h=%.1fpt, topGap=%d, v_off=%.1fpt, y=%.1fpt\n", 
-          $name, $height, text_h_pt, $topGap, v_off_pt, y);
+    TRACE(2, "Wlabel %s: h=%d, text_h_px=%.1f, topGap=%d, v_off_px=%.1f, y_pt=%.1f\n", 
+          $name, $height, text_h_px, $topGap, v_off_px, y_pt);
 
     be->set_color(be, xftcolor_to_argb($, COLOR_FG_NORM + $state));
-    retex_paragraph_render($para, be, x, y);
+    retex_paragraph_render($para, be, x_pt, y_pt);
 }
 
 @UTILITIES

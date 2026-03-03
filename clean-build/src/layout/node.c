@@ -66,7 +66,7 @@ int node_list_to_vbox(int all_lines, double font_size_pt) {
     // Calculate Height and Width
     double height = 0;
     double width = 0;
-    double first_line_height = 0;
+    double first_line_height = -1.0; // Marker
     double prev_depth = 0;
     int p; Node *line;
 
@@ -75,7 +75,13 @@ int node_list_to_vbox(int all_lines, double font_size_pt) {
     m_foreach(all_lines, p, line) {
         if (line->type == NODE_KERN && line->width == 0) {
             // Explicit vertical spacing
-            height += TO_DOUBLE(line->height);
+            double kh = TO_DOUBLE(line->height);
+            if (first_line_height < 0) {
+                height += kh;
+            } else {
+                // This kern is below the first baseline
+                // We'll add it to the total height later via glue calculation
+            }
             m_put(vbox_list, line);
             continue;
         }
@@ -84,8 +90,8 @@ int node_list_to_vbox(int all_lines, double font_size_pt) {
         double d = TO_DOUBLE(line->depth);
         double w = TO_DOUBLE(line->width);
         
-        if (p == 0) {
-            first_line_height = h;
+        if (first_line_height < 0) {
+            first_line_height = height + h;
             height += h;
         } else {
             // TeX-like inter-line spacing
@@ -104,6 +110,7 @@ int node_list_to_vbox(int all_lines, double font_size_pt) {
         prev_depth = d;
     }
     height += prev_depth;
+    if (first_line_height < 0) first_line_height = 0;
 
     int h_vbox = m_create(1, sizeof(Node));
     Node vbox = {0};
