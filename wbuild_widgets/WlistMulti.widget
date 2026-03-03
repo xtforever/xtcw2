@@ -674,7 +674,13 @@ zusätzlich wird der |notify| Handler aufgerufen.
 
                 double cur_x_pt = px2pt($, cur_x);
                 double cur_y_pt = px2pt($, y);
-                double y_render_pt = cur_y_pt + y_off_pt + nominal_ascent_pt;
+                
+                /* Calculate target baseline for the row */
+                double target_baseline_pt = cur_y_pt + y_off_pt + nominal_ascent_pt;
+                
+                /* VBox renderer expects top of VBox. First line's baseline is at TopOfVBox + firstH.
+                   So TopOfVBox = TargetBaseline - firstH. */
+                double y_render_pt = target_baseline_pt - retex_paragraph_get_first_line_height(para);
 
                 retex_paragraph_render(para, be, cur_x_pt, y_render_pt);
                 retex_paragraph_free(para);
