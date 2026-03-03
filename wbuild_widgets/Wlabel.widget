@@ -11,6 +11,8 @@
 @var String fontFace = "Sans"
 @ default size
 @var int fontSize = 12
+@var int vSpace = 0
+@var Boolean autoHeight = FALSE
 @var int cornerRoundPercent = 0
 @var int leftOffsetPercent = 5
 @var int update = 0
@@ -52,7 +54,7 @@
   $prefered_height = 20;
 
   // Initial measurement
-  calculate_size($, &$prefered_width, &$prefered_height);
+  calculate_size($, 0, &$prefered_width, &$prefered_height);
   if ($width == 0) $width = $prefered_width;
   if ($height == 0) $height = $prefered_height;
 }
@@ -95,13 +97,13 @@
     if ($fg_norm != $old$fg_norm || $bg_norm != $old$bg_norm ||
         $fg_sel != $old$fg_sel || $bg_sel != $old$bg_sel ||
         $fg_hi != $old$fg_hi || $bg_hi != $old$bg_hi ||
-        $state != $old$state ) {
+        $state != $old$state || $vSpace != $old$vSpace ) {
         redraw_flag = 1;
     }
 
     if (redraw_flag) {
         $dirty = 1;
-        calculate_size($, &$prefered_width, &$prefered_height);
+        calculate_size($, $width, &$prefered_width, &$prefered_height);
         do_expose = 1;
     }
 
@@ -110,11 +112,11 @@
 
 @proc query_geometry
 {
+    int tw = (request->request_mode & CWWidth) ? request->width : $width;
     int w, h;
-    calculate_size($, &w, &h);
+    calculate_size($, tw, &w, &h);
 
-    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
-    reply->x = 0; reply->y = 0;
+    reply->request_mode = CWWidth | CWHeight;
     reply->width = w;
     reply->height = h;
 
@@ -240,35 +242,29 @@
     return px * 72.0 / get_dpi($);
 }
 
-@proc calculate_size($, int *w, int *h)
+@proc calculate_size($, int tw, int *w, int *h)
 {
-    /* Measure without creating full backend if possible? */
-    /* retex_layout needs a backend for font metrics. */
-    /* create a dummy 1x1 backend */
     Display *dpy = XtDisplay($);
     Window root = DefaultRootWindow(dpy);
     
     Backend *be = backend_xpixmap_create(dpy, root, 10, 10);
     if (!be) { *w=10; *h=10; return; }
     
-    /* Use a large width to check natural width (single line) */
-    /* Let's assume infinite width for preferred size (no wrapping) */
-    /* SAFETY: Ensure target_width_pt is at least 10pt to avoid infinite line wrapping */
-    double target_width_pt = ($width > 0) ? px2pt($, $width) : 10000.0;
+    double target_width_pt = (tw > 0) ? px2pt($, tw) : 10000.0;
     if (target_width_pt < 10.0) target_width_pt = 10.0;
 
     RetexParagraph *p = retex_layout(be, $label, target_width_pt, $fontFace, $fontSize, $alignment);
     
     if (p) {
-        if ($width > 0) {
-            *w = $width;
+        if (tw > 0) {
+            *w = tw;
         } else {
             *w = (int)pt2px($, retex_paragraph_get_width(p)) + 4;
         }
-        double h_px = pt2px($, retex_paragraph_get_height(p)) + 4;
+        double h_px = pt2px($, retex_paragraph_get_height(p)) + 4 + $vSpace * 2;
         
-        /* If a height was explicitly set (e.g. via LUI), respect it if it's larger */
-        if ($height > h_px) h_px = $height;
+        /* If not autoHeight, respect explicitly set height if larger */
+        if (!$autoHeight && $height > h_px) h_px = $height;
 
         /* SAFETY: Cap pixel height to prevent XCreatePixmap BadAlloc (max 4000px) */
         if (h_px > 4000) h_px = 4000;
