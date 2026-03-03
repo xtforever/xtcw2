@@ -208,6 +208,9 @@
     if (x < px2pt($, $leftGap)) x = px2pt($, $leftGap);
     if (y < px2pt($, $topGap)) y = px2pt($, $topGap);
 
+    /* VBox renderer expects y to be the baseline of the first line. */
+    y += retex_paragraph_get_first_line_height($para);
+
     be->set_color(be, xftcolor_to_argb($, COLOR_FG_NORM + $state));
     retex_paragraph_render($para, be, x, y);
 }
