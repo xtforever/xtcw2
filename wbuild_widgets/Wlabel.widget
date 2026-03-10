@@ -32,6 +32,8 @@
 @var int prefered_height
 @var Bool dirty
 @var String label_mem
+@var double layout_x_offset_pt
+@var double layout_y_offset_pt
 @var int last_state
 
 @METHODS
@@ -239,6 +241,9 @@
     double x_pt = px2pt($, (double)$leftGap) + h_centering_offset_pt;
     double y_pt = px2pt($, (double)$topGap) + v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
 
+    $layout_x_offset_pt = x_pt;
+    $layout_y_offset_pt = y_pt - retex_paragraph_get_first_line_height($para_ptr);
+
     be->set_color(be, xftcolor_to_argb($, COLOR_FG_NORM + $state));
     retex_paragraph_set_selection($para_ptr, $selection_start, $selection_end);
     retex_paragraph_render($para_ptr, be, x_pt, y_pt);
@@ -259,15 +264,15 @@
 {
     int x = event->xbutton.x;
     int y = event->xbutton.y;
-    double x_pt = px2pt($, x - $leftGap);
-    double y_pt = px2pt($, y - $topGap);
+    double x_pt = px2pt($, x) - $layout_x_offset_pt;
+    double y_pt = px2pt($, y) - $layout_y_offset_pt;
     
     if (!$para_ptr) update_cache($);
     if ($para_ptr) {
         int idx = retex_paragraph_get_node_at($para_ptr, x_pt, y_pt);
         if (idx != -1) {
             $selection_start = $selection_end = idx;
-            XtVaSetValues($, XtNselection_start, idx, XtNselection_end, idx, NULL);
+            redraw_label($);
             // Own PRIMARY selection
             XtOwnSelection($, XA_PRIMARY, event->xbutton.time, convert_selection, NULL, NULL);
         }
@@ -278,21 +283,21 @@
 {
     int x = event->xmotion.x;
     int y = event->xmotion.y;
-    double x_pt = px2pt($, x - $leftGap);
-    double y_pt = px2pt($, y - $topGap);
+    double x_pt = px2pt($, x) - $layout_x_offset_pt;
+    double y_pt = px2pt($, y) - $layout_y_offset_pt;
     
     if ($para_ptr) {
         int idx = retex_paragraph_get_node_at($para_ptr, x_pt, y_pt);
         if (idx != -1) {
             $selection_end = idx;
-            XtVaSetValues($, XtNselection_end, idx, NULL);
+            redraw_label($);
         }
     }
 }
 
 @UTILITIES
 
-@proc Boolean convert_selection($, Atom *selection, Atom *target, Atom *type, XtPointer *value, uint32_t *length, int *format)
+@proc Boolean convert_selection($, Atom *selection, Atom *target, Atom *type, XtPointer *value, unsigned long *length, int *format)
 {
     if (*target == XA_STRING) {
         *type = XA_STRING;
