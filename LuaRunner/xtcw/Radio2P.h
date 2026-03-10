@@ -6,17 +6,6 @@
 #include <xtcw/GridboxP.h>
 #include <xtcw/Radio2.h>
 _XFUNCPROTOBEGIN
-typedef struct {
-/* Constraint resources */
-/* Private constraint variables */
-int dummy;
-} Radio2ConstraintPart;
-
-typedef struct _Radio2ConstraintRec {
-GridboxConstraintPart gridbox;
-Radio2ConstraintPart radio2;
-} Radio2ConstraintRec;
-
 
 typedef struct {
 /* methods */
@@ -27,7 +16,6 @@ int dummy;
 typedef struct _Radio2ClassRec {
 CoreClassPart core_class;
 CompositeClassPart composite_class;
-ConstraintClassPart constraint_class;
 GridboxClassPart gridbox_class;
 Radio2ClassPart radio2_class;
 } Radio2ClassRec;
@@ -45,7 +33,6 @@ String  radioGroup;
 typedef struct _Radio2Rec {
 CorePart core;
 CompositePart composite;
-ConstraintPart constraint;
 GridboxPart gridbox;
 Radio2Part radio2;
 } Radio2Rec;

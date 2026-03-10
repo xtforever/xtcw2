@@ -1,4 +1,5 @@
 #include "focus-group.h"
+#include <xtcw/Wheel.h>
 
 char trace_focus = 0;
 

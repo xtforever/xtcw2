@@ -3,28 +3,34 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 156 "Canvas.widget"
-#include <assert.h>
-#line 157 "Canvas.widget"
-#include <stdint.h>
-#line 158 "Canvas.widget"
-#include <X11/Intrinsic.h>
-#line 159 "Canvas.widget"
-#include <X11/Xmu/Converters.h>
 #line 160 "Canvas.widget"
-#include <X11/Xft/Xft.h>
+#include <assert.h>
 #line 161 "Canvas.widget"
-#include <X11/Xregion.h>
+#include <stdint.h>
 #line 162 "Canvas.widget"
-#include "converters.h"
+#include <X11/Intrinsic.h>
 #line 163 "Canvas.widget"
-#include "xutil.h"
+#include <X11/Xmu/Converters.h>
 #line 164 "Canvas.widget"
-#include "mls.h"
+#include <X11/Xft/Xft.h>
 #line 165 "Canvas.widget"
+#include <X11/Xregion.h>
+#line 166 "Canvas.widget"
+#include "converters.h"
+#line 167 "Canvas.widget"
+#include "xutil.h"
+#line 168 "Canvas.widget"
+#include "mls.h"
+#line 169 "Canvas.widget"
 #include "canvas-draw.h"
 #include <xtcw/CanvasP.h>
 #line 116 "Canvas.widget"
+static void expose_action(
+#if NeedFunctionPrototypes
+Widget,XEvent*,String*,Cardinal*
+#endif
+);
+#line 120 "Canvas.widget"
 static void zoom(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -32,6 +38,7 @@ Widget,XEvent*,String*,Cardinal*
 );
 
 static XtActionsRec actionsList[] = {
+{"expose_action", expose_action},
 {"zoom", zoom},
 };
 static void _resolve_inheritance(
@@ -143,7 +150,7 @@ CanvasClassRec canvasClassRec = {
 /* initialize_hook 	*/  NULL,
 /* realize      	*/  realize,
 /* actions      	*/  actionsList,
-/* num_actions  	*/  1,
+/* num_actions  	*/  2,
 /* resources    	*/  resources,
 /* num_resources 	*/  6,
 /* xrm_class    	*/  NULLQUARK,
@@ -173,6 +180,13 @@ CanvasClassRec canvasClassRec = {
 WidgetClass canvasWidgetClass = (WidgetClass) &canvasClassRec;
 /*ARGSUSED*/
 #line 116 "Canvas.widget"
+static void expose_action(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
+{
+    expose(self, NULL, NULL);
+}
+
+/*ARGSUSED*/
+#line 120 "Canvas.widget"
 static void zoom(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	XTFUNC();
@@ -324,17 +338,17 @@ static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  re
 {
 	return True; /* yes we want a redraw */	
 }
-#line 142 "Canvas.widget"
-#line 143 "Canvas.widget"
+#line 146 "Canvas.widget"
+#line 147 "Canvas.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 143 "Canvas.widget"
+#line 147 "Canvas.widget"
 canvas_draw_t * canvas_get_priv(Widget self)
 #else
-#line 143 "Canvas.widget"
+#line 147 "Canvas.widget"
 canvas_draw_t * canvas_get_priv(self)Widget self;
 #endif
-#line 144 "Canvas.widget"
+#line 148 "Canvas.widget"
 {
     if( XtIsSubclass( self,canvasWidgetClass ) )
       return & ((CanvasWidget)self)->canvas.canv;

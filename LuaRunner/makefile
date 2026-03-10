@@ -24,7 +24,7 @@ CC = gcc
 VPATH = ../utils
 
 CFLAGS += -D_GNU_SOURCE -fms-extensions $(LUA_CFLAGS)
-CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I. -I../utils -Ixtcw -I../build/source
+CFLAGS += -I. -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I../utils -I../build/source
 
 XORGLIB=-lXt -lXaw -lX11 -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil -ldl $(shell pkg-config --libs cairo cairo-xlib)
 LOADLIBES=$(libdir)/libxtcw.a $(LUA_LIBS) $(XORGLIB)
@@ -46,7 +46,7 @@ WFLAGS= -d . -c . -i ./$(WBPREFIX) --include-prefix=$(WBPREFIX) $(PKGDATADIR)/te
 	swig -lua -o $@ $<
 
 xtcw/%.h %.c: %.widget
-	wb_search=$(srcdir) $(WBWRAP) $^ $(WBUILD) $(WFLAGS)
+	wb_search=.:$(srcdir):../plainc_widgets $(WBWRAP) $^ $(WBUILD) $(WFLAGS)
 
 %.tab.c %.tab.h: %.y
 	$(YACC) $(YFLAGS) $<

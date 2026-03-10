@@ -37,18 +37,24 @@ typedef struct {
 String  label;
 String  fontFace;
 int  fontSize;
+int  topGap;
+int  bottomGap;
+int  leftGap;
+int  rightGap;
+Boolean  autoHeight;
 int  cornerRoundPercent;
 int  leftOffsetPercent;
 int  update;
 int  alignment;
 /* private state */
-void * backend;
-void * para;
+void * backend_ptr;
+void * para_ptr;
 Pixmap  pixmap;
 int  prefered_width;
 int  prefered_height;
 Bool  dirty;
 String  label_mem;
+int  last_state;
 } WlabelPart;
 
 typedef struct _WlabelRec {

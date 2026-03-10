@@ -6,17 +6,6 @@
 #include <xtcw/GridboxP.h>
 #include <xtcw/MessageBox.h>
 _XFUNCPROTOBEGIN
-typedef struct {
-/* Constraint resources */
-/* Private constraint variables */
-int dummy;
-} MessageBoxConstraintPart;
-
-typedef struct _MessageBoxConstraintRec {
-GridboxConstraintPart gridbox;
-MessageBoxConstraintPart messageBox;
-} MessageBoxConstraintRec;
-
 
 typedef struct {
 /* methods */
@@ -27,7 +16,6 @@ int dummy;
 typedef struct _MessageBoxClassRec {
 CoreClassPart core_class;
 CompositeClassPart composite_class;
-ConstraintClassPart constraint_class;
 GridboxClassPart gridbox_class;
 MessageBoxClassPart messageBox_class;
 } MessageBoxClassRec;
@@ -41,7 +29,6 @@ XtCallbackList  callback;
 typedef struct _MessageBoxRec {
 CorePart core;
 CompositePart composite;
-ConstraintPart constraint;
 GridboxPart gridbox;
 MessageBoxPart messageBox;
 } MessageBoxRec;

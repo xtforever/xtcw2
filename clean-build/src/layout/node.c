@@ -97,7 +97,7 @@ int node_list_to_vbox(int all_lines, double font_size_pt) {
             // TeX-like inter-line spacing
             double baseline_skip = font_size_pt * 1.2;
             double glue_val = baseline_skip - prev_depth - h;
-            if (glue_val < font_size_pt * 0.1) glue_val = font_size_pt * 0.1;
+            if (glue_val < 2.0) glue_val = 2.0; 
             
             node_create_kern(vbox_list, FROM_DOUBLE(glue_val));
             Node *kn = (Node*)mls(vbox_list, m_len(vbox_list) - 1);

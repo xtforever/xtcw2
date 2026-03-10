@@ -8,6 +8,14 @@
 #include "glue.h"
 #include "mls.h"
 #include "m_tool.h"
+
+/* Workaround for redefinition error in conststr.h vs m_tool.h */
+#define s_cstr s_cstr_hidden
+#define s_mstr s_mstr_hidden
+#include "conststr.h"
+#undef s_cstr
+#undef s_mstr
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -47,13 +55,13 @@ static Scaled retex_layout_parse_length(int token_list, int *p_idx, Scaled em_si
     int start = *p_idx;
     int end = start;
     
-    int buf = s_printf(0, 0, "");
+    int buf = m_create(16, 1);
     while (end < len) {
         Token *t = (Token*)mls(token_list, end);
         if (t->type == TOK_CHAR) {
             if (t->char_code == '-' || isdigit(t->char_code) || t->char_code == '.' || isalpha(t->char_code)) {
-                char tmp[2] = {(char)t->char_code, 0};
-                s_app(buf, tmp, NULL);
+                char tmp = (char)t->char_code;
+                m_put(buf, &tmp);
                 end++;
             } else break;
         } else if (t->type == TOK_GROUP_END && in_group) {
@@ -65,17 +73,18 @@ static Scaled retex_layout_parse_length(int token_list, int *p_idx, Scaled em_si
         } else break;
     }
     
+    char tmp = 0; m_put(buf, &tmp);
     const char *s = m_str(buf);
     char *endptr;
     double val = strtod(s, &endptr);
     Scaled result = 0;
     
     if (endptr != s) {
-        if (strcmp(endptr, "pt") == 0) result = FROM_DOUBLE(val);
-        else if (strcmp(endptr, "mm") == 0) result = FROM_DOUBLE(val * 72.27 / 25.4);
-        else if (strcmp(endptr, "cm") == 0) result = FROM_DOUBLE(val * 72.27 / 2.54);
-        else if (strcmp(endptr, "in") == 0) result = FROM_DOUBLE(val * 72.27);
-        else if (strcmp(endptr, "em") == 0) result = (Scaled)(val * (double)em_size);
+        if (strncmp(endptr, "pt", 2) == 0) result = FROM_DOUBLE(val);
+        else if (strncmp(endptr, "mm", 2) == 0) result = FROM_DOUBLE(val * 72.27 / 25.4);
+        else if (strncmp(endptr, "cm", 2) == 0) result = FROM_DOUBLE(val * 72.27 / 2.54);
+        else if (strncmp(endptr, "in", 2) == 0) result = FROM_DOUBLE(val * 72.27);
+        else if (strncmp(endptr, "em", 2) == 0) result = (Scaled)(val * (double)em_size);
         else result = FROM_DOUBLE(val); 
     }
     
@@ -85,29 +94,32 @@ static Scaled retex_layout_parse_length(int token_list, int *p_idx, Scaled em_si
 }
 
 RetexParagraph* retex_layout(Backend *be, const char *text, double width_pt, const char *font_face, double font_size_pt, RetexAlign align) {
+    if (!text) return NULL;
     RetexParagraph *para = malloc(sizeof(RetexParagraph));
     if (!para) return NULL;
 
     const char *face = font_face ? font_face : "Sans";
+    int face_handle = conststr_lookup_c(face);
+    
     be->set_font_face(be, face, 0);
     be->set_font_size(be, font_size_pt);
 
     // Replace literal \n and \t with actual characters
-    int buf = s_printf(0, 0, "");
+    int buf = m_create(strlen(text)+1, 1);
     const char *p_in = text;
     while (*p_in) {
         if (*p_in == '\\' && *(p_in+1) == 'n') {
-            s_app(buf, "\n", NULL);
+            char tmp = '\n'; m_put(buf, &tmp);
             p_in += 2;
         } else if (*p_in == '\\' && *(p_in+1) == 't') {
-            s_app(buf, "\t", NULL);
+            char tmp = '\t'; m_put(buf, &tmp);
             p_in += 2;
         } else {
-            char tmp[2] = {*p_in, 0};
-            s_app(buf, tmp, NULL);
+            m_put(buf, p_in);
             p_in++;
         }
     }
+    char tmp = 0; m_put(buf, &tmp);
 
     int tokens = tokenize(m_str(buf));
     m_free(buf);
@@ -156,7 +168,7 @@ RetexParagraph* retex_layout(Backend *be, const char *text, double width_pt, con
             }
             
             if (m_len(current_para_tokens) > 0) {
-                int hlist = build_hlist(current_para_tokens, internal_measure_char, be, FROM_DOUBLE(font_size_pt), face);
+                int hlist = build_hlist(current_para_tokens, internal_measure_char, be, FROM_DOUBLE(font_size_pt), face, face_handle);
                 node_create_glue(hlist, parfill);
                 
                 Scaled hang_indent = 0;

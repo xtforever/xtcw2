@@ -3,42 +3,42 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 165 "ScrolledCanvas.widget"
-#include <X11/Xatom.h>
-#line 166 "ScrolledCanvas.widget"
-#include <X11/Xft/Xft.h>
-#line 167 "ScrolledCanvas.widget"
-#include "converters-xft.h"
-#line 168 "ScrolledCanvas.widget"
-#include "converters.h"
-#line 169 "ScrolledCanvas.widget"
-#include <X11/Xmu/Converters.h>
-#line 170 "ScrolledCanvas.widget"
-#include "mls.h"
-#line 171 "ScrolledCanvas.widget"
-#include "xutil.h"
-#line 172 "ScrolledCanvas.widget"
-#include <X11/Xaw/Command.h>
-#line 173 "ScrolledCanvas.widget"
-#include "xtcw/HSlider.h"
 #line 174 "ScrolledCanvas.widget"
-#include "xtcw/VSlider.h"
+#include <X11/Xatom.h>
 #line 175 "ScrolledCanvas.widget"
+#include <X11/Xft/Xft.h>
+#line 176 "ScrolledCanvas.widget"
+#include "converters-xft.h"
+#line 177 "ScrolledCanvas.widget"
+#include "converters.h"
+#line 178 "ScrolledCanvas.widget"
+#include <X11/Xmu/Converters.h>
+#line 179 "ScrolledCanvas.widget"
+#include "mls.h"
+#line 180 "ScrolledCanvas.widget"
+#include "xutil.h"
+#line 181 "ScrolledCanvas.widget"
+#include <X11/Xaw/Command.h>
+#line 182 "ScrolledCanvas.widget"
+#include "xtcw/HSlider.h"
+#line 183 "ScrolledCanvas.widget"
+#include "xtcw/VSlider.h"
+#line 184 "ScrolledCanvas.widget"
 #include "xtcw/Canvas.h"
 #include <xtcw/ScrolledCanvasP.h>
-#line 119 "ScrolledCanvas.widget"
+#line 117 "ScrolledCanvas.widget"
 static void sc_motion(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 149 "ScrolledCanvas.widget"
+#line 146 "ScrolledCanvas.widget"
 static void redraw(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
 #endif
 );
-#line 155 "ScrolledCanvas.widget"
+#line 151 "ScrolledCanvas.widget"
 static void zoom(
 #if NeedFunctionPrototypes
 Widget,XEvent*,String*,Cardinal*
@@ -84,16 +84,28 @@ static void sliderx_cb(
 Widget ,Widget,void *
 #endif
 );
-#line 99 "ScrolledCanvas.widget"
+#line 98 "ScrolledCanvas.widget"
 static void slidery_cb(
 #if NeedFunctionPrototypes
 Widget ,Widget,void *
 #endif
 );
-#line 107 "ScrolledCanvas.widget"
+#line 105 "ScrolledCanvas.widget"
 static void movexy(
 #if NeedFunctionPrototypes
 Widget,int ,int 
+#endif
+);
+#line 158 "ScrolledCanvas.widget"
+static void sc_redraw(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+#line 163 "ScrolledCanvas.widget"
+static void sc_zoom(
+#if NeedFunctionPrototypes
+Widget,String *,Cardinal 
 #endif
 );
 #line 35 "ScrolledCanvas.widget"
@@ -177,35 +189,33 @@ static void sliderx_cb(w,self,d)Widget  w;Widget self;void * d;
 {
     XTFUNC();
     ((ScrolledCanvasWidget)self)->scrolledCanvas.priv->sl_posx = (intptr_t) d;
-    self=((ScrolledCanvasWidget)self)->scrolledCanvas.can;
-    ((ScrolledCanvasWidgetClass)self->core.widget_class)->core_class.expose(self,NULL,NULL); 
+    XtCallActionProc(((ScrolledCanvasWidget)self)->scrolledCanvas.can, "expose_action", NULL, NULL, 0);
 }
-#line 99 "ScrolledCanvas.widget"
+#line 98 "ScrolledCanvas.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 99 "ScrolledCanvas.widget"
+#line 98 "ScrolledCanvas.widget"
 static void slidery_cb(Widget  w,Widget self,void * d)
 #else
-#line 99 "ScrolledCanvas.widget"
+#line 98 "ScrolledCanvas.widget"
 static void slidery_cb(w,self,d)Widget  w;Widget self;void * d;
 #endif
-#line 100 "ScrolledCanvas.widget"
+#line 99 "ScrolledCanvas.widget"
 {
     XTFUNC();
     ((ScrolledCanvasWidget)self)->scrolledCanvas.priv->sl_posy = (intptr_t) d;
-    self=((ScrolledCanvasWidget)self)->scrolledCanvas.can;
-    ((ScrolledCanvasWidgetClass)self->core.widget_class)->core_class.expose(self,NULL,NULL);
+    XtCallActionProc(((ScrolledCanvasWidget)self)->scrolledCanvas.can, "expose_action", NULL, NULL, 0);
 }
-#line 107 "ScrolledCanvas.widget"
+#line 105 "ScrolledCanvas.widget"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 107 "ScrolledCanvas.widget"
+#line 105 "ScrolledCanvas.widget"
 static void movexy(Widget self,int  x,int  y)
 #else
-#line 107 "ScrolledCanvas.widget"
+#line 105 "ScrolledCanvas.widget"
 static void movexy(self,x,y)Widget self;int  x;int  y;
 #endif
-#line 108 "ScrolledCanvas.widget"
+#line 106 "ScrolledCanvas.widget"
 {
 	/* move VSlider y-pixel u/d */
 	/* move HSlider x-pixel l/r */
@@ -213,14 +223,40 @@ static void movexy(self,x,y)Widget self;int  x;int  y;
 	/* update $priv->>sl_posx */	
 	/* move Canvas x/y -pixel -> just redraw */	
 }
+#line 158 "ScrolledCanvas.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 158 "ScrolledCanvas.widget"
+static void sc_redraw(Widget self)
+#else
+#line 158 "ScrolledCanvas.widget"
+static void sc_redraw(self)Widget self;
+#endif
+#line 159 "ScrolledCanvas.widget"
+{
+    XtCallActionProc(((ScrolledCanvasWidget)self)->scrolledCanvas.can, "expose_action", NULL, NULL, 0);
+}
+#line 163 "ScrolledCanvas.widget"
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+#line 163 "ScrolledCanvas.widget"
+static void sc_zoom(Widget self,String * params,Cardinal  num_params)
+#else
+#line 163 "ScrolledCanvas.widget"
+static void sc_zoom(self,params,num_params)Widget self;String * params;Cardinal  num_params;
+#endif
+#line 164 "ScrolledCanvas.widget"
+{
+    XtCallActionProc(((ScrolledCanvasWidget)self)->scrolledCanvas.can, "zoom", NULL, params, num_params);
+}
 
 static XtResource resources[] = {
 #line 5 "ScrolledCanvas.widget"
 {XtNslwidth,XtCSlwidth,XtRDistance,sizeof(((ScrolledCanvasRec*)NULL)->scrolledCanvas.slwidth),XtOffsetOf(ScrolledCanvasRec,scrolledCanvas.slwidth),XtRString,(XtPointer)"3mm"},
 #line 6 "ScrolledCanvas.widget"
-{XtNworld_width,XtCWorld_width,XtRUint,sizeof(((ScrolledCanvasRec*)NULL)->scrolledCanvas.world_width),XtOffsetOf(ScrolledCanvasRec,scrolledCanvas.world_width),XtRImmediate,(XtPointer)10000 },
+{XtNworld_width,XtCWorld_width,XtRInt,sizeof(((ScrolledCanvasRec*)NULL)->scrolledCanvas.world_width),XtOffsetOf(ScrolledCanvasRec,scrolledCanvas.world_width),XtRImmediate,(XtPointer)10000 },
 #line 7 "ScrolledCanvas.widget"
-{XtNworld_height,XtCWorld_height,XtRUint,sizeof(((ScrolledCanvasRec*)NULL)->scrolledCanvas.world_height),XtOffsetOf(ScrolledCanvasRec,scrolledCanvas.world_height),XtRImmediate,(XtPointer)10000 },
+{XtNworld_height,XtCWorld_height,XtRInt,sizeof(((ScrolledCanvasRec*)NULL)->scrolledCanvas.world_height),XtOffsetOf(ScrolledCanvasRec,scrolledCanvas.world_height),XtRImmediate,(XtPointer)10000 },
 #line 8 "ScrolledCanvas.widget"
 {XtNdrag_last_x,XtCDrag_last_x,XtRInt,sizeof(((ScrolledCanvasRec*)NULL)->scrolledCanvas.drag_last_x),XtOffsetOf(ScrolledCanvasRec,scrolledCanvas.drag_last_x),XtRImmediate,(XtPointer)0 },
 #line 9 "ScrolledCanvas.widget"
@@ -271,15 +307,6 @@ XtInheritInsertChild,
 XtInheritDeleteChild,
 NULL
 },
-{ /* constraint_class part */
-/* constraint_resources     */  NULL,
-/* num_constraint_resources */  0,
-/* constraint_size          */  sizeof(ScrolledCanvasConstraintRec),
-/* constraint_initialize    */  NULL,
-/* constraint_destroy       */  NULL,
-/* constraint_set_values    */  NULL,
-/* constraint_extension     */  NULL 
-},
 { /* Gridbox_class part */
  /* dummy */  0
 },
@@ -289,7 +316,7 @@ NULL
 };
 WidgetClass scrolledCanvasWidgetClass = (WidgetClass) &scrolledCanvasClassRec;
 /*ARGSUSED*/
-#line 119 "ScrolledCanvas.widget"
+#line 117 "ScrolledCanvas.widget"
 static void sc_motion(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
 	int x = event->xbutton.x;
@@ -319,18 +346,17 @@ static void sc_motion(self,event,params,num_params)Widget self;XEvent*event;Stri
 }
 
 /*ARGSUSED*/
-#line 149 "ScrolledCanvas.widget"
+#line 146 "ScrolledCanvas.widget"
 static void redraw(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
-    self=((ScrolledCanvasWidget)self)->scrolledCanvas.can;
-    ((ScrolledCanvasWidgetClass)self->core.widget_class)->core_class.expose(self,NULL,NULL);	
+    sc_redraw(self);
 }
 
 /*ARGSUSED*/
-#line 155 "ScrolledCanvas.widget"
+#line 151 "ScrolledCanvas.widget"
 static void zoom(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
-  XtCallActionProc( ((ScrolledCanvasWidget)self)->scrolledCanvas.can, "zoom", NULL, params, * num_params );	
+    sc_zoom(self, params, *num_params);
 }
 
 static void _resolve_inheritance(class)

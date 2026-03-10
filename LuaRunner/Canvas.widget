@@ -113,6 +113,10 @@
 
 @ACTIONS
 @ Widget self;XEvent*event;String*params;Cardinal*num_params
+@proc expose_action
+{
+    expose($, NULL, NULL);
+}
 @proc zoom
 {
 	XTFUNC();

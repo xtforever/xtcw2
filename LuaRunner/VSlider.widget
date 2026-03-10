@@ -6,9 +6,9 @@
 @var int lineWidth = 1
 @var Boolean filled = False
 @ how much of the total space the slider should consume
-@var uint frac =  200000
+@var int frac =  200000
 @ from zero to (1-frac) where should the slider beeing drawn
-@var uint pos  =  100000
+@var int pos  =  100000
 @ call this functions when the slider changes its position due to the pointer
 @var <Callback> XtCallbackList callback   = NULL
 

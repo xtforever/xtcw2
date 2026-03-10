@@ -4,6 +4,14 @@
 #include "renderer.h"
 #include "mls.h"
 #include "m_tool.h"
+
+/* Workaround for redefinition error in conststr.h vs m_tool.h */
+#define s_cstr s_cstr_hidden
+#define s_mstr s_mstr_hidden
+#include "conststr.h"
+#undef s_cstr
+#undef s_mstr
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -40,7 +48,8 @@ int main() {
     be->set_font_size(be, 10.0);
     be->set_font_face(be, "Monospace", 0);
     
-    int node_list = build_hlist(tokens, measure_char, be, FROM_INT(10), "Monospace");
+    int face_handle = conststr_lookup_c("Monospace");
+    int node_list = build_hlist(tokens, measure_char, be, FROM_INT(10), "Monospace", face_handle);
 
     // Create a wrapper HBOX
     int box_handle_list = m_create(1, sizeof(Node));

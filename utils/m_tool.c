@@ -307,12 +307,7 @@ m_free_user(int m, void (*free_h)(void *), int only_clear)
 {
 	void *d;
 	int p;
-	if (m_width(m) == sizeof(void *)) {
-		m_foreach(m, p, d) free_h(*(void **)d);
-	} else {
-		m_foreach(m, p, d) free_h(d);
-	}
-
+	m_foreach(m, p, d) free_h(d);
 	if (only_clear)
 		m_clear(m);
 	else
@@ -464,13 +459,6 @@ lookup_int(int m, int key)
 int
 m_slice(int dest, int offs, int m, int a, int b)
 {
-	if( offs < 0 ) {
-		if( offs == -1 && m_len(dest) == 0 )
-			offs=0;
-		else {
-			offs += m_len(dest)+1;
-		}
-	}
 	int len = m ? m_len(m) : 0;
 	if (b < 0) {
 		b += len;
@@ -488,7 +476,7 @@ m_slice(int dest, int offs, int m, int a, int b)
 	if (cnt < 0)
 		cnt = 1;
 	if (dest <= 0)
-		dest = m_create(cnt + offs + (b-a)+1, m_width(m));
+		dest = m_create(cnt + offs, m_width(m));
 	m_setlen(dest, offs);
 	ASSERT(m_width(dest) == m_width(m));
 	for (int i = a; i <= b; i++) {
@@ -527,13 +515,15 @@ s_isempty(int m)
 	if (m == 0)
 		WARN("handle is zero");
 	else {
-		if (m_len(m) == 0)
-			; // WARN("strlen  is zero");
+		if (m_len(m) == 0) {
+			// WARN("strlen  is zero");
+		}
 		else {
 			if (CHAR(m, m_len(m) - 1))
 				WARN("last byte not zero");
-			if (CHAR(m, 0) == 0)
-				WARN("first byte is zero");
+			if (CHAR(m, 0) == 0) {
+				//	WARN("first byte is zero");
+			}					
 		}
 	}
 
@@ -764,13 +754,6 @@ s_strcpy_c(int out, const char *s)
 	return out;
 }
 
-int
-s_strcmp_c(int s0,int offs, const char *s1)
-{
-	if( s0 == 0 || m_len(s0) <= offs ) return -1;
-	return mstrcmp(s0,offs,s1);
-}
-
 
 int
 s_strdup_c(const char *s)
@@ -824,8 +807,6 @@ conststr_free(void)
 	CONSTSTR_DATA = 0;
 }
 
-
-
 void
 conststr_init(void)
 {
@@ -865,6 +846,11 @@ int cmp_mstr_cstr_fast(const void *key, const void *b)
 	const char *const *s = key;
 	int mstr = *(int*) b;
 	return -mstrcmp(mstr, 0, *s);	
+}
+
+int s_strcmp_c( int mstr, const char *s )
+{
+	return mstrcmp(mstr, 0, s);
 }
 
 static int
@@ -909,31 +895,9 @@ conststr_lookup(int s)
 	return INT(CONSTSTR_DATA, p) = m_dub(s);
 }
 
-static int destruct_conststr = 0;
-
-/* debug function check if we try to free a constant */
-void conststr_handle_free(int h)
-{
-  if( destruct_conststr ) return;
-  int p, *d;
-  m_foreach( CONSTSTR_DATA, p, d ) {
-    if( *d == h ) {
-      WARN("trying to delete a conststr");
-      m_del(CONSTSTR_DATA,p);
-    }
-  }
-}
-
 int
 conststr_lookup_c(const char *s)
 {
-	int n=strlen(s)+1;
-	int v = m_create(n,1);
-	m_write(v,0,s,n);
-	int ret = conststr_lookup(v);
-	m_free(v);
-	return ret;
-		
 	if (is_empty(s))
 		return CS_ZERO;
 	union {
@@ -982,7 +946,7 @@ conststr_stats(void)
 	int cnt = m_len(CONSTSTR_DATA);
 	TRACE(4, "Count: %d", cnt);
 	len = cnt * (sizeof(int) + sizeof(struct ls_st));
-	m_foreach(CONSTSTR_DATA, p, d) { TRACE(1, "%d %s",p,m_str(*d)); len += m_len(*d); }
+	m_foreach(CONSTSTR_DATA, p, d) { len += m_len(*d); }
 	TRACE(4, "Memory: %d", len);
 }
 
@@ -1081,7 +1045,7 @@ glob_match(char const *pat, char const *str, const char **a, const char **b)
 	 * (no exception for /), it can be easily proved that there's
 	 * never a need to backtrack multiple levels.
 	 */
-	char const *back_pat = NULL, *back_str = NULL;
+	char const *back_pat = NULL, *back_str;
 	if( a ) *a=NULL;
 	/*
 	 * Loop over each token (character or class) in pat, matching

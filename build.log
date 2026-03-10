@@ -1,0 +1,7 @@
+make: Verzeichnis „/home/jens/git/xtcw2/clean-build“ wird betreten
+wb_search=widgets src/util/wbuild/wb.sh widgets/Gridbox.widget build/wbuild -d generated -c generated -i generated --include-prefix=xtcw
+gcc -Wall -Wextra -std=c11 -fPIC -fms-extensions -g -D_GNU_SOURCE -Iinclude/project -Iinclude/project/xtcw -Igenerated -Igenerated/xtcw -I/usr/include/cairo -I/usr/include/libpng16 -I/usr/include/freetype2 -I/usr/include/pixman-1  -I/usr/include/freetype2 -include xtcw_resources.h -c generated/Gridbox.c -o build/widgets/Gridbox.o
+cc1: fatal error: generated/Gridbox.c: Datei oder Verzeichnis nicht gefunden
+compilation terminated.
+make: *** [Makefile:64: build/widgets/Gridbox.o] Fehler 1
+make: Verzeichnis „/home/jens/git/xtcw2/clean-build“ wird verlassen

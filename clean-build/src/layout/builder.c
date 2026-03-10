@@ -1,8 +1,17 @@
 #include "builder.h"
+#include "token.h"
 #include "math_node.h"
 #include "linebreak.h"
 #include "mls.h"
 #include "m_tool.h"
+
+/* Workaround for redefinition error in conststr.h vs m_tool.h */
+#define s_cstr s_cstr_hidden
+#define s_mstr s_mstr_hidden
+#include "conststr.h"
+#undef s_cstr
+#undef s_mstr
+
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -197,11 +206,11 @@ static Scaled parse_length(int token_list, int *p_idx, Scaled em_size) {
     Scaled result = 0;
     
     if (endptr != s) {
-        if (strcmp(endptr, "pt") == 0) result = FROM_DOUBLE(val);
-        else if (strcmp(endptr, "mm") == 0) result = FROM_DOUBLE(val * 72.27 / 25.4);
-        else if (strcmp(endptr, "cm") == 0) result = FROM_DOUBLE(val * 72.27 / 2.54);
-        else if (strcmp(endptr, "in") == 0) result = FROM_DOUBLE(val * 72.27);
-        else if (strcmp(endptr, "em") == 0) result = (Scaled)(val * (double)em_size);
+        if (strncmp(endptr, "pt", 2) == 0) result = FROM_DOUBLE(val);
+        else if (strncmp(endptr, "mm", 2) == 0) result = FROM_DOUBLE(val * 72.27 / 25.4);
+        else if (strncmp(endptr, "cm", 2) == 0) result = FROM_DOUBLE(val * 72.27 / 2.54);
+        else if (strncmp(endptr, "in", 2) == 0) result = FROM_DOUBLE(val * 72.27);
+        else if (strncmp(endptr, "em", 2) == 0) result = (Scaled)(val * (double)em_size);
         else result = FROM_DOUBLE(val); // default to pt
     }
     
@@ -210,7 +219,7 @@ static Scaled parse_length(int token_list, int *p_idx, Scaled em_size) {
     return result;
 }
 
-int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Scaled font_size_base, const char *font_face_base) {
+int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Scaled font_size_base, const char *font_face_base, int face_handle_base) {
     int nodes = m_create(10, sizeof(Node));
     int idx = 0;
     int len = m_len(token_list);
@@ -224,7 +233,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
     fs.style = 0;
     fs.is_math_mode = 0;
 
-    int face_handle = conststr_lookup_c(fs.face);
+    int face_handle = face_handle_base;
     Glue space_glue = calc_space_glue(get_current_size(&fs));
     
     while (idx < len) {
@@ -247,7 +256,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
             idx++;
             int mlist = parse_mlist(token_list, &idx);
             // Convert mlist to hlist
-            int math_nodes = mlist_to_hlist(mlist, STYLE_TEXT, measure_func, measure_ctx, font_size_base, font_face_base);
+            int math_nodes = mlist_to_hlist(mlist, STYLE_TEXT, measure_func, measure_ctx, font_size_base, font_face_base, face_handle);
             
             // Append math_nodes to nodes
             int mn_p; Node *mn;
@@ -337,7 +346,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 idx++;
                 if (idx < len && ((Token*)mls(token_list, idx))->type == TOK_GROUP_BEGIN) {
                     int sub_tokens = extract_group(token_list, &idx);
-                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face);
+                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle);
                     Node hbox = node_pack_hbox(sub_hlist, 0); 
                     m_put(nodes, &hbox);
                     m_free(sub_tokens);
@@ -349,7 +358,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 idx++;
                 if (idx < len && ((Token*)mls(token_list, idx))->type == TOK_GROUP_BEGIN) {
                     int sub_tokens = extract_group(token_list, &idx);
-                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face);
+                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle);
                     Node hbox = node_pack_hbox(sub_hlist, 0);
                     hbox.shift = shift;
                     m_put(nodes, &hbox);
@@ -360,7 +369,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 idx++;
                 if (idx < len && ((Token*)mls(token_list, idx))->type == TOK_GROUP_BEGIN) {
                     int sub_tokens = extract_group(token_list, &idx);
-                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face);
+                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle);
                     Node hbox = node_pack_hbox(sub_hlist, 0);
                     // Center relative to the axis (approx 0.25 font size above baseline)
                     Scaled axis_height = get_current_size(&fs) / 4;
@@ -375,7 +384,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 idx++;
                 if (idx < len && ((Token*)mls(token_list, idx))->type == TOK_GROUP_BEGIN) {
                     int sub_tokens = extract_group(token_list, &idx);
-                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, get_current_size(&fs), fs.face);
+                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, get_current_size(&fs), fs.face, face_handle);
                     Glue zero = glue_zero();
                     int lines = line_break(sub_hlist, w, zero, zero, 0, 0);
                     int vbox_h = node_list_to_vbox(lines, TO_DOUBLE(get_current_size(&fs)));

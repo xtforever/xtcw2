@@ -1,0 +1,5 @@
+[2]node_create_char: LAYOUT handle 3, class NODE_CHAR, name , width 3276800, height 655360, x 0, y 0, color 00000000, content 1
+[2]node_create_char: LAYOUT handle 3, class NODE_CHAR, name , width 3276800, height 655360, x 0, y 0, color 00000000, content 2
+[2]node_create_char: LAYOUT handle 3, class NODE_CHAR, name , width 3276800, height 655360, x 0, y 0, color 00000000, content 3
+[2]node_pack_hbox: LAYOUT handle 5, class PACK_HBOX, name , width 5242880, height 655360, x 0, y 0, color 00000000, content 
+[2]node_pack_hbox: LAYOUT handle 7, class PACK_HBOX, name , width 5242880, height 655360, x 0, y 0, color 00000000, content 

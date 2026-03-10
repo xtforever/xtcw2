@@ -21,8 +21,8 @@ _XFUNCPROTOBEGIN
 #ifndef XtCWorld_width
 #define XtCWorld_width "World_width"
 #endif
-#ifndef XtRUint
-#define XtRUint "Uint"
+#ifndef XtRInt
+#define XtRInt "Int"
 #endif
 
 #ifndef XtNworld_height
@@ -31,8 +31,8 @@ _XFUNCPROTOBEGIN
 #ifndef XtCWorld_height
 #define XtCWorld_height "World_height"
 #endif
-#ifndef XtRUint
-#define XtRUint "Uint"
+#ifndef XtRInt
+#define XtRInt "Int"
 #endif
 
 #ifndef XtNdrag_last_x

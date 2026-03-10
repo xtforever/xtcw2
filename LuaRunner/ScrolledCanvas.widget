@@ -3,8 +3,8 @@
 
 @PUBLIC
 @var Distance      slwidth = <String> "3mm"
-@var uint          world_width  = 10000
-@var uint          world_height = 10000
+@var int          world_width  = 10000
+@var int          world_height = 10000
 @var int drag_last_x = 0
 @var int drag_last_y = 0 
 @var ulong drag_time = 0
@@ -92,16 +92,14 @@
 {
     XTFUNC();
     $priv->sl_posx = (intptr_t) d;
-    $=$can;
-    $expose($,NULL,NULL); 
+    XtCallActionProc($can, "expose_action", NULL, NULL, 0);
 }
 
 @proc slidery_cb(Widget w, $, void *d )
 {
     XTFUNC();
     $priv->sl_posy = (intptr_t) d;
-    $=$can;
-    $expose($,NULL,NULL);
+    XtCallActionProc($can, "expose_action", NULL, NULL, 0);
 }
 
 @proc movexy($, int x, int y)
@@ -144,18 +142,29 @@
 	$drag_time = t;
 }
 
-
-
+@ACTIONS
 @proc redraw
 {
-    $=$can;
-    $expose($,NULL,NULL);	
+    sc_redraw($);
 }
 
 @proc zoom
 {
-  XtCallActionProc( $can, "zoom", NULL, params, * num_params );	
+    sc_zoom($, params, *num_params);
 }
+
+@UTILITIES
+
+@proc sc_redraw($)
+{
+    XtCallActionProc($can, "expose_action", NULL, NULL, 0);
+}
+
+@proc sc_zoom($, String *params, Cardinal num_params)
+{
+    XtCallActionProc($can, "zoom", NULL, params, num_params);
+}
+
 
 @TRANSLATIONS
 @trans <Btn1Motion>: sc_motion()

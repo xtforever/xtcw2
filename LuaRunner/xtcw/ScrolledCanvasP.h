@@ -6,17 +6,6 @@
 #include <xtcw/GridboxP.h>
 #include <xtcw/ScrolledCanvas.h>
 _XFUNCPROTOBEGIN
-typedef struct {
-/* Constraint resources */
-/* Private constraint variables */
-int dummy;
-} ScrolledCanvasConstraintPart;
-
-typedef struct _ScrolledCanvasConstraintRec {
-GridboxConstraintPart gridbox;
-ScrolledCanvasConstraintPart scrolledCanvas;
-} ScrolledCanvasConstraintRec;
-
 
 typedef struct {
 /* methods */
@@ -27,7 +16,6 @@ int dummy;
 typedef struct _ScrolledCanvasClassRec {
 CoreClassPart core_class;
 CompositeClassPart composite_class;
-ConstraintClassPart constraint_class;
 GridboxClassPart gridbox_class;
 ScrolledCanvasClassPart scrolledCanvas_class;
 } ScrolledCanvasClassRec;
@@ -35,8 +23,8 @@ ScrolledCanvasClassPart scrolledCanvas_class;
 typedef struct {
 /* resources */
 Distance  slwidth;
-uint  world_width;
-uint  world_height;
+int  world_width;
+int  world_height;
 int  drag_last_x;
 int  drag_last_y;
 ulong  drag_time;
@@ -50,7 +38,6 @@ canvas_draw_t * priv;
 typedef struct _ScrolledCanvasRec {
 CorePart core;
 CompositePart composite;
-ConstraintPart constraint;
 GridboxPart gridbox;
 ScrolledCanvasPart scrolledCanvas;
 } ScrolledCanvasRec;

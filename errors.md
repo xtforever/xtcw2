@@ -29,3 +29,15 @@
 - **Problem**: `WlsMulti` used a resource named `callback` for row activation, while LUI and other list widgets expected `notify`. This caused `:on-row-activated` properties in LUI to have no effect.
 - **Solution**: Renamed the `callback` resource to `notify` in `WlsMulti.widget` and updated the internal callback bridge.
 - **File**: `wbuild_widgets/WlsMulti.widget`
+
+## Wlabel: Geometry Calculation and Alignment Issues
+- **Problem**: `Wlabel` widget had several geometry issues: 
+  1. Height and width were truncated due to `int` casting of subpixel measurements, causing text clipping.
+  2. "Infinite" width constant used for natural width calculation was too small, leading to incorrect preferred width (10000px).
+  3. Documentation/comment for `alignment` was wrong (3 was described as right-justified, but 2 is RIGHT and 3 is JUSTIFY).
+  4. `autoHeight` property was defined but not implemented.
+- **Solution**: 
+  1. Used `ceil()` for all pixel size conversions in `calculate_size`.
+  2. Increased the "infinite" width constant to ensure it exceeds the `re-tex` threshold for natural layout.
+  3. Corrected the `alignment` comment and ensured `set_values` triggers geometry requests when `autoHeight` is enabled.
+- **File**: `wbuild_widgets/Wlabel.widget`

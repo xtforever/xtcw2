@@ -60,7 +60,7 @@ static void add_widgets(self)Widget self;
 #endif
 #line 25 "MessageBox.widget"
 {
-  XTFUNC();
+  fprintf( stderr, "%s: %s\n", XtName(self), __func__ );
 
   Widget btn;
   btn = XtVaCreateManagedWidget( "txt", wtextWidgetClass, self,
@@ -119,7 +119,7 @@ static void btn_close_cb(w,self,d)Widget  w;Widget self;void * d;
 #endif
 #line 77 "MessageBox.widget"
 {
-    XTFUNC();
+    fprintf( stderr, "%s: %s\n", XtName(self), __func__ );
     XtCallCallbackList( self, ((MessageBoxWidget)self)->messageBox.callback, NULL );
 }
 
@@ -170,15 +170,6 @@ XtInheritInsertChild,
 XtInheritDeleteChild,
 NULL
 },
-{ /* constraint_class part */
-/* constraint_resources     */  NULL,
-/* num_constraint_resources */  0,
-/* constraint_size          */  sizeof(MessageBoxConstraintRec),
-/* constraint_initialize    */  NULL,
-/* constraint_destroy       */  NULL,
-/* constraint_set_values    */  NULL,
-/* constraint_extension     */  NULL 
-},
 { /* Gridbox_class part */
  /* dummy */  0
 },
@@ -214,7 +205,7 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
 #endif
 #line 14 "MessageBox.widget"
 {
-    XTFUNC();
+    fprintf( stderr, "%s: %s\n", XtName(self), __func__ );
     XtVaSetValues( self, "borderWidth", 0, NULL );
     gridboxClassRec.core_class.realize(self,mask,attributes);
     add_widgets(self);

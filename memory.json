@@ -1,0 +1,23 @@
+{
+  "overall_goal": "Build a multi-threaded, LUI-based dual-pane file manager (Midnight Commander clone).",
+  "completed_milestones": [
+    "IPC Bridge Prototype (Step 10.1)",
+    "Task Manager Backend (Step 10.2)",
+    "LUI Task Bindings (Step 10.3)",
+    "Dual Pane Layout with WPaned (Step 10.4)",
+    "File Copy Thread-safe Operation (Step 10.5)"
+  ],
+  "next_steps": [
+    "Implement UI Polish (Step 10.6) with Gauges and Status Labels.",
+    "Implement Directory Navigation (Step 10.7) in Lua.",
+    "Map all standard F-keys (Step 10.8)."
+  ],
+  "current_artifacts": {
+    "runner": "experimental/commander_runner.c",
+    "bindings": "experimental/lua_task_bindings.c",
+    "task_manager": "experimental/task_manager.c",
+    "file_ops": "experimental/file_ops.c",
+    "app_ad": "commander/commander.ad",
+    "app_lua": "commander/commander.lui"
+  }
+}

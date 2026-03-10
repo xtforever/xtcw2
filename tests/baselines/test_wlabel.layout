@@ -1,0 +1,17 @@
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 589824, height 589824, x 0, y 0, color 00000000, content H
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content e
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 196608, height 589824, x 0, y 0, color 00000000, content l
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 196608, height 589824, x 0, y 0, color 00000000, content l
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 491520, height 442368, x 0, y 0, color 00000000, content o
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 294912, height 294912, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 344064, height 393216, x 0, y 0, color 00000000, content b
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 294912, height 294912, x 0, y 0, color 00000000, content 
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 344064, height 393216, x 0, y 0, color 00000000, content 
+[2]node_create_vbox: LAYOUT handle MASKED, class NODE_VBOX, name , width 0, height 0, x 0, y 0, color 00000000, content 
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 737280, height 589824, x 0, y 0, color 00000000, content W
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 491520, height 442368, x 0, y 0, color 00000000, content o
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 344064, height 442368, x 0, y 0, color 00000000, content r
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 196608, height 589824, x 0, y 0, color 00000000, content l
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 491520, height 589824, x 0, y 0, color 00000000, content d
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 5177344, height 655360, x 0, y 0, color 00000000, content 
+[2]initialize: LAYOUT handle MASKED, class Wlabel, name label, width 106, height 21, x 0, y 0, color 00000000, content Hello $\frac{a}{b}$ World

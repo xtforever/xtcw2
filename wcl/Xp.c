@@ -23,6 +23,7 @@
 
 #include "WcCreateP.h"
 #include "Xp.h"
+#include "Gridbox.h"
 
 
 

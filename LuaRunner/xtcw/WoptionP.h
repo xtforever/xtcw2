@@ -6,17 +6,27 @@
 #include <xtcw/WlabelP.h>
 #include <xtcw/Woption.h>
 _XFUNCPROTOBEGIN
+typedef void (*initialize_Proc)(
+#if NeedFunctionPrototypes
+void
+#endif
+);
+#define XtInherit_initialize ((initialize_Proc) _XtInherit)
+typedef void (*exec_command_Proc)(
+#if NeedFunctionPrototypes
+void
+#endif
+);
+#define XtInherit_exec_command ((exec_command_Proc) _XtInherit)
 
 typedef struct {
 /* methods */
+initialize_Proc initialize;
+exec_command_Proc exec_command;
 /* class variables */
-int dummy;
 } WoptionClassPart;
 
 typedef struct _WoptionClassRec {
-CoreClassPart core_class;
-WheelClassPart wheel_class;
-WlabelClassPart wlabel_class;
 WoptionClassPart woption_class;
 } WoptionClassRec;
 
@@ -32,9 +42,6 @@ int  key_svar;
 } WoptionPart;
 
 typedef struct _WoptionRec {
-CorePart core;
-WheelPart wheel;
-WlabelPart wlabel;
 WoptionPart woption;
 } WoptionRec;
 

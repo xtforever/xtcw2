@@ -1,0 +1,58 @@
+*foreground: #ecf0f1
+*background: #2c3e50
+*fontName: Sans-12
+
+wlabel_demo.WcChildren: main
+
+*main.WcClass: Gridbox
+*main.WcChildren: lbl1 lbl2 lbl3 lbl4 quit
+
+! Standard label with some gaps
+*lbl1.WcClass: Wlabel
+*lbl1.label: This is a standard label with equal gaps of 10 pixels on all sides. It should wrap if the container is too narrow.
+*lbl1.topGap: 10
+*lbl1.bottomGap: 10
+*lbl1.leftGap: 10
+*lbl1.rightGap: 10
+*lbl1.gridy: 0
+*lbl1.fill: Width
+*lbl1.bg_norm: #34495e
+
+! Large top/bottom gaps
+*lbl2.WcClass: Wlabel
+*lbl2.label: Label with large vertical gaps (40px) and small horizontal gaps (5px).
+*lbl2.topGap: 40
+*lbl2.bottomGap: 40
+*lbl2.leftGap: 5
+*lbl2.rightGap: 5
+*lbl2.gridy: 1
+*lbl2.fill: Width
+*lbl2.bg_norm: #16a085
+
+! Large horizontal gaps
+*lbl3.WcClass: Wlabel
+*lbl3.label: Label with large horizontal gaps (50px) and no vertical gaps. This should force the text into a very narrow column.
+*lbl3.topGap: 0
+*lbl3.bottomGap: 0
+*lbl3.leftGap: 50
+*lbl3.rightGap: 50
+*lbl3.gridy: 2
+*lbl3.fill: Width
+*lbl3.bg_norm: #2980b9
+
+! Asymmetric gaps
+*lbl4.WcClass: Wlabel
+*lbl4.label: Asymmetric gaps: Top=20, Bottom=5, Left=60, Right=10.
+*lbl4.topGap: 20
+*lbl4.bottomGap: 5
+*lbl4.leftGap: 60
+*lbl4.rightGap: 10
+*lbl4.gridy: 3
+*lbl4.fill: Width
+*lbl4.bg_norm: #8e44ad
+
+*quit.WcClass: Wbutton
+*quit.label: Quit Demo
+*quit.gridy: 4
+*quit.fill: Width
+*quit.callback: quit_cb

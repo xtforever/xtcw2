@@ -6,17 +6,6 @@
 #include <xtcw/GridboxP.h>
 #include <xtcw/Wls.h>
 _XFUNCPROTOBEGIN
-typedef struct {
-/* Constraint resources */
-/* Private constraint variables */
-int dummy;
-} WlsConstraintPart;
-
-typedef struct _WlsConstraintRec {
-GridboxConstraintPart gridbox;
-WlsConstraintPart wls;
-} WlsConstraintRec;
-
 
 typedef struct {
 /* methods */
@@ -27,7 +16,6 @@ int dummy;
 typedef struct _WlsClassRec {
 CoreClassPart core_class;
 CompositeClassPart composite_class;
-ConstraintClassPart constraint_class;
 GridboxClassPart gridbox_class;
 WlsClassPart wls_class;
 } WlsClassRec;
@@ -49,7 +37,6 @@ int  ignore_cb;
 typedef struct _WlsRec {
 CorePart core;
 CompositePart composite;
-ConstraintPart constraint;
 GridboxPart gridbox;
 WlsPart wls;
 } WlsRec;

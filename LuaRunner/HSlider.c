@@ -121,9 +121,9 @@ static XtResource resources[] = {
 #line 7 "HSlider.widget"
 {XtNfilled,XtCFilled,XtRBoolean,sizeof(((HSliderRec*)NULL)->hSlider.filled),XtOffsetOf(HSliderRec,hSlider.filled),XtRImmediate,(XtPointer)False },
 #line 9 "HSlider.widget"
-{XtNfrac,XtCFrac,XtRUint,sizeof(((HSliderRec*)NULL)->hSlider.frac),XtOffsetOf(HSliderRec,hSlider.frac),XtRImmediate,(XtPointer)200000 },
+{XtNfrac,XtCFrac,XtRInt,sizeof(((HSliderRec*)NULL)->hSlider.frac),XtOffsetOf(HSliderRec,hSlider.frac),XtRImmediate,(XtPointer)200000 },
 #line 11 "HSlider.widget"
-{XtNpos,XtCPos,XtRUint,sizeof(((HSliderRec*)NULL)->hSlider.pos),XtOffsetOf(HSliderRec,hSlider.pos),XtRImmediate,(XtPointer)100000 },
+{XtNpos,XtCPos,XtRInt,sizeof(((HSliderRec*)NULL)->hSlider.pos),XtOffsetOf(HSliderRec,hSlider.pos),XtRImmediate,(XtPointer)100000 },
 #line 13 "HSlider.widget"
 {XtNcallback,XtCCallback,XtRCallback,sizeof(((HSliderRec*)NULL)->hSlider.callback),XtOffsetOf(HSliderRec,hSlider.callback),XtRImmediate,(XtPointer)NULL },
 };

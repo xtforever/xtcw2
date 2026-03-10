@@ -12,6 +12,13 @@
 #include "mls.h"
 #include "m_tool.h"
 
+/* Workaround for redefinition error in conststr.h vs m_tool.h */
+#define s_cstr s_cstr_hidden
+#define s_mstr s_mstr_hidden
+#include "conststr.h"
+#undef s_cstr
+#undef s_mstr
+
 // Callback for builder to measure chars using backend
 static CharMetricsScaled measure_char(void *ctx, int c, Scaled font_size, int style, const char *face) {
     Backend *be = (Backend*)ctx;
@@ -75,7 +82,8 @@ int main() {
     
     printf("Building node list...\n");
     // Build with 24pt
-    int hlist = build_hlist(tokens, measure_char, be, FROM_INT(24), "Serif");
+    int face_handle = conststr_lookup_c("Serif");
+    int hlist = build_hlist(tokens, measure_char, be, FROM_INT(24), "Serif", face_handle);
     
     // Add parfillskip
     Glue parfill = glue_create(0, FROM_INT(1000), ORDER_FIL, 0, ORDER_NORMAL);

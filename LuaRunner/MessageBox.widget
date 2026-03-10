@@ -12,7 +12,7 @@
 
 @proc realize
 {
-    XTFUNC();
+    fprintf( stderr, "%s: %s\n", XtName($), __func__ );
     XtVaSetValues( $, "borderWidth", 0, NULL );
     #realize($,mask,attributes);
     add_widgets($);
@@ -23,7 +23,7 @@
 
 @proc add_widgets($)
 {
-  XTFUNC();
+  fprintf( stderr, "%s: %s\n", XtName($), __func__ );
 
   Widget btn;
   btn = XtVaCreateManagedWidget( "txt", wtextWidgetClass, $,
@@ -75,7 +75,7 @@
 
 @proc btn_close_cb(Widget w, $, void *d )
 {
-    XTFUNC();
+    fprintf( stderr, "%s: %s\n", XtName($), __func__ );
     XtCallCallbackList( $, $callback, NULL );
 }
 

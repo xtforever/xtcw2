@@ -26,22 +26,23 @@ static const char *Version =
 //
 // 2007-12-25 nomux: m_free(): ignore h==0 instead of abort with error
 //
-// 2011-02-04 nomux: m_ins: added n==0 -> error, keine erlaubnis 0 elemente einzufuegen
+// 2011-02-04 nomux: m_ins: added n==0 -> error, keine erlaubnis 0 elemente
+// einzufÃ¼gen
 //
 // 2012-03-09 nomux: deb_err: removed "debi.me=0". es sollte verhindert werden
-// das nach einem internen fehler noch ueberfluessige meldungen erscheinen. dies
+// das nach einem internen fehler noch ueberflÃ¼ssige melden erscheinen. dies
 // funktionierte ganz und gar nicht. stattdessen wurde die
-// fehler-rueckverfolgung abgeschaltet.
+// fehler-rÃ¼ckverfolgung abgeschaltet.
 //
 // 2012-03-12 nomux: m_setlen verwendet jetzt lst_resize um neuen speicher zu
 // allokieren
+
 // 2014-02-16 lst_remove remove multiple items bug, m_init, _m_init do not
-// terminate prog
-// 2014-06-30 lst_resize, lst_create - fill allocated memory with 0
-// 2014-07-09 m_utf8getchar - benutzt jetzt neue UTF8CHAR
-// 2014-07-09 void m_qsort( int list, int(*compar)(const void *, const void *))
-// 2016-11-27 mstr_to_long
-// 2018-12-28 m_write, lst_write. lst_write bug: if m_len(m) and count=0 -> error
+// terminate prog 2014-06-30 lst_resize, lst_create - fill allocated memory with
+// 0 2014-07-09 m_utf8getchar - benutzt jetzt neue UTF8CHAR 2014-07-09 void
+// m_qsort( int list, int(*compar)(const void *, const void *)) 2016-11-27
+// mstr_to_long 2018-12-28 m_write, lst_write
+//            lst_write bug: if m_len(m) and count=0 -> error
 // 2019-03-13 BUG: buffer overflow in deb_xxx better use vsnprintf :-)
 // 2021-05-11 m_next do nothing if list==0
 // 2021-11-22 BUG: lst_resize - fill new memory with zero
@@ -67,6 +68,12 @@ struct debug_info_st {
 };
 
 static struct debug_info_st debi;
+static int m_free_simple(int h); /* was: m_free */
+static int AUTO_start = 0;
+static int AUTO_ln = -1;
+static const char * AUTO_fn = NULL;
+static const char *AUTO_fun = NULL;
+
 
 //
 // Error Reporting
@@ -76,6 +83,15 @@ static struct debug_info_st debi;
 int trace_level = 0;
 static char buf[4096];
 
+/**
+ * @brief Prints an error message and terminates the program.
+ *
+ * @param line The line number where the error occurred.
+ * @param file The file name where the error occurred.
+ * @param function The function name where the error occurred.
+ * @param format The printf-style format string for the error message.
+ * @param ... Additional arguments for the format string.
+ */
 void deb_err(int line, const char *file, const char *function,
              const char *format, ...) {
 
@@ -94,6 +110,15 @@ void deb_err(int line, const char *file, const char *function,
   exit(1);
 }
 
+/**
+ * @brief Prints a warning message.
+ *
+ * @param line The line number where the warning occurred.
+ * @param file The file name where the warning occurred.
+ * @param function The function name where the warning occurred.
+ * @param format The printf-style format string for the warning message.
+ * @param ... Additional arguments for the format string.
+ */
 void deb_warn(int line, const char *file, const char *function,
               const char *format, ...) {
 
@@ -107,6 +132,16 @@ void deb_warn(int line, const char *file, const char *function,
           function, buf);
 }
 
+/**
+ * @brief Prints a trace message if the trace level is sufficient.
+ *
+ * @param l The trace level of the message.
+ * @param line The line number where the trace occurred (unused).
+ * @param file The file name where the trace occurred (unused).
+ * @param function The function name where the trace occurred.
+ * @param format The printf-style format string for the trace message.
+ * @param ... Additional arguments for the format string.
+ */
 void deb_trace(int l, int line, const char *file, const char *function,
                const char *format, ...) {
 
@@ -143,13 +178,26 @@ void deb_trace(int l, int line, const char *file, const char *function,
 static lst_t ML = 0; // stack allocated vars
 static lst_t FR = 0; // stack freed vars
 
+/**
+ * @brief Prints the current size of the handle stack.
+ *
+ * @return Always returns 0.
+ */
 int print_stacksize() {
   printf("STACKSIZE: %d\n", ML->l);
   return 0;
 }
 
-/** this functions calls realloc and fills the newly allocated memory with zeros
- * in case realloc returns zero this exits with an error message
+/**
+ * @brief Reallocates memory and clears newly allocated space.
+ *
+ * This function calls realloc and fills the newly allocated memory with zeros.
+ * If realloc fails, it terminates the program with an error message.
+ *
+ * @param pBuffer Pointer to the memory block to be reallocated.
+ * @param oldSize The current size of the memory block.
+ * @param newSize The new desired size of the memory block.
+ * @return A pointer to the reallocated memory block.
  */
 void *reallocz(void *pBuffer, size_t oldSize, size_t newSize) {
   void *pNew = realloc(pBuffer, newSize);
@@ -163,16 +211,28 @@ void *reallocz(void *pBuffer, size_t oldSize, size_t newSize) {
   return pNew;
 }
 
-// returns: ptr to element i
-// R: NULL - index out of bounds
+/**
+ * @brief Returns a pointer to the element at the specified index in a list.
+ *
+ * @param l The list to access.
+ * @param i The index of the element.
+ * @return A pointer to the element at index i.
+ * @note Terminates the program if the index is out of bounds.
+ */
 void *lst(lst_t l, int i) {
   if (i >= l->l || i < 0)
     ERR("Index(%d) out of Bounds", i);
   return &l->d[l->w * i];
 }
 
-//! X!
-// R: NULL - out of memory
+/**
+ * @brief Creates a new list.
+ *
+ * @param max Initial capacity of the list.
+ * @param w Width of each element in bytes.
+ * @return A pointer to the newly created list.
+ * @note Terminates the program if memory allocation fails.
+ */
 lst_t lst_create(int max, int w) {
   lst_t l = (lst_t)calloc(1, (max * w) + sizeof(struct ls_st));
   if (!l)
@@ -183,10 +243,15 @@ lst_t lst_create(int max, int w) {
   return l;
 }
 
-// alloc space for (n) items
-// if n == 1: if neccessary optimize resize
-// if n > 1: alloc at most n items
-// returns: -1 - error, >=0 - index of new item
+/**
+ * @brief Allocates space for n items in a list.
+ *
+ * If necessary, the list's capacity is increased.
+ *
+ * @param LP Pointer to the list pointer (may be updated if the list is resized).
+ * @param n Number of items to allocate space for.
+ * @return The index of the first new item, or -1 on error.
+ */
 int lst_new(lst_t *LP, int n) {
   int max = (**LP).max;
   int len = (**LP).l;
@@ -207,6 +272,12 @@ int lst_new(lst_t *LP, int n) {
   return len;
 }
 
+/**
+ * @brief Resizes a list to a new length.
+ *
+ * @param LP Pointer to the list pointer (may be updated).
+ * @param new_len The new length (number of elements).
+ */
 void lst_resize(lst_t *LP, int new_len) {
   int len = (**LP).l;
   if (new_len < 0)
@@ -221,8 +292,13 @@ void lst_resize(lst_t *LP, int new_len) {
     (**LP).l = new_len;
 }
 
-// append item
-// returns: -1: error, index of new item
+/**
+ * @brief Appends an item to a list.
+ *
+ * @param LP Pointer to the list pointer.
+ * @param d Pointer to the data to be appended.
+ * @return The index of the new item, or -1 on error.
+ */
 int lst_put(lst_t *LP, const void *d) {
   int n;
   if (!d)
@@ -233,12 +309,16 @@ int lst_put(lst_t *LP, const void *d) {
   return n;
 }
 
-// get ptr to element after *p and increment p by one
-// if *p is out of range *p is set to array-length
-// params: p - pointer to index-var. *p should be init.
-// with -1, data is ptr to ptr to array data.
-// returns: 1 - ok and *data is a ptr to
-// element, 0 - no more elements
+/**
+ * @brief Iterates through a list.
+ *
+ * Gets the pointer to the element after *p and increments *p by one.
+ *
+ * @param l The list to iterate.
+ * @param p Pointer to the current index. Initialize with -1.
+ * @param data Pointer to a void pointer that will receive the element's address.
+ * @return 1 if an element was returned, 0 if no more elements are available.
+ */
 int lst_next(lst_t l, int *p, void *data) {
   *p += 1;
   if (*p > l->l || *p < 0) {
@@ -252,7 +332,14 @@ int lst_next(lst_t l, int *p, void *data) {
   return 1;
 }
 
-// exits if realloc fails. returns zero if arg (p) is out of bounds
+/**
+ * @brief Inserts n elements at position p in a list.
+ *
+ * @param lp Pointer to the list pointer.
+ * @param p The insertion index.
+ * @param n Number of elements to insert.
+ * @return A pointer to the newly allocated space, or NULL if p is out of bounds.
+ */
 void *lst_ins(lst_t *lp, int p, int n) {
   int cnt;
   void *src, *dst;
@@ -281,7 +368,12 @@ void *lst_ins(lst_t *lp, int p, int n) {
   return src;
 }
 
-// remove item inside array
+/**
+ * @brief Deletes an item at position p in a list.
+ *
+ * @param l The list to modify.
+ * @param p The index of the item to delete.
+ */
 void lst_del(lst_t l, int p) {
   void *dest, *src;
   size_t n;
@@ -298,7 +390,13 @@ void lst_del(lst_t l, int p) {
   l->l--;
 }
 
-// remove n items inside array starting at p
+/**
+ * @brief Removes n items from a list starting at position p.
+ *
+ * @param lp Pointer to the list pointer.
+ * @param p The starting index.
+ * @param n The number of items to remove.
+ */
 void lst_remove(lst_t *lp, int p, int n) {
   void *dest, *src;
   lst_t l = *lp;
@@ -321,16 +419,28 @@ void lst_remove(lst_t *lp, int p, int n) {
   l->l -= n;
 }
 
-//! X!
-// returns address of element i
+/**
+ * @brief Returns a pointer to the element at the specified index without bounds checking against used length.
+ *
+ * @param l The list to access.
+ * @param i The index.
+ * @return A pointer to the element.
+ */
 void *lst_peek(lst_t l, int i) {
   if (i < 0 || i > l->max)
     ERR("Out of bounds");
   return &l->d[l->w * i];
 }
 
-// returns zero on succ.
-// n==0 is aceptable, no error
+/**
+ * @brief Writes data into a list at position p.
+ *
+ * @param lp Pointer to the list pointer.
+ * @param p The starting index.
+ * @param data Pointer to the data to be copied.
+ * @param n Number of elements to write.
+ * @return 0 on success, -1 on error.
+ */
 int lst_write(lst_t *lp, int p, const void *data, int n) {
   void *mem;
   lst_t l = *lp;
@@ -352,8 +462,15 @@ int lst_write(lst_t *lp, int p, const void *data, int n) {
   return 0;
 }
 
-// copy n items from array l at (p) to *data
-// if *data == 0 alloc memory
+/**
+ * @brief Reads data from a list into a buffer.
+ *
+ * @param l The list to read from.
+ * @param p The starting index.
+ * @param data Pointer to a buffer pointer. If *data is NULL, memory is allocated.
+ * @param n Number of elements to read.
+ * @return 0 on success.
+ */
 int lst_read(lst_t l, int p, void **data, int n) {
   if (p < 0 || n < 0 || data == NULL)
     ERR("Wrong arguments");
@@ -372,11 +489,14 @@ int lst_read(lst_t l, int p, void **data, int n) {
 //
 // ********************************************
 
-// hole zeiger auf das array m
-// ist das array nicht allociert oder
-// ist ML nicht init. oder m ausserhalb der
-// mÃ¶glichen grenzen wird NULL Ã¼bergeben
-// ansonsten ein zeiger auf auf den array-header
+/**
+ * @brief Internal function to retrieve a list structure from a handle.
+ *
+ * Checks if the list is initialized, allocated, and matches the UAF protection pattern.
+ *
+ * @param m The handle of the list.
+ * @return A pointer to the list pointer (lst_t *).
+ */
 static inline lst_t *_get_list(int m) {
   if (ML == 0 || m < 1)
     ERR("Not initialized");
@@ -391,39 +511,69 @@ static inline lst_t *_get_list(int m) {
   return l;
 }
 
+/**
+ * @brief Returns a pointer to the element at the specified index in the list handle.
+ *
+ * @param m The list handle.
+ * @param i The index of the element.
+ * @return A pointer to the element.
+ */
 void *mls(int m, int i) {
   lst_t *lp = _get_list(m);
   return lst(*lp, i);
 }
 
-/* add n elements, return index of first element */
+/**
+ * @brief Allocates n new elements in the list and returns the index of the first one.
+ *
+ * @param m The list handle.
+ * @param n The number of elements to add.
+ * @return The index of the first new element.
+ */
 int m_new(int m, int n) {
   lst_t *lp = _get_list(m);
   return lst_new(lp, n);
 }
 
-/* add single element, return its address */
+/**
+ * @brief Adds a single element to the list and returns its address.
+ *
+ * @param m The list handle.
+ * @return A pointer to the new element.
+ */
 void *m_add(int m) { return mls(m, m_new(m, 1)); }
 
+/**
+ * @brief Resizes the list to a new capacity.
+ *
+ * @param m The list handle.
+ * @param new_size The new capacity in number of elements.
+ */
 void m_resize(int m, int new_size) {
   lst_t *lp = _get_list(m);
   return lst_resize(lp, new_size);
 }
 
-// remove n items inside array starting at p
+/**
+ * @brief Removes n items from the list starting at position p.
+ *
+ * @param m The list handle.
+ * @param p The starting index.
+ * @param n The number of items to remove.
+ */
 void m_remove(int m, int p, int n) {
   lst_t *lp = _get_list(m);
   return lst_remove(lp, p, n);
 }
 
 /**
-    @brief hole den zeiger auf das folgende element
-    @param p - zeiger auf das zuletzt geholte element, -1 falls das erste
-   gewünscht wird
-    @param d - zeiger auf zeiger auf die gewünschte datenstruktur
-    @param m - die liste
-    @return 1 if element exists, 0 otherwise
-*/
+ * @brief Iterates through the list.
+ *
+ * @param m The list handle.
+ * @param p Pointer to the current index. Initialize with -1.
+ * @param d Pointer to a void pointer that will receive the element's address.
+ * @return 1 if an element was returned, 0 otherwise.
+ */
 int m_next(int m, int *p, void *d) {
   if (!m || !m_len(m))
     return 0;
@@ -433,7 +583,17 @@ int m_next(int m, int *p, void *d) {
   return lst_next(*lp, p, d);
 }
 
-// returns 0 - ok, 1 - liste schon initialisiert
+// static int deep_protect = 0;
+static int MF = 0;
+static void free_wrap(int m);
+static void free_strings_wrap(int m);
+static void free_list_wrap(int m);
+
+/**
+ * @brief Initializes the MLS memory management system.
+ *
+ * @return 0 on success, 1 if already initialized.
+ */
 int m_init() {
   static lst_t zero = 0;
   if (ML)
@@ -441,15 +601,25 @@ int m_init() {
   ML = lst_create(100, sizeof(lst_t));
   lst_put(&ML, &zero);
   FR = lst_create(100, sizeof(int));
+  // -- m_init ready -- 
+  MF = m_create( 10, sizeof(void*) );
+  void *p;
+  p =  free_wrap; m_put( MF, &p );
+  p =  free_strings_wrap; m_put( MF, &p );
+  p =  free_list_wrap; m_put( MF, &p );
   return 0;
 }
 
-// returns ZERO
+/**
+ * @brief Destroys the MLS memory management system and frees all lists.
+ */
 void m_destruct() {
   int p;
   lst_t *d;
   if (!ML)
     ERR("Not Init.");
+  m_free_simple(MF);
+  // -- m_destruct start -- 
   for (p = -1; lst_next(ML, &p, &d);)
     if (*d) {
       free(*d);
@@ -463,10 +633,17 @@ void m_destruct() {
 
 static int UAF_PROTECTION = 0;
 
+/**
+ * @brief Creates a new list and returns its handle.
+ *
+ * @param max Initial capacity.
+ * @param w Width of each element in bytes.
+ * @return The list handle.
+ */
 int m_create(int max, int w) {
   int i;
   lst_t lp;
-  if (!ML || max <= 0 || w <= 0)
+  if (!ML || max < 0 || w <= 0)
     ERR("Wrong args");
   lp = lst_create(max, w);
   lp->uaf_protection = UAF_PROTECTION;
@@ -486,13 +663,13 @@ int m_create(int max, int w) {
   return i;
 }
 
-//! X!
-// free memory for list h
-// Returns Zero
-//
-// OPT: speichert die nummer des freigegebenen arrays
-// JH 2007-12-25 ignore h==0 instead of abort with error
-int m_free(int h) {
+/**
+ * @brief Frees the memory associated with a list handle without calling custom free handlers.
+ *
+ * @param h The list handle.
+ * @return 0 on success.
+ */
+static int m_free_simple(int h) {
   if (!ML || h < 0)
     ERR("Wrongs Args ML=%p h=%d", ML, h);
   if (!h)
@@ -507,42 +684,70 @@ int m_free(int h) {
 
   free(*l);
   *l = 0;
+  TRACE(1, "Free List %d", h);
   lst_put(&FR, &h);
   return 0;
 }
 
-// append *data to array m
-// returns: -1 error, >=0 index of new item
+/**
+ * @brief Appends data to a list.
+ *
+ * @param m The list handle.
+ * @param data Pointer to the data to append.
+ * @return The index of the new item, or -1 on error.
+ */
 int m_put(int m, const void *data) {
   lst_t *lp = _get_list(m);
   return lst_put(lp, data);
 }
 
-int m_len(int m) {
+/**
+ * @brief Returns the number of used elements in a list.
+ *
+ * @param m The list handle.
+ * @return The number of elements.
+ */
+int m_len_simple(int m) {
   lst_t *lp = _get_list(m);
   return (**lp).l;
 }
 
+/**
+ * @brief Returns the number of used elements in a list.
+ *
+ * @param m The list handle.
+ * @return The number of elements.
+ */
+int m_len(int m) {
+  return m_len_simple(m);
+}
+
+/**
+ * @brief Returns a pointer to the first element of the list buffer.
+ *
+ * @param m The list handle.
+ * @return A pointer to the buffer.
+ */
 void *m_buf(int m) { return m_peek(m, 0); }
 
+/**
+ * @brief Returns the current capacity of the list.
+ *
+ * @param m The list handle.
+ * @return The capacity in number of elements.
+ */
 int m_bufsize(int m) {
   lst_t *lp = _get_list(m);
   return (**lp).max;
 }
 
 /**
- * @brief Insert 'n' elements at position 'p' in the array pointed to by 'm'.
+ * @brief Inserts n elements at position p in a list.
  *
- * Inserts 'n' elements at position 'p' in the array pointed to by 'm'.
- * If 'p' is negative or 'n' is non-positive, an error is raised.
- *
- * @param m Handle of the array where elements are to be inserted.
- * @param p The position at which to insert the elements.
- * @param n The number of elements to insert.
- * @return The first free element position 'p' after insertion.
- *
- * @note This function assumes 'm' points to a valid array.
- * @note The position 'p' should be within the bounds of the array.
+ * @param m The list handle.
+ * @param p The insertion index.
+ * @param n Number of elements to insert.
+ * @return The position p.
  */
 int m_ins(int m, int p, int n) {
   lst_t *lp;
@@ -553,9 +758,12 @@ int m_ins(int m, int p, int n) {
   return p;
 }
 
-// !X!
-// decrements the number of used elements
-// returns a ptr to the last item, or NULL.
+/**
+ * @brief Removes and returns the last element from the list.
+ *
+ * @param m The list handle.
+ * @return A pointer to the popped element, or NULL if empty.
+ */
 void *m_pop(int m) {
   lst_t *lp;
   lp = _get_list(m);
@@ -565,7 +773,12 @@ void *m_pop(int m) {
   return (*lp)->d + ((*lp)->w * (*lp)->l);
 }
 
-// remove element
+/**
+ * @brief Deletes the element at position p.
+ *
+ * @param m The list handle.
+ * @param p The index of the element to delete.
+ */
 void m_del(int m, int p) {
   lst_t *lp;
   if (p < 0)
@@ -574,26 +787,34 @@ void m_del(int m, int p) {
   lst_del(*lp, p);
 }
 
-// clears array, sets used ptr to zero
-void m_clear(int m) {
+/**
+ * @brief Clears the list (sets length to zero) without freeing memory.
+ *
+ * @param m The list handle.
+ */
+void m_clear_simple(int m) {
   lst_t *lp;
   lp = _get_list(m);
   (**lp).l = 0;
 }
 
 /**
- * @brief Set the length of the array pointed to by 'm' to the specified length.
+ * @brief Clears the list.
  *
- * Sets the length of the array pointed to by 'm' to the specified length 'len'.
- * If 'len' is greater than the current maximum length of the array, the array
- * is resized to accommodate the new length. If 'len' is negative, an error is
- * raised.
+ * @param m The list handle.
+ */
+void m_clear(int m) {
+  m_clear_simple(m);
+}
+
+/**
+ * @brief Sets the used length of the list.
  *
- * @param m Pointer to the array whose length is to be set.
- * @param len The new length to set for the array.
- * @return 0 on success, -1 on error.
+ * If the new length is greater than the capacity, the list is resized.
  *
- * @note This function only grows the array and does not shrink it.
+ * @param m The list handle.
+ * @param len The new length.
+ * @return 0 on success.
  */
 int m_setlen(int m, int len) {
   lst_t *lp;
@@ -606,14 +827,28 @@ int m_setlen(int m, int len) {
   return 0;
 }
 
+/**
+ * @brief Returns a pointer to the element at index i without bounds checking against used length.
+ *
+ * @param m The list handle.
+ * @param i The index.
+ * @return A pointer to the element.
+ */
 void *m_peek(int m, int i) {
   lst_t *lp;
   lp = _get_list(m);
   return lst_peek(*lp, i);
 }
 
-// copy |n| elements from |data| to array |m| at position |p|
-// returns the array |m|
+/**
+ * @brief Writes n elements from data into the list at position p.
+ *
+ * @param m The list handle.
+ * @param p The starting index.
+ * @param data Pointer to the data to write.
+ * @param n Number of elements to write.
+ * @return The list handle.
+ */
 int m_write(int m, int p, const void *data, int n) {
   lst_t *lp;
   if (n <= 0)
@@ -623,18 +858,130 @@ int m_write(int m, int p, const void *data, int n) {
   return m;
 }
 
-// copy n items from array (m) at (p) to data
+/**
+ * @brief Reads n elements from the list starting at p into the buffer data.
+ *
+ * @param m The list handle.
+ * @param p The starting index.
+ * @param data Pointer to a buffer pointer.
+ * @param n Number of elements to read.
+ * @return 0 on success.
+ */
 int m_read(int m, int p, void **data, int n) {
   lst_t *lp;
   lp = _get_list(m);
   return lst_read(*lp, p, data, n);
 }
 
+/**
+ * @brief Returns the width of each element in the list.
+ *
+ * @param m The list handle.
+ * @return The element width in bytes.
+ */
 int m_width(int m) {
   lst_t *lp;
   lp = _get_list(m);
   return (**lp).w;
 }
+
+/**
+ * @brief Frees the memory associated with a list handle, calling a custom free handler if registered.
+ *
+ * @param m The list handle.
+ * @return 0 on success.
+ */
+int m_free(int m)
+{	
+	if( m < 1 ) return 0;
+	
+	lst_t *lp = _get_list(m);
+	uint8_t h = (*lp)->free_hdl;
+	if (h == 255) return 0; /* this prevents recursion, if a list contains itself */
+	if (h == 0 ) { /* the simple case first */
+	  m_free_simple(m);
+	  return 0;
+	}
+
+	if( h >= m_len(MF) ) {
+		ERR("FREE Hander %d undefined", h );
+	}
+	(*lp)->free_hdl = 255; // mark this list as 'freeing in progress'
+	void (**fn)(int m);
+	fn = mls(MF,h);
+	if(!*fn) { ERR("FREE Hander %d is NULL", h ); }
+	(*fn)(m);
+	/* clean this list, use a non on-debug-override function
+	   because we could be called from a debug function */
+	m_free_simple(m);
+
+	return 0;
+}
+
+/**
+ * @brief Registers a custom free function.
+ *
+ * @param n Unused.
+ * @param free_fn The free function to register.
+ * @return The handle of the registered free function.
+ */
+int m_reg_freefn( int n, void (*free_fn) (int m) )
+{
+	void (**fn)(int m);	
+	int p;
+	for(p=-1; m_next(MF, &p, &fn); ) {
+		if( *fn == free_fn ) return p;
+	}
+	return m_put( MF, &free_fn);
+}
+
+/**
+ * @brief Allocates a new list with a specific free handler.
+ *
+ * @param max Initial capacity.
+ * @param w Element width.
+ * @param free_hdl Handle of the free function.
+ * @return The list handle.
+ */
+int m_alloc( int max, int w, uint8_t free_hdl )
+{
+	if( MF && free_hdl >= m_len_simple(MF) ) {
+		ERR("FREE Hander %d undefined", free_hdl );
+	}
+	int h = m_create( max, w );
+	lst_t *lp = _get_list(h);
+	(*lp)->free_hdl = free_hdl;
+	return h;
+}
+
+/**
+ * @brief Returns the free handler index of a list.
+ *
+ * @param h The list handle.
+ * @return The free handler index.
+ */
+int m_free_hdl( int h )
+{
+	lst_t *lp = _get_list(h);
+	return (*lp)->free_hdl; 
+}
+
+/**
+ * @brief Checks if a list handle has been freed.
+ *
+ * @param h The list handle.
+ * @return 1 if freed, 0 otherwise.
+ */
+int m_is_freed(int h)
+{
+	if (!FR) return 0;
+	h &= 0xffffff;
+	for (int i = 0; i < FR->l; i++) {
+		if (*(int*)lst_peek(FR, i) == h) return 1;
+	}
+	return 0;
+}
+
 
 // ********************************************
 //
@@ -643,14 +990,18 @@ int m_width(int m) {
 // ********************************************
 #define CASSERT(a, l, f, n) ASERR(a, "Caller %s() in %s:%d", (n), (f), (l))
 
-// !X!
-// create caller message in the form:
-// Funtion: _m_put was called by loop_test:2142 in 'rounders.c'
-// args:
-// bit 0: check handle
-// bit 1: check index
-// bit 2: check data
-//
+/**
+ * @brief Sets up the debug information for the current caller.
+ *
+ * @param me Name of the MLS function being called.
+ * @param ln Line number in the caller's source file.
+ * @param fn File name of the caller's source file.
+ * @param fun Name of the calling function.
+ * @param args Flags indicating what to check (bit 0: handle, bit 1: index, bit 2: data).
+ * @param handle The list handle being operated on.
+ * @param index The element index being operated on.
+ * @param data Pointer to the data being operated on.
+ */
 static void _mlsdb_caller(const char *me, int ln, const char *fn,
                           const char *fun, int args, int handle, int index,
                           const void *data) {
@@ -664,6 +1015,12 @@ static void _mlsdb_caller(const char *me, int ln, const char *fn,
   debi.data = data;
 }
 
+/**
+ * @brief Internal function to print an error message to stderr.
+ *
+ * @param format printf-style format string.
+ * @param ... Arguments for the format string.
+ */
 static void perr(char *format, ...) {
   va_list argptr;
   va_start(argptr, format);
@@ -672,9 +1029,11 @@ static void perr(char *format, ...) {
   va_end(argptr);
 }
 
-//! X!
-// check for handle error
-// R: 0 if handle seems correct
+/**
+ * @brief Checks if a list handle is valid during debugging.
+ *
+ * @return 0 if valid, -1 if an error is detected.
+ */
 static int _mlsdb_check_handle() {
   lst_t *lp;
   lst_owner *o;
@@ -690,10 +1049,10 @@ static int _mlsdb_check_handle() {
   lp = (lst_t *)lst(ML, h);
   if (*lp == NULL) {
     perr("List base address for handle %d is not allocated", h);
-    // check for other errors like double free 
-  } 
+    return -1;
+  }
 
-  if ( *lp && (*lp)->uaf_protection != (orig >> 24)) {
+  if ((*lp)->uaf_protection != (orig >> 24)) {
     perr("uaf protection pattern does not match, expected:%d, got:%d",
          (*lp)->uaf_protection, (orig >> 24));
     return -1;
@@ -720,10 +1079,16 @@ static int _mlsdb_check_handle() {
 
   return 0;
 }
+
+/**
+ * @brief Checks if a list index is valid during debugging.
+ *
+ * @return 0 if valid, -1 if an error is detected.
+ */
 static int _mlsdb_check_index() {
   int i = debi.index, h = debi.handle;
-  if (i < 0) {
-    perr("Array Index %d should be >=0\n", i);
+  if (i < -1) {
+    perr("Array Index %d should be >=-1\n", i);
     return -1;
   }
 
@@ -736,6 +1101,9 @@ static int _mlsdb_check_index() {
   return 0;
 }
 
+/**
+ * @brief Post-mortem analysis function called upon exit if an error occurred.
+ */
 void exit_error() {
   if (!debi.me)
     return;
@@ -743,8 +1111,8 @@ void exit_error() {
   perr("\n"
        "POST MORTEM ANALYSER STARTED\n"
        "****************************\n"
-       "ERROR in funtion: '%s()'. Called in '%s:%d' by '%s()'",
-       debi.me, debi.fn, debi.ln, debi.fun);
+       "ERROR in funtion: '%s'. Called by '%s:%d' in '%s'",
+       debi.me, debi.fun, debi.ln, debi.fn);
 
   if (!ML) {
     perr("m_init not called");
@@ -766,6 +1134,11 @@ void exit_error() {
     }
 }
 
+/**
+ * @brief Initializes MLS with debug tracking enabled.
+ *
+ * @return 0 on success, 1 if already initialized.
+ */
 int _m_init() {
   /*  if( ML || DEB ) { ERR("mls/debug already initialized"); } */
   if (DEB)
@@ -777,6 +1150,9 @@ int _m_init() {
   return 0;
 }
 
+/**
+ * @brief Destroys MLS and checks for memory leaks (lists not freed).
+ */
 void _m_destruct() {
   // check for allocated lists
   lst_owner *o;
@@ -789,11 +1165,21 @@ void _m_destruct() {
            i + 1, o->fun, o->fn, o->ln);
     }
   }
-  m_free(DEB);
+  m_free_simple(DEB);
   m_destruct();
-  _Exit(0);
+  debi.me = NULL;
 }
 
+/**
+ * @brief Debug version of m_create, tracking caller information.
+ *
+ * @param ln Line number.
+ * @param fn File name.
+ * @param fun Function name.
+ * @param n Initial capacity.
+ * @param w Element width.
+ * @return List handle.
+ */
 int _m_create(int ln, const char *fn, const char *fun, int n, int w) {
   lst_owner *lo;
   int len, m, m_uaf;
@@ -814,10 +1200,48 @@ int _m_create(int ln, const char *fn, const char *fun, int n, int w) {
   return m_uaf;
 }
 
+/**
+ * @brief Debug version of m_alloc, tracking caller information.
+ *
+ * @param ln Line number.
+ * @param fn File name.
+ * @param fun Function name.
+ * @param n Initial capacity.
+ * @param w Element width.
+ * @param free_hdl Free handler index.
+ * @return List handle.
+ */
+int _m_alloc(int ln, const char *fn, const char *fun, int n, int w, uint8_t free_hdl) {
+	int h = _m_create(ln,fn,fun,n,w);
+	lst_t *lp = _get_list(h);
+	(*lp)->free_hdl = free_hdl;
+	return h;
+}
+
+/**
+ * @brief Debug version of m_free, tracking caller information.
+ *
+ * @param ln Line number.
+ * @param fn File name.
+ * @param fun Function name.
+ * @param m List handle.
+ * @return 0 on success.
+ */
 int _m_free(int ln, const char *fn, const char *fun, int m) {
   if (!m)
     return 0;
-  _mlsdb_caller(__FUNCTION__, ln, fn, fun, 1, m, 0, 0);
+
+  if (m_is_freed(m)) {
+    WARN("Attempt to free already freed list %d. Called by %s() in %s:%d", m, fun, fn, ln);
+    return 0;
+  }
+
+  if(! AUTO_start++ ) {  
+	  AUTO_ln = ln;
+	  AUTO_fn = fn;
+	  AUTO_fun = fun;
+  }
+  _mlsdb_caller(__FUNCTION__, AUTO_ln, AUTO_fn, AUTO_fun, 1, m, 0, 0);
   m_free(m);
 
   m &= 0xffffff; /* uaf protection */
@@ -827,9 +1251,19 @@ int _m_free(int ln, const char *fn, const char *fun, int m) {
   o->fun = fun;
   o->fn = fn;
   TRACE(1, "Free List %d", m);
+  AUTO_start--;
   return 0;
 }
 
+/**
+ * @brief Debug version of m_buf, tracking caller information.
+ *
+ * @param ln Line number.
+ * @param fn File name.
+ * @param fun Function name.
+ * @param m List handle.
+ * @return Pointer to buffer.
+ */
 void *_m_buf(int ln, const char *fn, const char *fun, int m) {
   if (!m)
     return 0;
@@ -837,25 +1271,66 @@ void *_m_buf(int ln, const char *fn, const char *fun, int m) {
   return m_buf(m);
 }
 
+/**
+ * @brief Debug version of mls, tracking caller information.
+ *
+ * @param ln Line number.
+ * @param fn File name.
+ * @param fun Function name.
+ * @param h List handle.
+ * @param i Index.
+ * @return Pointer to element.
+ */
 void *_mls(int ln, const char *fn, const char *fun, int h, int i) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 3, h, i, 0);
   return mls(h, i);
 }
 
+/**
+ * @brief Debug version of m_next, tracking caller information.
+ *
+ * @param ln Line number.
+ * @param fn File name.
+ * @param fun Function name.
+ * @param h List handle.
+ * @param i Pointer to index.
+ * @param d Pointer to data pointer.
+ * @return 1 if found, 0 otherwise.
+ */
 int _m_next(int ln, const char *fn, const char *fun, int h, int *i, void *d) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 7, h, i ? *i : -1, d);
   return m_next(h, i, d);
 }
 
+/**
+ * @brief Debug version of m_put, tracking caller information.
+ *
+ * @param ln Line number.
+ * @param fn File name.
+ * @param fun Function name.
+ * @param h List handle.
+ * @param d Pointer to data to append.
+ * @return Index of new item.
+ */
 int _m_put(int ln, const char *fn, const char *fun, int h, const void *d) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 5, h, 0, d);
   return m_put(h, d);
 }
 
+/**
+ * @brief Debug version of m_clear, tracking caller information.
+ *
+ * @param ln Line number.
+ * @param fn File name.
+ * @param fun Function name.
+ * @param h List handle.
+ */
 void _m_clear(int ln, const char *fn, const char *fun, int h) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 1, h, 0, 0);
   m_clear(h);
 }
+
+
 
 /*
    -------------------------------------------------------------------------
@@ -868,11 +1343,81 @@ void _m_clear(int ln, const char *fn, const char *fun, int h) {
 #undef MLS_DEBUG_DISABLE
 #include "mls.h"
 
+/**
+ * @brief Simple wrapper for m_free_simple to avoid recursion.
+ *
+ * @param m List handle.
+ */
+static void free_wrap(int m)
+{
+	//if  MLS_DEBUG is enabled, we may be called by   _m_free() -> m_free() -> free_wrap() 
+	//we need m_free_simple to avoid a loop
+	//but wait: if we are called by free_list_wrap() and we are in debug mode we need to call
+	// _m_free for the list to clear debug-list information
+	m_free_simple(m);
+
+
+#if 0
+	_mlsdb_caller(__FUNCTION__,AUTO_ln, AUTO_fn,AUTO_fun, 1, m, 0, 0);
+	m &= 0xffffff; /* uaf protection */
+	lst_owner *o = (lst_owner *)mls(DEB, m - 1);
+	o->ln = -ln;
+	o->fun = fun;
+	o->fn = fn;
+	TRACE(1, "Free List %d", m);
+#endif	
+}
+
+/**
+ * @brief Wrapper to free all strings within a list.
+ *
+ * @param list List handle.
+ */
+static void free_strings_wrap(int list)
+{
+  int index;
+  char **strp;
+  TRACE(1, "Free List %d", list & 0xffffff ) ;
+  if (list < 1)
+    return;
+
+  lst_t *lp = _get_list(list);
+  for(index=-1; lst_next(*lp, &index, &strp); ) {
+    if (*strp) {
+      free(*strp);
+      *strp = NULL;
+    }
+  }
+}
+
+/**
+ * @brief Wrapper to free all lists contained within a list.
+ *
+ * @param m List handle.
+ */
+static void free_list_wrap(int m)
+{
+	TRACE(1, "Free List %d", m & 0xffffff );
+	int p,*d;	
+	m_foreach(m,p,d) m_free(*d);
+	// list m is marked with free_hdl=255 before this function was
+	// called, so we will not get a recursion
+	// if this list 'm' contains itself       
+}
+
+/**
+ * @brief Prints the MLS library version.
+ */
 void m_print_version() {
   puts("MLS - Secure, Easy, Low-Overhead Array-Memory-Mangement");
   puts(Version);
 }
 
+/**
+ * @brief Fills the entire list buffer with zeros.
+ *
+ * @param m List handle.
+ */
 void m_bzero(int m) {
   lst_t lp = *_get_list(m);
   bzero(lp->d, lp->max * lp->w);
@@ -884,100 +1429,59 @@ void m_bzero(int m) {
 //
 // ********************************************
 
-//! X! speicher das char c an das ende von marray m
-void m_putc(int m, char c)
+/**
+ * @brief Appends a character to a list.
+ *
+ * @param m List handle.
+ * @param c Character to append.
+ * @return The appended character.
+ */
+int m_putc(int m, char c)
 {
-	*(char*)m_add(m)=c;
+	return *(char*)m_add(m)=c;
 }
 
-//! X! speicher ein int an das ende von marray m
-void m_puti(int m, int c)
+/**
+ * @brief Appends an integer to a list.
+ *
+ * @param m List handle.
+ * @param c Integer to append.
+ * @return The appended integer.
+ */
+int m_puti(int m, int c)
 {
-	*(int*)m_add(m)=c;
+	return *(int*)m_add(m)=c;
 }
 
-
-// Vorteile:
-// Übergabe eines Speicherbereichs an eine Funktion die
-// ggf. den Speicher vergrößern muss:
-//
-// Vorher:
-//
-/* FILE * fp; */
-/*            char * line = NULL; */
-/*            size_t len = 0; */
-/*            ssize_t read; */
-
-/*            fp = fopen("/etc/motd", "r"); */
-/*            if (fp == NULL) */
-/*                exit(EXIT_FAILURE); */
-
-/*            while ((read = getline(&line, &len, fp)) != -1) { */
-//
-//
-// Nachher:
-//
-/* FILE * fp; */
-/*            int line=m_create(100,1); */
-/*            ssize_t read; */
-
-/*            fp = fopen("/etc/motd", "r"); */
-/*            if (fp == NULL) */
-/*                exit(EXIT_FAILURE); */
-
-/*            while ((read = getline(line, fp)) != -1) { */
-//
-//
-//
-// wenn der Puffer auf den "line" verweist vergrößert werden muss bleibt
-// "line" unverändert.
-// zudem wird durch die funktion sofort klar, das hier speicher reserviert wurde
-// und am ende der funktion eine freigabe "m_free(line)" stehen muss.
-//
-// vorher war es notwendig zusätzlich die funktionen von getline zu kennen,
-// um zu wissen das "line" ein zeiger auf einen reservierten speicherbereich
-// sein kann.
-//
-
-// TODO: Erkläre Stringlist
-//  String-Liste
-//  Eine String-Liste besteht aus einer Liste von Datenblöcken beliebiger Größe.
-//  Jeder Datenblock der Stringliste enthält als erstes einen
-//  Zeiger auf einen Speicherbereich mit einem Null-terminierten String.
-//
-//  struct my_data_st { char *string; int x, y,z; }
-//  mlsCreate( 100, sizeof( my_data_st ))
-//
-//  my_data_st m; m.string = strdup("Hello"); m_put( ll, &m );
-//
-//
-
-//! X!
-// Loesche alle Zeilen einer String-Liste
-// wird CLEAR_ONLY gesetzt werden die Inhalte
-// der String-Liste geloescht sonst
-// auch die Liste selber
-//
+/**
+ * @brief Frees all strings in a string list and optionally the list itself.
+ *
+ * @param list The string list handle.
+ * @param CLEAR_ONLY If non-zero, only the strings are freed and the list is cleared.
+ */
 void m_free_strings(int list, int CLEAR_ONLY) {
   int index;
   char **strp;
   if (list < 1)
     return;
-  m_foreach(list, index, strp) {
+  for(index=-1; m_next(list, &index, &strp); ) {
     if (*strp)
       free(*strp);
     *strp = NULL;
   }
   if (CLEAR_ONLY)
     m_clear(list); // reset array size to zero
-  else
-    m_free(list); // free array
+  else {
+	  lst_t *lp = _get_list(list);
+	  (*lp)->free_hdl = 0;
+	  m_free(list); // free simple array and if ncc. debug info
+  }
+  
 }
 
 /**
  * @brief Splits the string `s` at each occurrence of the character `c` and
  * copies the handles to the resulting substrings into the array list `m`.
- *
  *
  * - An empty string results in an entry with a string of length zero.
  * - A string containing only the separator results in a string list with two
@@ -993,16 +1497,16 @@ void m_free_strings(int list, int CLEAR_ONLY) {
  * @param c The character used as the delimiter for splitting the string.
  * @param remove_wspace Flag to indicate whether leading and trailing whitespace
  * should be removed from the substrings.
- * @return The generated string list.
+ * @return The generated string list handle.
  */
 int s_split(int m, const char *s, int c, int remove_wspace) {
   int p = 0, start = 0, end;
   char *szTemp;
 
   if (m)
-    m_free_strings(m, 1);
+	  m_free_strings(m, 1);
   else
-    m = m_create(10, sizeof(char *));
+	  m = m_alloc(10, sizeof(char *), MFREE_STR );
 
   for (;;) {
 
@@ -1045,33 +1549,13 @@ int s_split(int m, const char *s, int c, int remove_wspace) {
 #include <regex.h>
 
 /**
- !X!
- Match DIGIT: [[:digit:]]
- Match DIGIT AND/OR a-f or A-F: [a-f[:digit:]A-F]
- Subexpresssion-Match: (first)##*(second)
- Matches the string: first#####second and
- returns the substring-list
- "first", "second"
- Returns: StringList
- len(m) == 0 : NO MATCH
- len(m) == 1 : matched string
- len(m) > 1  : matched string and matched subexpressions
- returns:  substring-list
- restrictions:
- bei jedem lauf wird die regex kompiliert
- pos. der substrings im zu durchsuchenden str. geht verloren
- todo: bei bedarf eine find-all funktion die alle passenden
- stellen fuer ein pattern sucht
-
-
- @PARAMS: int m - eine string-liste oder 0. wird mit m_free_strings gelöscht.
- char *regex - die expression
- char *s - der zu durchsuchende string
-
- @RETURNS: eine stringliste
-
-*/
-
+ * @brief Matches a regular expression against a string and returns captured groups.
+ *
+ * @param m A string list handle or 0.
+ * @param regex The regular expression.
+ * @param s The string to search.
+ * @return A string list handle containing the matches.
+ */
 int m_regex(int m, const char *regex, const char *s) {
   char *szTemp;
   regex_t regc;
@@ -1093,9 +1577,9 @@ int m_regex(int m, const char *regex, const char *s) {
   pm = (regmatch_t *)malloc(sizeof(regmatch_t) * subexp);
 
   if (m > 1)
-    m_free_strings(m, 1);
+	  m_free_strings(m, 1);
   else
-    m = m_create(subexp + 1, sizeof(char *));
+	  m = m_alloc(subexp + 1, sizeof(char *), MFREE_STR);
 
   error = regexec(&regc, s, subexp, pm, 0);
   if (!error) {
@@ -1111,11 +1595,17 @@ int m_regex(int m, const char *regex, const char *s) {
   return m;
 }
 
-//! X! Copy List m
+/**
+ * @brief Creates a duplicate of a list.
+ *
+ * @param m List handle to duplicate.
+ * @return New list handle.
+ */
 int m_dub(int m) {
-  int r = m_create(m_len(m), m_width(m));
-  m_write(r, 0, mls(m, 0), m_len(m));
-  return r;
+	int h = m_free_hdl( m );
+	int r = m_alloc(m_len(m), m_width(m), h);  
+	m_write(r, 0, mls(m, 0), m_len(m));  
+	return r;
 }
 
 /*
@@ -1177,9 +1667,13 @@ int m_dub(int m) {
                                                                                \
   return ret
 
-/* get current char (32bit) and increment p by character length
-   -1 is reserved as end of stream indicator
-*/
+/**
+ * @brief Decodes a UTF-8 character from a list buffer.
+ *
+ * @param buf List handle.
+ * @param p Pointer to byte offset in buffer. Incremented by character length.
+ * @return 32-bit character code, or -1 on EOS, or 0xFFFD on error.
+ */
 int m_utf8char(int buf, int *p) {
   unsigned char c;
   uint32_t ret;
@@ -1196,9 +1690,12 @@ int m_utf8char(int buf, int *p) {
 #undef INC
 }
 
-/* get current char (32bit) and increment (*s) by character length
-   -1 is reserved as end of stream indicator
-*/
+/**
+ * @brief Decodes a UTF-8 character from a string.
+ *
+ * @param s Pointer to string pointer. Incremented by character length.
+ * @return 32-bit character code, or -1 on EOS, or 0xFFFD on error.
+ */
 int utf8char(char **s) {
   unsigned char c;
   uint32_t ret;
@@ -1215,6 +1712,13 @@ int utf8char(char **s) {
 #undef INC
 }
 
+/**
+ * @brief Reads a UTF-8 character from a file.
+ *
+ * @param fp File pointer.
+ * @param buf Buffer to store raw bytes (buf[0] is length).
+ * @return First byte of the character, or -1 on error.
+ */
 int utf8_getchar(FILE *fp, utf8_char_t buf) {
   int len, ch, nx, i;
 
@@ -1282,11 +1786,14 @@ read_multi_byte:
   return ch;
 }
 
-// lese aus fp und speicher in m, falls m>0,
-// bis EOF oder das Zeichen delim gefunden wurde.
-// returns: -1 EOF, delim - OK
-// wird m>0 übergeben, erhält man einen mit null-terminierten string
-//
+/**
+ * @brief Scans a file until a delimiter is found.
+ *
+ * @param m List handle to store results.
+ * @param delim Delimiter character.
+ * @param fp File pointer.
+ * @return Delimiter character or -1 on EOF.
+ */
 int m_fscan(int m, char delim, FILE *fp) {
   int ch;
   utf8_char_t buf;
@@ -1305,15 +1812,14 @@ int m_fscan(int m, char delim, FILE *fp) {
   }
 }
 
-//
-// lese aus fp und speicher in m, falls m>0,
-// bis EOF oder das Zeichen delim gefunden wurde.
-// returns: -1 = EOF, oder 'delim'
-// wird m>0 übergeben, erhält man einen mit null-terminierten string
-// führende und folgende Leerzeichen werden nicht gespeichert
-// es werden doppelte leerzeichen zu einem reduziert (squeeze).
-// tabs werden zu leerzeichen
-// die gelesenen daten werden an m angehängt, falls m existiert (i.e. m>0)!
+/**
+ * @brief Scans a file with whitespace reduction.
+ *
+ * @param m List handle.
+ * @param delim Delimiter.
+ * @param fp File pointer.
+ * @return Delimiter or -1 on EOF.
+ */
 int m_fscan2(int m, char delim, FILE *fp) {
   int ch;
   int IN = 1;
@@ -1349,9 +1855,13 @@ int m_fscan2(int m, char delim, FILE *fp) {
   }
 }
 
-//! X! vergleiche zwei marrays mit strncmp
-// returns: 0 wenn beide gleich sind, sonst !=0
-// beide strings müssen mit 0 enden
+/**
+ * @brief Compares two string lists using strncmp.
+ *
+ * @param a First list handle.
+ * @param b Second list handle.
+ * @return Comparison result.
+ */
 int m_cmp(int a, int b) {
   int l1, l2;
   l1 = m_len(a);
@@ -1360,11 +1870,14 @@ int m_cmp(int a, int b) {
   return strncmp((char *)mls(a, 0), (char *)mls(b, 0), l1);
 }
 
-/* suche nach obj in der liste m
-   ist obj noch nicht vorhanden wird es der liste hinzugefügt
-   RETURNS:
-   index von obj
-*/
+/**
+ * @brief Searches for an object in a list, adding it if not found.
+ *
+ * @param m List handle.
+ * @param obj Pointer to object.
+ * @param size Object size.
+ * @return Index of the object.
+ */
 int m_lookup_obj(int m, void *obj, int size) {
   int p;
   void *d;
@@ -1376,27 +1889,32 @@ int m_lookup_obj(int m, void *obj, int size) {
   return p;
 }
 
-//! X! lookup-table verwaltung
-// suche nach key in liste m
-// falls key gefunden gebe den treffer zurück
-// ansonsten füge key hinzu und gebe key zurück
-// m - marray [ int ]
-// key - marray [ char ], type: mstr 
-// returns: entweder wird (key) zurückgegeben, dann wurde key hinzugefügt,
-// oder es wird ein wert !=key zurückgegeben, dann existiert der schlüssel
-// schon und der rückgabewert zeigt auf den existieren schlüssel.
-//
+/**
+ * @brief Lookup table management for string handles.
+ *
+ * @param m List handle.
+ * @param key String handle to look up.
+ * @return Existing string handle or key if newly inserted.
+ */
 int m_lookup(int m, int key) {
   int p, *d;
 
   if (m_len(key) == 0)
-    ERR("Key size is zero");
+    ERR("Key of zero size");
   m_foreach(m, p, d) if (m_cmp(*d, key) == 0) return *d;
 
   m_put(m, &key);
   return key;
 }
 
+/**
+ * @brief Searches for a C-string in a list, optionally adding it.
+ *
+ * @param m List handle.
+ * @param key C-string to look up.
+ * @param NOT_INSERT If non-zero, do not insert if not found.
+ * @return Index of the string, or -1 if not found and NOT_INSERT is set.
+ */
 int m_lookup_str(int m, const char *key, int NOT_INSERT) {
   int p;
   char **d;
@@ -1418,8 +1936,9 @@ int m_lookup_str(int m, const char *key, int NOT_INSERT) {
   return p;
 }
 
-
-/* binary search/insert functions for lists where the first element is integer sortable */
+/**
+ * @brief Integer comparison function for qsort/bsearch.
+ */
 int
 cmp_int(const void *a0, const void *b0)
 {
@@ -1428,22 +1947,33 @@ cmp_int(const void *a0, const void *b0)
 	return (*a) - (*b);
 }
 
-
+/**
+ * @brief Inserts an integer into a sorted list.
+ */
 int
 m_binsert_int(int buf, int key)
 {
 	return m_blookup_int(buf,key,NULL,NULL);
 }
 
+/**
+ * @brief Searches for an integer in a sorted list.
+ */
 int
 m_bsearch_int(int buf, int key)
 {
 	return m_bsearch(&key, buf, cmp_int);
 }
 
-/* return pos of array-entry that matches `key`, insert `key` if not found and
-   call the new() function if defined.
-*/
+/**
+ * @brief Binary lookup for an integer, inserting if not found and calling an initializer.
+ *
+ * @param buf List handle.
+ * @param key Integer key.
+ * @param new Initializer function for new entries.
+ * @param ctx Context for initializer.
+ * @return Index of the entry.
+ */
 int
 m_blookup_int(int buf, int key, void (*new)(void *, void *), void *ctx)
 {
@@ -1459,6 +1989,9 @@ m_blookup_int(int buf, int key, void (*new)(void *, void *), void *ctx)
 	return p;
 }
 
+/**
+ * @brief Same as m_blookup_int but returns a pointer to the element.
+ */
 void*   m_blookup_int_p(int buf, int key, void (*new)(void *, void *), void *ctx)
 {
 	return mls(buf, m_blookup_int(buf,key,new,ctx));	
@@ -1469,30 +2002,45 @@ void*   m_blookup_int_p(int buf, int key, void (*new)(void *, void *), void *ctx
 
 
 
-// ***********
-//  VARIABLES
-// ***********
-// initalize a new set of variables
+/**
+ * @brief Initializes a new set of variables.
+ *
+ * @return Handle of the variable list.
+ */
 int v_init(void) { return m_create(100, sizeof(int)); }
 
-// free  a  set of variables
+/**
+ * @brief Frees a set of variables and their associated string lists.
+ *
+ * @param vl Handle of the variable list.
+ */
 void v_free(int vl) {
   int p, *d;
   m_foreach(vl, p, d) m_free_strings(*d, 0);
   m_free(vl);
 }
 
-// using variable name
-
-//
+/**
+ * @brief Sets a variable's value.
+ *
+ * @param vs Handle of the variable set.
+ * @param name Variable name.
+ * @param value Variable value.
+ * @param pos Position in the value list (VAR_APPEND for end).
+ * @return Handle of the variable's value list.
+ */
 int v_set(int vs, const char *name, const char *value, int pos) {
   int key = v_lookup(vs, name);
   v_kset(key, value, pos);
   return key;
 }
 
-// v_vaset( vs   [, name,value]*
-// set a list of variables
+/**
+ * @brief Sets multiple variables from a variadic list.
+ *
+ * @param vs Handle of the variable set.
+ * @param ... Pairs of char *name, char *value, terminated by NULL.
+ */
 void v_vaset(int vs, ...) {
   va_list argptr;
   char *name, *value;
@@ -1507,15 +2055,42 @@ void v_vaset(int vs, ...) {
   va_end(argptr);
 }
 
-void v_clr(int vs, const char *name) { return v_kclr(v_lookup(vs, name)); }
+/**
+ * @brief Clears a variable's value list.
+ *
+ * @param vs Handle of the variable set.
+ * @param name Variable name.
+ */
+void v_clr(int vs, const char *name) { v_kclr(v_lookup(vs, name)); }
 
+/**
+ * @brief Retrieves a variable's value.
+ *
+ * @param vs Handle of the variable set.
+ * @param name Variable name.
+ * @param pos Position in the value list.
+ * @return Variable value as C-string.
+ */
 char *v_get(int vs, const char *name, int pos) {
   return v_kget(v_lookup(vs, name), pos);
 }
 
+/**
+ * @brief Returns the number of values for a variable.
+ *
+ * @param vs Handle of the variable set.
+ * @param name Variable name.
+ * @return Number of values.
+ */
 int v_len(int vs, const char *name) { return v_klen(v_lookup(vs, name)); }
 
-// returns index of variable "name" in list vs
+/**
+ * @brief Finds the index of a variable by name.
+ *
+ * @param vs Handle of the variable set.
+ * @param name Variable name.
+ * @return Index or -1 if not found.
+ */
 int v_find_key(int vs, const char *name) {
   char *s;
   int p, *d;
@@ -1527,6 +2102,12 @@ int v_find_key(int vs, const char *name) {
   return -1;
 }
 
+/**
+ * @brief Removes a variable from a set.
+ *
+ * @param vs Handle of the variable set.
+ * @param name Variable name.
+ */
 void v_remove(int vs, const char *name) {
   int pos = v_find_key(vs, name);
   if (pos >= 0) {
@@ -1535,7 +2116,13 @@ void v_remove(int vs, const char *name) {
   }
 }
 
-/* return key to access variable "name" inside "vl" */
+/**
+ * @brief Retrieves the handle of a variable's value list, creating it if needed.
+ *
+ * @param vl Handle of the variable set.
+ * @param name Variable name.
+ * @return Handle of the variable's value list.
+ */
 int v_lookup(int vl, const char *name) {
   if (is_empty(name))
     return -1;
@@ -1553,13 +2140,13 @@ int v_lookup(int vl, const char *name) {
   return var;
 }
 
-// Access Stringlist Var
-//
-// row=0 - varname
-// row=1 - first value ...
-//
-// row < 0 OR row==Len : Append val
-// row > len : Error, exit
+/**
+ * @brief Sets a value in a variable's value list.
+ *
+ * @param var Handle of the variable's value list.
+ * @param v Value string.
+ * @param row Index in the list (or VAR_APPEND).
+ */
 void v_kset(int var, const char *v, int row) {
   char *val = NULL;
   if (v)
@@ -1577,6 +2164,11 @@ void v_kset(int var, const char *v, int row) {
   }
 }
 
+/**
+ * @brief Clears all values for a variable but keeps its name.
+ *
+ * @param var Handle of the variable's value list.
+ */
 void v_kclr(int var) {
   int i = 0;
   char **d;
@@ -1589,6 +2181,13 @@ void v_kclr(int var) {
   m_setlen(var, 1);
 }
 
+/**
+ * @brief Retrieves a value from a variable's value list by index.
+ *
+ * @param var Handle of the variable's value list.
+ * @param row Index.
+ * @return Value string.
+ */
 char *v_kget(int var, int row) {
   if (var <= 0)
     return "";
@@ -1601,10 +2200,19 @@ char *v_kget(int var, int row) {
   return s;
 }
 
+/**
+ * @brief Returns the number of values in a variable's value list (excluding name).
+ */
 int v_klen(int key) { return m_len(key) - 1; }
 
+/**
+ * @brief Initializes a string expansion structure.
+ */
 void se_init(str_exp_t *se) { memset(se, 0, sizeof *se); }
 
+/**
+ * @brief Frees a string expansion structure and its buffers.
+ */
 void se_free(str_exp_t *se) {
   m_free_strings(se->splitbuf, 0);
   m_free(se->values);
@@ -1613,6 +2221,9 @@ void se_free(str_exp_t *se) {
   memset(se, 0, sizeof *se);
 }
 
+/**
+ * @brief Reallocates or clears buffers in a string expansion structure.
+ */
 void se_realloc_buffers(str_exp_t *se) {
   if (!se->buf) {
     se->splitbuf = m_create(10, sizeof(char *));
@@ -1629,12 +2240,12 @@ void se_realloc_buffers(str_exp_t *se) {
   se->max_row = 0;
 }
 
-// tbd
-// returns:
-//  1 ALL
-//  2..n SINGLE
-//  0 ERROR
-//
+/**
+ * @brief Internal function to parse a variable index in a template string.
+ *
+ * @param s Pointer to current position in template string.
+ * @return Parsed index code.
+ */
 static int parse_index(const char **s) {
   int val;
   const char *p = *s;
@@ -1661,6 +2272,12 @@ static int parse_index(const char **s) {
   return 0;
 }
 
+/**
+ * @brief Parses a template string for expansion.
+ *
+ * @param se String expansion structure.
+ * @param frm Template string.
+ */
 void se_parse(str_exp_t *se, const char *frm) {
   ASSERT(frm && se);
 
@@ -1712,9 +2329,9 @@ void se_parse(str_exp_t *se, const char *frm) {
   }
 };
 
-// str_replace(array('\\', "\0", "\n", "\r", "'", '"', "\x1a"), array('\\\\',
-// '\\0', '\\n', '\\r', "\\'", '\\"', '\\Z')
-
+/**
+ * @brief Replaces a single character with its escaped version if necessary.
+ */
 static void repl_char(int buf, char ch) {
   char tab[] = {'\\', '\0', '\n', '\r', '\'', '"', '\x1a'};
   char rep[] = {'\\', '0', 'n', 'r', '\'', '"', 'Z'};
@@ -1729,11 +2346,17 @@ static void repl_char(int buf, char ch) {
   m_putc(buf, ch);
 }
 
+/**
+ * @brief Escapes characters in a string and appends to a list buffer.
+ */
 void escape_buf(int buf, char *src) {
   while (*src)
     repl_char(buf, *src++);
 }
 
+/**
+ * @brief Escapes a string and returns it in a new list buffer.
+ */
 int escape_str(int buf, char *src) {
   if (!buf)
     buf = m_create(100, 1);
@@ -1744,12 +2367,8 @@ int escape_str(int buf, char *src) {
   return buf;
 }
 
-/** @brief erzeugt aus *s einen string mit escape zeichen
-    @param s2 - 0 oder mls liste
-    @param s - ein string der umgewandelt werden soll
-    @param quotes - falls quotes==1 werden einfache anführungszeichen um die
-   variable gesetzt
-    @return gültiger mls string (liste mit breite 1, string ohne Nullbyte)
+/**
+ * @brief Internal function to escape a field, optionally with quotes.
  */
 static int field_escape(int s2, char *s, int quotes) {
   // "*s" ist der zu speichernde string
@@ -1767,7 +2386,12 @@ static int field_escape(int s2, char *s, int quotes) {
 }
 
 /**
-    @return einen gültigen string - immer
+ * @brief Expands a parsed template with variables.
+ *
+ * @param se Parsed template.
+ * @param vl Variable set.
+ * @param row Default row index for variable expansion.
+ * @return Expanded string.
  */
 char *se_expand(str_exp_t *se, int vl, int row) {
   int var, index;
@@ -1822,10 +2446,12 @@ char *se_expand(str_exp_t *se, int vl, int row) {
   return mls(buf, 0);
 }
 
-/** expandiert den string frm mit den variablen aus vl
- * @return	einen Zeiger auf den expandierten string
- *		dieser string wird auch als variable
- *		unter dem namen se_string in vl gespeichert
+/**
+ * @brief Parses and expands a template string in one go.
+ *
+ * @param vl Variable set handle.
+ * @param frm Template string.
+ * @return Expanded string.
  */
 char *se_string(int vl, const char *frm) {
   str_exp_t se;
@@ -1839,14 +2465,16 @@ char *se_string(int vl, const char *frm) {
   return STR(data, 1);
 }
 
-/* returns: length of string */
+/**
+ * @brief Returns the length of a string in a list buffer, excluding terminating zero if present.
+ */
 int s_strlen(int m) {
   int p = m_len(m);
   return p && CHAR(m, p - 1) == 0 ? p - 1 : p;
 }
 
-/** append cstring to mstr
- * returns: mstr
+/**
+ * @brief Appends a C-string to a string list buffer.
  */
 int s_app1(int m, char *s) {
   int p = s_strlen(m);
@@ -1854,6 +2482,9 @@ int s_app1(int m, char *s) {
   return m;
 }
 
+/**
+ * @brief Internal function for variadic string append.
+ */
 static int vas_app(int m, va_list ap) {
   char *name;
   while ((name = va_arg(ap, char *)) != NULL) {
@@ -1862,7 +2493,9 @@ static int vas_app(int m, va_list ap) {
   return m;
 }
 
-/** anhängen der char* strings an |m| */
+/**
+ * @brief Appends multiple C-strings to a list buffer.
+ */
 int s_app(int m, ...) {
   va_list ap;
   if (!m)
@@ -1873,6 +2506,15 @@ int s_app(int m, ...) {
   return m;
 }
 
+/**
+ * @brief Formatted print to a list buffer.
+ *
+ * @param m List handle (if 0, a new list is created).
+ * @param p Position (if <0 or >len, appends).
+ * @param format Printf-style format string.
+ * @param ap Variadic argument list.
+ * @return List handle.
+ */
 int vas_printf(int m, int p, const char *format, va_list ap) {
   int len;
   va_list copy;
@@ -1898,11 +2540,9 @@ int vas_printf(int m, int p, const char *format, va_list ap) {
   return m;
 }
 
-/* string printf
-   place string at p into array m
-   if p<0 append str to m
-   if m == 0 create new str
-*/
+/**
+ * @brief Variadic formatted print to a list buffer.
+ */
 int s_printf(int m, int p, char *format, ...) {
   va_list ap;
   va_start(ap, format);
@@ -1911,10 +2551,9 @@ int s_printf(int m, int p, char *format, ...) {
   return m;
 }
 
-/** das letzte zeichen des strings finden
-    falls der string leer ist oder nur NULL enthält
-    wird 0 zurückgegeben
-*/
+/**
+ * @brief Finds the last non-zero character in a string list buffer.
+ */
 int s_lastchar(int m) {
   int len = m_len(m);
   if (len == 0)
@@ -1927,7 +2566,14 @@ int s_lastchar(int m) {
   return CHAR(m, len);
 }
 
-/* erzeuge eine kopie eines teil-strings */
+/**
+ * @brief Creates a copy of a substring.
+ *
+ * @param m List handle.
+ * @param first_char Starting index.
+ * @param last_char Ending index (or -1 for end of string).
+ * @return New list handle.
+ */
 int s_copy(int m, int first_char, int last_char) {
   if (last_char < 0)
     last_char = m_len(m) - 1;
@@ -1943,10 +2589,18 @@ int s_copy(int m, int first_char, int last_char) {
   return ret;
 }
 
+/**
+ * @brief Standard qsort wrapper for MLS lists.
+ */
 void m_qsort(int list, int (*compar)(const void *, const void *)) {
   qsort(m_buf(list), m_len(list), m_width(list), compar);
 }
 
+/**
+ * @brief Standard bsearch wrapper for MLS lists.
+ *
+ * @return Index of found element, or -1.
+ */
 int m_bsearch(const void *key, int list,
               int (*compar)(const void *, const void *)) {
   if (list < 1 || m_len(list) == 0)
@@ -1957,6 +2611,9 @@ int m_bsearch(const void *key, int list,
   return -1;
 }
 
+/**
+ * @brief Standard lfind wrapper for MLS lists.
+ */
 int m_lfind(const void *key, int list,
             int (*compar)(const void *, const void *)) {
   size_t max;
@@ -1969,8 +2626,14 @@ int m_lfind(const void *key, int list,
   return -1;
 }
 
-/** @brief insert *data into sorted list buf
- * @returns: position of new element, or ret=-pos-1 (ret<0) if elem. exists
+/**
+ * @brief Inserts data into a sorted list.
+ *
+ * @param buf List handle.
+ * @param data Pointer to data.
+ * @param cmpf Comparison function.
+ * @param with_duplicates If non-zero, allow duplicates.
+ * @return Position of new element, or (-pos-1) if element exists and duplicates are not allowed.
  */
 int m_binsert(int buf, const void *data,
               int (*cmpf)(const void *data, const void *buf_elem),
@@ -2014,7 +2677,14 @@ int m_binsert(int buf, const void *data,
   return cur;
 }
 
-// scan buf from p to end for character ch, return found postion or -1 if not found
+/**
+ * @brief Searches for a byte character in a list buffer.
+ *
+ * @param buf List handle.
+ * @param p Starting index.
+ * @param ch Character code.
+ * @return Index or -1 if not found.
+ */
 int s_index(int buf, int p, int ch) {
   unsigned char *d;
   while (p < m_len(buf)) {
@@ -2026,22 +2696,17 @@ int s_index(int buf, int p, int ch) {
   return -1;
 }
 
+/**
+ * @brief Exported version of _get_list for external modules.
+ */
 lst_t *exported_get_list(int r) { return _get_list(r); }
 
-/* ringbuf */
-/*
-  Array:
-  l         : Wr
-  d[0]      : Rd
-  d[1..max] : data
-
-  Rd < 0    : Empty
-  Wr == Rd  : Full
-  Wr zeigt immer auf einen freien Platz, solange Wr != Rd
-  Rd zeigt immer auf das zu lesende Element, soland Rd > 0
-*/
-/* RD = -1:  empty */
-/* RD == WR: full  */
+/**
+ * @brief Creates a ring buffer.
+ *
+ * @param size Buffer capacity.
+ * @return Ring buffer handle.
+ */
 int ring_create(int size) {
   int r = m_create(size + 1, sizeof(int));
   lst_t *lp = _get_list(r);
@@ -2052,12 +2717,18 @@ int ring_create(int size) {
   return r;
 }
 
+/**
+ * @brief Checks if a ring buffer is empty.
+ */
 int ring_empty(int r) {
   lst_t *lp = _get_list(r);
   int *rd = lst_peek(*lp, 0);
   return (*rd < 0);
 }
 
+/**
+ * @brief Checks if a ring buffer is full.
+ */
 int ring_full(int r) {
   lst_t *lp = _get_list(r);
   int *rd = lst_peek(*lp, 0);
@@ -2065,7 +2736,11 @@ int ring_full(int r) {
   return (*rd == *wr);
 }
 
-/* if RD == WR return -1 */
+/**
+ * @brief Puts an integer into a ring buffer.
+ *
+ * @return 0 on success, -1 if full.
+ */
 int ring_put(int r, int data) {
   lst_t *lp = _get_list(r);
   int *rd = lst_peek(*lp, 0);
@@ -2084,6 +2759,11 @@ int ring_put(int r, int data) {
   return 0;
 }
 
+/**
+ * @brief Gets an integer from a ring buffer.
+ *
+ * @return Value or -1 if empty.
+ */
 int ring_get(int r) {
   lst_t *lp = _get_list(r);
   int *rd = lst_peek(*lp, 0);
@@ -2101,10 +2781,18 @@ int ring_get(int r) {
   return *d;
 }
 
+/**
+ * @brief Frees a ring buffer.
+ */
 void ring_free(int r) { m_free(r); }
 
-/* return 0 if string m[p..] == s
-   else return <0 or >0
+/**
+ * @brief Compares a list buffer string with a C-string.
+ *
+ * @param m List handle.
+ * @param p Starting index in list.
+ * @param s C-string.
+ * @return 0 if equal, otherwise non-zero.
  */
 int mstrcmp(int m, int p, const char *s) {
   int res = 1;
@@ -2122,6 +2810,14 @@ int mstrcmp(int m, int p, const char *s) {
   return res;
 }
 
+/**
+ * @brief Converts a string in a list buffer to a long integer.
+ *
+ * @param buf List handle.
+ * @param p Pointer to starting index.
+ * @param ret_val Pointer to receive converted value.
+ * @return 0 on success, -1 on error.
+ */
 int mstr_to_long(int buf, int *p, long int *ret_val) {
 
   int pp = 0;

@@ -38,5 +38,9 @@ $(BINC)/register_wb.h: $(WIDGET_H)
 
 all-widgets: $(WIDGET_H)
 
+install: $(WIDGET_H) $(BINC)/register_wb.h
+	mkdir -p $(BINC)
+	cp *.h $(BINC)/
+
 clean:
 	-$(RM) $(WIDGET_H)

@@ -3,7 +3,6 @@
 
 #include <X11/Intrinsic.h>
 #include "mls.h"
-#include "Wheel.h"
 void focus_keyboard( Widget w, XEvent*ev, String *s, Cardinal* n);
 
 void focus_add( Widget w );

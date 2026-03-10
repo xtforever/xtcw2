@@ -6,17 +6,28 @@
 #include <xtcw/WlabelP.h>
 #include <xtcw/Wcombo.h>
 _XFUNCPROTOBEGIN
+typedef void (*initialize_Proc)(
+#if NeedFunctionPrototypes
+void
+#endif
+);
+#define XtInherit_initialize ((initialize_Proc) _XtInherit)
+typedef void (*destroy_Proc)(
+#if NeedFunctionPrototypes
+void
+#endif
+);
+#define XtInherit_destroy ((destroy_Proc) _XtInherit)
 
 typedef struct {
 /* methods */
+initialize_Proc initialize;
+destroy_Proc destroy;
 /* class variables */
-int dummy;
+ visible_interest;
 } WcomboClassPart;
 
 typedef struct _WcomboClassRec {
-CoreClassPart core_class;
-WheelClassPart wheel_class;
-WlabelClassPart wlabel_class;
 WcomboClassPart wcombo_class;
 } WcomboClassRec;
 
@@ -37,9 +48,6 @@ int  k_lst;
 } WcomboPart;
 
 typedef struct _WcomboRec {
-CorePart core;
-WheelPart wheel;
-WlabelPart wlabel;
 WcomboPart wcombo;
 } WcomboRec;
 

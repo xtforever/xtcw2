@@ -21,6 +21,7 @@ extern "C" {
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #ifndef is_empty
 #define is_empty(s) (!((s) && *(s)))
@@ -84,6 +85,7 @@ extern int trace_level;
 typedef struct ls_st {
 	int w, l, max;
 	char uaf_protection;
+	uint8_t free_hdl;
 	char d[0];
 } *lst_t __attribute__(( aligned(1) ));
 
@@ -107,15 +109,38 @@ void lst_resize( lst_t *LP, int new_size);
 // handle and are indexed by an integer
 //
 // ********************************************
-
+	enum predefined_free_handler {
+		MFREE = 0,
+		MFREE_STR = 1,
+		MFREE_EACH = 2,
+		MFREE_MAX = 2
+	};
+	
+	/* pregistered free handler:
+	   registered by m_init()
+	   MFREE       0 - m_free
+	   MFREE_STR   1 - m_free_strings   - elements are malloced strings 
+	   MFREE_EACH  2 - m_free_each      - elements are m_alloc() lists, m_xfree will be called for each element
+	*/
+	
+	/* new alloc function, using pre-registered free_hdl */
+	int m_alloc( int max, int w, uint8_t free_hdl );
+	int m_free( int m );
+	int m_reg_freefn( int n, void (*free_fn) (int m) );
+	int m_is_freed( int h );
+	int m_free_hdl( int h );
+	/* --- */
+	
+	
 void* mls( int m, int i );
 int m_new( int m, int n );
 void *m_add( int m );
 int m_next( int m, int *p, void *d );
 int m_init();
 void m_destruct() ;
-int m_create(int max, int w);
-int m_free(int h);
+	
+	int m_create(int max, int w); /* deprecated: use m_alloc */
+
 int m_put( int m, const void* data );
 int m_len( int m );
 int m_setlen( int m, int len );
@@ -166,6 +191,8 @@ void _m_clear( int ln, const char *fn, const char *fun,
 	      int h );
 void* _m_buf(int ln, const char *fn, const char *fun,
 	      int m );
+int _m_alloc(int ln, const char *fn, const char *fun,
+	       int n, int w, uint8_t hfree );
 
 // ********************************************
 //
@@ -217,8 +244,8 @@ void* _m_buf(int ln, const char *fn, const char *fun,
 	int m_lookup( int m, int key );
 	int m_lookup_obj( int m, void *obj, int size );
 	int utf8_getchar(FILE *fp, utf8_char_t buf );
-	void m_putc(int m, char c);
-	void m_puti(int m, int  c);
+	int m_putc(int m, char c);
+	int m_puti(int m, int  c);
 	int m_lookup_str(int m, const char *key, int NOT_INSERT);
 	int utf8char(char **s);
 	int m_utf8char(int buf, int *p);
@@ -351,6 +378,10 @@ enum {
 #define m_create(n,w) \
 	_m_create(__LINE__, \
 	__FILE__,__FUNCTION__,(n),(w))
+
+#define m_alloc(n,w,h)				   \
+	_m_alloc(__LINE__,  __FILE__,__FUNCTION__, \
+		 (n),(w), (h) )
 
 #define m_free(m) \
 	_m_free(__LINE__, \

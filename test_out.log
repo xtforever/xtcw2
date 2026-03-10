@@ -1,0 +1,17 @@
+[2]node_create_char: LAYOUT handle 16777226, class NODE_CHAR, name , width 491520, height 589824, x 0, y 0, color 00000000, content A
+[2]node_create_char: LAYOUT handle 16777226, class NODE_CHAR, name , width 540672, height 589824, x 0, y 0, color 00000000, content B
+[2]node_create_char: LAYOUT handle 16777226, class NODE_CHAR, name , width 491520, height 589824, x 0, y 0, color 00000000, content C
+DEBUG: glue encountered, line_nodes len=1, line_width=0, word_width=1523712, target=983040000
+[2]node_pack_hbox: LAYOUT handle 33554444, class PACK_HBOX, name , width 1523712, height 589824, x 0, y 0, color 00000000, content 
+WARNING: mls.c Line: 1235 Function: _m_free
+Attempt to free already freed list 16777223. Called by retex_layout() in retex.c:210
+ERROR: mls.c Line: 505 Function: _get_list
+List 33554444 not allocated
+Resource temporarily unavailable
+
+POST MORTEM ANALYSER STARTED
+****************************
+ERROR in funtion: '_m_next'. Called by 'node_list_free:257' in 'node.c'
+Checking Handle 12, uaf protection: 2
+List base address for handle 12 is not allocated
+xft converter Sans-22

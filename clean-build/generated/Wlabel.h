@@ -35,6 +35,56 @@ _XFUNCPROTOBEGIN
 #define XtRInt "Int"
 #endif
 
+#ifndef XtNtopGap
+#define XtNtopGap "topGap"
+#endif
+#ifndef XtCTopGap
+#define XtCTopGap "TopGap"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNbottomGap
+#define XtNbottomGap "bottomGap"
+#endif
+#ifndef XtCBottomGap
+#define XtCBottomGap "BottomGap"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNleftGap
+#define XtNleftGap "leftGap"
+#endif
+#ifndef XtCLeftGap
+#define XtCLeftGap "LeftGap"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNrightGap
+#define XtNrightGap "rightGap"
+#endif
+#ifndef XtCRightGap
+#define XtCRightGap "RightGap"
+#endif
+#ifndef XtRInt
+#define XtRInt "Int"
+#endif
+
+#ifndef XtNautoHeight
+#define XtNautoHeight "autoHeight"
+#endif
+#ifndef XtCAutoHeight
+#define XtCAutoHeight "AutoHeight"
+#endif
+#ifndef XtRBoolean
+#define XtRBoolean "Boolean"
+#endif
+
 #ifndef XtNcornerRoundPercent
 #define XtNcornerRoundPercent "cornerRoundPercent"
 #endif

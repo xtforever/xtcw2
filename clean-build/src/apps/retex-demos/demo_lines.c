@@ -9,6 +9,13 @@
 #include "mls.h"
 #include "m_tool.h"
 
+/* Workaround for redefinition error in conststr.h vs m_tool.h */
+#define s_cstr s_cstr_hidden
+#define s_mstr s_mstr_hidden
+#include "conststr.h"
+#undef s_cstr
+#undef s_mstr
+
 // Callback for builder to measure chars using backend
 static CharMetricsScaled measure_char(void *ctx, int c, Scaled font_size, int style, const char *face) {
     Backend *be = (Backend*)ctx;
@@ -50,7 +57,8 @@ int main() {
     be->set_font_size(be, 12.0); // 12pt font
 
     printf("Building node list...\n");
-    int hlist = build_hlist(tokens, measure_char, be, FROM_INT(12), "Serif");
+    int face_handle = conststr_lookup_c("Serif");
+    int hlist = build_hlist(tokens, measure_char, be, FROM_INT(12), "Serif", face_handle);
     
     // Append \parfillskip (infinite stretch) to the end of the list
     // This ensures the last line is not fully justified if it's short.
