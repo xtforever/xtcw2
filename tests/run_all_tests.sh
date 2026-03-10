@@ -44,7 +44,10 @@ echo "11. test_retex_hit"
 echo "12. test_wlabel_selection (LAYOUT verification)"
 xvfb-run "$DIR/verify_layout.sh" "$ROOT/tests/test_wlabel_selection" "$DIR/baselines/test_wlabel_selection.layout"
 
-echo "13. test_trace"
+echo "13. test_wlistmulti (LAYOUT verification)"
+xvfb-run "$DIR/verify_layout.sh" "$ROOT/tests/test_wlistmulti" "$DIR/baselines/test_wlistmulti.layout"
+
+echo "14. test_trace"
 if "$ROOT/tests/test_trace" 2>&1 | grep -q "LAYOUT"; then
     echo "test_trace passed (found LAYOUT trace)"
 else

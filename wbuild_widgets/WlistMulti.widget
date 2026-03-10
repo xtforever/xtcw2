@@ -682,6 +682,9 @@ zusätzlich wird der |notify| Handler aufgerufen.
                    So TopOfVBox = TargetBaseline - firstH. */
                 double y_render_pt = target_baseline_pt - retex_paragraph_get_first_line_height(para);
 
+                TRACE(2, "LAYOUT handle %p, class %s, name %s, width %d, height %d, x %d, y %d, color %08x, content %s", 
+                      $, "WlistMultiCell", $name, (int)cell_w_pt, (int)cell_h_pt, (int)cur_x_pt, (int)cur_y_pt, 0, *cell_text);
+
                 retex_paragraph_render(para, be, cur_x_pt, y_render_pt);
                 retex_paragraph_free(para);
             }
