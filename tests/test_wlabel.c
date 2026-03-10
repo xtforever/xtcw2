@@ -21,8 +21,10 @@ int main(int argc, char **argv) {
                             XtNlabel, "Hello $\\frac{a}{b}$ World",
                             NULL);
 
+
     XtRealizeWidget(top);
 
+XtAppMainLoop(app);
     XtDestroyWidget(top);
     XtDestroyApplicationContext(app);
     conststr_free();

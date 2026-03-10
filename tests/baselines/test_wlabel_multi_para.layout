@@ -1,0 +1,30 @@
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 491520, height 589824, x 0, y 0, color 00000000, content P
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 344064, height 442368, x 0, y 0, color 00000000, content r
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 589824, x 0, y 0, color 00000000, content 1
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 2162688, height 589824, x 0, y 0, color 00000000, content 
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 491520, height 589824, x 0, y 0, color 00000000, content P
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 344064, height 442368, x 0, y 0, color 00000000, content r
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 589824, x 0, y 0, color 00000000, content 2
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 2162688, height 589824, x 0, y 0, color 00000000, content 
+[2]initialize: LAYOUT handle MASKED, class Wlabel, name label, width 64, height 57, x 0, y 0, color 00000000, content Para1
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 491520, height 589824, x 0, y 0, color 00000000, content P
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 344064, height 442368, x 0, y 0, color 00000000, content r
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 589824, x 0, y 0, color 00000000, content 1
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 2162688, height 589824, x 0, y 0, color 00000000, content 
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 491520, height 589824, x 0, y 0, color 00000000, content P
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 344064, height 442368, x 0, y 0, color 00000000, content r
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 442368, height 589824, x 0, y 0, color 00000000, content 2
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 2162688, height 589824, x 0, y 0, color 00000000, content 
+[2]renderer_render_node: LAYOUT handle MASKED, class Highlight, name , width 7, height 9, x 7, y 29, color ffaaaaff, content 
+[2]renderer_render_node: LAYOUT handle MASKED, class Highlight, name , width 6, height 6, x 15, y 31, color ffaaaaff, content 
+[2]renderer_render_node: LAYOUT handle MASKED, class Highlight, name , width 5, height 6, x 21, y 31, color ffaaaaff, content 
+[2]renderer_render_node: LAYOUT handle MASKED, class Highlight, name , width 6, height 6, x 27, y 31, color ffaaaaff, content 
+[2]renderer_render_node: LAYOUT handle MASKED, class Highlight, name , width 6, height 9, x 33, y 29, color ffaaaaff, content 
