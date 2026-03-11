@@ -41,3 +41,23 @@
   2. Increased the "infinite" width constant to ensure it exceeds the `re-tex` threshold for natural layout.
   3. Corrected the `alignment` comment and ensured `set_values` triggers geometry requests when `autoHeight` is enabled.
 - **File**: `wbuild_widgets/Wlabel.widget`
+
+## Wlabel: Selection Not Visually Updating
+- **Problem**: When clicking and dragging inside the `Wlabel` to select text, the internal selection indices (`selection_start`, `selection_end`) were updated, but the widget did not visually reflect the selection. The X11 exposure mechanism wasn't triggered because the internal cache was not invalidated.
+- **Solution**: Added `$dirty = 1;` in the `select_start` and `select_extend` actions before calling `redraw_label($);` to force the layout engine to regenerate the pixmap with the new selection range highlighted.
+- **File**: `wbuild_widgets/Wlabel.widget`
+
+## Wlabel: Incorrect TRANSLATIONS Syntax
+- **Problem**: In `Wlabel.widget`, the `@TRANSLATIONS` section used `@ <Event>: action()` instead of the required `@trans <Event>: action()`. This caused `wbuild` to treat the lines as plain text rather than translation table entries, resulting in no default translations being registered for the widget.
+- **Solution**: Changed `@` to `@trans` for all translation entries in `Wlabel.widget`.
+- **File**: `wbuild_widgets/Wlabel.widget`
+
+## re-tex: Renderer Color Overwrite
+- **Problem**: `renderer_render_node` in `re-tex/src/renderer.c` hardcoded the text color to black (`0xFF000000`) for every character, which overrode custom foreground colors and selection highlights set by widgets.
+- **Solution**: Removed the hardcoded black color setting in the renderer, allowing the backend's current state (set by the widget) to persist.
+- **File**: `re-tex/src/renderer.c`
+
+## re-tex: find_node_at VBOX Coordinate Stacking
+- **Problem**: The `find_node_at` function in `re-tex/src/retex.c` incorrectly calculated relative coordinates for nodes inside a VBOX. It didn't correctly account for baseline-based stacking, causing hit tests to fail even when clicking inside the text area.
+- **Solution**: Updated the VBOX stacking logic in `find_node_at` to correctly track the top and baseline of each child node, matching the logic used in the renderer.
+- **File**: `re-tex/src/retex.c`

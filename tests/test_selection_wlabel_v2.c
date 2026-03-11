@@ -59,6 +59,7 @@ void paste_cb(Widget w, XtPointer client_data, XtPointer call_data)
 int main(int argc, char **argv) {
     m_init();
     conststr_init();
+    trace_level = 2;
     
     XtAppContext app;
     Widget top = XtOpenApplication(&app, "WlabelSelectionTest", NULL, 0, &argc, argv, NULL, sessionShellWidgetClass, NULL, 0);
@@ -85,7 +86,7 @@ int main(int argc, char **argv) {
                                            "bg_norm", "gray80",
                                            NULL);
 
-    XtOverrideTranslations(label_wid, XtParseTranslationTable("<Btn1Up>: update_info()"));
+    XtOverrideTranslations(label_wid, XtParseTranslationTable("<Btn1Up>: select_end() update_info()"));
 
     info_wid = XtVaCreateManagedWidget("info", wlabelWidgetClass, box,
                                           XtNlabel, "Selection: none",

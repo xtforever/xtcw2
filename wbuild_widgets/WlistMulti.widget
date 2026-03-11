@@ -685,7 +685,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
                 TRACE(2, "LAYOUT handle %p, class %s, name %s, width %d, height %d, x %d, y %d, color %08x, content %s", 
                       $, "WlistMultiCell", $name, (int)cell_w_pt, (int)cell_h_pt, (int)cur_x_pt, (int)cur_y_pt, 0, *cell_text);
 
-                retex_paragraph_render(para, be, cur_x_pt, y_render_pt);
+                retex_paragraph_render(para, be, cur_x_pt, y_render_pt, xftcolor_to_argb($, COLOR_FG_NORM + $state));
                 retex_paragraph_free(para);
             }
             

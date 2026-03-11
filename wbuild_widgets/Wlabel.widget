@@ -244,15 +244,19 @@
     $layout_x_offset_pt = x_pt;
     $layout_y_offset_pt = y_pt - retex_paragraph_get_first_line_height($para_ptr);
 
+    TRACE(2, "update_cache: text_w=%.2f, text_h=%.2f, layout_x_off=%.2f, layout_y_off=%.2f", 
+          text_w_pt, text_h_pt, $layout_x_offset_pt, $layout_y_offset_pt);
+
     be->set_color(be, xftcolor_to_argb($, COLOR_FG_NORM + $state));
     retex_paragraph_set_selection($para_ptr, $selection_start, $selection_end);
-    retex_paragraph_render($para_ptr, be, x_pt, y_pt);
+    retex_paragraph_render($para_ptr, be, x_pt, y_pt, xftcolor_to_argb($, COLOR_FG_NORM + $state));
 }
 
 @TRANSLATIONS
-@ <Btn1Down>: select_start()
-@ <Btn1Motion>: select_extend()
-@ <Key>Return: info()
+@trans <Btn1Down>: select_start()
+@trans <Btn1Motion>: select_extend()
+@trans <Btn1Up>: select_end()
+@trans <Key>Return: info()
 
 @ACTIONS
 @proc info
@@ -267,11 +271,16 @@
     double x_pt = px2pt($, x) - $layout_x_offset_pt;
     double y_pt = px2pt($, y) - $layout_y_offset_pt;
     
+    TRACE(2, "clicked: x=%d, y=%d, x_pt=%.2f, y_pt=%.2f, layout_x_off=%.2f, layout_y_off=%.2f", 
+          x, y, x_pt, y_pt, $layout_x_offset_pt, $layout_y_offset_pt);
+
     if (!$para_ptr) update_cache($);
     if ($para_ptr) {
         int idx = retex_paragraph_get_node_at($para_ptr, x_pt, y_pt);
+        TRACE(2, "select_start: hit idx=%d", idx);
         if (idx != -1) {
             $selection_start = $selection_end = idx;
+            $dirty = 1;
             redraw_label($);
             // Own PRIMARY selection
             XtOwnSelection($, XA_PRIMARY, event->xbutton.time, convert_selection, NULL, NULL);
@@ -286,13 +295,23 @@
     double x_pt = px2pt($, x) - $layout_x_offset_pt;
     double y_pt = px2pt($, y) - $layout_y_offset_pt;
     
+    TRACE(2, "drag: x=%d, y=%d", x, y);
+
     if ($para_ptr) {
         int idx = retex_paragraph_get_node_at($para_ptr, x_pt, y_pt);
         if (idx != -1) {
             $selection_end = idx;
+            $dirty = 1;
             redraw_label($);
         }
     }
+}
+
+@proc select_end
+{
+    int x = event->xbutton.x;
+    int y = event->xbutton.y;
+    TRACE(2, "released: x=%d, y=%d", x, y);
 }
 
 @UTILITIES
