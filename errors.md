@@ -52,12 +52,12 @@
 - **Solution**: Changed `@` to `@trans` for all translation entries in `Wlabel.widget`.
 - **File**: `wbuild_widgets/Wlabel.widget`
 
-## re-tex: Renderer Color Overwrite
-- **Problem**: `renderer_render_node` in `re-tex/src/renderer.c` hardcoded the text color to black (`0xFF000000`) for every character, which overrode custom foreground colors and selection highlights set by widgets.
-- **Solution**: Removed the hardcoded black color setting in the renderer, allowing the backend's current state (set by the widget) to persist.
-- **File**: `re-tex/src/renderer.c`
+## re-tex: Renderer Color Overwrite (Re-fix)
+- **Problem**: `renderer_render_node` in `re-tex/src/renderer.c` had hardcoded colors for selection and reverse mode, and didn't support custom background colors for normal text.
+- **Solution**: Introduced `RendererColors` struct to allow full customization of text, background, reverse, and selection colors. Updated `renderer_render` and `retex_paragraph_render` to accept this struct.
+- **File**: `re-tex/src/renderer.c`, `re-tex/src/renderer.h`, `re-tex/src/retex.c`, `re-tex/src/retex.h`
 
-## re-tex: find_node_at VBOX Coordinate Stacking
-- **Problem**: The `find_node_at` function in `re-tex/src/retex.c` incorrectly calculated relative coordinates for nodes inside a VBOX. It didn't correctly account for baseline-based stacking, causing hit tests to fail even when clicking inside the text area.
-- **Solution**: Updated the VBOX stacking logic in `find_node_at` to correctly track the top and baseline of each child node, matching the logic used in the renderer.
+## re-tex: find_node_at Premature Return
+- **Problem**: `find_node_at` in `re-tex/src/retex.c` returned the `source_offset` for `NODE_CHAR`, `NODE_GLUE`, and `NODE_RULE` as soon as the X coordinate matched, without verifying the Y coordinate. This caused incorrect hit test results in multi-line paragraphs.
+- **Solution**: Added Y coordinate boundary checks for all node types in `find_node_at`.
 - **File**: `re-tex/src/retex.c`
