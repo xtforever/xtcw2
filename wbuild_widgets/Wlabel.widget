@@ -80,8 +80,8 @@
     RendererColors colors = {
         .text = xftcolor_to_argb($, COLOR_FG_NORM + $state),
         .bg = 0,
-        .reverse_text = xftcolor_to_argb($, COLOR_BG_NORM + $state),
-        .reverse_bg = xftcolor_to_argb($, COLOR_FG_NORM + $state),
+        .reverse_text = xftcolor_to_argb($, COLOR_BG_HI + $state),
+        .reverse_bg = xftcolor_to_argb($, COLOR_FG_HI + $state),
         .sel_text = xftcolor_to_argb($, COLOR_FG_SEL + $state),
         .sel_bg = xftcolor_to_argb($, COLOR_BG_SEL + $state)
     };
