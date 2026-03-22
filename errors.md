@@ -57,7 +57,11 @@
 - **Solution**: Introduced `RendererColors` struct to allow full customization of text, background, reverse, and selection colors. Updated `renderer_render` and `retex_paragraph_render` to accept this struct.
 - **File**: `re-tex/src/renderer.c`, `re-tex/src/renderer.h`, `re-tex/src/retex.c`, `re-tex/src/retex.h`
 
-## re-tex: find_node_at Premature Return
-- **Problem**: `find_node_at` in `re-tex/src/retex.c` returned the `source_offset` for `NODE_CHAR`, `NODE_GLUE`, and `NODE_RULE` as soon as the X coordinate matched, without verifying the Y coordinate. This caused incorrect hit test results in multi-line paragraphs.
-- **Solution**: Added Y coordinate boundary checks for all node types in `find_node_at`.
-- **File**: `re-tex/src/retex.c`
+## re-tex: Reverse Mode Rewrite
+- **Problem**: Reverse mode (used for highlighting) was implemented per-character, causing potential visual gaps and inefficiency. The user requested a "bounding box" approach and swapping foreground/background highlight colors.
+- **Solution**: 
+    1. Added `draw_highlight` to the `Backend` interface.
+    2. Rewrote `renderer.c` to use two-pass rendering (Backgrounds then Text).
+    3. Implemented rectangle consolidation in `renderer_render_backgrounds` to merge adjacent highlighted nodes into single bounding boxes per line.
+    4. Updated `Wlabel.widget` to use `COLOR_FG_HI` for background and `COLOR_BG_HI` for text in reverse mode.
+- **File**: `re-tex/src/renderer.c`, `re-tex/src/backend.h`, `re-tex/src/backend_cairo.c`, `re-tex/src/backend_xpixmap.c`, `wbuild_widgets/Wlabel.widget`
