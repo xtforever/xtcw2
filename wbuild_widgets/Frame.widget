@@ -427,6 +427,15 @@ order and size are left to the child to decide.
     return XtGeometryAlmost;
 }
 
+@proc set_values_almost
+{
+    request->x = reply->x;
+    request->y = reply->y;
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWX | CWY | CWWidth | CWHeight;
+}
+
 @ Requests by the child to be resized are passed on to the parent. If
 the parent replies with |XtGeometryYes|, the change is accepted and
 (if not |XtCWQueryOnly|) already done. In that case the Frame widget

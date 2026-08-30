@@ -6,6 +6,11 @@
 #include "mls.h"
 #include "m_tool.h"
 
+static void timeout_cb(XtPointer client_data, XtIntervalId *id) {
+    XtAppContext app = (XtAppContext)client_data;
+    XtAppSetExitFlag(app);
+}
+
 int main(int argc, char **argv) {
     m_init();
     conststr_init();
@@ -21,10 +26,12 @@ int main(int argc, char **argv) {
                             XtNlabel, "Hello $\\frac{a}{b}$ World",
                             NULL);
 
-
     XtRealizeWidget(top);
 
-XtAppMainLoop(app);
+    // Exit after 500ms to capture LAYOUT trace
+    XtAppAddTimeOut(app, 500, timeout_cb, app);
+
+    XtAppMainLoop(app);
     XtDestroyWidget(top);
     XtDestroyApplicationContext(app);
     conststr_free();

@@ -30,17 +30,17 @@ end
 
 -- UI Definition
 -- Columns are: Process Name (250px), PID (100px), CPU (100px)
-local lui_source = [[(window :title "Three Column Demo" :width 600 :height 500
+local lui_source = [[(window :title "Three Column Demo" :width 600 :height 600
   (grid
     (label :label "System Process Monitor" 
            :gridx 0 :gridy 0 :weightx 100 :weighty 0 :fontSize 28 
-           :topGap 40 :bottomGap 40 :leftGap 20 :rightGap 20 
+           :topGap 20 :bottomGap 20 :leftGap 20 :rightGap 20 
            :autoHeight true :alignment 1)
     
     (list-view :id "processes" :model $list_handle 
                :gridx 0 :gridy 1 :weightx 100 :weighty 100 :fill 3
                :columns (250 100 100) :retexCells true :fontSize 20
-               :visible_lines 12)
+               :visible_lines 15)
 
     (grid :gridx 0 :gridy 2 :weighty 0 :fill 1
        (button :label "Quit" :gridx 0 :gridy 0 :callback "quit_cb")

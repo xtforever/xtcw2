@@ -1,0 +1,331 @@
+@ Wretex renders multiline retex text with SVG support
+@class Wretex (Wheel)
+
+@EXPORTS
+@proc void redraw_wretex($)
+{
+    if (!XtIsRealized($)) return;
+
+    if ($dirty || !$backend_ptr) {
+        update_cache($);
+        $dirty = 0;
+    }
+
+    if ($pixmap && XtWindow($)) {
+        int copy_w = $width;
+        int copy_h = $height;
+        if (copy_w > 4000) copy_w = 4000;
+        if (copy_h > 4000) copy_h = 4000;
+        XCopyArea(XtDisplay($), $pixmap, XtWindow($),
+                  $gc[0],
+                  0, 0, copy_w, copy_h, 0, 0);
+    }
+}
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+
+@PUBLIC
+@ multiline retex source text. supports \\includesvg{file.svg}{w}{h}
+@var String text = <String> ""
+@ freetype font name
+@var String fontFace = "Sans"
+@ font size in points
+@var int fontSize = 12
+@var int topGap = 4
+@var int bottomGap = 4
+@var int leftGap = 4
+@var int rightGap = 4
+@var Boolean autoHeight = TRUE
+@ 0=left, 1=center, 2=right, 3=justify
+@var int alignment = 0
+
+@PRIVATE
+@var void *backend_ptr
+@var void *para_ptr
+@var Pixmap pixmap
+@var int prefered_width
+@var int prefered_height
+@var Bool dirty
+@var String text_mem
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@proc initialize
+{
+    char *s = $text;
+    if (!s || !*s) s = $name;
+    $text_mem = XtNewString(s);
+    $text = $text_mem;
+
+    $backend_ptr = NULL;
+    $para_ptr = NULL;
+    $pixmap = 0;
+    $dirty = 1;
+    $prefered_width = 200;
+    $prefered_height = 100;
+
+    calculate_size($, 0, &$prefered_width, &$prefered_height);
+    if ($width == 0) $width = $prefered_width;
+    if ($height == 0) $height = $prefered_height;
+
+    $dirty = 1;
+}
+
+@proc destroy
+{
+    if ($para_ptr) {
+        retex_paragraph_free($para_ptr);
+        $para_ptr = NULL;
+    }
+    if ($backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->destroy(be);
+        $backend_ptr = NULL;
+    }
+    XtFree($text_mem);
+}
+
+@proc set_values
+{
+    int do_expose = 0;
+    int redraw_flag = 0;
+    int size_changed = 0;
+
+    if ($text != $old$text) {
+        XtFree($old$text_mem);
+        if ($text == 0) $text = "";
+        $text = $text_mem = XtNewString($text);
+        redraw_flag = 1;
+        size_changed = 1;
+    }
+
+    if ($fontFace != $old$fontFace || $fontSize != $old$fontSize) {
+        redraw_flag = 1;
+        size_changed = 1;
+    }
+
+    if ($alignment != $old$alignment) { redraw_flag = 1; size_changed = 1; }
+
+    if ($topGap != $old$topGap || $bottomGap != $old$bottomGap ||
+        $leftGap != $old$leftGap || $rightGap != $old$rightGap) {
+        redraw_flag = 1;
+        size_changed = 1;
+    }
+
+    if ($fg_norm != $old$fg_norm || $bg_norm != $old$bg_norm) {
+        redraw_flag = 1;
+    }
+
+    if (redraw_flag) {
+        $dirty = 1;
+        do_expose = 1;
+    }
+
+    if (size_changed && $autoHeight) {
+        int w, h;
+        calculate_size($, 0, &w, &h);
+        if (w != $width || h != $height) {
+             XtVaSetValues($, XtNwidth, (Dimension)w, XtNheight, (Dimension)h, NULL);
+        }
+    }
+
+    return do_expose;
+}
+
+@proc query_geometry
+{
+    int tw = (request->request_mode & CWWidth) ? request->width : 0;
+    int w, h;
+    calculate_size($, tw, &w, &h);
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = w;
+    reply->height = h;
+
+    $prefered_width = w;
+    $prefered_height = h;
+
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+    $dirty = 1;
+}
+
+@proc resize
+{
+    if ($backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->destroy(be);
+        $backend_ptr = NULL;
+        $pixmap = 0;
+    }
+    $dirty = 1;
+    redraw_wretex($);
+}
+
+@proc realize
+{
+    XtCreateWindow($, (unsigned int) InputOutput, (Visual *) CopyFromParent,
+                   (XtValueMask) 0, (XSetWindowAttributes *) NULL);
+    if ($dirty) {
+        redraw_wretex($);
+    }
+}
+
+@proc expose
+{
+    redraw_wretex($);
+}
+
+@UTILITIES
+
+@proc void update_cache($)
+{
+    Window win = XtWindow($);
+
+    if (!$backend_ptr) {
+        if (!XtIsRealized($) || win == 0) return;
+        int w = $width > 4000 ? 4000 : ($width < 1 ? 1 : $width);
+        int h = $height > 4000 ? 4000 : ($height < 1 ? 1 : $height);
+        $backend_ptr = backend_xpixmap_create(XtDisplay($), win, w, h);
+        if (!$backend_ptr) return;
+        $pixmap = backend_xpixmap_get_pixmap((Backend*)$backend_ptr);
+    }
+
+    if ($para_ptr) {
+        retex_paragraph_free($para_ptr);
+        $para_ptr = NULL;
+    }
+
+    Backend *be = (Backend*)$backend_ptr;
+
+    int inner_w_px = (int)$width - ($leftGap + $rightGap);
+    if (inner_w_px < 10) inner_w_px = 10;
+    double layout_width_pt = px2pt($, inner_w_px);
+
+    $para_ptr = retex_layout(be, $text, layout_width_pt, $fontFace, $fontSize, $alignment);
+    if (!$para_ptr) return;
+
+    /* Clear background */
+    be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), xftcolor_to_argb($, COLOR_BG_NORM));
+
+    double text_h_pt = retex_paragraph_get_height($para_ptr);
+    double text_w_pt = retex_paragraph_get_width($para_ptr);
+
+    double inner_h_pt = px2pt($, (double)$height - ($topGap + $bottomGap));
+    if (inner_h_pt < 0) inner_h_pt = 0;
+
+    double v_centering_offset_pt = (inner_h_pt - text_h_pt) / 2.0;
+    if (v_centering_offset_pt < 0) v_centering_offset_pt = 0;
+
+    double h_offset_pt = 0;
+    if ($alignment == 1) { /* center */
+        h_offset_pt = (px2pt($, inner_w_px) - text_w_pt) / 2.0;
+        if (h_offset_pt < 0) h_offset_pt = 0;
+    } else if ($alignment == 2) { /* right */
+        h_offset_pt = px2pt($, inner_w_px) - text_w_pt;
+        if (h_offset_pt < 0) h_offset_pt = 0;
+    }
+
+    double x_pt = px2pt($, (double)$leftGap) + h_offset_pt;
+    double y_pt = px2pt($, (double)$topGap) + v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
+
+    RendererColors colors = {
+        .text = xftcolor_to_argb($, COLOR_FG_NORM),
+        .bg = 0,
+        .reverse_text = xftcolor_to_argb($, COLOR_BG_HI),
+        .reverse_bg = xftcolor_to_argb($, COLOR_FG_HI),
+        .sel_text = xftcolor_to_argb($, COLOR_FG_SEL),
+        .sel_bg = xftcolor_to_argb($, COLOR_BG_SEL)
+    };
+
+    retex_paragraph_render($para_ptr, be, x_pt, y_pt, &colors, 0);
+}
+
+@proc uint32_t xftcolor_to_argb($, int index)
+{
+    XftColor *xc = &$xft_col[index];
+    uint32_t r = xc->color.red >> 8;
+    uint32_t g = xc->color.green >> 8;
+    uint32_t b = xc->color.blue >> 8;
+    uint32_t a = xc->color.alpha >> 8;
+    if (a == 0) a = 0xFF;
+    return (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+@proc double get_dpi($)
+{
+    Display *dpy = XtDisplay($);
+    char *s = XGetDefault(dpy, "Xft", "dpi");
+    if (s) {
+        double dpi = atof(s);
+        if (dpi < 1.0 || dpi > 1000.0) return 96.0;
+        return dpi;
+    }
+    return 96.0;
+}
+
+@proc double pt2px($, double pt)
+{
+    return pt * get_dpi($) / 72.0;
+}
+
+@proc double px2pt($, double px)
+{
+    return px * 72.0 / get_dpi($);
+}
+
+@proc calculate_size($, int tw, int *w, int *h)
+{
+    Display *dpy = XtDisplay($);
+    Window root = DefaultRootWindow(dpy);
+
+    Backend *be = backend_xpixmap_create(dpy, root, 10, 10);
+    if (!be) { *w = 10; *h = 10; return; }
+
+    int adj_tw = (tw > 0) ? (tw - ($leftGap + $rightGap)) : 400;
+    if (adj_tw < 10) adj_tw = 10;
+    double target_width_pt = px2pt($, adj_tw);
+
+    void *para = retex_layout(be, $text, target_width_pt, $fontFace, $fontSize, $alignment);
+    if (para) {
+        *w = (int)ceil(pt2px($, retex_paragraph_get_width(para))) + ($leftGap + $rightGap);
+        *h = (int)ceil(pt2px($, retex_paragraph_get_height(para))) + ($topGap + $bottomGap);
+        retex_paragraph_free(para);
+    } else {
+        *w = 10; *h = 10;
+    }
+    be->destroy(be);
+}
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xmu/Xmu.h>
+@incl <stdio.h>
+@incl <stdlib.h>
+@incl "backend.h"
+@incl "backend_xpixmap.h"
+@incl "retex.h"
+@incl <math.h>
+@incl "converters-xft.h"
+@incl "focus-group.h"
+@incl "apputil.h"
+@incl "xutil.h"
+@incl "converters.h"
+@incl "mls.h"
+@incl "conststr.h"

@@ -14,7 +14,7 @@ TMP_OUT=$(mktemp)
 
 # Run the command and extract LAYOUT traces, mask hexadecimal handles (addresses)
 # Matches 0x followed by hex digits or just plain large integers if they look like handles
-$CMD 2>&1 | grep "LAYOUT" | sed -E 's/handle (0x[0-9a-f]+|[0-9]{5,})/handle MASKED/g' > "$TMP_OUT"
+$CMD 2>&1 | grep "LAYOUT" | sed -E 's/handle (0x[0-9a-f]+|[0-9]{2,})/handle MASKED/g' > "$TMP_OUT"
 
 if [ ! -f "$BASELINE" ]; then
     echo "Baseline file $BASELINE not found. Creating it from current run."

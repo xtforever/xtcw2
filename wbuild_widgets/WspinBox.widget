@@ -1,0 +1,62 @@
+@class WspinBox (Wlabel)
+@ Numeric input with spin buttons
+
+@PUBLIC
+@var <Callback> XtCallbackList callback = NULL
+@var int value = 0
+@var int min = 0
+@var int max = 100
+@var int step = 1
+
+@PRIVATE
+@var int edit_pos
+
+@METHODS 
+@proc initialize
+{
+    $edit_pos = 0;
+    if ($value < $min) $value = $min;
+    if ($value > $max) $value = $max;
+    TRACE(2,"WspinBox:%s initialized, value=%d", $name, $value);
+}
+
+@TRANSLATIONS
+@trans   <Key>Up:     spin_up()
+@trans   <Key>Down:   spin_down()
+@trans   <Key>Return: notify()
+
+@ACTIONS
+
+@proc spin_up
+{
+    int new_val = $value + $step;
+    if (new_val <= $max) {
+        $value = new_val;
+        redraw_label($);
+    }
+}
+
+@proc spin_down
+{
+    int new_val = $value - $step;
+    if (new_val >= $min) {
+        $value = new_val;
+        redraw_label($);
+    }
+}
+
+@proc notify
+{
+    XtCallCallbackList( $, $callback, event );
+}
+
+@EXPORTS
+@proc int wspinbox_get_value($)
+{
+    return $value;
+}
+
+@IMPORTS
+@incl "mls.h"
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"

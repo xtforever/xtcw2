@@ -1,0 +1,5 @@
+[50]focus_in: Wcombo focus_in cb
+[50]set_cursor: Wcombo set_cursor cb
+[50]set_cursor: Wcombo set_cursor cb
+[50]focus_out: Wcombo focus_out cb
+[50]select_start: Wlabel select_start wl

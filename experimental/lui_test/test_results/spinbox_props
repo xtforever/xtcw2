@@ -1,0 +1,9 @@
+[1]_m_create: NEW LIST 3 allocated by task_manager_init:53 in task_manager.c
+[1]_m_create: NEW LIST 4 allocated by task_manager_init:54 in task_manager.c
+[1]_m_create: NEW LIST 5 allocated by luaxt_init:16 in luaxt.c
+DEBUG M.run: length	154	first 30:	(window :id "tw" :title "SpinB
+Parsing string of length:	154
+First byte:	40
+Match finished at pos:	155
+Converting shell class to container for first managed widget
+xtapptimeout callback error: [string "/home/jens/git/xtcw2/lui_test/test_results/sp..."]:11: bad argument #1 to 'tostring' (value expected)

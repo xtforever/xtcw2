@@ -1,0 +1,59 @@
+[1]_m_create: NEW LIST 3 allocated by task_manager_init:53 in task_manager.c
+[1]_m_create: NEW LIST 4 allocated by task_manager_init:54 in task_manager.c
+[1]_m_create: NEW LIST 5 allocated by luaxt_init:16 in ../LuaRunner/luaxt.c
+DEBUG M.run: length	155	first 30:	(window :id "tw" :title "Butto
+Parsing string of length:	155
+First byte:	40
+Match finished at pos:	156
+Converting shell class to container for first managed widget
+[3]computeWidHgtInfo: x:0,y:0,w:1,h:1
+
+[3]computeWidHgtInfo: Cols:1,Rows:1
+[3]computeWidHgtInfo: x:0,y:0,w:1,h:1
+
+[3]computeWidHgtInfo: Cols:1,Rows:1
+FAIL: FAIL: expected btn.activate() not found in trace log
+FAIL: FAIL: expected btn.notify() not found in trace log
+FAIL: FAIL: expected btn.reset() not found in trace log
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 3 still allocated. Source: task_manager_init() in task_manager.c:53
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 4 still allocated. Source: task_manager_init() in task_manager.c:54
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 6 still allocated. Source: register_widget() in xt_bridge.c:19
+
+=================================================================
+==65490==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 10 byte(s) in 3 object(s) allocated from:
+    #0 0x7b78a66f74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x583411e8a9b7 in register_widget /home/jens/git/xtcw2/experimental/xt_bridge.c:21
+    #2 0x583411e8d221 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:293
+    #3 0x7b78a6ce7f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #4 0x7b78a6cf27f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #5 0x7b78a6ce84d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #6 0x7b78a6ce0888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #7 0x7b78a6d019c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #8 0x7b78a6ce8384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #9 0x7b78a6cff6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #10 0x7b78a6ce7f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #11 0x7b78a6cf27f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #12 0x7b78a6ce84d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #13 0x7b78a6ce0888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #14 0x7b78a6d019c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #15 0x7b78a6ce8384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #16 0x583411e86aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+    #17 0x583411e8707b in main /home/jens/git/xtcw2/experimental/commander_runner.c:244
+    #18 0x7b78a5e2a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #19 0x7b78a5e2a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #20 0x583411e852a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x242a4) (BuildId: e1b0c96845aa3b0276c74c4f801b034e4d17b034)
+
+Direct leak of 10 byte(s) in 1 object(s) allocated from:
+    #0 0x7b78a66f74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x583411e888d6 in task_register_func /home/jens/git/xtcw2/experimental/task_manager.c:140
+    #2 0x583411e86dc6 in main /home/jens/git/xtcw2/experimental/commander_runner.c:209
+    #3 0x7b78a5e2a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #4 0x7b78a5e2a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #5 0x583411e852a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x242a4) (BuildId: e1b0c96845aa3b0276c74c4f801b034e4d17b034)
+
+SUMMARY: AddressSanitizer: 20 byte(s) leaked in 4 allocation(s).

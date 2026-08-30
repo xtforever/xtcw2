@@ -1,0 +1,1759 @@
+
+---
+# HR4YOU-User
+default_user_uid: 50000
+default_user_gid: 50000
+default_user_pass: "$6$r6n2cU41D6m4h$pKshYapJpFtA.kOvwKqVta36XYgqJVvng8mN6YRHXOZ.X2aFAitwKzRBNCd5AhG/EPaMdipym.kVYIHV05jiN0"
+
+# Location / Cluster
+cluster: cluster5
+datacenter: ber
+staging_cluster: cluster5
+standalone: false
+
+# nginx
+nginx_worker_connections: 2048
+
+# MySQL
+mysql_server: dbcluster5.ber.4hr.de
+mysql_root_password: wM8MF1lufcduATIf
+mysql_crossover_password: 7bbgx9C0SXAdZn1s
+mysql_repl_password: 1lz7QcPuWfWRPQkf
+mysql_replication_master: dbmaster01.cluster5.ber.4hr.de
+
+# PHPIDS
+couchdb_host: https://couchdb.services.ber.4hr.de/ids/
+
+# EmailReg
+emailreg_instance: emailreg-db5
+emailreg_db_server: dbcluster5.ber.4hr.de
+emailreg_db_user: emailreg_cluster5
+emailreg_db_pw: Zxi0Nu9YsXVXsoWMZh1x
+emailreg_db_database: mail_reg
+
+# NFS
+nfshost: nfs02.ber.4hr.de
+nfsbasedir: /srv/data/cluster5
+
+# Sessionserver
+sessionhost: nfs02.ber.4hr.de
+sessionbasedir: /srv/ramdisk/cluster5/sessions
+
+# miscellaneous
+graylog: true
+logserver: logs01.ber.4hr.de
+aptcache: http://mgmt01.ber.4hr.de:3142/
+phpfpmchecknode: check-web01.cluster5.ber.4hr.de
+max_children: 5
+subnet: 10.20.3.0/24
+git_repo_es3: git@gitlab.fra.4hr.de:hr4you/esearcher/esearcher.git
+git_repo_toolchain: git@gitlab.fra.4hr.de:hr4you/esearcher/es3-build-toolchain.git
+relayhost: 10.20.3.58
+mynetworks: "10.20.3.0/24"
+
+# Cluster5-Customers. AKTIV!! Bitte nach UID sortieren.
+customers:
+    kuehling:
+      dbpass: c0rWxLeWWmXDfvb1XBfK
+      pass: $6$cEsQn9aYJ9MKS$Z/TdurJWWT.J6ClPycHBUQ2sv5dUIS3sLtXX0kLOPvWTzBJDHojUX3YXS9UvWGdEh2N4DFEKofy6MSiZ2IDVz. 
+      uid: 50002
+      active: false 
+      server_name: "kuehling.hr4you.org kuehlingc5.hr4you.org"
+      app_pool: 0
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/trunk:/var/www/kuehling/htdocs:"
+      frontend:  false 
+      esearcher_version: 2
+      table_login: user_login
+      table_data: user_data
+      table_jobs: jobs 
+      memory_limit: 128M 
+      ckeditor: ckeditor-4.5-latest
+      cookie_ssl: 1
+      call_time_pass_by_reference: false
+      phpvalue: |
+        env[JWT_PASSPHRASE]="jwvXBrDKr8PmgpJxCA6MDOg+fQ3xUVQJtXzIW86PCE8="
+        env[APP_SECRET]="kIzFHixAI7ZOnWqfnoIrY76lBs4bnDY2+j1/TxSIgq4="
+
+    conciliates:
+      dbpass: zdorFAl9BOqSRMv2omGu 
+      pass: $6$b2GUNhxM35bM0QO$5uVeC/ZN2uz3z5fKUQgJSyVhvr.j3KXQJB57CVMcW9dTK1SbWplbrN7Y.PmQhYNYSsbUsgt/gkl6Y0moPnOiy/ 
+      uid: 50004
+      active: true 
+      server_name: "www.conciliat.es conciliatesc5.hr4you.org ces.hr4you.org conciliat.es"
+      app_pool: 0
+      post_max_size: 12M
+      upload_max_filesize: 10M
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/conciliates/htdocs:"
+      frontend:  false 
+      esearcher_version: 2
+      table_login: user_login
+      table_data: user_data
+      table_jobs: jobs 
+      memory_limit: 128M 
+      hrtknext: true
+      ckeditor: ckeditor-4.5-latest
+      cookie_ssl: 0
+      call_time_pass_by_reference: false
+      phpvalue: |
+        env[JWT_PASSPHRASE]="LcuIW2zKCBo06KXS9QKO8Cnm2JsoxYC4quFuPYzfeeQ="
+        env[APP_SECRET]="SX9D0IFA98LCPia+afrrsao1SLYwiVf1opxgU6TAf+s="
+
+    etransfer_master:
+      dbpass: dieXah6wein4ahbae7sh
+      pass: $6$25aF9byUE9vj$hx2uQPVT8Yp4Zbr2mcOvcY7ijKsmHTsjYGNUH72DT7sOkVACWSHd9gmHPu/vFyzMCsLg1GQifl0RwjQPr6iLo.
+      uid: 50007
+      active: true 
+      server_name: "etransfer_master.hr4you.org etransfer.hr4you.org"
+      app_pool: 0
+      max_execution_time: 180
+      include_path: ".:jobagent/class/:/usr/share/php:/srv/hrtk/next:/var/www/etransfer_master/htdocs:"
+      frontend: true
+      esearcher_version: 2
+      esearcher_release: master
+      table_login: user_login
+      table_data: user_data
+      table_jobs: jobs 
+      memory_limit: 128M 
+      ckeditor: ckeditor-4.5-latest
+      cookie_ssl: 1
+      call_time_pass_by_reference: false
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="jR4HiN3LzJ5pis7TKYMO5WYk6ahQxbQZ9CWhB7p7vAg="
+
+    salestalent:
+      dbpass: jhjHQ7e3kf9S8yYVFNjf
+      pass: $6$du.44ig8/bGxeRc0$zMhYixUd1504A8f6qB4KGhRJSRFhm9Q8SPDbgAJaG4wNosQfnsa6OS7bwPobAiy/UYoRyL3/s6eHROEF4N5Ef/
+      uid: 50010
+      active: true
+      server_name: "salestalent.hr4you.org salespassion.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/salestalent/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/salestalent
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="eWP+q00WJZ6f998YCAD3i8G1kBEnixIZkZuEZcG5DcA="
+
+    selecteam3:
+      dbpass: z3bGmGZvgYAZK3qNTZHB
+      pass: $6$ij1Pac3tkpeIZw$ia60rtqY64vX1i2kIGNZAfVj1P803/4BGACgMyFDDUO6lb5oAm1jUy6rQdjfVyTr9z2rRdUx50domDRPpYlEk.
+      uid: 50011
+      active: true
+      server_name: "selecteam3.hr4you.org selecteam.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/selecteam3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/selecteam3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="Bowa4J5ahpcYZ+mzaYYXfkeDlLQ21R3mv0mPLFFgIho="
+
+    wuppertal:
+      dbpass: 2jlpS6q2c3frSJjSqY5F
+      pass: $6$gW4U06T.$Nrl/v133fNZ9.dzedXXxP97TaiSOKjK4WyuMveoQdEqdHl520dYRuM7D7OBrRhMH/p9LSE44SU.5dAOdlwg.q. 
+      uid: 50012
+      active: true
+      server_name: "wuppertal.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/wuppertal/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/wuppertal
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="AXSgGCW7kpH3GMzVUwDaGJl1Opj9o+fFn23VHfsjWTI="
+
+    aeneas:
+      dbpass: km1BlFWK6cfQu8p3ay7U
+      pass: $6$SfEGYWIw7eUbc./$7Zb7v1N89HwHOS0sfr8eZbak1RuBxm7vYYia6VYIHNlsOwJKfV5AzXyPxNqKZ8ODNxAU6S/kT2TfT19bw9yrU1 
+      uid: 50016
+      active: true
+      server_name: "aeneas.hr4you.org aeneas-executive.hr4you.org"
+      app_pool: 0
+      post_max_size: 12M
+      upload_max_filesize: 10M
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/aeneas/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/aeneas
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      max_children: 10
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="i0vdmCRTxgDMaC+FjGBjnbsXphW6nRhblBk1+mkRVIY="
+
+    mytoyshcm:
+      dbpass: ftYuOETKrMzJweCfC4Bi
+      pass: $6$HZqv6emg$zZudgEJRREsnY7vbiSI2YLoJjbZmqV8ksJUq0uv8K2Lqqk3RqwSyAQWoPZHe659LrqOswifLQNhAs3KukMFDa.
+      uid: 50018
+      active: true
+      server_name: "mytoyshcm.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/mytoyshcm/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/mytoyshcm
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="az0Csgc8KH4XQN3lECAmDRP9HqBDU4D416S7HUxvbFo="
+
+    smsconsulting:
+      dbpass: drU5AGGOGWci2Lvq1qbH
+      pass: $6$6QShKKnwqiRM$vlwP1O1ZMJb907IXBYYNKzk7.r6tbqh4uyEChkFZd8hq5KbZbZJUkO6hMNuBEEqUtGxwiJq7UBWilyJx/T/0//
+      uid: 50020
+      active: true
+      server_name: "smsconsulting.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/smsconsulting/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/smsconsulting
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="WnziN0TyLwbK2pBHfyFmNazg2cYM3/DRdVZRM0RHya4="
+
+    stuermer:
+      dbpass: 5845Ye96OWyDR2XHdjl1
+      pass: $6$hqeDCHodbHooeym$0kvcMi0wqpyhFeQvFKhl5dvCNRSshALEBzzac34/5cCw8e3rwxLqedNPKda5UvOTcm57e1Vp2BA0jMaG2xF4Z1
+      uid: 50021
+      active: true
+      server_name: "stuermer.hr4you.org strategen-stuermer.hr4you.org karrierepilotin.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      post_max_size: 12M
+      rewrite: ""
+      frontend: false
+      upload_max_filesize: 10M
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/stuermer/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/stuermer
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="6WB9mg6XCW+9194d0OOuxZP6PAxdGV9ifhCdVE5L4mY="
+
+    ptb3:
+      dbpass: hSJJetaoPaEhCi2il0RB
+      pass: $6$kbFuxykUnQbUEB8$8X/itSSq0Ld2j0gBn892rSYCWlijpFeYdcamfUzSORXNpOk6JfmXi8cL61zEvdBli59DsQi8JZQFIuJW4fTIf1 
+      uid: 50022
+      active: true
+      server_name: "ptb3.hr4you.org peopletobusiness.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/ptb3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/ptb3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="D7yhLIwFF7hes9QYUd6TBEIreKOwj0mjmU1gTOMwaxM="
+
+    cep3:
+      error_reporting: 0
+      use_symfony: true
+      dbpass: kEKyYshA6KfSzVMChYRn
+      pass: $6$HtytlKul8$q4A6Q9glp6EdHhx6qM2DvnSuD8cKI5fNEWnkcMgElq9e0bWCAYa.rw7qnJaVfJMWlpspjy7sYJhh6PUtJp0pZ.
+      uid: 50023
+      active: true
+      server_name: "cep3.hr4you.org cep.hr4you.org  www.ceppersonal.de www.cep-login.de www.ceplogin.de"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/cep3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/cep3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="7bevhwW1E7HTGV4Bz4ihfSZS75X9+k4paZMIQO/Jr38="
+
+    seher3:
+      dbpass: 0HHSlPwToXF2GOfclYrm
+      pass: $6$3r0dqrDvto$LK1kq.P2Q6US7VsohD/g15Tt5RYWH3HVYVQstc2EmZSjKp7Zfp8YlqlkzJfq/aioCbNbw8wFqn6pE6055BmgI/
+      uid: 50025
+      active: true
+      server_name: "seher3.hr4you.org seher.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/seher3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/seher3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="K6wSN7wP5FP8awW0c/Q8lTprAh6O0y5sbeoayw/annY="
+
+    slp3:
+      dbpass: m4qnD0smnAypks1k9DLl
+      pass: $6$K5sq/AOl/i1ZZn$6CvUNDcgSFV0jcwbSF8EfW33sj/JWCcin.W6eFXcuEXZ62DEtCcPtL0sCXED.NDMzKExrnZNisXjKxReThVpn1 
+      uid: 50026
+      active: false
+      server_name: "slp3.hr4you.org slp.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/slp3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/slp3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="kdsngMPL6nWAcouBS2tuN3E5KvbvITCSzOZdux++J+g="
+
+    afus3:
+      dbpass: GfmpZMkFVyJAlhPQ0JS7
+      pass: $6$pC8fXq4j.OZr$Wcgm43E1Zp0jK2CZIy2qmcxXUs0jT7SG1KuF8pbjQLSRp1ugOVEK4.Z7s6HWqcqQGyNzdPiZ7ytK//aoqaCof1
+      uid: 50027
+      active: false
+      server_name: "afus3.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/afus3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/afus3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="pjI5F1o7/IW8upiH+UJfW+qs2pyUFaxQjBJ0Icv0AMc="
+
+    jansen:
+      dbpass: q8YpxFXqYLASxRBQe1bT
+      pass: $6$4fG0yNfYRq94YRU$LmLSJwmlonFl9AsjNC2kUtawAJEYclaSK0OZ6xX4Zt2Yoa2TMfyvvplVgXYhlTvqyxi7UpTEgGANAz4InrZgs/ 
+      uid: 50028
+      active: true
+      server_name: "jansen.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/jansen/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/jansen
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="GPU5ynemQAxB7rt/g7bmMvWLfhoG5EcSn5QO7BvQaiw="
+
+    esgroup:
+      dbpass: WdEffswVFeF4g4lkp7mL
+      pass: $6$QrPKZ9kHEc$huuR7/ficTKrOpk1jEsgWM8.9wNjYgL.yEHl2z3KMxSQWYk.32aXzaV7DH6wHTTpHqRlvU7b5Yr7zqPGIe8cO0
+      uid: 50032
+      active: true
+      server_name: "esgroup.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/esgroup/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/esgroup
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="JOZJUjTkOfu9wjMBmdc/6KzhVSGfDmcbc/NcdpM/xuc="
+
+    awe3:
+      dbpass: vABOEnsmV46PGjQqTlc3
+      pass: $6$mtpXWU4NTGmTLsxZ$2N.h7B/w8yGN6y/4v.ISWGX/g0fS7X6DyaoD4g6fwKWfwVwuxVp.F14Me.89yHqQCR6Vz5uQKyFoDbZKI1KXD1
+      uid: 50033
+      active: true
+      server_name: "awe3.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/awe3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/awe3
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="VWgQQLv5AJyuvIkDKkuJTndezqGFECM7YxQMebZ7WF0="
+
+    trauco:
+      dbpass: baDU6XRV0QPERXSiAMla
+      pass: $6$pp7ZBFAY$opJYta.ObKk6zv9b4Jv37FN1E6K.S5wrv0RZcEbKdBEUmKWACuAHyYFecXaa44wjlSkLru3z9OP70cqecu9d00
+      uid: 50037
+      active: true
+      server_name: "trauco.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/trauco/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/trauco
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="7zKoukUrQEI0P/1xugT3E9Xy049ZrvVYlv+On1N5Za0="
+
+    mettnau:
+      dbpass: WpNfdFH7UIYqT8xwAQC2 
+      pass: $6$UCP0M9WsChTK$BPSQ1bEdYMQ3wj1Gh2IJxv6AOeea7WgkDryLyLCyDITxT0fAWi5a6EUihjQ38VZerPB3FXSmy0o8LQj4qQK1n1  
+      uid: 50038
+      active: true
+      server_name: "mettnau.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/mettnau/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/mettnau
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="WOE8O0BQUVVzx79GiM3wv2M+mJZOYMbBV0rWH/5exmw="
+
+    ratbacherintern:
+      dbpass: bthVhhd5gs8Kj6DCb5Dc
+      pass: $6$kmtFAuP7ySL$o6L019Wejofref3SYnRA0c8O/YGGO3L3f2JJti4PjWr/gV3Gi/jPWq4qf0b4NO1ZdNUURxIh0skoXnSrUlZEk1
+      uid: 50040
+      active: false
+      server_name: "ratbacherintern.hr4you.org jobs.ratbacherkarriere.de"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/ratbacherintern/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/ratbacherintern
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="/K9Nvbxymix5V1oO9lqsBlUX1W8Sdwzaop0bh49Cw4s="
+
+    waff3:
+      dbpass: Ef1jPxTCr0qFbVdWbsVI
+      pass: $6$iKDOWSfYXr$aDBUIUZNxMmOM6RXnvjlvH0UI8dlp47QaYwmCLnnMI6ry06JPc43ZD9EXpRlOnLSZnStfaZr2V40NrCi4CqE70
+      uid: 50042
+      active: true
+      server_name: "jobs.waff.at waff3.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/waff3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/waff3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 10
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="yP5sdHN0Cv92iYv6y5WvhF7fBt/c43HjPfb8Ut8fY9w="
+
+    krh:
+      dbpass: jBGPUz7cLAzc8rGwtq1m
+      pass: $6$N5kUxsz7CCFs$n0qpofKFwnIS/nHGzfRFxWrtrJWZvbDewESsrv0rkJcZy9lsw.GRbOfTJXNJzVZSjmmgWsXf5J8v7ESRfJhs20
+      uid: 50046
+      active: true
+      server_name: "krh.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/krh/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/krh
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="6Uys/5v3TWqNJpVTUm6Se4MkYpUgHy8ouJcqtZKHr3A="
+
+    myhumancapital:
+      dbpass: Wpyv7t3Xd2rFzh5s21jF
+      pass: $6$Ia5zXeduot7lG47Y$hunF4N9F8/IaFBJ4kk8UXabP/u3YSeMGsmPU8.e0iA4WrVirTxOdbaPiPs3eoKvA5MebygUD2Q57XPlQSoD7u1
+      uid: 50047
+      active: true
+      server_name: "myhumancapital.hr4you.org my-humancapital.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/myhumancapital/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/myhumancapital
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="y8npVMsjxvg1xuCXqea+SQS3/257NPzQXo74RNETESM="
+
+    kolping:
+      error_reporting: 0
+      use_symfony: true
+      dbpass: Ifn2rgCf75t6nrBG4jfa
+      pass: $6$PMp8IxcCokZw$6NNwGqKRa9JCGVDD0vezX.y79ZSVrg.8mgMrGfBNmnvIlQfHs0owPsuaQSm2JSs4nE2Nq8dQgGaqlnTzy2vkv. 
+      uid: 50052
+      active: false
+      server_name: "kolping.hr4you.org kolping-ostbayern.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/kolping/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/kolping
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="TE7FfLPAut35HXN7yWm2ZdaEhW/F2SJp2XDOIboaCnA="
+
+    tfe3:
+      dbpass: WMazcgaAP94euRoSXpSa
+      pass: $6$I.fJ.qt4M3UD2$A6YbVR9B1C3p5jwj1ePjWsjKvQm0hPqtNx2AC1XOXkbqRj.CETU.KCtQnEHeXeo.q5VNmvMJ7/TIt3Bk3wXjV/
+      uid: 50054
+      active: false
+      server_name: "tfe.hr4you.org tfe3.hr4you.org metis.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/tfe3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/tfe3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="TF1r3X9qvQNex63zkFIxGDeUM+294ua/I1QdgBPzGvw="
+
+    xelvin3:
+      dbpass: 00BdQ0x4b942bBYYOX09
+      pass: $6$B7uAcq3zvRV$Q6dcrFOBPqL.LMwuyHgQmsxGj.11rf4vFBYs9qvXHGyRy2RiUPBEiYtePMVkd7PcOBnfk74RTTw9uLuJis45E1
+      uid: 50056
+      active: true
+      server_name: "xelvin.hr4you.org xelvin3.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      post_max_size: 8M
+      rewrite: ""
+      frontend: false
+      upload_max_filesize: 6M
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/xelvin3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/xelvin3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="9mFKuCpFeTMPgOsW1r7Q0MP5iN07W63Xrurr3/pXd0E="
+
+    lpp:
+      dbpass: YDfSEE5e666Jad2TcCP7
+      pass: $6$qMdVRvSp$.TNmRUkkC5f7TNKFwSOKcTecpIERKc5eJiuvde9PqNbVBZw0tsM0XgzwzjWTEaclMyU3TMJsj7BLeLynbPTfG.
+      uid: 50057
+      active: true
+      server_name: "jobportal.liebich-partner.de liebich-partner-personalberatung.hr4you.org lpp.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      post_max_size: 8M
+      rewrite: ""
+      frontend: false
+      upload_max_filesize: 6M
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/lpp/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/lpp
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="4zjhyt7icDBZq10I2XOni9d4s2fj7726+HSWjgFdlhE="
+
+    bbj:
+      dbpass: hiZlnFEnrk9wczYyBrtm
+      pass: $6$BRVq0jfwT$jDbRwEXHBZpHWV.aJ98Qi3v0jkPmcyCRG4tra/2aSRd1kzdveEZYddV3LS3lLB6kzkgYw9va6WtVLL0JmAvJA.
+      uid: 50058
+      active: true
+      server_name: "bbj.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/bbj/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/bbj
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="ztxgA3UzVDkGxMNKgkMRnq4CdTDWYouh/umXD/tA9K4="
+
+    kuechenaktuell:
+      dbpass: dpieEWL2iJVbhDLgF6MU
+      pass: $6$54VJQRz4d$1KbhjxegjU0Jp0Ky9lQ3KRrWfjBIXrkNueCKRZhKOPl5jkBgjJt0T5Lc2OA0w9J4wVcRfbVc83PrUeq5.u.F61
+      uid: 50064
+      active: true
+      server_name: "kuechenaktuell.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/kuechenaktuell/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/kuechenaktuell
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="eAn/P7xtqpmMMs1NhfzlKZQAAe7ZFt9V/3usGPVjKhI="
+
+    personalisten3:
+      dbpass: nlBqqkd8TRNPjR4DXGkQ
+      pass: $6$MApq/yvjKlyH$oSDYmBDICQ5piqkTm9n1iGDeeAbTbtaKm5JeA8PnfatycPl2yx.DevKXGRSiwAJL9zZ/xK/8ktZCHfwzBVvXY1
+      uid: 50065
+      active: true
+      server_name: "personalisten3.hr4you.org personalisten.hr4you.org jobs.personalisten.com"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/personalisten3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/personalisten3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      max_children: 10
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="H1oRb6MIrHSVdCt8IbM3KHdksNJ/0TW2/65GXf+wTjs="
+
+    es3doku:
+      dbpass: 5zFq7SH555it2vG96unn
+      pass: $6$MP2JmkG74GUfi2$5znOsk9gIYmqjg1bLzWJEEoCpjPP/vgd872uLp48teiq9FncW11Fp74OrBnjo3hsTIuDMDo9BdSnL6d/HETEA.
+      uid: 50070
+      active: true
+      server_name: "es3doku.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/es3doku/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/es3doku
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="Y2BOxYGFyiJDCEVbSHQuVMurdiE4ni/TDLxPCJd58ec="
+
+    trm3doku:
+      dbpass: rxK2BtSJhvzVfkzMFxeH
+      pass: $6$nhHJs1GPY70LHYk$ksg.nbdZGr2NHpewpNAZZSWUK18v3.2aCYWYadVEENkhg8zB3HoAWL4hYG9JsFZ1/axDLME1F2YatpHZ.os4J0
+      uid: 50071
+      active: true
+      server_name: "trm3doku.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/trm3doku/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/trm3doku
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="B/NBw9V8l3AAfN+ljshu1YNZ0GWw9JSZf9DkT6raGZ4="
+
+    fricke:
+      dbpass: LKxG9LZLcFZcOBoeTOoc
+      pass: $6$z8t7MV8V5TJ0zx$uZt7upHhjakzObXgWrPNWMBC0NygPJ5VxTP9fopIU1k8oLM0tJuWu/jI9y7igOP314hYbYiAX72kZ7fDbXFyM1
+      uid: 50072
+      active: true
+      server_name: "fricke.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/fricke/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/fricke
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="/lqMLJKF71m725VB6T202o+NxL/XjDCGNWkBSky7f6A="
+
+    solvus:
+      dbpass: wJg7jERaqxZ6iQrFBnFs
+      pass: $6$zQq3wL4MU2$2I0LzHxq1AuNI4khTZpmJCgXV/aO71WfzeRcteX7E8xLVoE8gMsnR8Y/DWAyyo25DrKDXbDJWXS1YxQQZ6.nD1
+      uid: 50073
+      active: true
+      server_name: "solvus.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/solvus/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/solvus
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="scUH3d9TThyIn/k1+Rm2I0aliUnbHY6r8QLY3PB6uvo="
+
+    pentagon3:
+      dbpass: gdDeSkc2tdt7Eo2fyHMW
+      pass: $6$sUyI2xzcBUok3$R9n57xvwX..F72nwM52LXewyqDEu6H35HcZBQdXGcTyjJQWDbaa30BZuvTUuycQb7Amv7Ld17uqm7ZbBLMgtJ1
+      uid: 50074
+      active: true
+      server_name: "pentagon3.hr4you.org pentagon.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/pentagon3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/pentagon3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="NW21Z/EOhFx20wifFi0RIMW82ApciUyNX6VtiG8ukIY="
+
+    osiander:
+      dbpass: dJu5Z4uKzT9swUtiv4KH
+      pass: $6$FrU8OiKDySHd18M$WlQYmTWqsKYiXibWpGQaEk8eMMy1ptaT1JYkAIzfFOg9mN9ttBsQPlO4ptiGM7PrDahCsUaaqELeWbSD/8CBa/
+      uid: 50076
+      active: true
+      server_name: "osiander.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/osiander/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/osiander
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="tUuvkrGbta1/AC+4urwH+cYAlx9T//4hw9trWih8gug="
+
+    rwt3:
+      dbpass: KCbi20EGR758aNY9oTLp
+      pass: $6$meoLnK8pdGETbe6$oSUwUynq6ZFRiDjKMnvUuSyGc/Z5YmYplF3i2lHNa63Hr3UPGOVFfEoRpNjC0FnU9JSbbpuo9suGel8DciGn/0
+      uid: 50079
+      active: true
+      server_name: "rwt3.hr4you.org rwt.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/rwt3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/rwt3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="DpcHjSsMyebqoBgNYZ/X5o113F2J2m8KuOLlcuO4v6A="
+
+    grosch:
+      active: false
+      dbpass: ofKL9rsvw3taolFdgxzc
+      pass: $6$lhvIitsLLkBf$ii/QITThnHs9j1Cul3fDfhKgN5rlAhubvVpgQeVOmKIASgdgkoQVAD2unzZytqyekoFH9T6w45Jf28qh0Eeuo0
+      uid: 50080
+      server_name: "grosch.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/grosch/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/grosch
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="iOmSb1wXeGLuFMjBeixxv0IN3se4eaubrZOrjQF4MZI="
+
+    testbirds:
+      dbpass: Fg6WmybhLcwCEmaS1feT
+      pass: $6$F2oQi8fV91K55$S0RqXMiQl3zxtQgt6QKtsXEbiSsDvBNk26L1aS8.OSfTBG7QfiYwc5cOGFKZf.arCBQVjcumpZwqwQ/xPDShn.
+      uid: 50084
+      active: true
+      server_name: "testbirds.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/testbirds/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/testbirds
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="RbAiVfsir+OC3KK03Duk6WLYwO+RQOo2B1MYWyRIyMI="
+
+    muentenerthomas:
+      dbpass: jPzaVy52qfdSjzA91I5S
+      pass: $6$hYxvIPffB$2oV1VDOcIKBfT5sPwf0BwJU.STlBxpeVhfEnAa1bqFLOVsBV29bPKlXoroCJ19gf8FjZmehnYtRKZMxrIlUz81
+      uid: 50085
+      active: true
+      server_name: "muentenerthomas.hr4you.org muentenerundthomas.hr4you.org"
+      app_pool: 0
+      post_max_size: 17M
+      upload_max_filesize: 15M
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/muentenerthomas/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/muentenerthomas
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="7+8ZDXaVMOTlkfVF+/RjBL5K/CtnJzHtis3yQ65OhFE="
+
+    opitztrm:
+      dbpass: Ng0PeADX4IW9STTbZxqL
+      pass: $6$2jHj/RYI5ujYCH$SHvByrIpjzaLJ9L/jhqTOdgbtznN8ECV8t9LuRwo9IySCudi.rpwlgvrGWdjEDvvlT.eKioGFGpMueZNVtd1f1
+      uid: 50087
+      active: true
+      server_name: "opitztrm.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/opitztrm/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/opitztrm
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      error_reporting: 0
+      use_symfony: true
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="WP2Zkd8c0khM1iAPGXAWURAch4R2sG1cRfs6c5j0pz0="
+
+    oscar:
+      dbpass: cBbRf5xs2mehclQgxbia
+      pass: $6$5rZp2HZAkibf5$1hZPRQ/uuDPsQzRYD2qbMhetL9l7oHPNCKFyDeVfUBsGvyko5vJTyHkFEXYjAhcRunQDKGfCl/5iRrSm.80wF1  
+      uid: 50088
+      active: true
+      server_name: "oscar.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/oscar/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/oscar
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="eUumltgtAhRc+/i1sWLV6rTg9DPu9pvp6dhUQ/30T6M="
+
+    ihkmfr3:
+      dbpass: t2nYvrtbJSoH4H1rxwJx
+      pass: $6$7u/YYYdT/LkToYdP$8ZZdfa.xwhnE0HEqjgGvGHmiO5.WhSA8LUVy1ruwKOHYHPwj8j.Pr5Cw0ebdOsApI1U3PZAvosGpod6EwZcAW/ 
+      uid: 50089
+      active: true
+      server_name: "ihkmfr.hr4you.org ihkmfr3.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/ihkmfr3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/ihkmfr3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="F5Ehl74wJ7LN1rQv1/zvTP66elod65kox+MS+K3RSts="
+
+    juniortalents:
+      dbpass: voTS1bGMn0InXseQlgzZ
+      pass: $6$vbXU1Ol9P.FZmUP2$.lUnBUVfiTfZKz4iC8F9rccQQmr0jhviOJ3aP3Lb9Y4/w9M2qh.zPo7zpu980GFPwtMIKBahrE2aUgC8ec7rV/
+      uid: 50091
+      active: false
+      server_name: "juniortalents.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/juniortalents/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/juniortalents
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="iw1fJdv6BccxeSigJlJQolcP5CAuNZtUIDwP1Iyc7Aw="
+
+    igel:
+      dbpass: beHf9q4sEdWTZEwGVRY9
+      pass: $6$7W2lRYXMeSFWd$9DeJIC58VefQCsa6Igopr8waR2wPN4J4EJC8JvrdYhYhYF3DijqTfXqggwGLWmp.nw9c8KXZq/hlBG1rIlGgF0
+      uid: 50094
+      active: true
+      server_name: "igel.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/igel/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/igel
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="cDviYivHq6mUY/LNKQKe8tsiaPM1JX/f8QDKblYOVL8="
+
+    hermconcept3:
+      dbpass: fv3FufNrSU9gvVtRniiT
+      pass: $6$cVFyjC3wghBBoEm$cdeYtsB9/4QFGc4Q1IaJW.YFKobjM72wSd3rv6Lb/lBpcdDVhYbR3anyROMTnSmpNK2aLSt3DrzJSiK5kyNBd1
+      uid: 50095
+      active: true
+      server_name: "hermconcept3.hr4you.org hermconcept.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/hermconcept3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/hermconcept3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="GbhkXycD6uc/jk6YZmZx9yk8CP9KKlFLVCTqUzXuDGM="
+
+    cxp:
+      dbpass: gb4TKXGmiS2vBedb7hFL
+      pass: $6$GDkfEVXgGIgo25KW$B2BEWpQZ4wYI5O7y6W1rMlPKK7VJwT/AqIgo7ku0k0RqQv/GXwE5Cl10.OwjMHsxonIrCAe54otcaDKtK/qEF/
+      uid: 50097
+      active: true
+      server_name: "cxp.hr4you.org cx-p.hr4you.org"
+      app_pool: 0
+      post_max_size: 12M
+      upload_max_filesize: 10M
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/cxp/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/cxp
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      error_reporting: 0
+      use_symfony: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="UL0xKIFAvZEd1z8ljl6oyMvVZNV0pvokOVjA2d8/c4c="
+
+    hubside:
+      error_reporting: 0
+      use_symfony: true
+      dbpass: lf9JT3eKhttPsifhLZdd
+      pass: $6$TUOwV4rA75$NWr/y2BgR54IZImnuGp/S/5uD4oJrkJrwmiqgZPZwLOZL2Pxmc.fkdwEnrnbTI3P16tzfgmNy9SmwLR7yO/DJ.
+      uid: 50098
+      active: true
+      server_name: "hubside.hr4you.org"
+      app_pool: 0
+      post_max_size: 12M
+      upload_max_filesize: 10M
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/hubside/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/hubside
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="tiTGscrfOYRRNIkREmA2yC3UOz9mTd1WPate8NN5t4A="
+
+    dreieck:
+      dbpass: QJmGTUYJmpTn8nyE8VXG
+      pass: $6$A2CETAqi2cabk5$Vr0xBPk9NeTLMyJyAFseJo90/BuX5MouK0dKsEMM81EHD6JJA6NDAYPCysdCUsdgvwxSaeNfPCm9FHoGHaE7V1
+      uid: 50099
+      active: true
+      server_name: "3eck.hr4you.org"
+      app_pool: 0
+      post_max_size: 12M
+      upload_max_filesize: 10M
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/dreieck/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/dreieck
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="K3oFf6Qsg0w4q123lNK9mcznEfrqpo8M1iw+AJTt15Y="
+
+    elnet:
+      dbpass: glEpbBhmTnbcqw2PJh4N 
+      pass: $6$X9d6EMxta$aTd8A2xJp72iatfjNjgu7inClh1jRfcSEJjs5Bmxy8xIqbvphcX4IkV2JIdLYKfZPAmBpM4PMY0pv3/NkDT8k1
+      uid: 50100 
+      active: true 
+      server_name: "elnet.hr4you.org 10k.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M 
+      rewrite: |
+         location ~ ^/upload/.* {
+             rewrite ^/upload/(.*)$ /frontend.php/access_check.php?path=$1 break;
+             fastcgi_read_timeout 600s;
+             fastcgi_send_timeout 600s;
+             fastcgi_pass fcgi_elnet;
+             fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+             include fastcgi.conf; }  
+      frontend: true
+      max_execution_time: 180
+      include_path: ".:jobagent/class/:/usr/share/php:/srv/hrtk/next:/var/www/elnet/htdocs:"
+      esearcher_version: 2
+      ckeditor: ckeditor-4.5-latest
+      charset: iso-8859-15
+      esearcher_release: customers/elnet
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true 
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="3FeJXiKh9MdrCBg5cbgwU6u5BQ2Vz6bAJDAYBLfMsj8="
+
+    augusta:
+      error_reporting: 0
+      use_symfony: true
+      dbpass: ovJfivJxS5Qe8Y5le8o4
+      pass: $6$l2jTTR9B$Jl3wAR6gcch89qiuKCTTYRxUnqu4avNhRN1Wp.uC.63OXOJ6Wk7ETvi/s/aquUwmUySDT7OBf8AyhmrK1r3yA1
+      uid: 50101
+      active: true
+      server_name: "augusta.hr4you.org alpha.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/augusta/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/augusta
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="C6gKNVV6Ue+MPwhokWUGC15Dc1YPonkuYcdONLfEnN4="
+
+    upgrade4you:
+      dbpass: NrAh2GH9yvHjKkncNden
+      pass: $6$.K8wms5x$V5DhVGR.E1QD.SmCOybK5Je6qpocAhdkg2ucAeqHjJm2AiMCoKyuxvTOprJ1027MKpRZbiPM5rOzBR79kDTKd/
+      uid: 50102
+      active: true
+      server_name: "upgrade4you.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/upgrade4you/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.5-latest
+      charset: utf-8
+      esearcher_release: customers/upgrade4you
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      use_symfony: true
+      error_reporting: 0
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="Q+W/1HjeK9fc7IWOJHdLq4C330sVA/psSePHoO2MOdk="
+
+    waff3uat:
+      dbpass: UApOtkOcAIPiDiAeE7aO
+      pass: $6$QIUfJZ1S20$WJ876S25MY2uC2Mjv4ed5jgF4AeG49sbPFADw6GwEfHhKYSCxFnoDuZV5LOgJusWyJtT4nTesHQ.kicvIkdId/
+      uid: 50105
+      active: true
+      server_name: "waff3uat.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/waff3uat/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/waff3uat
+      call_time_pass_by_reference: false
+      use_symfony: true
+      error_reporting: 0
+      cookie_ssl: 1
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="yP5sdHN0Cv92iYv6y5WvhF7fBt/c43HjPfb8Ut8fY9w="
+
+    design_etransfer:
+      dbpass: AWu0Eeyae6ahz7Taen1g
+      pass: $6$cg.vz0jQAi$1IeFwPTsJ1zHb9UZ/OraAYYMxKXpKYbIBJBdgnmhTLwwgZ5Q50Szm/TO7ezmZaef3yPXmtwTXGvBz/CuTSD2V1
+      uid: 50106
+      active: true 
+      server_name: "design_etransfer.hr4you.org"
+      app_pool: 0
+      max_execution_time: 180
+      include_path: ".:jobagent/class/:/usr/share/php:/srv/hrtk/next:/var/www/etransfer_master/htdocs:"
+      frontend: true
+      esearcher_version: 2
+      esearcher_release: master
+      table_login: user_login
+      table_data: user_data
+      table_jobs: jobs 
+      memory_limit: 128M 
+      ckeditor: ckeditor-4.5-latest
+      cookie_ssl: 1
+      call_time_pass_by_reference: false
+      hrtknext: true
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="dOu12lx1NoeicVSUsHUDZ81IK7E3+IHOShTk/XHpGEQ="
+
+    basfsw:
+      dbpass: pIyygzYRKKO3gegLs8x2
+      pass: $6$/LkPqraZRzX3$KsAlrBilT7szMUGLH8Mmxju8wjqf9PKZANmhdo8vIIHJjAnuGHywWui/hFC2GasGqIPf643vuTbMakLhB.Iw..
+      uid: 50108
+      active: true
+      server_name: "basfsw.hr4you.org basfschwarzheide.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/basfsw/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/basfsw
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[SIMPLESAMLPHP_CONFIG_DIR] = /var/www/basfsw/data/saml_config/
+         env[JWT_PASSPHRASE]="y1JjBkV0rvtfloEzNA4PjFmAm2gJkMzlzdy7raPRjSQ="
+      location: |
+                location /simplesaml {
+                         alias /var/www/basfsw/vendor/simplesamlphp/simplesamlphp/www;
+                         location ~ ^(?<prefix>/simplesaml)(?<phpfile>.+?\.php)(?<pathinfo>/.*)?$ {
+                                 include fastcgi.conf;
+                                 fastcgi_pass fcgi_basfsw;
+                                 fastcgi_split_path_info ^(.+?\.php)(/.+)$;
+                                 fastcgi_param SCRIPT_FILENAME $document_root$phpfile;
+                                 fastcgi_param PATH_INFO $pathinfo if_not_empty;
+                         }    
+                }  
+
+    basfswuat:
+      dbpass: wKy5jSj0ymOI2vhGBg2N
+      pass: $6$UTu2GVz6B2B/Oeug$yMpV8OXavmpZxr.R7TGz3jPqQdkRgsMm9rUwZL4bL/Ut8vqY9.2kvqXfG1wc5tjVoxUEWd9hQYn5keyCSBY2J/
+      uid: 50109
+      active: true
+      server_name: "basfswuat.hr4you.org basfschwarzheideuat.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/basfswuat/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/basfswuat
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="HqZFHpfmIqYI4zBjNuXbv8i3Ow1dlUczae9B/STM9FA="
+
+    xpress:
+      dbpass: 3mjSpE1tsXbSwfWEKmxM
+      pass: $6$3cKy80mdSnL$eE2ziBmlDa5c/1ZX8Ds0vnuDIWiVXfxKjdcORqXJdVpUf5CH1xTc1mu6A9n7HBwJ0w.MqsCo.WPoGM/D2uzDe1
+      uid: 50110
+      active: true
+      server_name: "sl-personal.hr4you.org xpress.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/xpress/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/xpress
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="WWceIbmgMV9vinzUOoqUHaDbg1cndytPVuEE7we4Cc8="
+
+    viame:
+      dbpass: CqWtEZIr5KoW466QSOp3
+      pass: $6$Bzgy7aoHw$mSnzRFzF9aU/G7C307/9l1uvsylCvTfn4td0m2Ppwy0wz1BcDFHAJfEJ/cB9pSrvp/0cUnnlOTToKj6cin6eh1
+      uid: 50111
+      active: true
+      server_name: "viame.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/viame/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/viame
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="2TEvrCwMqkwD9qczwE20XYnx1ug4EMMq1nISPjpQJOY="
+
+    kohler:
+      dbpass: IdIUWXbHdzyTsQxogj3V
+      pass: $6$uBGs0u3jR$JZa9CffLyhq2lar05EBzkL02rUQ1mWbFj0YYb8uIRmm3HFWizSTyRG2LwJjPIn2KtghxNtfvX5PCUFkeoeXao.
+      uid: 50112
+      active: true
+      server_name: "kohler.hr4you.org kohler-partner.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/kohler/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/kohler
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="jOVxlUKWPqjIOeY0AUFE4O+LZJyQhWJzlVaKcZ9Zx5s="
+
+    isspersonal3:
+      dbpass: Aqr3XWhK16qwnuwYSaqG
+      pass: $6$fXNYgBL7.$f6l0yV3jQL7KX40vPInDsLcqFg00fK5Mw//wZxPlNPFgrWmINTPNFAe0w2MkoO3cd6D8XN8QfdlKCMxNiO9mk/
+      uid: 50113
+      active: true
+      server_name: "isspersonal3.hr4you.org iss-personal.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/isspersonal3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/isspersonal3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="qRyemWSPW3m5uQAmJ9hkZZj8KZDDRqfEKVYetCMUmTw="
+
+    solver:
+      dbpass: wr9LDIGxnz231JV43tDz
+      pass: $6$Cb7qAkaa.$qsaSCNN5IbvBMyxUFnPEz8zCk9Ug.6mBvjoheuDTqQmpu4yfB7OHgkZB2W3JPMBU11qAEw15QhJ95qNqeIRI6.
+      uid: 50115
+      active: true
+      server_name: "solver.hr4you.org solver-service.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/solver/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/solver
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="TeudjOm8tzUrza9B11Tlhl750Sg3AAN9A4WlARllbYY="
+
+    nicepartners:
+      dbpass: F421lM6M2JIvlhi3DcYP
+      pass: $6$/GPpExqRf8dY4$fcKlCup2lMc0a9yjhtSbzp/RblGiZcek8C.dIOsnkIdId3y.zkBzYzklHpc3X1Tru0.7lsxCC0X5MjQzV/brV.
+      uid: 50116
+      active: true
+      server_name: "nicepartners.hr4you.org nice-partners.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/nicepartners/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/nicepartners
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="RZY7MPzzu0vt0qapwGGJyzRIdqIwYN+BqrOVeKxzKpo="
+
+    mvpersonalleasing:
+      dbpass: hvFWPHp24WCe2hXXrkMs
+      pass: $6$mASCRernZl2rzX$hA/CR/uHknovx77ZPzHAB77TShF7K.3yttWUlCPb3PHIjYd6VFjcMuvkgKFzMtQBIgdnZT7HkAfAjDXna97d30
+      uid: 50117
+      active: true
+      server_name: "mvpersonalleasing.hr4you.org mv-personalleasing.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/mvpersonalleasing/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/mvpersonalleasing
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="UBouh2xQz5qkiQaLDqQvUdzr9Mh5gDITnVbec8TcflI="
+
+    bskoerper:
+      dbpass: hDel02lTcXzRXCHvNNok
+      pass: $6$K/yWKH7Bkbew$tlE1Qa5XObPb17OaS4yj6zSrgSminXMgiBzoKB6cCcy1LZqb0/s2dJq6oUfbDAebr26t5q.SAQ2gCipt8lMHl/
+      uid: 50118
+      active: false
+      server_name: "bskoerper.hr4you.org bsksh-pflegedienstleistungen.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/bskoerper/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/bskoerper
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="JfItePKueD4MvO7DL4Yi+hk41yAHHlOCO4lbJIgbE68="
+
+    unikat:
+      dbpass: Pj0FnUZMtBVVpSGR9CvV
+      pass: $6$YqLyuNMjUj3$BYY/lLt8MDU0K6fFC9Ye9JkikKP.8l2LITH9I7tWT2wOeGazHfd.FP2xmS172bsU1Nb.XtvV2cCdmylAehRLr/
+      uid: 50119
+      active: true
+      server_name: "unikat.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/unikat/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/unikat
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="fo9s/wVf0kjU/cghg1jf9aeQQ035fXiI0B2wMHVhmLg="
+
+    wpservice:
+      dbpass: aNHxUPYhSAbEiclw8KdH
+      pass: $6$ieJsimcX61hOJcdd$WDcE1ZdNfPzA94jjbsRaPvctnG20yjP90GuhsceUxt4pjcWZnHC9zwdGQimM4jN/ZRjiYe6wVjhtAgCTzyiTp.
+      uid: 50120
+      active: true
+      server_name: "wpservice.hr4you.org wp-service-solutions.hr4you.org"
+      app_pool: 0
+      memory_limit: 128M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/wpservice/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/wpservice
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      max_children: 5
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc5.4hr.de
+         env[JWT_PASSPHRASE]="Le4WWfXfO6EnngP3+87Si6tWiMgg/u65xWXYPWzwx9A="
+
+#INSERT_AUTOMATIC
+#Spezialfälle von Cluster5-Customers. AKTIV!! Bitte nach UID sortieren.
+specialvhosts:
+    dummy:
+      active: false
+
+    staticc5special:
+       active: true
+       app_pool: 0
+       uid: 50034

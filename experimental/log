@@ -1,0 +1,84 @@
+[1]_m_create: NEW LIST 3 allocated by task_manager_init:53 in task_manager.c
+[1]_m_create: NEW LIST 4 allocated by task_manager_init:54 in task_manager.c
+[1]_m_create: NEW LIST 5 allocated by luaxt_init:16 in ../LuaRunner/luaxt.c
+LUI Test: Starting...
+LUI Test: Starting event loop...
+DEBUG M.run: length	163	first 30:	(window :title "LUI Test" :wid
+Parsing string of length:	163
+First byte:	40
+Match finished at pos:	1
+Syntax Error at line 1, column 2
+Context: ...(window :title "LUI T...
+Stopped at character: '(' (byte 1)
+X connection to :1 broken (explicit kill or server shutdown).
+
+POST MORTEM ANALYSER STARTED
+****************************
+ERROR in funtion: '_m_create'. Called by 'luaxt_init:16' in '../LuaRunner/luaxt.c'
+
+=================================================================
+==447654==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 3216 byte(s) in 1 object(s) allocated from:
+    #0 0x771ea3cfd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x64823b4e2115 in lst_create /home/jens/git/xtcw2/utils/mls.c:237
+    #2 0x64823b4e2f69 in m_create /home/jens/git/xtcw2/utils/mls.c:648
+    #3 0x64823b4e3d37 in _m_init /home/jens/git/xtcw2/utils/mls.c:1148
+    #4 0x64823b4d1a07 in main /home/jens/git/xtcw2/experimental/commander_runner.c:127
+    #5 0x771ea362a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #6 0x771ea362a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #7 0x64823b4d11a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x211a4) (BuildId: 49071f8c587efb6b0fee7ce86aa3ea1ae6d16803)
+
+Direct leak of 336 byte(s) in 1 object(s) allocated from:
+    #0 0x771ea3cfd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x64823b4e2115 in lst_create /home/jens/git/xtcw2/utils/mls.c:237
+    #2 0x64823b4e2f69 in m_create /home/jens/git/xtcw2/utils/mls.c:648
+    #3 0x64823b4e3e99 in _m_create /home/jens/git/xtcw2/utils/mls.c:1187
+    #4 0x64823b4d2431 in task_manager_init /home/jens/git/xtcw2/experimental/task_manager.c:53
+    #5 0x64823b4d1b50 in main /home/jens/git/xtcw2/experimental/commander_runner.c:141
+    #6 0x771ea362a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #7 0x771ea362a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #8 0x64823b4d11a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x211a4) (BuildId: 49071f8c587efb6b0fee7ce86aa3ea1ae6d16803)
+
+Direct leak of 176 byte(s) in 1 object(s) allocated from:
+    #0 0x771ea3cfd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x64823b4e2115 in lst_create /home/jens/git/xtcw2/utils/mls.c:237
+    #2 0x64823b4e2f69 in m_create /home/jens/git/xtcw2/utils/mls.c:648
+    #3 0x64823b4e3e99 in _m_create /home/jens/git/xtcw2/utils/mls.c:1187
+    #4 0x64823b4d9397 in luaxt_init ../LuaRunner/luaxt.c:16
+    #5 0x64823b4d1b6e in main /home/jens/git/xtcw2/experimental/commander_runner.c:144
+    #6 0x771ea362a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #7 0x771ea362a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #8 0x64823b4d11a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x211a4) (BuildId: 49071f8c587efb6b0fee7ce86aa3ea1ae6d16803)
+
+Direct leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x771ea3cfd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x64823b4e2115 in lst_create /home/jens/git/xtcw2/utils/mls.c:237
+    #2 0x64823b4e2f69 in m_create /home/jens/git/xtcw2/utils/mls.c:648
+    #3 0x64823b4e3e99 in _m_create /home/jens/git/xtcw2/utils/mls.c:1187
+    #4 0x64823b4d2460 in task_manager_init /home/jens/git/xtcw2/experimental/task_manager.c:54
+    #5 0x64823b4d1b50 in main /home/jens/git/xtcw2/experimental/commander_runner.c:141
+    #6 0x771ea362a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #7 0x771ea362a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #8 0x64823b4d11a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x211a4) (BuildId: 49071f8c587efb6b0fee7ce86aa3ea1ae6d16803)
+
+Direct leak of 96 byte(s) in 1 object(s) allocated from:
+    #0 0x771ea3cfd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x64823b4e2115 in lst_create /home/jens/git/xtcw2/utils/mls.c:237
+    #2 0x64823b4e2f69 in m_create /home/jens/git/xtcw2/utils/mls.c:648
+    #3 0x64823b4e2d3a in m_init /home/jens/git/xtcw2/utils/mls.c:605
+    #4 0x64823b4e3d28 in _m_init /home/jens/git/xtcw2/utils/mls.c:1147
+    #5 0x64823b4d1a07 in main /home/jens/git/xtcw2/experimental/commander_runner.c:127
+    #6 0x771ea362a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #7 0x771ea362a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #8 0x64823b4d11a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x211a4) (BuildId: 49071f8c587efb6b0fee7ce86aa3ea1ae6d16803)
+
+Direct leak of 10 byte(s) in 1 object(s) allocated from:
+    #0 0x771ea3cf74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x64823b4d33c8 in task_register_func /home/jens/git/xtcw2/experimental/task_manager.c:140
+    #2 0x64823b4d1b69 in main /home/jens/git/xtcw2/experimental/commander_runner.c:142
+    #3 0x771ea362a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #4 0x771ea362a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #5 0x64823b4d11a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x211a4) (BuildId: 49071f8c587efb6b0fee7ce86aa3ea1ae6d16803)
+
+SUMMARY: AddressSanitizer: 3930 byte(s) leaked in 6 allocation(s).

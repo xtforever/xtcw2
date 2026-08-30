@@ -1,1 +1,0 @@
-../../../LuaRunner/ximage2.h

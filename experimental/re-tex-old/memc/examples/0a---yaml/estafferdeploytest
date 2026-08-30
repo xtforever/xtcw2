@@ -1,0 +1,70 @@
+upstream fcgi_estafferdeploytest {
+    server 127.0.0.1:11001 max_fails=3 fail_timeout=30s;
+}
+
+server {
+
+    listen 81;
+    root /var/www/esentry01/htdocs;
+    server_name estafferdeploytest.e-staffer.net;
+    charset utf-8;
+    index index.php;
+
+    location / {
+        try_files $uri @php;
+    }
+
+    location  /favicon.ico {
+        try_files $uri $uri/ =404;
+        access_log off;
+        error_log off;
+    }
+
+    location ~* (/\.|\.ini) {
+        deny all;
+        access_log off;
+        log_not_found off;
+        return 404;
+    }
+
+    location ~* ^/temp/.*\.php$ {
+        return 404;
+    }
+
+    location ~* ^/upload_files/.*\.php$ {
+        return 404;
+    }
+
+    location ~* ^/components/.*\.php$ {
+        return 404;
+    }
+
+    location ~* ^/scripts/.*\.php$ {
+        return 404;
+    }
+
+    location ~* ^/styles/.*\.php$ {
+        return 404;
+    }
+
+    location ~ ^/dist/ {
+        expires 7d;
+    }
+
+    location ~* ^.+\.php$ {
+        try_files _ @php;
+    }
+
+    location @php {
+        rewrite ^/(.*)$ /index.php/$1 break;
+        fastcgi_split_path_info ^(/index.php)(/.*)$;
+        fastcgi_read_timeout 600s;
+        fastcgi_send_timeout 600s;
+        fastcgi_param    APP_PATH_CONFIG 'data/customers/estafferdeploytest/config';
+        fastcgi_param    APP_PATH_DATA 'data/customers/estafferdeploytest';
+        fastcgi_param    APP_CUSTOMER 'estafferdeploytest';
+        fastcgi_param    DATABASE_URL 'pdo-mysql://estafferdeploytest:OpI2zxdxwEMMudlkuvdw@localhost:3306/estafferdeploytest';
+        fastcgi_pass fcgi_estafferdeploytest;
+        include fastcgi.conf;
+   }
+}

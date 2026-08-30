@@ -1,0 +1,298 @@
+@class Gauge(  Wheel  )
+
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+@var Atom XA_UTF8_STRING = 0
+
+@PUBLIC
+@var String label = <String> "60%"
+@var int cornerRoundPercent = "20"
+@var int timer = <String> "2000"
+@var QVar qpercent = "zero"
+@var Distance gauge_width = <String> "15mm"
+@var Distance hh = <String> "6mm"
+@var int percent0 = 50
+@var int percent1 = 75
+@var <Pixel> Pixel color0 = <String> "#00ff00"
+@var <Pixel> Pixel color1 = <String> "#807313"
+@var <Pixel> Pixel color2 = <String> "#ff0000"
+
+
+
+
+@PRIVATE
+@var XftDraw *draw
+@var Pixmap pixmap
+@var GC gc_copy
+@var int prefered_width
+@var int prefered_height
+@var XtIntervalId tmr
+@var String fromResource 
+@var Widget TopLevel
+@var XftColor col[3]
+
+
+@METHODS
+
+@proc initialize
+{
+    TRACE(1, "Gauge");
+    $pixmap = 0;
+    $draw = 0;
+    $gc_copy =  XtGetGC($, 0,0 );
+    if( $width == 0 ) $width = 10;
+    if( $height == 0 ) $height = 10;	
+    calculate_size($);
+    if(! $XA_UTF8_STRING )
+	$XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+    $tmr=0;
+    
+    Widget w;
+    $TopLevel = $;
+    w = $;
+
+    while( ! XtIsShell(w) ) {
+      w = XtParent(w);
+      if( w ) $TopLevel = w; else break;
+    }
+
+    xft_color_alloc( $, $color0, $col+0 );
+    xft_color_alloc( $, $color1, $col+1 );
+    xft_color_alloc( $, $color2, $col+2 );
+
+    add_qpercent_cb($);
+}
+
+@proc realize
+ {
+        TRACE(1, "Gauge");
+        XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+  	reshape_widget($);
+
+}
+
+@proc resize
+{
+        TRACE(1, "Gauge");
+    if (XtIsRealized($)) {
+       if( $width > 4096 || $height > 4096 ) return;
+       
+       reshape_widget($);
+       if( $pixmap ) XFreePixmap(XtDisplay($),$pixmap);
+       $pixmap=0;
+       alloc_pixmap($);
+    }
+}
+
+
+@proc destroy
+{
+
+        TRACE(1, "Gauge");
+    if( $draw) XftDrawDestroy( $draw );
+    
+    XtReleaseGC($,$gc_copy);
+    XFreePixmap(XtDisplay($),$pixmap);
+    
+}
+
+@proc set_values
+{
+    /* get_selection($); */
+       return True;
+}
+
+@proc expose
+{
+	TRACE(1, "Gauge");	
+    	redraw($);
+}
+
+@ parameter list ($, int cmd, int val)
+@proc int exec_command
+{
+  return 0;
+}
+
+
+@ When our parent asks for this widget's preferred geometry,
+simply return the geometry as wanted
+Currently, the method always returns |XtGeometryAlmost|. It doesn't bother
+to check if the preferred geometry is equal to the current geometry (in
+which case it should really return |XtGeometryNo|) or if the preferred
+geometry is equal to what the parent proposed (in which case a return of
+|XtGeometryYes| should have been given.
+
+It seems that no harm is done by always returning |XtGeometryAlmost| and
+letting Xt figure out what really needs to be changed.
+
+@proc query_geometry
+{
+    reply->request_mode = CWX | CWY | CWWidth | CWHeight;
+    calculate_size($);
+    reply->x=0; reply->y=0;
+    reply->width =  $prefered_width;
+    reply->height = $prefered_height;
+
+    TRACE(1, "Gauge:%s: parent request is: %dx%d", XtName($),
+             request->width,
+             request->width );
+
+    TRACE(1, "Gauge:%s: our prefered size is %dx%d", XtName($),
+                  $prefered_width,
+                  $prefered_height );
+
+    return XtGeometryAlmost;
+}
+
+
+@UTILITIES
+
+@proc reshape_widget($)
+{
+	int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = Min($height,$width);
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+}
+
+@ called by update cache if pixmap==0
+@proc alloc_pixmap($)
+{
+    TRACE(1, "Gauge");
+    Display *dpy = XtDisplay($);
+
+    TRACE(2,"Gauge:%s size:%dx%d", XtName($),  $width, $height );
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+    if( $draw ) {
+        XftDrawChange($draw, $pixmap );
+    }
+    else {
+        $draw = XftDrawCreate(dpy, $pixmap,
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+    }
+}
+
+@ outputs a simple string on the window cache pixmap
+@proc str_print($, int x, int y, char *s )
+{
+   if( is_empty(s) ) return;
+   XftDrawStringUtf8($draw, $xft_col + $state, $xftFont,
+    			     x,y+$xftFont->ascent, (FcChar8*)s, strlen(s) );
+}
+					       
+@ redraws everything on pixmap cache
+@proc update_cache($)
+{
+    TRACE(1, "Gauge");
+    if( $pixmap == 0 ) alloc_pixmap($);
+
+    /* clear background */
+    XFillRectangle(XtDisplay($),$pixmap, $gc[$state], 0,0,$width,$height );
+    
+    TRACE(1,"Gauge:%s size:%dx%d", $name, $width, $height );
+    draw_percent($);
+
+    /* draw percent value on the left side inside gauge */
+    int val = *mv_var($qpercent);
+    char buf[100];
+    snprintf(buf,sizeof buf, "%d%%", val ); 
+    draw_label($,buf);
+}
+
+
+@proc redraw($)
+{
+    TRACE(1, "Gauge");
+    if( !XtIsRealized($)) return;
+    update_cache($);
+    XCopyArea(XtDisplay($),$pixmap, XtWindow($), $gc_copy,
+              0,0, $width, $height, /* source pixmap */
+              0,0 ); /* target window x,y */
+}
+
+@proc calculate_size($)
+{
+
+	int w,h;
+	xft_calc_string_size( $, $xftFont, $label, &w, &h );
+	
+	$prefered_width = w+4;
+	$prefered_height = (h+2) * 2;
+
+	if( $hh != 0 ) $prefered_height=$hh;
+}
+
+@proc add_qpercent_cb($)
+{
+	mv_onwrite($qpercent, (void*)redraw, $, 0);	
+}
+
+
+@proc draw_pix_rect($,int from, int to, int col)
+{
+	XftColor *c = $col +col;
+    	XftDrawRect($draw,c,from,0,to-from+1,$height);	
+}
+
+@proc int percent_pixel(int w, int p)
+{
+	float x = w * 1.0 / 100.0 * p + 0.5;
+	return x;
+}
+
+
+@proc draw_pix($, int wx, int p0, int p1, int col )
+{
+	int max = percent_pixel($width,wx);
+	int from = percent_pixel($width,p0);
+	int to = percent_pixel($width,p1);
+	if( max < from ) return;
+	if( to  > max  ) to = max;
+	draw_pix_rect($,from,to,col);
+}
+
+@proc draw_percent($)
+{
+	int wx = *mv_var($qpercent);
+	draw_pix($,wx,0,$percent0,0);
+	draw_pix($,wx,$percent0,$percent1,1);
+	draw_pix($,wx,$percent1,100,2);
+}
+
+
+
+@proc draw_label($, char *s)
+{
+    int px,py,h,w;
+    xft_calc_string_size( $, $xftFont, s, &w, &h );	
+
+
+    /* horizontal centered */
+    px = ($width - w) / 2;
+    if( px < 0 ) px = 0;
+
+    /* left side attached */
+    px = 1;
+
+    /* vertical centered */
+    py = ($height - h) / 2;
+    
+    str_print($,px,py,s);
+}
+
+
+@IMPORTS
+@incl <X11/Xatom.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl <X11/Xmu/Converters.h>
+@incl "mls.h"
+@incl "xutil.h"
+@incl "micro_vars.h"

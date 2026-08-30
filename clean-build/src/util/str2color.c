@@ -1,1 +1,0 @@
-../../../utils/str2color.c

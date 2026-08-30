@@ -17,7 +17,7 @@
 #include <X11/Xaw/XawInit.h>
 
 #include "mls.h"
-#include <vexmo/WheelP.h>
+#include <xtcw/WheelP.h>
 
 /********************************************
  *                                          *

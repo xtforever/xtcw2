@@ -25,7 +25,7 @@ local lui_source = [[(window :title "Hello LUI List" :width 500 :height 400
     
     (list-view :id "my_list" :model $list_placeholder 
                :gridx 0 :gridy 1 :weightx 100 :weighty 100 :fill 3
-               :columns (200 150 100) :retexCells true :fontSize 18
+               :columns (200 150 100) :retexCells true :fontSize 10
                :visible_lines 10)
 
     (button :label "Quit" 

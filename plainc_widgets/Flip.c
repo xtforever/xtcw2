@@ -385,7 +385,7 @@ static void expose( Widget w, XEvent *event, Region region )
 
 static void TemplateAction(Widget w, XEvent* e, String* s, Cardinal* n)
 {
-  puts("key");
+  TRACE(50, "Flip %s key", XtName(w));
 }
 
 
@@ -395,18 +395,20 @@ static void TemplateAction(Widget w, XEvent* e, String* s, Cardinal* n)
 
 static void FocusInAction(Widget w, XEvent* e, String* s, Cardinal* n)
 {
+  TRACE(50, "Flip %s focus_in", XtName(w));
   XtCallCallbacks( w, XtNfocusCB, (XtPointer) 1 );
 }
 
 static void FocusOutAction(Widget w, XEvent* e, String* s, Cardinal* n)
 {
+  TRACE(50, "Flip %s focus_out", XtName(w));
   XtCallCallbacks( w, XtNfocusCB, (XtPointer) 0 );
 }
 
 static void HighlightAction(Widget w, XEvent* e, String* s, Cardinal* n)
 {
   FlipPart *tkb = & ((FlipWidget)w)->flip;
-  puts("hi");
+  TRACE(50, "Flip %s highlight", XtName(w));
   tkb->state = selected;
   PaintLabel(w);
 }
@@ -415,7 +417,7 @@ static void ResetAction(Widget w, XEvent* e, String* s, Cardinal* n)
 {
   FlipPart *tkb = & ((FlipWidget)w)->flip;
   tkb->state = normal;
-  puts("reset");
+  TRACE(50, "Flip %s reset", XtName(w));
   PaintLabel(w);
 }
 

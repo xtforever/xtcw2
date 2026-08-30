@@ -9,7 +9,7 @@ int main() {
     trace_level = 2;
 
     int child_list = m_create(1, sizeof(Node));
-    node_create_char(child_list, 'A', FROM_INT(5), FROM_INT(7), 0, 10.0, 0, 0);
+    node_create_char(child_list, 'A', FROM_INT(5), FROM_INT(7), 0, 10.0, 0, 0, 0);
     
     int box_list = m_create(1, sizeof(Node));
     node_create_hbox(box_list, child_list);

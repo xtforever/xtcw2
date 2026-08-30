@@ -1,0 +1,57 @@
+@class Wcheckbox (Wlabel)
+@ Checkbox widget with toggle state
+
+@PUBLIC
+@var <Callback> XtCallbackList callback = NULL
+@var Boolean checked = False
+@var String label = ""
+
+@PRIVATE
+@var int check_state
+
+@METHODS 
+@proc initialize
+{
+    $check_state = $checked ? 1 : 0;
+    TRACE(2,"Wcheckbox:%s initialized, checked=%d", $name, $checked);
+}
+
+@TRANSLATIONS
+@trans   <EnterWindow>: highlight()
+@trans   <LeaveWindow>: reset()
+@trans   <BtnDown>:     toggle()
+
+@ACTIONS
+
+@proc highlight
+{
+    if( $state == STATE_SELECTED ) return;
+    $state = STATE_SELECTED;
+    redraw_label($);
+}
+
+@proc reset
+{
+    if( $state == STATE_NORMAL ) return;
+    $state = STATE_NORMAL;
+    redraw_label($);
+}
+
+@proc toggle
+{
+    $check_state = $check_state ? 0 : 1;
+    $checked = ($check_state == 1);
+    redraw_label($);
+    XtCallCallbackList( $, $callback, event );
+}
+
+@EXPORTS
+@proc Boolean wcheckbox_is_checked($)
+{
+    return ($check_state == 1);
+}
+
+@IMPORTS
+@incl "mls.h"
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"

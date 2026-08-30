@@ -1,0 +1,17 @@
+Implement use-after-free protection
+
+  Problem: handles are re-used in m_create.
+  - p=m_create(...); .. m_free(p); p1 = m_create(...) : p and p1 have the same value
+  Error: m_buf(p,0) will work!
+
+  Solution:
+     reduce handles to 24bit and fill the remaining seven bits with a bit pattern
+     that changes on every call of m_free.
+     store that pattern inside the lst_t struct
+     on access use 24bit to find the lst_t struct, compare the 7bit-pattern with
+     the pattern stored inside the lst_t structure, exit if not match.
+
+     - every 128th free/alloc cycle a handle is reused
+     - only 16million active arrays
+
+

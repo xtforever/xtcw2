@@ -1,0 +1,3 @@
+btn1=OK
+lbl1=Hello
+btn1_changed=Changed

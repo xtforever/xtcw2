@@ -507,10 +507,13 @@ zusätzlich wird der |notify| Handler aufgerufen.
 @proc uint32_t xftcolor_to_argb($, int index)
 {
     XftColor *xc = &$xft_col[index];
+    /* XftColor stores as 16-bit values (0-65535), need 8-bit (0-255) */
     uint32_t r = xc->color.red >> 8;
     uint32_t g = xc->color.green >> 8;
     uint32_t b = xc->color.blue >> 8;
     uint32_t a = xc->color.alpha >> 8;
+    /* Alpha is often 0 in X11 - if so, assume fully opaque */
+    if (a == 0) a = 0xFF;
     return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
@@ -665,27 +668,34 @@ zusätzlich wird der |notify| Handler aufgerufen.
             if (para) {
                 double cell_h_pt = px2pt($, h);
                 
-                /* Use a fixed baseline offset based on the widget's nominal font metrics 
-                   to ensure all cells in a row align their baselines. */
-                double nominal_ascent_pt = px2pt($, $xftFont->ascent);
-                double nominal_height_pt = px2pt($, $xftFont->height);
-                double y_off_pt = (cell_h_pt - nominal_height_pt) / 2.0;
+                /* Get actual retex metrics for proper vertical centering */
+                double retex_height = retex_paragraph_get_height(para);
+                double retex_first_h = retex_paragraph_get_first_line_height(para);
+                
+                /* Calculate centering offset using retex's actual metrics */
+                double y_off_pt = (cell_h_pt - retex_height) / 2.0;
                 if (y_off_pt < 0) y_off_pt = 0;
 
                 double cur_x_pt = px2pt($, cur_x);
                 double cur_y_pt = px2pt($, y);
                 
-                /* Calculate target baseline for the row */
-                double target_baseline_pt = cur_y_pt + y_off_pt + nominal_ascent_pt;
+                /* Calculate target baseline: cell top + offset to center + retex first line height */
+                double target_baseline_pt = cur_y_pt + y_off_pt + retex_first_h;
                 
-                /* VBox renderer expects top of VBox. First line's baseline is at TopOfVBox + firstH.
-                   So TopOfVBox = TargetBaseline - firstH. */
-                double y_render_pt = target_baseline_pt - retex_paragraph_get_first_line_height(para);
+                /* Renderer expects baseline coordinates. Pass target_baseline_pt directly.
+                 * Use col_idx_wheel (the line's color state) instead of $state (widget state)
+                 * to ensure text colors match the background fill color from print_pixmap.
+                 */
+                RendererColors colors = {
+                    .text = xftcolor_to_argb($, COLOR_FG_NORM + col_idx_wheel),
+                    .bg = 0,
+                    .reverse_text = xftcolor_to_argb($, COLOR_BG_HI + col_idx_wheel),
+                    .reverse_bg = xftcolor_to_argb($, COLOR_FG_HI + col_idx_wheel),
+                    .sel_text = xftcolor_to_argb($, COLOR_FG_SEL + col_idx_wheel),
+                    .sel_bg = xftcolor_to_argb($, COLOR_BG_SEL + col_idx_wheel)
+                };
 
-                TRACE(2, "LAYOUT handle %p, class %s, name %s, width %d, height %d, x %d, y %d, color %08x, content %s", 
-                      $, "WlistMultiCell", $name, (int)cell_w_pt, (int)cell_h_pt, (int)cur_x_pt, (int)cur_y_pt, 0, *cell_text);
-
-                retex_paragraph_render(para, be, cur_x_pt, y_render_pt, xftcolor_to_argb($, COLOR_FG_NORM + $state));
+                retex_paragraph_render(para, be, cur_x_pt, target_baseline_pt, &colors, 0);
                 retex_paragraph_free(para);
             }
             
@@ -737,7 +747,8 @@ zusätzlich wird der |notify| Handler aufgerufen.
   }
 
   if ($pixmap) {
-      XDrawLine($dpy, $pixmap, $gc[1], x,y + h -2, w, y+h-2 );
+      /* Use gc[0] (normal background) for subtle separator lines instead of gc[1] (yellow) */
+      XDrawLine($dpy, $pixmap, $gc[0], x,y + h -2, w, y+h-2 );
   }
   TRACE(2, "Update Line: %d\n", line );
 }
@@ -772,10 +783,14 @@ zusätzlich wird der |notify| Handler aufgerufen.
   }
   if( $pixmap ) XFreePixmap( $dpy, $pixmap );
   
+  /* Cap buffer dimensions to 4000 to avoid X11 limitations */
   if ($buf.width > 4000) $buf.width = 4000;
   if ($buf.height > 4000) $buf.height = 4000;
   if ($buf.width < 1) $buf.width = 1;
   if ($buf.height < 1) $buf.height = 1;
+  
+  /* Also constrain widget width to match buffer width to avoid rendering mismatches */
+  if ($width > $buf.width) $width = $buf.width;
 
   $backend = backend_xpixmap_create($dpy, XtWindow($), $buf.width, $buf.height);
   if ($backend) {
@@ -1159,8 +1174,12 @@ zusätzlich wird der |notify| Handler aufgerufen.
   uint by = $titleBarHeight;
   update_cache($);
   if ($pixmap) {
+      int copy_w = $width - 2*bx;
+      int copy_h = $height - by;
+      if (copy_w > $buf.width) copy_w = $buf.width;
+      if (copy_h > $buf.height) copy_h = $buf.height;
       XCopyArea($dpy,$pixmap,XtWindow($), $gc_copy,
-                $top_x, $top_y - $buf.y, $width -2*bx, $height-by,
+                $top_x, $top_y - $buf.y, copy_w, copy_h,
     	    bx, by );
   }
 

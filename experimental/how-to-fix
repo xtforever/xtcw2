@@ -1,0 +1,25 @@
+
+xtcw - libxt core widget set
+diese lib soll genug widgets fuer eine vollstaendige app entwicklung bereitstellen
+
+aktueller stand: broken
+
+problem: interaktion der widgets mit libxt 
+1. widgets (Wlabel.widget)  werden durch das tool wbuild in c code umgesetzt,
+dabei sind strenge konventionen zu beachten
+2. widgets stellen callback functionen bereit die von libxt aufgerufen werden (expose/resize)
+3. geometry management
+   - ein TopLevel widget braucht eine Shell diese muss die erlaubnis zum
+   aendern der groesse haben (allowShellResize)
+   - ein ManagerWidget uebernimmt das resize der Childs
+   - Childs acceptieren die Groessenvorschlaege des Manager Widgets (query_geometry)
+   - Das ManagerWidget muss wissen wie der zur verfuegung stehende
+     platz auf die Child-Widgets aufgeteilt wird, bei Gridbox.widget:
+     "weightx:1, weighty:1, fill:Both"
+
+Dieses implizite verhalten wird bei der Codegenerierung durch ein LLM oft
+falsch interpretiert, wodurch immer wieder defekte eingebaut werden.
+
+Finde einen   Plan um dieses Projekt fertigzustellen;
+
+

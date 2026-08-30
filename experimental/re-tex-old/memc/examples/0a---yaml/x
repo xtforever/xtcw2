@@ -1,0 +1,26 @@
+customers:
+    seg3:
+      dbpass: a0bK30COBlhW5CfX78gP
+      pass: $6$mNeZ7RHjoY$p8VUj81Cm/MO2Mw.O9x5uqtKkVTWLpWPmIDSeRkqlE8RblKGojtajiq7LrX15SZlrZAdpfBIc8OrygJKDl0mA0
+      uid: 9051
+      active: true
+      server_name: "seg.hr4you.org seg3.hr4you.org "
+      app_pool: 0
+      memory_limit: 256M
+      rewrite: ""
+      frontend: false
+      max_execution_time: 180
+      include_path: ".:include/class/:/usr/share/php:/srv/hrtk/next:/var/www/seg3/htdocs:"
+      esearcher_version: 3
+      ckeditor: ckeditor-4.14-latest
+      charset: utf-8
+      esearcher_release: customers/seg3
+      call_time_pass_by_reference: false
+      cookie_ssl: 1
+      hrtknext: true
+      use_symfony: true
+      error_reporting: 0
+      phpvalue: |
+         env[STATIC_HOST] = staticc9.4hr.de
+         env[JWT_PASSPHRASE]="IEkX9KZsXRosqwf000S8X0s4uvQ5ojK9axnblilYvhs="
+         env[APP_SECRET]="rG8jebs9237xAjv/FbGHB5T0fj9IazruefkZuwhfr60="

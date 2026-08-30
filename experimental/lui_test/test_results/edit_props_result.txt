@@ -1,0 +1,5 @@
+ed_init=StartText
+pw_init=Secret
+ed_after=Changed
+pw_after=NewSecret
+ed_value_fallback=Changed

@@ -28,8 +28,33 @@ end
 function M.get(id, prop)
     local w = backend.get_widget(id)
     if w then
-        return xtgetvalue(w, prop)
+        local mapped_prop = prop
+        if prop == 'spinValue' then mapped_prop = 'value'
+        elseif prop == 'spinMin' then mapped_prop = 'min'
+        elseif prop == 'spinMax' then mapped_prop = 'max'
+        elseif prop == 'spinStep' then mapped_prop = 'step'
+        end
+        local result = xtgetvalue(w, mapped_prop)
+        if result == nil and (prop == 'value' or prop == 'text') then
+            result = xtgetvalue(w, 'label')
+        end
+        return result
     end
+end
+
+function M.get_widget(id)
+    return backend.get_widget(id)
+end
+
+function M.geometry(id)
+    local w = backend.get_widget(id)
+    if w then
+        return xtgeometry(w)
+    end
+end
+
+function M.xerrors(reset)
+    return xterror_count(reset and true or false)
 end
 
 function M.manage(id)

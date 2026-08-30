@@ -374,6 +374,7 @@ WidgetClass wpixBtnWidgetClass = (WidgetClass) &wpixBtnClassRec;
 #line 18 "WpixBtn.widget"
 static void next_pixmap(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
+	TRACE(50, "WpixBtn %s next_pixmap step=%d", XtName(self), *num_params > 0 ? atoi(params[0]) : 1);
 	int step=1;
 
 	if( *num_params > 0 )
@@ -387,6 +388,7 @@ static void next_pixmap(self,event,params,num_params)Widget self;XEvent*event;St
 #line 29 "WpixBtn.widget"
 static void highlight(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
+  TRACE(50, "WpixBtn %s highlight", XtName(self));
   if( ((WpixBtnWidget)self)->wheel.state == STATE_SELECTED ) return;
   ((WpixBtnWidget)self)->wheel.state = STATE_SELECTED;
   ((WpixBtnWidgetClass)self->core.widget_class)->core_class.expose(self,NULL,NULL);
@@ -396,6 +398,7 @@ static void highlight(self,event,params,num_params)Widget self;XEvent*event;Stri
 #line 36 "WpixBtn.widget"
 static void reset(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
+  TRACE(50, "WpixBtn %s reset", XtName(self));
   if( ((WpixBtnWidget)self)->wheel.state == STATE_NORMAL ) return;
   ((WpixBtnWidget)self)->wheel.state = STATE_NORMAL;
   ((WpixBtnWidgetClass)self->core.widget_class)->core_class.expose(self,NULL,NULL);
@@ -405,6 +408,7 @@ static void reset(self,event,params,num_params)Widget self;XEvent*event;String*p
 #line 43 "WpixBtn.widget"
 static void notify(self,event,params,num_params)Widget self;XEvent*event;String*params;Cardinal*num_params;
 {
+  TRACE(50, "WpixBtn %s notify", XtName(self));
   XtCallCallbackList( self, ((WpixBtnWidget)self)->wheel.callback, event );
 }
 

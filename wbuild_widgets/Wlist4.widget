@@ -124,6 +124,7 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
 @proc highlight
 {
+  TRACE(50, "Wlist4 highlight %s", XtName($));
   if( $state == STATE_NORMAL ) {
     $state = STATE_SELECTED;
     update_widget_state($);
@@ -132,6 +133,7 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
 @proc reset
 {
+  TRACE(50, "Wlist4 reset %s", XtName($));
   if( $state != STATE_NORMAL ) {
     $state = STATE_NORMAL;
     update_widget_state($);
@@ -141,6 +143,7 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
 @proc motion_start
 {
+	TRACE(50, "Wlist4 motion_start %s", XtName($));
 	int y = event->xbutton.y;
 	int lineno;
 	ulong t = (ulong ) event->xbutton.time;
@@ -169,7 +172,8 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
 @proc motion_end
 {
-      int y = event->xbutton.y;
+	TRACE(50, "Wlist4 motion_end %s", XtName($));
+	int y = event->xbutton.y;
       ulong t = (ulong ) event->xbutton.time;
       int lineno = translate_ypos_to_lineno($,event->xbutton.y );
 
@@ -192,6 +196,7 @@ Der Puffer ist 4 Zeilen größer als das sichtbare Fenster.
 
 @proc toggle_line_state_act
 {
+	TRACE(50, "Wlist4 toggle_line_state_act %s", XtName($));
 	int lineno = translate_ypos_to_lineno($,event->xbutton.y );
 	toggle_line_state( $, lineno );
 }
@@ -204,6 +209,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
 
 @proc select_line
 {
+	TRACE(50, "Wlist4 select_line %s", XtName($));
 	int lineno = translate_ypos_to_lineno($,event->xbutton.y );
 	XtCallCallbackList($,$notify,lineno);
 }
@@ -374,6 +380,25 @@ zusätzlich wird der |notify| Handler aufgerufen.
         update_list($);
 }
 
+@proc query_geometry
+{
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = $titleBarWidth ? $titleBarWidth : 100;
+    reply->height = $line_height ? $line_height * 5 : 100;
+    if ($titleBarHeight) reply->height += $titleBarHeight;
+    if ((request->request_mode & CWWidth) && request->width > reply->width)
+        reply->width = request->width;
+    if ((request->request_mode & CWHeight) && request->height > reply->height)
+        reply->height = request->height;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
 
 @proc class_initialize
 {
@@ -543,7 +568,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   render_multiline($, $tab_pos, $draw, $xft_col+col, $xftFont,
                       x, y + $line_distance/2, s);
 
-  XDrawLine($dpy, $pixmap, $gc[1], x,y + h -2, w, y+h-2 );
+  XDrawLine($dpy, $pixmap, $gc[0], x,y + h -2, w, y+h-2 );
   TRACE(2, "Update Line: %d\n", line );
 }
 

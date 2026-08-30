@@ -449,6 +449,7 @@ static void NotifyAction(Widget w, XEvent *event, String *params, Cardinal *n)
 {
   SliderWidget mw = (SliderWidget)w;
   SliderPart   *mp = & mw->slider; 
+  TRACE(50, "SliderW %s notify val=%d", XtName(w), mp->slider_val);
   
   if( mw->wheel.state == STATE_ARMED ) {
     mp->slider_val_cur = mp->slider_val; // saved value == current value
@@ -464,6 +465,7 @@ static void SliderAction(Widget w, XEvent* event, String* s, Cardinal* n)
   SliderWidget mw = (SliderWidget)w;
   int x,y; 
   (void)y;
+  TRACE(50, "SliderW %s slider type=%d", XtName(w), event->type);
 
   switch (event->type) {
   case MotionNotify:

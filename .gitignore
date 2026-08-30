@@ -85,3 +85,12 @@ Wheel.tex
 input_test/input_test
 *.o
 *.lo
+.gitnexus
+.venv/
+.sisyphus/
+*.pdf
+*.png
+*.a
+experimental/lua/
+experimental/swig/
+experimental/caveman/

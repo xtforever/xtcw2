@@ -1,0 +1,56 @@
+*foreground: #000000
+*background: #ffffff
+*fontName: Sans-12
+
+demo.WcChildren: vbox
+
+*vbox.WcClass: VBox
+*vbox.WcChildren: title_label button_row list_section output_section
+*vbox.width: 600
+*vbox.height: 500
+
+*title_label.WcClass: Wlabel
+*title_label.label: Widget Verification Demo
+*title_label.fontSize: 16
+*title_label.fontWeight: bold
+
+*button_row.WcClass: HBox
+*button_row.WcChildren: btn_click btn_clear
+*button_row.spacing: 10
+
+*btn_click.WcClass: Wbutton
+*btn_click.label: Click Me
+*btn_click.width: 100
+
+*btn_clear.WcClass: Wbutton
+*btn_clear.label: Clear Output
+*btn_clear.width: 100
+
+*list_section.WcClass: VBox
+*list_section.WcChildren: list_label list_widget
+*list_section.weighty: 1
+
+*list_label.WcClass: Wlabel
+*list_label.label: Select an item:
+
+*list_widget.WcClass: Wlist
+*list_widget.height: 150
+*list_widget.min: 100
+*list_widget.translations: #override \
+    <Key>Return: LUA(handle_list_select, Return) \n\
+    <Key>Up: LUA(handle_list_select, Up) \n\
+    <Key>Down: LUA(handle_list_select, Down)
+
+*output_section.WcClass: VBox
+*output_section.WcChildren: output_label output_text
+*output_section.weighty: 1
+
+*output_label.WcClass: Wlabel
+*output_label.label: Selected Text Output:
+
+*output_text.WcClass: Wlabel
+*output_text.label: (none)
+*output_text.width: 400
+*output_text.height: 60
+*output_text.background: #f0f0f0
+*output_text.padding: 5

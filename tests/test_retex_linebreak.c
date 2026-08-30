@@ -13,15 +13,15 @@ int main() {
     int p_list = m_create(10, sizeof(Node));
     
     // Word 1 (50pt)
-    node_create_char(p_list, '1', FROM_INT(50), FROM_INT(10), 0, 10.0, 0, 0);
+    node_create_char(p_list, '1', FROM_INT(50), FROM_INT(10), 0, 10.0, 0, 0, 0);
     // Glue (10pt)
     Glue g = glue_create(FROM_INT(10), 0, 0, 0, 0);
-    node_create_glue(p_list, g);
+    node_create_glue(p_list, g, 0);
     // Word 2 (50pt)
-    node_create_char(p_list, '2', FROM_INT(50), FROM_INT(10), 0, 10.0, 0, 0);
-    node_create_glue(p_list, g);
+    node_create_char(p_list, '2', FROM_INT(50), FROM_INT(10), 0, 10.0, 0, 0, 0);
+    node_create_glue(p_list, g, 0);
     // Word 3 (50pt)
-    node_create_char(p_list, '3', FROM_INT(50), FROM_INT(10), 0, 10.0, 0, 0);
+    node_create_char(p_list, '3', FROM_INT(50), FROM_INT(10), 0, 10.0, 0, 0, 0);
 
     // Target 80pt.
     // Line 1: Word 1 (50pt) + Glue(10pt) = 60pt. Word 2 (50pt) does NOT fit.

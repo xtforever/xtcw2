@@ -598,7 +598,7 @@ falls keine daten vorhanden sind wird mit der hintergrundfarbe norm gefüllt.
   render_multiline($, $tab_pos, $draw, $xft_col+col, $xftFont,
                       x, y + $line_distance/2, s);
 
-  XDrawLine($dpy, $pixmap, $gc[1], x,y + h -2, w, y+h-2 );
+  XDrawLine($dpy, $pixmap, $gc[0], x,y + h -2, w, y+h-2 );
   TRACE(2, "Update Line: %d\n", line );
 }
 

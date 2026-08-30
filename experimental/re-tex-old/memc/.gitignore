@@ -1,0 +1,12 @@
+*~
+*.o
+adv-string
+a.out
+*.do
+*.od
+*.exe
+*.exed
+hashmap
+hasmpapd
+hello-world
+list-dirs

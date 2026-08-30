@@ -1,0 +1,613 @@
+[1]_m_create: NEW LIST 3 allocated by task_manager_init:53 in task_manager.c
+[1]_m_create: NEW LIST 4 allocated by task_manager_init:54 in task_manager.c
+[1]_m_create: NEW LIST 5 allocated by luaxt_init:16 in ../LuaRunner/luaxt.c
+DEBUG M.run: length	177	first 30:	(window :id "tw" :title "Test 
+Parsing string of length:	177
+First byte:	40
+Match finished at pos:	178
+Converting shell class to container for first managed widget
+[2]node_create_char: LAYOUT handle 33554447, class NODE_CHAR, name , width 589824, height 589824, x 0, y 0, color 00000000, content H
+[2]node_create_char: LAYOUT handle 33554447, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content e
+[2]node_create_char: LAYOUT handle 33554447, class NODE_CHAR, name , width 196608, height 589824, x 0, y 0, color 00000000, content l
+[2]node_create_char: LAYOUT handle 33554447, class NODE_CHAR, name , width 196608, height 589824, x 0, y 0, color 00000000, content l
+[2]node_create_char: LAYOUT handle 33554447, class NODE_CHAR, name , width 491520, height 442368, x 0, y 0, color 00000000, content o
+[2]node_pack_hbox: LAYOUT handle 50331665, class PACK_HBOX, name , width 1916928, height 589824, x 0, y 0, color 00000000, content 
+[2]initialize: LAYOUT handle 0x517000003180, class Wlabel, name l1, width 600, height 400, x 0, y 0, color 00000000, content Hello
+[2]node_create_char: LAYOUT handle 234881041, class NODE_CHAR, name , width 589824, height 589824, x 0, y 0, color 00000000, content H
+[2]node_create_char: LAYOUT handle 234881041, class NODE_CHAR, name , width 442368, height 442368, x 0, y 0, color 00000000, content e
+[2]node_create_char: LAYOUT handle 234881041, class NODE_CHAR, name , width 196608, height 589824, x 0, y 0, color 00000000, content l
+[2]node_create_char: LAYOUT handle 234881041, class NODE_CHAR, name , width 196608, height 589824, x 0, y 0, color 00000000, content l
+[2]node_create_char: LAYOUT handle 234881041, class NODE_CHAR, name , width 491520, height 442368, x 0, y 0, color 00000000, content o
+[2]node_pack_hbox: LAYOUT handle 251658253, class PACK_HBOX, name , width 1916928, height 589824, x 0, y 0, color 00000000, content 
+[3]computeWidHgtInfo: x:0,y:0,w:1,h:1
+
+[3]computeWidHgtInfo: x:0,y:0,w:1,h:1
+
+[3]computeWidHgtInfo: Cols:1,Rows:1
+[3]computeWidHgtInfo: x:0,y:0,w:1,h:1
+
+[3]computeWidHgtInfo: Cols:1,Rows:1
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 3 still allocated. Source: task_manager_init() in task_manager.c:53
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 4 still allocated. Source: task_manager_init() in task_manager.c:54
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 6 still allocated. Source: register_widget() in xt_bridge.c:19
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 8 still allocated. Source: conststr_init() in m_tool.c:814
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 9 still allocated. Source: conststr_init() in m_tool.c:815
+WARNING: mls.c Line: 1163 Function: _m_destruct
+List 11 still allocated. Source: vas_printf() in mls.c:2528
+
+=================================================================
+==65447==ERROR: LeakSanitizer: detected memory leaks
+
+Direct leak of 1024 byte(s) in 1 object(s) allocated from:
+    #0 0x78dd80afc778 in realloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:85
+    #1 0x78dd807188aa  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x228aa) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd807276ca  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x316ca) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd8072211b in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c11b) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #5 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #7 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #8 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #16 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+
+Direct leak of 256 byte(s) in 1 object(s) allocated from:
+    #0 0x78dd80afd9c7 in malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:69
+    #1 0x78dd807187fc  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x227fc) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd8071ced8  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x26ed8) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd8072b331  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x35331) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd8043b93f  (/lib/x86_64-linux-gnu/libexpat.so.1+0xa93f) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #5 0x78dd8043c772  (/lib/x86_64-linux-gnu/libexpat.so.1+0xb772) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #6 0x78dd8043d747  (/lib/x86_64-linux-gnu/libexpat.so.1+0xc747) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #7 0x78dd8043ff70  (/lib/x86_64-linux-gnu/libexpat.so.1+0xef70) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #8 0x78dd8043546e  (/lib/x86_64-linux-gnu/libexpat.so.1+0x446e) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #9 0x78dd8044243d in XML_ParseBuffer (/lib/x86_64-linux-gnu/libexpat.so.1+0x1143d) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #10 0x78dd8072583d  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2f83d) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #11 0x78dd8072622c  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x3022c) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #12 0x78dd80726478  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x30478) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #13 0x78dd80729436  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x33436) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #14 0x78dd8043b93f  (/lib/x86_64-linux-gnu/libexpat.so.1+0xa93f) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #15 0x78dd8043c772  (/lib/x86_64-linux-gnu/libexpat.so.1+0xb772) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #16 0x78dd8043d747  (/lib/x86_64-linux-gnu/libexpat.so.1+0xc747) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #17 0x78dd8043ff70  (/lib/x86_64-linux-gnu/libexpat.so.1+0xef70) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #18 0x78dd8043546e  (/lib/x86_64-linux-gnu/libexpat.so.1+0x446e) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #19 0x78dd8044243d in XML_ParseBuffer (/lib/x86_64-linux-gnu/libexpat.so.1+0x1143d) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #20 0x78dd8072583d  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2f83d) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #21 0x78dd8072622c  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x3022c) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #22 0x78dd8070d3b5  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x173b5) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #23 0x78dd807081c0  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x121c0) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #24 0x78dd8070d6bc in FcInit (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x176bc) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #25 0x78dd8075869a in XftInit (/lib/x86_64-linux-gnu/libXft.so.2+0x1169a) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #26 0x78dd807586d1 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x116d1) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #27 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #28 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #29 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+
+Direct leak of 256 byte(s) in 1 object(s) allocated from:
+    #0 0x78dd80afd9c7 in malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:69
+    #1 0x78dd807187fc  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x227fc) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd8071ced8  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x26ed8) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd8071fc7e in FcPatternDuplicate (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x29c7e) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd80658ccf  (/lib/x86_64-linux-gnu/libcairo.so.2+0xb2ccf) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #5 0x78dd80659033  (/lib/x86_64-linux-gnu/libcairo.so.2+0xb3033) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #6 0x78dd8062bab5 in cairo_toy_font_face_create (/lib/x86_64-linux-gnu/libcairo.so.2+0x85ab5) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #7 0x78dd806356f4 in cairo_select_font_face (/lib/x86_64-linux-gnu/libcairo.so.2+0x8f6f4) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #8 0x587157455745 in xpixmap_set_font_face /home/jens/git/xtcw2/re-tex/src/backend_xpixmap.c:68
+    #9 0x58715745337c in retex_layout /home/jens/git/xtcw2/re-tex/src/retex.c:106
+    #10 0x5871573fb44f in calculate_size /home/jens/git/xtcw2/build/source/Wlabel.widget:420
+    #11 0x5871573fbb4d in initialize /home/jens/git/xtcw2/build/source/Wlabel.widget:163
+    #12 0x78dd807bba6b  (/lib/x86_64-linux-gnu/libXt.so.6+0x15a6b) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c5ca7  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fca7) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #16 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #17 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+
+Direct leak of 34 byte(s) in 4 object(s) allocated from:
+    #0 0x78dd80afd9c7 in malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:69
+    #1 0x78dd807bc818 in XtMalloc (/lib/x86_64-linux-gnu/libXt.so.6+0x16818) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #2 0x58715743435b in WcGetResourceType /home/jens/git/xtcw2/wcl/WcSetValue.c:647
+    #3 0x5871573dc7c0 in xtgetvalue_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:333
+    #4 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #5 0x78dd809e07b8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7b8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #6 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #7 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #8 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #9 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #10 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #11 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #12 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #13 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #14 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #15 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #16 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+    #18 0x5871573d607b in main /home/jens/git/xtcw2/experimental/commander_runner.c:244
+    #19 0x78dd8022a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #20 0x78dd8022a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #21 0x5871573d42a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x242a4) (BuildId: e1b0c96845aa3b0276c74c4f801b034e4d17b034)
+
+Direct leak of 12 byte(s) in 4 object(s) allocated from:
+    #0 0x78dd80af74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x5871573d99b7 in register_widget /home/jens/git/xtcw2/experimental/xt_bridge.c:21
+    #2 0x5871573dc221 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:293
+    #3 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #4 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #5 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #6 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #7 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #8 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #9 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #10 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #11 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #12 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #13 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #14 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #15 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #16 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+    #17 0x5871573d607b in main /home/jens/git/xtcw2/experimental/commander_runner.c:244
+    #18 0x78dd8022a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #19 0x78dd8022a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #20 0x5871573d42a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x242a4) (BuildId: e1b0c96845aa3b0276c74c4f801b034e4d17b034)
+
+Direct leak of 10 byte(s) in 1 object(s) allocated from:
+    #0 0x78dd80af74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x5871573d78d6 in task_register_func /home/jens/git/xtcw2/experimental/task_manager.c:140
+    #2 0x5871573d5dc6 in main /home/jens/git/xtcw2/experimental/commander_runner.c:209
+    #3 0x78dd8022a1c9 in __libc_start_call_main ../sysdeps/nptl/libc_start_call_main.h:58
+    #4 0x78dd8022a28a in __libc_start_main_impl ../csu/libc-start.c:360
+    #5 0x5871573d42a4 in _start (/home/jens/git/xtcw2/experimental/commander_runner+0x242a4) (BuildId: e1b0c96845aa3b0276c74c4f801b034e4d17b034)
+
+Indirect leak of 640 byte(s) in 20 object(s) allocated from:
+    #0 0x78dd80afd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x78dd80718287  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x22287) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd80722108 in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c108) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #5 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #7 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #8 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #15 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #16 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+    #29 0x5871573d607b in main /home/jens/git/xtcw2/experimental/commander_runner.c:244
+
+Indirect leak of 416 byte(s) in 13 object(s) allocated from:
+    #0 0x78dd80afd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x78dd80718287  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x22287) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd807223de in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c3de) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #5 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #7 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #8 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #15 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #16 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+    #29 0x5871573d607b in main /home/jens/git/xtcw2/experimental/commander_runner.c:244
+
+Indirect leak of 288 byte(s) in 9 object(s) allocated from:
+    #0 0x78dd80afd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x78dd8071ce6f  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x26e6f) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd80722270 in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c270) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #5 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #7 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #8 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #15 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #16 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+    #29 0x5871573d607b in main /home/jens/git/xtcw2/experimental/commander_runner.c:244
+
+Indirect leak of 144 byte(s) in 6 object(s) allocated from:
+    #0 0x78dd80af74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x78dd80717ff7 in FcValueSave (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x21ff7) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd8071823e  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2223e) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd807223de in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c3de) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #5 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #7 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #8 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #16 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+
+Indirect leak of 96 byte(s) in 3 object(s) allocated from:
+    #0 0x78dd80afd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x78dd8071ce6f  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x26e6f) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd8071fc7e in FcPatternDuplicate (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x29c7e) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd80658ccf  (/lib/x86_64-linux-gnu/libcairo.so.2+0xb2ccf) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #4 0x78dd80659033  (/lib/x86_64-linux-gnu/libcairo.so.2+0xb3033) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #5 0x78dd8062bab5 in cairo_toy_font_face_create (/lib/x86_64-linux-gnu/libcairo.so.2+0x85ab5) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #6 0x78dd806356f4 in cairo_select_font_face (/lib/x86_64-linux-gnu/libcairo.so.2+0x8f6f4) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #7 0x587157455745 in xpixmap_set_font_face /home/jens/git/xtcw2/re-tex/src/backend_xpixmap.c:68
+    #8 0x58715745337c in retex_layout /home/jens/git/xtcw2/re-tex/src/retex.c:106
+    #9 0x5871573fb44f in calculate_size /home/jens/git/xtcw2/build/source/Wlabel.widget:420
+    #10 0x5871573fbb4d in initialize /home/jens/git/xtcw2/build/source/Wlabel.widget:163
+    #11 0x78dd807bba6b  (/lib/x86_64-linux-gnu/libXt.so.6+0x15a6b) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c5ca7  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fca7) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #16 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+
+Indirect leak of 96 byte(s) in 3 object(s) allocated from:
+    #0 0x78dd80afd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x78dd8071811f  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2211f) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd80721f9b in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2bf9b) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #5 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #7 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #8 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #15 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #16 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+    #29 0x5871573d607b in main /home/jens/git/xtcw2/experimental/commander_runner.c:244
+
+Indirect leak of 96 byte(s) in 3 object(s) allocated from:
+    #0 0x78dd80afd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x78dd8071811f  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2211f) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd80721f7b in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2bf7b) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #5 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #7 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #8 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #15 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #16 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+    #29 0x5871573d607b in main /home/jens/git/xtcw2/experimental/commander_runner.c:244
+
+Indirect leak of 64 byte(s) in 2 object(s) allocated from:
+    #0 0x78dd80afd340 in calloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:77
+    #1 0x78dd8071ce6f  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x26e6f) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd8072b331  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x35331) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd8043b93f  (/lib/x86_64-linux-gnu/libexpat.so.1+0xa93f) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #4 0x78dd8043c772  (/lib/x86_64-linux-gnu/libexpat.so.1+0xb772) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #5 0x78dd8043d747  (/lib/x86_64-linux-gnu/libexpat.so.1+0xc747) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #6 0x78dd8043ff70  (/lib/x86_64-linux-gnu/libexpat.so.1+0xef70) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #7 0x78dd8043546e  (/lib/x86_64-linux-gnu/libexpat.so.1+0x446e) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #8 0x78dd8044243d in XML_ParseBuffer (/lib/x86_64-linux-gnu/libexpat.so.1+0x1143d) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #9 0x78dd8072583d  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2f83d) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #10 0x78dd8072622c  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x3022c) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #11 0x78dd80726478  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x30478) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #12 0x78dd80729436  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x33436) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #13 0x78dd8043b93f  (/lib/x86_64-linux-gnu/libexpat.so.1+0xa93f) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #14 0x78dd8043c772  (/lib/x86_64-linux-gnu/libexpat.so.1+0xb772) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #15 0x78dd8043d747  (/lib/x86_64-linux-gnu/libexpat.so.1+0xc747) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #16 0x78dd8043ff70  (/lib/x86_64-linux-gnu/libexpat.so.1+0xef70) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #17 0x78dd8043546e  (/lib/x86_64-linux-gnu/libexpat.so.1+0x446e) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #18 0x78dd8044243d in XML_ParseBuffer (/lib/x86_64-linux-gnu/libexpat.so.1+0x1143d) (BuildId: 6634bb422dbd36f2476c855381ab1020a2455eb4)
+    #19 0x78dd8072583d  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2f83d) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #20 0x78dd8072622c  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x3022c) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #21 0x78dd8070d3b5  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x173b5) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #22 0x78dd807081c0  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x121c0) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #23 0x78dd8070d6bc in FcInit (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x176bc) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #24 0x78dd8075869a in XftInit (/lib/x86_64-linux-gnu/libXft.so.2+0x1169a) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #25 0x78dd807586d1 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x116d1) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #26 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #27 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #28 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #29 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+
+Indirect leak of 48 byte(s) in 1 object(s) allocated from:
+    #0 0x78dd80afd9c7 in malloc ../../../../src/libsanitizer/asan/asan_malloc_linux.cpp:69
+    #1 0x78dd8070ddca in FcLangSetCopy (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x17dca) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd807180a9 in FcValueSave (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x220a9) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd8071ce86  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x26e86) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd80722270 in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c270) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #5 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #6 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #7 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #8 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #9 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #16 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #17 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+
+Indirect leak of 36 byte(s) in 3 object(s) allocated from:
+    #0 0x78dd80af74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x78dd80717ff7 in FcValueSave (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x21ff7) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd80718132  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x22132) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd80721f7b in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2bf7b) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #5 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #7 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #8 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #16 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+
+Indirect leak of 33 byte(s) in 3 object(s) allocated from:
+    #0 0x78dd80af74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x78dd80717ff7 in FcValueSave (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x21ff7) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd8071823e  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2223e) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd80722108 in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c108) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #5 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #7 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #8 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #16 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+
+Indirect leak of 9 byte(s) in 3 object(s) allocated from:
+    #0 0x78dd80af74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x78dd80717ff7 in FcValueSave (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x21ff7) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd80718132  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x22132) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd80721f9b in FcFontRenderPrepare (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2bf9b) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd807228ac in FcFontMatch (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x2c8ac) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #5 0x78dd80758737 in XftFontMatch (/lib/x86_64-linux-gnu/libXft.so.2+0x11737) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #6 0x78dd80758a3d in XftFontOpenName (/lib/x86_64-linux-gnu/libXft.so.2+0x11a3d) (BuildId: 18daad8558a541281b33a9045b7758daa2dea473)
+    #7 0x587157444803 in XmuCvtStringToXftFont /home/jens/git/xtcw2/utils/converters-xft.c:169
+    #8 0x78dd807be63c  (/lib/x86_64-linux-gnu/libXt.so.6+0x1863c) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #9 0x78dd807c3ddf in _XtConvert (/lib/x86_64-linux-gnu/libXt.so.6+0x1dddf) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #10 0x78dd807dd1bd  (/lib/x86_64-linux-gnu/libXt.so.6+0x371bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #11 0x78dd807ddce3 in _XtGetResources (/lib/x86_64-linux-gnu/libXt.so.6+0x37ce3) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #12 0x78dd807c5b95  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fb95) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #16 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #17 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x5871573d5aaa in lui_bootstrap /home/jens/git/xtcw2/experimental/commander_runner.c:183
+
+Indirect leak of 5 byte(s) in 1 object(s) allocated from:
+    #0 0x78dd80af74e8 in strdup ../../../../src/libsanitizer/asan/asan_interceptors.cpp:578
+    #1 0x78dd80717ff7 in FcValueSave (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x21ff7) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #2 0x78dd8071ce86  (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x26e86) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #3 0x78dd8071fc7e in FcPatternDuplicate (/lib/x86_64-linux-gnu/libfontconfig.so.1+0x29c7e) (BuildId: 9ea8985291d6ca9e904a796a5767d191039d813d)
+    #4 0x78dd80658ccf  (/lib/x86_64-linux-gnu/libcairo.so.2+0xb2ccf) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #5 0x78dd80659033  (/lib/x86_64-linux-gnu/libcairo.so.2+0xb3033) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #6 0x78dd8062bab5 in cairo_toy_font_face_create (/lib/x86_64-linux-gnu/libcairo.so.2+0x85ab5) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #7 0x78dd806356f4 in cairo_select_font_face (/lib/x86_64-linux-gnu/libcairo.so.2+0x8f6f4) (BuildId: 9f9072c35b2fcc9bc570d133f2bbecb9fc367527)
+    #8 0x587157455745 in xpixmap_set_font_face /home/jens/git/xtcw2/re-tex/src/backend_xpixmap.c:68
+    #9 0x58715745337c in retex_layout /home/jens/git/xtcw2/re-tex/src/retex.c:106
+    #10 0x5871573fb44f in calculate_size /home/jens/git/xtcw2/build/source/Wlabel.widget:420
+    #11 0x5871573fbb4d in initialize /home/jens/git/xtcw2/build/source/Wlabel.widget:163
+    #12 0x78dd807bba6b  (/lib/x86_64-linux-gnu/libXt.so.6+0x15a6b) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #13 0x78dd807c5ca7  (/lib/x86_64-linux-gnu/libXt.so.6+0x1fca7) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #14 0x78dd807c60bd in _XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x200bd) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #15 0x78dd807c6341 in XtCreateWidget (/lib/x86_64-linux-gnu/libXt.so.6+0x20341) (BuildId: dfbbec1226e21984312322de708ccb12a4dfb1a3)
+    #16 0x5871573dc0a9 in xtcreate_lua /home/jens/git/xtcw2/experimental/xt_bridge.c:279
+    #17 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #18 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #19 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #20 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #21 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #22 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #23 0x78dd809ed6ec  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x296ec) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #24 0x78dd809d5f7d  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x11f7d) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #25 0x78dd809e07f8  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x1c7f8) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #26 0x78dd809d64d7  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x124d7) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #27 0x78dd809ce888  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0xa888) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #28 0x78dd809ef9c4  (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x2b9c4) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+    #29 0x78dd809d6384 in lua_pcallk (/lib/x86_64-linux-gnu/liblua5.3.so.0+0x12384) (BuildId: a7088d4d6b420bed196751b47575794f31ba6bc3)
+
+SUMMARY: AddressSanitizer: 3563 byte(s) leaked in 82 allocation(s).

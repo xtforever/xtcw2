@@ -1,0 +1,13 @@
+gr_w=600
+gr_h=400
+gr_pos=true
+lbl_w=600
+lbl_h=400
+lbl_pos=true
+btn_w=600
+btn_h=400
+btn_pos=true
+spin_w=600
+spin_h=400
+spin_pos=true
+xerrors=0

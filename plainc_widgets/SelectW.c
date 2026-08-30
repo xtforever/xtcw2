@@ -3,7 +3,7 @@
 #include "sig_xt.h"
 #include "common_sigxt.h"
 #include "ini_read2.h"
-#include "focus_group.h"
+#include "focus-group.h"
 
 /****************************************************
  * resourcen, todo!                                 *
@@ -457,6 +457,7 @@ static void NotifyAction(Widget w, XEvent *event, String *params, Cardinal *n)
 { 
   SelectWidget mw = (SelectWidget)w;
   SelectPart   *mp = & mw->select; 
+  TRACE(50, "SelectW %s notify", XtName(w));
   if( mp->locked ) return; 
   fire(w);
 }

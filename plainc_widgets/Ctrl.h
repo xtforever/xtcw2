@@ -5,7 +5,7 @@
 #include <X11/Xft/Xft.h>
 #include <X11/CoreP.h>
 #include "xftdef.h"
-#include "XWBUILD/WheelP.h"
+#include <xtcw/WheelP.h>
 
 /* define unique representation types not found in <X11/StringDefs.h> */
 #define XtRCtrlResource "CtrlResource"

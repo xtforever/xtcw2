@@ -1,0 +1,174 @@
+# Wlabel Fix Plan — Multi-Paragraph Resize & Background Fill
+
+## Symptoms (reported)
+
+- Resize with multi-paragraph text is broken
+- Background not correctly filled (background color not initialized)
+- Sometimes no fill at all
+
+## Root Cause Analysis
+
+Inspected the generated `build/source/Wlabel.c` (regenerated from `wbuild_widgets/Wlabel.widget` on 2026-06-07). Three bugs contribute:
+
+### Bug 1: Background Fill Can Be Skipped
+**File:** `wbuild_widgets/Wlabel.widget:291-318` (update_cache)
+**Impact:** If `retex_layout()` returns NULL (e.g., unpaired TeX commands, bad font, multi-paragraph edge cases), the function exits at line 315 (`if (!$para_ptr) return;`) before the `be->draw_rect()` background fill at line 318. The pixmap stays blank/uninitialized. On next expose, `XClearWindow`+`XCopyArea` copies blank pixmap → widget shows garbage/no fill.
+
+### Bug 2: resize() Doesn't Trigger Synchronous Redraw
+**File:** `wbuild_widgets/Wlabel.widget:209-220` (resize)
+**Impact:** After destroying the backend (freeing the pixmap), resize sets `$dirty=1` and calls `reshape_widget()` but does NOT call `redraw_label()`. Relies on Xt expose events, which may be:
+- Compressed by `compress_exposure = TRUE` (line 33)
+- Delayed until the next event loop cycle
+- Not generated if the window size doesn't actually change
+
+Result: widget window shows stale/destroyed content between resize and next expose.
+
+### Bug 3: No XSync Between Cairo Render and XCopyArea
+**File:** `wbuild_widgets/Wlabel.widget:318, 351` (update_cache → draw_rect/render)
+**Impact:** `update_cache` renders background + text into the pixmap via Cairo. `retex_paragraph_render` calls `cairo_surface_flush()` (via `be->flush`) to push Cairo state to Xlib. But Cairo's surface flush does NOT call `XSync`/`XFlush`. If the X protocol buffer hasn't been flushed to the X server when `XCopyArea` reads the pixmap, the copy may fetch stale/partial content. This manifests as "sometimes no fill" depending on Xlib buffer timing.
+
+### Bug 4 (Secondary): Multi-paragraph Height Mismatch
+**File:** `wbuild_widgets/Wlabel.widget:209-220` (resize), `Wlabel.widget:185-199` (query_geometry)
+**Impact:** When a container resizes only the WIDTH of a Wlabel with multi-paragraph text (`\n\n`), the text reflows to more lines (height increases). If the parent calls resize with only the new width (not recalculated height), the pixmap is created too short, clipping the re-wrapped text. The `query_geometry` + parent negotiation should handle this, but edge cases (direct `XtResizeWidget` without geometry query) can leave the widget at the wrong height.
+
+## Fix Plan
+
+### Fix 1: Move Background Fill Before Layout (Priority: CRITICAL)
+**File:** `wbuild_widgets/Wlabel.widget:291-318` (update_cache)
+**Action:** Reorder `update_cache` so `be->draw_rect()` background fill happens BEFORE `retex_layout`. Also handle `retex_layout` failure gracefully — clear pixmap even if layout fails.
+
+**Change from:**
+```c
+    $para_ptr = retex_layout(be, $label, layout_width_pt, $fontFace, $fontSize, $alignment);
+    if (!$para_ptr) return;
+
+    /* Clear background - use widget dimensions in points */
+    be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), ...);
+```
+**To:**
+```c
+    /* Clear background — must happen BEFORE layout so background is always filled */
+    be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), 
+                  xftcolor_to_argb($, COLOR_BG_NORM + $state));
+
+    $para_ptr = retex_layout(be, $label, layout_width_pt, $fontFace, $fontSize, $alignment);
+    if (!$para_ptr) {
+        be->flush(be);  /* ensure pixmap has the background fill */
+        return;
+    }
+```
+
+### Fix 2: Call redraw_label() in resize() (Priority: HIGH)
+**File:** `wbuild_widgets/Wlabel.widget:209-220` (resize)
+**Action:** Add `redraw_label($)` call after destroying the backend. This ensures the widget is rendered in the new size synchronously, without waiting for expose.
+
+**Change from:**
+```c
+    $dirty = 1;
+    if (XtIsRealized($)) reshape_widget($);
+}
+```
+**To:**
+```c
+    $dirty = 1;
+    if (XtIsRealized($)) {
+        reshape_widget($);
+        redraw_label($);
+    }
+}
+```
+
+### Fix 3: Add XSync After Pixmap Update (Priority: MEDIUM)
+**File:** `wbuild_widgets/Wlabel.widget:291-353` (update_cache) and/or `5-27` (redraw_label)
+**Action:** After `update_cache` finishes rendering and before `XCopyArea` reads the pixmap, ensure the Cairo/Xlib rendering is flushed to the X server. The simplest approach: add a flush in `redraw_label` just before the XCopyArea.
+
+**Change in redraw_label — after update_cache, before XCopyArea:**
+```c
+    if ($dirty || !$backend_ptr) {
+        update_cache($);
+        $dirty = 0;
+    }
+
+    if ($pixmap) {
+        Backend *be = (Backend*)$backend_ptr;
+        if (be && be->flush) be->flush(be);
+        XSync(XtDisplay($), False);  /* ensure pixmap is ready */
+        XClearWindow(XtDisplay($), XtWindow($));
+        XCopyArea(...);
+    }
+```
+
+### Fix 4: Guard Multi-paragraph Height Recalculation (Priority: MEDIUM)
+**File:** `wbuild_widgets/Wlabel.widget:209-220` (resize)
+**Action:** After resize changes width, if the widget has a label AND $autoHeight is set, recompute the height and request geometry change. This is already partially handled in `set_values`, but resize doesn't trigger it. For non-autoHeight, this is the parent's responsibility.
+
+**Change:** Add a height check in resize for autoHeight+multi-paragraph:
+```c
+    if ($autoHeight && $label && *$label) {
+        int tw = (int)$width;
+        int w, h;
+        calculate_size($, tw, &w, &h);
+        if (h != $height) {
+            XtVaSetValues($, XtNheight, (Dimension)h, NULL);
+        }
+    }
+```
+
+### Fix 5: Prevent Para Dangling Pointer (Priority: LOW)
+**File:** `wbuild_widgets/Wlabel.widget:209-220` (resize)
+**Action:** Set `$para_ptr = NULL` when destroying the backend, to prevent use-after-free if any code path tries to access it between backend destruction and update_cache recreation.
+
+**Add in resize:**
+```c
+    if ($para_ptr) {
+        retex_paragraph_free($para_ptr);
+        $para_ptr = NULL;
+    }
+```
+
+## Test Plan
+
+### Test 1: Basic Multi-paragraph with Resize
+Create Wlabel with `"Line 1\n\nLine 2\n\nLine 3"`, realize, resize width down by 30%, verify:
+- Background is filled (not transparent)
+- Background color matches the widget's background
+- All text lines are visible (not clipped)
+- No X11 protocol errors
+
+### Test 2: Multi-paragraph with autoHeight
+Create Wlabel with `"AA\n\nBB\n\nCC"`, `XtNautoHeight=True`, no explicit height.
+Resize width very narrow (50px). Verify widget height auto-adjusts.
+
+### Test 3: Bad Layout Graceful Degradation
+Create Wlabel with malformed TeX commands, resize, verify:
+- Background is filled (not blank)
+- No crash or X11 errors
+- Text shows what CAN be rendered
+
+### Test 4: Rapid Resize Stress Test
+In a tight loop: XtResizeWidget 5 times in succession, verify:
+- No X11 errors
+- No blank/flash frames
+- Each resize shows correct content
+
+### Test 5: State Transitions During Resize
+Create Wlabel, change state (NORMAL→SELECTED), then resize, verify:
+- Background color reflects current state
+- Text color reflects current state
+
+## Implementation Order
+
+1. Fix 1 (reorder background fill) — addresses "no fill at all"
+2. Fix 2 (call redraw_label in resize) — addresses stale content after resize
+3. Fix 3 (XSync guarantee) — addresses "sometimes no fill"
+4. Fix 4 (autoHeight in resize) — addresses multi-paragraph clipping
+5. Fix 5 (para_ptr cleanup) — safety/defensive
+
+## Affected Files
+
+| File | Changes |
+|------|---------|
+| `wbuild_widgets/Wlabel.widget` | update_cache(), resize(), redraw_label() |
+| `build/source/Wlabel.c` | Regenerated from .widget |
+| `tests/test_wlabel_geometry.c` | May need update for multi-paragraph test |
+| `tests/test_wlabel_multipara.c` | New test file |

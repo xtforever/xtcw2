@@ -140,6 +140,7 @@ var compress_motion = True
 @ params: ($, XEvent *event _X_UNUSED, String *params _X_UNUSED, Cardinal *num_params _X_UNUSED)
 @proc SetKeyboardFocus
 {
+    TRACE(50, "Wcombo SetKeyboardFocus %s", XtName($));
     TRACE(2,"try to set keyboard focus");
     Widget shell, parent;
 
@@ -156,6 +157,7 @@ var compress_motion = True
 
 @proc set_cursor
 {
+	TRACE(50, "Wcombo set_cursor %s", XtName($));
 	if( $entry_mode ) return;
 	TRACE(2,"open");
 	XtCallCallbackList( $, $refresh_list, NULL );
@@ -164,6 +166,7 @@ var compress_motion = True
 
 @proc insert_char
 {
+    TRACE(50, "Wcombo insert_char %s", XtName($));
     if( ! $entry_mode ) return;
     int len;
     unsigned char buf[32];
@@ -179,6 +182,7 @@ var compress_motion = True
 
 @proc remove_char
 {
+	TRACE(50, "Wcombo remove_char %s", XtName($));
 	if( ! $entry_mode ) return;
 	unsigned char ch;
 	TRACE(2,"del");
@@ -194,12 +198,14 @@ var compress_motion = True
 
 @proc focus_in
 {
+	TRACE(50, "Wcombo focus_in %s", XtName($));
 	TRACE(2, "Wcombo %s got focus", XtName($));
 	set_cursor($, NULL, NULL, NULL );
 }
 
 @proc focus_out
 {
+	TRACE(50, "Wcombo focus_out %s", XtName($));
 	TRACE(2, "Wcombo %s lost focus", XtName($));
 	if( $entry_mode ) {
 	    XtPopdown($shell);
@@ -209,6 +215,7 @@ var compress_motion = True
 
 @proc notify
 {
+	TRACE(50, "Wcombo notify %s", XtName($));
 	TRACE(2, "Wcombo %s notify: entry_mode %d", XtName($), $entry_mode );
 	item_selected_cb(NULL, $, (XtPointer)0 );
 }

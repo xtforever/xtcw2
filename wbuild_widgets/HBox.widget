@@ -76,6 +76,11 @@ letting Xt figure out what really needs to be changed.
     reply->width =  $total_width;
     reply->height = $total_height;
 
+    if ((request->request_mode & CWWidth) && request->width > reply->width)
+        reply->width = request->width;
+    if ((request->request_mode & CWHeight) && request->height > reply->height)
+        reply->height = request->height;
+
     TRACE(2, "%s: parent request is: %dx%d", XtName($),
              request->width,
              request->width );
@@ -86,6 +91,14 @@ letting Xt figure out what really needs to be changed.
     return XtGeometryAlmost;
 }
 
+@proc set_values_almost
+{
+    request->x = reply->x;
+    request->y = reply->y;
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWX | CWY | CWWidth | CWHeight;
+}
 
 @ If a child requests to be resized, the request is always granted. We
 ignore stacking order.

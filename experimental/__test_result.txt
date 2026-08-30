@@ -1,0 +1,2 @@
+click_count=1
+result=Clicked 1 times

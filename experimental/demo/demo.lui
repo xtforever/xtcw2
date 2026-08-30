@@ -1,0 +1,82 @@
+print("Widget Demo Started")
+
+-- Create list data
+local list_data = mls_create(100, 8)
+
+-- Sample items for the list
+local items = {
+    "Apple",
+    "Banana",
+    "Cherry",
+    "Date",
+    "Elderberry",
+    "Fig",
+    "Grape",
+    "Honeydew",
+    "Kiwi",
+    "Lemon",
+    "Mango",
+    "Nectarine",
+    "Orange",
+    "Papaya",
+    "Quince"
+}
+
+-- Populate the list
+for _, item in ipairs(items) do
+    mls_put_string(list_data, item)
+end
+
+-- Set the list contents
+xtsetvalue("list_widget", "tableStrs", list_data)
+
+-- Track click count
+local click_count = 0
+
+-- Button click handler
+function handle_click()
+    click_count = click_count + 1
+    print("Button clicked! Count: " .. click_count)
+    xtsetvalue("output_text", "label", "Button clicked " .. click_count .. " times!")
+end
+
+-- Clear button handler
+function handle_clear()
+    click_count = 0
+    print("Output cleared")
+    xtsetvalue("output_text", "label", "(cleared)")
+end
+
+-- List selection handler
+function handle_list_select(key)
+    print("List key pressed: " .. key)
+    
+    local cursor = xtgetvalue("list_widget", "key_cursor")
+    if not cursor then
+        print("Error: could not get key_cursor")
+        return
+    end
+    
+    if key == "Up" then
+        wheel_exec_command("list_widget", WHEEL_UP)
+    elseif key == "Down" then
+        wheel_exec_command("list_widget", WHEEL_DOWN)
+    elseif key == "Return" then
+        -- Get the selected item text
+        local idx = xtgetvalue("list_widget", "key_cursor")
+        if idx and idx >= 0 then
+            -- Get text from mls at index
+            local selected = mls_get_string(list_data, idx)
+            if selected then
+                print("Selected: " .. selected)
+                xtsetvalue("output_text", "label", "Selected: " .. selected)
+            end
+        end
+    end
+end
+
+-- Register button callbacks (these would be triggered from the widget)
+-- For now, we use LUA actions in the .ad file
+
+print("Widget Demo initialized")
+print("Items loaded: " .. #items)

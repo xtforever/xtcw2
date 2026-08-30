@@ -29,7 +29,7 @@ in this Software without prior written authorization from The Open Group.
 
 #include <X11/Intrinsic.h>
 #include "xftdef.h"
-#include "XWBUILD/Wheel.h"
+#include <xtcw/Wheel.h>
 
 /****************************************************************
  *
