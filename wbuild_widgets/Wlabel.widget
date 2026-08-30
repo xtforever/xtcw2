@@ -13,92 +13,23 @@
         $dirty = 0;
     }
 
-    if ($pixmap) {
+    if ($pixmap && $backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->flush(be);
+        XSync(XtDisplay($), False);
         /* Cap copy size to match pixmap dimensions (backend is capped at 4000x4000) */
         int copy_w = $width;
         int copy_h = $height;
         if (copy_w > 4000) copy_w = 4000;
         if (copy_h > 4000) copy_h = 4000;
-        XClearWindow(XtDisplay($), XtWindow($));
+        // XClearWindow(XtDisplay($), XtWindow($));
         XCopyArea(XtDisplay($), $pixmap, XtWindow($), 
                   $gc[0],
                   0, 0, copy_w, copy_h, 0, 0);
     }
 }
 
-@proc void update_cache($)
-{
-    if (!$backend_ptr) {
-        if (!XtIsRealized($)) return;
-        /* Cap dimensions to 4000 to avoid X11 limitations */
-        int w = $width > 4000 ? 4000 : ($width < 1 ? 1 : $width);
-        int h = $height > 4000 ? 4000 : ($height < 1 ? 1 : $height);
-        $backend_ptr = backend_xpixmap_create(XtDisplay($), XtWindow($), w, h);
-        if (!$backend_ptr) return;
-        $pixmap = backend_xpixmap_get_pixmap((Backend*)$backend_ptr);
-    }
 
-    if ($para_ptr) {
-        retex_paragraph_free($para_ptr);
-        $para_ptr = NULL;
-    }
-
-    Backend *be = (Backend*)$backend_ptr;
-    
-    int inner_w_px = (int)$width - ($leftGap + $rightGap);
-    if (inner_w_px < 10) inner_w_px = 10;
-    double layout_width_pt = px2pt($, inner_w_px);
-
-    $para_ptr = retex_layout(be, $label, layout_width_pt, $fontFace, $fontSize, $alignment);
-    if (!$para_ptr) return;
-
-    /* Clear background - use widget dimensions in points */
-    be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), xftcolor_to_argb($, COLOR_BG_NORM + $state));
-
-    double text_h_pt = retex_paragraph_get_height($para_ptr);
-    double text_w_pt = retex_paragraph_get_width($para_ptr);
-    
-    double inner_h_pt = px2pt($, (double)$height - ($topGap + $bottomGap));
-    if (inner_h_pt < 0) inner_h_pt = 0;
-
-    double v_centering_offset_pt = (inner_h_pt - text_h_pt) / 2.0;
-    if (v_centering_offset_pt < 0) v_centering_offset_pt = 0;
-
-    double h_centering_offset_pt = (px2pt($, inner_w_px) - text_w_pt) / 2.0;
-    if (h_centering_offset_pt < 0) h_centering_offset_pt = 0;
-
-    /* re-tex renderer expects y to be the baseline of the first line (in points). */
-    double x_pt = px2pt($, (double)$leftGap) + h_centering_offset_pt;
-    double y_pt = px2pt($, (double)$topGap) + v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
-
-    $layout_x_offset_pt = x_pt;
-    $layout_y_offset_pt = y_pt - retex_paragraph_get_first_line_height($para_ptr);
-
-    TRACE(2, "update_cache: text_w=%.2f, text_h=%.2f, layout_x_off=%.2f, layout_y_off=%.2f", 
-          text_w_pt, text_h_pt, $layout_x_offset_pt, $layout_y_offset_pt);
-
-    RendererColors colors = {
-        .text = xftcolor_to_argb($, COLOR_FG_NORM + $state),
-        .bg = 0,
-        .reverse_text = xftcolor_to_argb($, COLOR_BG_HI + $state),
-        .reverse_bg = xftcolor_to_argb($, COLOR_FG_HI + $state),
-        .sel_text = xftcolor_to_argb($, COLOR_FG_SEL + $state),
-        .sel_bg = xftcolor_to_argb($, COLOR_BG_SEL + $state)
-    };
-
-    retex_paragraph_set_selection($para_ptr, $selection_start, $selection_end);
-    retex_paragraph_render($para_ptr, be, x_pt, y_pt, &colors, $reverse_mode ? 1 : 0);
-}
-
-@proc void reshape_widget($)
-{
-	int w;
-	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
-	    w = ($height < $width) ? $height : $width;
-	    w = w * $cornerRoundPercent / 100;
-	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
-	}
-}
 
 
 @CLASSVARS
@@ -116,6 +47,7 @@
 @var int leftGap = 0
 @var int rightGap = 0
 @var Boolean autoHeight = FALSE
+@var Boolean autoWidth = FALSE
 @var int cornerRoundPercent = 0
 @var int leftOffsetPercent = 5
 @var int update = 0
@@ -233,11 +165,15 @@
         if (XtIsRealized($)) update_cache($);
     }
 
-    if (size_changed && $autoHeight) {
+    if (size_changed && ($autoHeight || $autoWidth)) {
+        int tw = $autoWidth ? 10000 : (int)$width;
         int w, h;
-        calculate_size($, 0, &w, &h);
-        if (w != $width || h != $height) {
-             XtVaSetValues($, XtNwidth, (Dimension)w, XtNheight, (Dimension)h, NULL);
+        calculate_size($, tw, &w, &h);
+        if ($autoWidth && w != $width) {
+             XtVaSetValues($, XtNwidth, (Dimension)w, NULL);
+        }
+        if ($autoHeight && h != $height) {
+             XtVaSetValues($, XtNheight, (Dimension)h, NULL);
         }
     }
 
@@ -259,15 +195,32 @@
     reply->width = w;
     reply->height = h;
 
-    $prefered_width = w;
-    $prefered_height = h;
+    /* Accept any proposed size that is larger */
+    if ((request->request_mode & CWWidth) && request->width > reply->width)
+        reply->width = request->width;
+    if ((request->request_mode & CWHeight) && request->height > reply->height)
+        reply->height = request->height;
+
+    $prefered_width = reply->width;
+    $prefered_height = reply->height;
 
     return XtGeometryAlmost;
 }
 
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+    $dirty = 1;
+}
+
 @proc resize
 {
-    // On resize, we need to recreate the backend because pixmap size changes
+    if ($para_ptr) {
+        retex_paragraph_free($para_ptr);
+        $para_ptr = NULL;
+    }
     if ($backend_ptr) {
         Backend *be = (Backend*)$backend_ptr;
         be->destroy(be);
@@ -275,7 +228,10 @@
         $pixmap = 0;
     }
     $dirty = 1;
-    if (XtIsRealized($)) reshape_widget($);
+    if (XtIsRealized($)) {
+        reshape_widget($);
+        redraw_label($);
+    }
 }
 
 @proc expose
@@ -347,6 +303,97 @@
 
 @UTILITIES
 
+@proc void update_cache($)
+{
+    if (!$backend_ptr) {
+        if (!XtIsRealized($)) return;
+        /* Cap dimensions to 4000 to avoid X11 limitations */
+        int w = $width > 4000 ? 4000 : ($width < 1 ? 1 : $width);
+        int h = $height > 4000 ? 4000 : ($height < 1 ? 1 : $height);
+        $backend_ptr = backend_xpixmap_create(XtDisplay($), XtWindow($), w, h);
+        if (!$backend_ptr) return;
+        $pixmap = backend_xpixmap_get_pixmap((Backend*)$backend_ptr);
+    }
+
+    if ($para_ptr) {
+        retex_paragraph_free($para_ptr);
+        $para_ptr = NULL;
+    }
+
+    Backend *be = (Backend*)$backend_ptr;
+    
+    int inner_w_px = (int)$width - ($leftGap + $rightGap);
+    if (inner_w_px < 10) inner_w_px = 10;
+    double layout_width_pt = px2pt($, inner_w_px);
+
+    /* Clear background using backend's actual DPI for guaranteed full-pixmap coverage.
+     * Reset clip and flush immediately so the pixmap is always filled even if layout fails. */
+    be->set_clip(be, 0, 0, 0, 0, 0);
+    {
+        double dpi = be->get_dpi(be);
+        if (dpi < 1.0 || dpi > 1000.0) dpi = 96.0;
+        double w_pt = (double)$width * 72.0 / dpi;
+        double h_pt = (double)$height * 72.0 / dpi;
+        be->draw_rect(be, 0, 0, w_pt, h_pt, xftcolor_to_argb($, COLOR_BG_NORM + $state));
+    }
+    be->flush(be);
+
+    double retex_layout_pt = px2pt($, inner_w_px);
+
+    /* retex handles per-line alignment (CENTER, RIGHT, LEFT, JUSTIFY)
+     * internally via left/right fil glues.  No horizontal offset needed:
+     * the paragraph fills the full inner width, and retex positions the
+     * text within it. */
+    $para_ptr = retex_layout(be, $label, retex_layout_pt, $fontFace, $fontSize, $alignment);
+    if (!$para_ptr) {
+        be->flush(be);
+        return;
+    }
+
+    double text_h_pt = retex_paragraph_get_height($para_ptr);
+    double text_w_pt = retex_paragraph_get_width($para_ptr);
+    
+    double inner_h_pt = px2pt($, (double)$height - ($topGap + $bottomGap));
+    if (inner_h_pt < 0) inner_h_pt = 0;
+
+    double v_centering_offset_pt = (inner_h_pt - text_h_pt) / 2.0;
+    if (v_centering_offset_pt < 0) v_centering_offset_pt = 0;
+
+    /* re-tex renderer expects y to be the baseline of the first line (in points).
+     * Horizontal positioning: paragraph starts at leftGap, fills to width-rightGap.
+     * Vertical positioning: paragraph is vertically centered via v_centering_offset. */
+    double x_pt = px2pt($, (double)$leftGap);
+    double y_pt = px2pt($, (double)$topGap) + v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
+
+    $layout_x_offset_pt = x_pt;
+    $layout_y_offset_pt = y_pt - retex_paragraph_get_first_line_height($para_ptr);
+
+    TRACE(2, "update_cache: text_w=%.2f, text_h=%.2f, layout_x_off=%.2f, layout_y_off=%.2f", 
+          text_w_pt, text_h_pt, $layout_x_offset_pt, $layout_y_offset_pt);
+
+    RendererColors colors = {
+        .text = xftcolor_to_argb($, COLOR_FG_NORM + $state),
+        .bg = 0,
+        .reverse_text = xftcolor_to_argb($, COLOR_BG_HI + $state),
+        .reverse_bg = xftcolor_to_argb($, COLOR_FG_HI + $state),
+        .sel_text = xftcolor_to_argb($, COLOR_FG_SEL + $state),
+        .sel_bg = xftcolor_to_argb($, COLOR_BG_SEL + $state)
+    };
+
+    retex_paragraph_set_selection($para_ptr, $selection_start, $selection_end);
+    retex_paragraph_render($para_ptr, be, x_pt, y_pt, &colors, $reverse_mode ? 1 : 0);
+}
+
+@proc void reshape_widget($)
+{
+	int w;
+	if( $cornerRoundPercent >0 && $cornerRoundPercent < 100 ) {
+	    w = ($height < $width) ? $height : $width;
+	    w = w * $cornerRoundPercent / 100;
+	    XmuReshapeWidget( $, XmuShapeRoundedRectangle, w, w );
+	}
+}
+
 @proc Boolean convert_selection($, Atom *selection, Atom *target, Atom *type, XtPointer *value, unsigned long *length, int *format)
 {
     if (*target == XA_STRING) {
@@ -415,13 +462,24 @@
     Backend *be = backend_xpixmap_create(dpy, root, 10, 10);
     if (!be) { *w=10; *h=10; return; }
     
-    /* Calculate internal target width for retex (subtract horizontal gaps) */
-    int adj_tw = (tw > 0) ? (tw - ($leftGap + $rightGap)) : 20000;
-    if (adj_tw < 10) adj_tw = 10;
-    double target_width_pt = px2pt($, adj_tw);
+    /* Calculate internal target width for retex (subtract horizontal gaps).
+       When no width is requested (tw == 0) use retex's natural-width
+       convention (target_width_pt >= 10000 pt) so the measured width is
+       the unwrapped content width, not the requested box width. */
+    double target_width_pt;
+    if (tw > 0) {
+        int adj_tw = (int)(tw - ($leftGap + $rightGap));
+        if (adj_tw < 10) adj_tw = 10;
+        target_width_pt = px2pt($, adj_tw);
+    } else {
+        target_width_pt = 10000.0;
+    }
 
-    /* For measurement, we don't need a real pixmap but we need a backend */
-    void *para = retex_layout(be, $label, target_width_pt, $fontFace, $fontSize, $alignment);
+    /* For measurement, we don't need a real pixmap but we need a backend.
+       Measure with RETEX_ALIGN_JUSTIFY: LEFT/CENTER/RIGHT alignment adds
+       infinite fill glue which would make the measured width equal to the
+       target width instead of the natural content width. */
+    void *para = retex_layout(be, $label, target_width_pt, $fontFace, $fontSize, RETEX_ALIGN_JUSTIFY);
     if (para) {
         *w = (int)ceil(pt2px($, retex_paragraph_get_width(para))) + ($leftGap + $rightGap);
         *h = (int)ceil(pt2px($, retex_paragraph_get_height(para))) + ($topGap + $bottomGap);

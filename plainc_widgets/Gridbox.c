@@ -350,6 +350,11 @@ GridboxResize(w)
     if( gb->gridbox.nx <= 0 || gb->gridbox.ny <= 0 )
       return ;
 
+    TRACE(2, "GridboxResize: %s own size %dx%d total %dx%d weight %dx%d", XtName(w),
+          (int)gb->core.width, (int)gb->core.height,
+          (int)gb->gridbox.total_wid, (int)gb->gridbox.total_hgt,
+          gb->gridbox.total_weightx, gb->gridbox.total_weighty);
+
     /* assign row & column sizes */
     layout(gb, gb->core.width, gb->core.height) ;
 
@@ -387,6 +392,8 @@ GridboxResize(w)
 	y = ys[gc->gridbox.gridy] + margin ;
 
 	layoutChild(gb, *childP, &width, &height, &x, &y) ;
+
+	TRACE(2, "GridboxResize: %s pos=%d,%d size=%dx%d", XtName(*childP), x, y, width, height);
 
 	XtConfigureWidget(*childP,x,y, width, height,
 	  (*childP)->core.border_width );
@@ -1027,14 +1034,36 @@ layout(gb, width, height)
     weight = gb->gridbox.total_weightx ;
 
     /* distribute excess to the columns & assign positions */
-    if( weight > 0 ) {
-
+    if( excess >= 0 ) {
+      if( weight > 0 ) {
+	for(i=0; i < gb->gridbox.nx; ++i)
+	  if( gb->gridbox.max_weightx[i] > 0 )
+	  {
+	    j = wids[i] + gb->gridbox.max_weightx[i]*excess/weight ;
+	    wids[i] = max(j,mincellsize) ;
+	  }
+      }
+    } else {
+      /* Gridbox is smaller than its preferred width.  Shrink all columns
+       * proportionally so the children fit the space the parent granted.
+       * The original algorithm only grew/shrunk weighted columns, which
+       * made unweighted children overflow when a parent (e.g. a shell
+       * with a fixed size) refused the preferred geometry request. */
+      long total = 0 ;
+      long target = (long)width ;
+      long allocated = 0 ;
       for(i=0; i < gb->gridbox.nx; ++i)
-	if( gb->gridbox.max_weightx[i] > 0 )
-	{
-	  j = wids[i] + gb->gridbox.max_weightx[i]*excess/weight ;
-	  wids[i] = max(j,mincellsize) ;
+	total += (long)wids[i] ;
+      if( total > 0 && target > 0 ) {
+	for(i=0; i < gb->gridbox.nx; ++i) {
+	  long s = (i == gb->gridbox.nx-1)
+	    ? (target - allocated)
+	    : (long)wids[i] * target / total ;
+	  if( s < mincellsize ) s = mincellsize ;
+	  wids[i] = (Dimension)s ;
+	  allocated += (long)wids[i] ;
 	}
+      }
     }
 
     /* Same again, for heights */
@@ -1044,13 +1073,31 @@ layout(gb, width, height)
     weight = gb->gridbox.total_weighty ;
 
     /* distribute it to the rows */
-    if( weight > 0 )
+    if( excess >= 0 ) {
+      if( weight > 0 )
+	for(i=0; i < gb->gridbox.ny; ++i)
+	  if( gb->gridbox.max_weighty[i] > 0 )
+	  {
+	    j = hgts[i] + gb->gridbox.max_weighty[i]*excess/weight ;
+	    hgts[i] = max(j,mincellsize) ;
+	  }
+    } else {
+      long total = 0 ;
+      long target = (long)height ;
+      long allocated = 0 ;
       for(i=0; i < gb->gridbox.ny; ++i)
-	if( gb->gridbox.max_weighty[i] > 0 )
-	{
-	  j = hgts[i] + gb->gridbox.max_weighty[i]*excess/weight ;
-	  hgts[i] = max(j,mincellsize) ;
+	total += (long)hgts[i] ;
+      if( total > 0 && target > 0 ) {
+	for(i=0; i < gb->gridbox.ny; ++i) {
+	  long s = (i == gb->gridbox.ny-1)
+	    ? (target - allocated)
+	    : (long)hgts[i] * target / total ;
+	  if( s < mincellsize ) s = mincellsize ;
+	  hgts[i] = (Dimension)s ;
+	  allocated += (long)hgts[i] ;
 	}
+      }
+    }
 }
 
 
