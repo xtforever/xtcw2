@@ -52,6 +52,7 @@ int svar_strdup(char *s);
 
 
 void  svar_create(void);
+int   svar_is_initialized(void);
 static inline const void svar_init(void) { svar_create(); }
 void  svar_destruct(void);
 int   svar_lookup(int buf, int type );

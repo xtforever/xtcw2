@@ -534,6 +534,11 @@ int new_hashtable(void)
    return h;
 }
 
+int svar_is_initialized(void)
+{
+    return SVAR >= 0;
+}
+
 void svar_create(void)
 {
     if( SVAR >=0 ) return;

@@ -10,6 +10,14 @@
 @methods
 @proc initialize
 {
+        if( !$varname || !*$varname ) {
+            fprintf(stderr, "FATAL: WviewVar widget '%s' requires a non-empty 'varname' resource\n", XtName($));
+            exit(1);
+        }
+        if( !mv_is_initialized() ) {
+            fprintf(stderr, "FATAL: WviewVar widget '%s' requires the micro-vars system (call mv_init())\n", XtName($));
+            exit(1);
+        }
         $qvar = XrmStringToQuark( $varname );
         char *s = $label;
         if (!s) s = $name;
@@ -40,4 +48,5 @@
 
 @imports
 @incl "xutil.h"
+@incl "mls.h"
 @incl "micro_vars.h"

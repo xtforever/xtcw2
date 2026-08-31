@@ -29,6 +29,10 @@
 @METHODS 
 @proc initialize
 {
+        if( !svar_is_initialized() ) {
+            fprintf(stderr, "FATAL: Woption widget '%s' requires the svar system (call svar_create())\n", XtName($));
+            exit(1);
+        }
         TRACE(2,"Wbutton:%s focus group: %s", $name, $focus_group );
 	$key_group = register_widget_group( $, $group );	
 	$key_svar  = mvar_parse_string($var5, VAR_STRING );
@@ -113,6 +117,7 @@
 @IMPORTS
 @incl "opts.h"
 @incl "mls.h"
+@incl "svar2.h"
 @incl "var5.h"
 @incl <X11/Xft/Xft.h>
 @incl "converters-xft.h"

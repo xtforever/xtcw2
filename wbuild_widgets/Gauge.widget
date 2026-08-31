@@ -37,6 +37,10 @@
 
 @proc initialize
 {
+    if( !mv_is_initialized() ) {
+	fprintf(stderr, "FATAL: Gauge widget '%s' requires the micro-vars system (call mv_init())\n", XtName($));
+	exit(1);
+    }
     TRACE(1, "Gauge");
     $pixmap = 0;
     $draw = 0;

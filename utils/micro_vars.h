@@ -23,6 +23,7 @@ struct micro_vars {
 typedef void (*voidfn_t) (void*);
 
 void mv_init();
+int  mv_is_initialized();
 void mv_destroy();
 void mv_parse(int buf, int *p, char *group );
 void mv_onwrite( int q_var, void (*fn) (void*), void *d, int remove );

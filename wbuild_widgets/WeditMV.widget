@@ -81,6 +81,10 @@
 
 @proc initialize
 {
+  if( !svar_is_initialized() ) {
+      fprintf(stderr, "FATAL: WeditMV widget '%s' requires the svar system (call svar_create())\n", XtName($));
+      exit(1);
+  }
   Display *dpy = XtDisplay($);
 
  $draw = 0;

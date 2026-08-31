@@ -6,6 +6,11 @@ static struct micro_vars MV;
 
 
 static int first_time = 1;
+int mv_is_initialized(void)
+{
+  return first_time == 0;
+}
+
 void mv_init(void)
 {
   if( first_time ) {

@@ -17,6 +17,10 @@
 @METHODS
 @proc initialize
 {
+        if( !svar_is_initialized() ) {
+            fprintf(stderr, "FATAL: Radio2 widget '%s' requires the svar system (call svar_create())\n", XtName($));
+            exit(1);
+        }
         asprintf( & $radioGroup, "group_%p", (void*)$ );
         do_layout($);
 }
@@ -75,4 +79,5 @@
 @incl <xtcw/Woption.h>
 @incl "converters.h"
 @incl "mls.h"
+@incl "svar2.h"
 @incl "var5.h"

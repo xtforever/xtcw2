@@ -33,6 +33,10 @@
 {
 
     XTFUNC();
+    if( !$filename || !*$filename ) {
+	fprintf(stderr, "FATAL: IconSVG widget '%s' requires a non-empty 'filename' resource\n", XtName($));
+	exit(1);
+    }
     TRACE(1, "IconSVG:%s: init size is: %dx%d", XtName($),
 		 $width,$height );
 
