@@ -24,6 +24,7 @@ WFLAGS= -d $(docdir) -c $(srcdir) -i $(incdir)/$(WBPREFIX) --include-prefix=$(WB
 BINC=$(incdir)/$(WBPREFIX)
 BSRC=$(srcdir)
 BDOC=$(docdir)
+LUI_REGISTRY ?= ../lui/registry_generated.lua
 
 ALL_WIDGETS:=${notdir $(wildcard *.widget)}
 WIDGET_H:=${ALL_WIDGETS:%.widget=$(BINC)/%.h}
@@ -34,7 +35,7 @@ $(BINC)/%.h: %.widget
 	wb_search=./ $(WBWRAP) $^ $(WBUILD) $(WFLAGS)
 
 $(BINC)/register_wb.h: $(WIDGET_H)
-	./register-widgets.sh $(BINC) $(BSRC)
+	./register-widgets.sh $(BINC) $(BSRC) $(LUI_REGISTRY)
 
 all-widgets: $(WIDGET_H)
 
