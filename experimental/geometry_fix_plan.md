@@ -38,8 +38,8 @@ LUI S-expression  →  Xt widget tree  →  retex layout  →  pixmap render  �
 | `learn.md` | Gridbox API, TRACE mechanism, wbuild syntax, known pitfalls |
 | `errors.md` | 12 fixed bugs with root causes — prevention patterns |
 | `ultimate_plan.md` | Widget verification checklist, testing gaps |
-| `overview.md` | Build pipeline, selection system, wbuild `$` expansion rules |
-| `howto.md` | LUI S-expression format, `gui.set`/`gui.get` |
+| `legacy/overview.md` | Build pipeline, selection system, wbuild `$` expansion rules |
+| `legacy/howto.md` | LUI S-expression format, `gui.set`/`gui.get` |
 | `AGENTS.md` | GitNexus impact analysis workflow (run before editing any symbol) |
 
 ### 2.3 Key reference code (in this repo)
@@ -514,8 +514,8 @@ Estimated total: 5-7 hours
 learn.md                        — Gridbox API, TRACE, wbuild, pitfalls
 errors.md                       — Fixed bug catalogue, prevention patterns
 ultimate_plan.md                — Widget verification checklist
-overview.md                     — Build pipeline, selection, $ expansion rules
-howto.md                        — LUI S-expression format
+legacy/overview.md              — Build pipeline, selection, $ expansion rules
+legacy/howto.md                 — LUI S-expression format
 AGENTS.md                       — GitNexus tools (run impact analysis before edits)
 
 plainc_widgets/Gridbox.c        — Reference geometry_manager (496-618)

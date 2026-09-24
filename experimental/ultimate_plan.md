@@ -139,9 +139,9 @@ Catalog all existing widgets, identify canonical sources, and create unified reg
 #### Widget Discovery (Task 0.1)
 - **Task 0.1.1**: ✅ Cataloged 150+ .widget files across 30+ directories
 - **Task 0.1.2**: ✅ Identified canonical source: `wbuild_widgets/` (42 widgets)
-- **Task 0.1.3**: ✅ Documented widget dependencies in WIDGETS.md
+- **Task 0.1.3**: ✅ Documented widget dependencies in legacy/WIDGETS.md
 
-**Verification**: Complete spreadsheet in `WIDGETS.md`
+**Verification**: Complete spreadsheet in `legacy/WIDGETS.md`
 
 #### Canonical Source Selection (Task 0.2)
 - **Task 0.2.1**: ✅ Determined official widget source: `wbuild_widgets/`
@@ -151,7 +151,7 @@ Catalog all existing widgets, identify canonical sources, and create unified reg
 **Verification**: 42 widgets now in canonical source
 
 #### Widget Registry (Task 0.3)
-- **Task 0.3.1**: ✅ Created `WIDGETS.md` with complete inventory
+- **Task 0.3.1**: ✅ Created `legacy/WIDGETS.md` with complete inventory
 - **Task 0.3.2**: ✅ Categorized: Core (42), Extended, Legacy, Experimental
 - **Task 0.3.3**: ✅ Documented status: Working, Partial, Broken
 
@@ -507,8 +507,8 @@ All project documentation has been consolidated into `docs/`:
 | `docs/mls.md` | MLS library: lists, strings, debugging |
 | `docs/testing.md` | Test plan: E/P/A/L/T categories, bug patterns, infrastructure needs |
 
-Legacy files (still in project root, superseded by `docs/`):
-`overview.md`, `WIDGETS.md`, `lui-summary.md`, `how-to-use-mls.md`, `howto.md`
+Legacy files (moved to `legacy/`, superseded by `docs/`):
+`legacy/overview.md`, `legacy/WIDGETS.md`, `legacy/lui-summary.md`, `legacy/how-to-use-mls.md`, `legacy/howto.md`
 
 ---
 

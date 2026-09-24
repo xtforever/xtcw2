@@ -1,15 +1,18 @@
 # XTCW2 Documentation Index
 
-> Version 1.2 | Last updated: 2026-04-13
+> Version 1.2 | Last updated: 2026-09-24
+
+> **Agent entry point:** the repository root [`overview.md`](../../overview.md) is the
+> LLM-agent-oriented project overview (build, test, structure, conventions).
 
 ## Documentation Files
 
 | File | Content | Source |
 |------|---------|--------|
-| [architecture.md](architecture.md) | Project structure, build pipeline, wbuild, C host, TRACE mechanism | Consolidated from `overview.md`, `learn.md` |
-| [widgets.md](widgets.md) | Widget class reference, LUI registry, known bugs, TRACE(50) status | Consolidated from `WIDGETS.md`, `learn.md` |
-| [lui.md](lui.md) | LUI framework, S-expression syntax, property mapping, callbacks, C bindings, tests | Consolidated from `lui-summary.md`, `howto.md`, `learn.md` |
-| [mls.md](mls.md) | MLS library: lists, strings, debugging | Consolidated from `how-to-use-mls.md` |
+| [architecture.md](architecture.md) | Project structure, build pipeline, wbuild, C host, TRACE mechanism | Consolidated from `../legacy/overview.md`, `learn.md` |
+| [widgets.md](widgets.md) | Widget class reference, LUI registry, known bugs, TRACE(50) status | Consolidated from `../legacy/WIDGETS.md`, `learn.md` |
+| [lui.md](lui.md) | LUI framework, S-expression syntax, property mapping, callbacks, C bindings, tests | Consolidated from `../legacy/lui-summary.md`, `../legacy/howto.md`, `learn.md` |
+| [mls.md](mls.md) | MLS library: lists, strings, debugging | Consolidated from `../legacy/how-to-use-mls.md` |
 | [testing.md](testing.md) | Test plan: categories (E/P/A/L/T), measures, infrastructure | New (`test_plan.md`) |
 | [widget-demos.md](widget-demos.md) | Shell-pasteable demo commands for all widgets, layouts, SVG, scrolling, etc. | New |
 | [retex.md](retex.md) | Retex layout engine API, coordinate transformation, first_line_height | New (2026-04-15) |
@@ -19,15 +22,16 @@
 
 ## Legacy Documentation (superseded)
 
-These files still exist in the project root but their content has been consolidated into `docs/`:
+Superseded sources have been moved to `legacy/`; their content is consolidated into `docs/`.
+The remaining files are still current and live in `experimental/`:
 
 | Legacy File | Replaced By | Status |
 |-------------|-------------|--------|
-| `overview.md` | `docs/architecture.md` | Superseded |
-| `WIDGETS.md` | `docs/widgets.md` | Superseded |
-| `lui-summary.md` | `docs/lui.md` | Superseded |
-| `how-to-use-mls.md` | `docs/mls.md` | Superseded |
-| `howto.md` | `docs/lui.md` | Superseded |
+| `legacy/overview.md` | `docs/architecture.md` | Moved to legacy/ |
+| `legacy/WIDGETS.md` | `docs/widgets.md` | Moved to legacy/ |
+| `legacy/lui-summary.md` | `docs/lui.md` | Moved to legacy/ |
+| `legacy/how-to-use-mls.md` | `docs/mls.md` | Moved to legacy/ |
+| `legacy/howto.md` | `docs/lui.md` | Moved to legacy/ |
 | `learn.md` | Multiple `docs/` files | Still current (contains test automation findings) |
 | `errors.md` | `docs/widgets.md` (bug table) + `learn.md` | Still current |
 | `ultimate_plan.md` | — | Still current (updated) |
