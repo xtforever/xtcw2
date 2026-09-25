@@ -55,4 +55,7 @@ else
     exit 1
 fi
 
+echo "15. KaroEd multiline editor (keystroke-injection)"
+make -C "$ROOT/experimental/karo_widget" test
+
 echo "All tests PASSED."
