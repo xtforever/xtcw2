@@ -146,10 +146,13 @@ run_scenario clamp_column \
     "KaroEd cursor=(2,0)"
 
 run_scenario home_end \
+    "KaroEd caret=(0,0)" \
     "KaroEd cursor_home cursor=(0,0)" \
+    "KaroEd caret=(3,0)" \
     "KaroEd cursor_end cursor=(3,0)" \
     "KaroEd line0='abc'" \
-    "KaroEd cursor=(3,0)"
+    "KaroEd cursor=(3,0)" \
+    "KaroEd selection anchor=(0,0) active=0 text=''"
 
 # locked: mutations must be rejected and no change callback fired
 run_scenario locked \
