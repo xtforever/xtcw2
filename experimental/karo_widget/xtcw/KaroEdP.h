@@ -9,6 +9,9 @@ _XFUNCPROTOBEGIN
 #define debug 5 
 
 
+#define KARO_TESTING 50 
+
+
 
 typedef struct {
 /* methods */

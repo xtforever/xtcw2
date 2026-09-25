@@ -2,7 +2,7 @@ TARGET=cwri
 
 debug_enable=1
 
-prefix      ?= ../build
+prefix      ?= ../../build
 exec_prefix ?= $(prefix)
 bindir      ?= $(exec_prefix)/bin
 libdir      ?= $(exec_prefix)/lib
@@ -43,5 +43,23 @@ ALL: $(TARGET)
 
 $(TARGET): KaroEd.o form_parse.o $(libdir)/libxtcw.a
 
+# --- KaroEd keystroke-injection test suite ---------------------------------
+TEST_TARGET=test_karoed
+
+# libxtcw/libutils/libwcl are mutually dependent -> --start-group.
+# -lXtst provides the XTEST key injection used by test_karoed/xkey.
+TEST_LIBS = -L$(libdir) -Wl,--start-group -lxtcw -lwcl -lutils -Wl,--end-group \
+	$(shell pkg-config --libs cairo cairo-xlib) \
+	-lXaw -lXmu -lXft -lfontconfig -lXrender -lXpm -lXext -lX11 -lXt -lm -lXtst
+
+$(TEST_TARGET): test_karoed.o xkey.o KaroEd.o form_parse.o | $(libdir)/libxtcw.a
+	$(CC) $(CFLAGS) $^ -o $@ $(TEST_LIBS)
+
+# Ensure the generated widget header exists before compiling the driver.
+test_karoed.o: | xtcw/KaroEd.h
+
+test: $(TEST_TARGET)
+	./run_tests.sh
+
 clean:
-	${RM} -rf $(TARGET) *.o  xtcw *~ *.3 *.tex KaroEd.c Wheel.c 
+	${RM} -rf $(TARGET) $(TEST_TARGET) *.o  xtcw *~ *.3 *.tex KaroEd.c Wheel.c 

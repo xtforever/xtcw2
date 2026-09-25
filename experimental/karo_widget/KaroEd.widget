@@ -46,6 +46,7 @@
 @var XRectangle rsel
 @var XRectangle rsel_old
 @def debug = 5
+@def KARO_TESTING = 50
 @var int FRM
 @var int SCR
 
@@ -841,17 +842,22 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     Bool d = split_line_at_cursor($) | cursor_down($) | cursor_pos1($);
     if( d )  redraw_full($);
     selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd key_return cursor=(%d,%d)", $rsel.x, $rsel.y );
 }
 
 @proc prev_line
 {
-    if( $rsel.y == 0 ) return;
+    if( $rsel.y == 0 ) {
+        TRACE(KARO_TESTING, "KaroEd prev_line cursor=(%d,%d)", $rsel.x, $rsel.y );
+        return;
+    }
     $rsel.y--;
     if( $rsel.y < $top_y ) {
         $top_y = $rsel.y;
         redraw_full($);
     }
     selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd prev_line cursor=(%d,%d)", $rsel.x, $rsel.y );
 }
 
 @proc next_line
@@ -862,11 +868,15 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
         redraw_full($);
     }
     selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd next_line cursor=(%d,%d)", $rsel.x, $rsel.y );
 }
 
 @proc backward_char
 {
-    if( $rsel.x == 0 ) return;
+    if( $rsel.x == 0 ) {
+        TRACE(KARO_TESTING, "KaroEd backward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
+        return;
+    }
     $rsel.x--;
     if( $rsel.x < $top_x )
     {
@@ -874,11 +884,13 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
         redraw_full($);
     }
     selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd backward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
 }
 
 @proc forward_char
 {
     cursor_right($);
+    TRACE(KARO_TESTING, "KaroEd forward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
 }
 
 
@@ -893,17 +905,33 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 }
 
 
+@  Test hook: report the full text buffer and cursor via TRACE so a
+  keystroke-injection test can verify state without screenshots.
+@proc dump
+{
+    int i;
+    for( i=0; i<m_len($lines); i++ )
+        TRACE(KARO_TESTING, "KaroEd line%d='%s'", i, STR($lines,i) );
+    TRACE(KARO_TESTING, "KaroEd lines=%d", m_len($lines) );
+    TRACE(KARO_TESTING, "KaroEd cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+
 @proc remove_char
 {
+    int removed_line = 0;
     /* could be expanded to remove region */
     if( current_line_empty($) ) {
         remove_current_line($);
         redraw_full($);
+        removed_line = 1;
     }
     else {
         remove_char_at_cursor($);
         draw_line_from($, $rsel.x, $rsel.y );
     }
+    TRACE(KARO_TESTING, "KaroEd remove_char line=%d cursor=(%d,%d)",
+          removed_line, $rsel.x, $rsel.y );
 }
 
 
@@ -919,6 +947,8 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     insert_char_at_cursor($, (char*)buf, len );
     draw_line_from($, $rsel.x, $rsel.y );
     cursor_right($);
+    TRACE(KARO_TESTING, "KaroEd insert_char len=%d '%.*s' cursor=(%d,%d)",
+          len, len, (char*)buf, $rsel.x, $rsel.y );
 }
 
 
