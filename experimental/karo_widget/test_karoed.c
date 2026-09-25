@@ -35,13 +35,15 @@
 
 extern int trace_level;
 
-typedef enum { S_STR, S_KEY } step_kind;
+typedef enum { S_STR, S_KEY, S_CALL, S_WAIT } step_kind;
 
 typedef struct {
     step_kind kind;
     const char *text;   /* S_STR */
     KeySym keysym;      /* S_KEY */
     unsigned int mods;  /* S_KEY */
+    void (*fn)(Widget); /* S_CALL */
+    int ms;             /* S_WAIT: extra settle time */
 } step_t;
 
 static const step_t sc_type[] = {
@@ -115,6 +117,14 @@ static const step_t sc_locked[] = {
     { S_KEY, NULL, XK_Return, 0 },
 };
 
+/* Ctrl+A selects all lines and copies them to PRIMARY/CUT_BUFFER0. */
+static const step_t sc_select_all[] = {
+    { S_STR, "ab", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "cd", 0, 0 },
+    { S_KEY, NULL, XK_a, ControlMask },
+};
+
 static const scenario_t scenarios[] = {
     { "type",      sc_type,      (int)(sizeof(sc_type) / sizeof(sc_type[0])), NULL },
     { "return",    sc_return,    (int)(sizeof(sc_return) / sizeof(sc_return[0])), NULL },
@@ -124,6 +134,7 @@ static const scenario_t scenarios[] = {
     { "clamp_column", sc_clamp_column, (int)(sizeof(sc_clamp_column) / sizeof(sc_clamp_column[0])), NULL },
     { "home_end",  sc_home_end,  (int)(sizeof(sc_home_end) / sizeof(sc_home_end[0])), NULL },
     { "locked",    sc_locked,    (int)(sizeof(sc_locked) / sizeof(sc_locked[0])), locked_resources },
+    { "select_all", sc_select_all, (int)(sizeof(sc_select_all) / sizeof(sc_select_all[0])), NULL },
 };
 
 static const scenario_t *find_scenario(const char *name)
@@ -167,12 +178,25 @@ static void do_step(XtPointer client_data, XtIntervalId *id)
 
     if (step_i < scen->count) {
         const step_t *s = &scen->steps[step_i++];
-        if (s->kind == S_STR)
+        int next_ms = STEP_MS;
+        switch (s->kind) {
+        case S_STR:
             xkey_type(dpy, s->text);
-        else
+            break;
+        case S_KEY:
             xkey_press(dpy, s->keysym, s->mods);
+            break;
+        case S_CALL:
+            if (s->fn)
+                s->fn(ed);
+            break;
+        case S_WAIT:
+            /* bounded settle for asynchronous selection round-trips */
+            next_ms = (s->ms > 0) ? s->ms : STEP_MS * 5;
+            break;
+        }
         XSync(dpy, False);
-        XtAppAddTimeOut(app, STEP_MS, do_step, NULL);
+        XtAppAddTimeOut(app, next_ms, do_step, NULL);
     } else {
         /* All keys injected; the event loop has drained them by now. */
         XtCallActionProc(ed, "dump", NULL, NULL, 0);

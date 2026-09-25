@@ -180,6 +180,23 @@
 }
 
 
+@  Return `s` with newlines/tabs escaped so it can be emitted on a
+  single TRACE line.
+@proc char* escape_nl(char *s)
+{
+    static char buf[1024];
+    int i = 0, j = 0;
+    while( s[i] && j < (int)sizeof(buf) - 3 ) {
+        if( s[i] == '\n' ) { buf[j++] = '\\'; buf[j++] = 'n'; }
+        else if( s[i] == '\t' ) { buf[j++] = '\\'; buf[j++] = 't'; }
+        else buf[j++] = s[i];
+        i++;
+    }
+    buf[j] = 0;
+    return buf;
+}
+
+
 @  Fire the widget's change callback exactly once per logical edit.
   Honours `$locked` and guards against re-entrancy (a callback may
   itself trigger another edit).
@@ -547,6 +564,7 @@
 @proc cursor_right($)
 {
     int len = 0;
+    $has_selection = False;
     if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
         len = utf8_strlen( STR($lines,$rsel.y) );
     if( $rsel.x < len ) $rsel.x++;
@@ -567,6 +585,7 @@
     $top_x = 0;
     $rsel.x=0;
     $col_hint=0;
+    $has_selection = False;
     return redraw;
 }
 
@@ -771,7 +790,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
                     XA_CUT_BUFFER0, $XA_UTF8_STRING, 8, PropModeReplace,
                     (unsigned char *) m_buf($selectionText),
                     s_strlen($selectionText));
-    TRACE(KARO_TESTING, "KaroEd copy='%s'", m_buf($selectionText) );
+    TRACE(KARO_TESTING, "KaroEd copy='%s'", escape_nl( (char*)m_buf($selectionText) ) );
 }
 
 @  x,y - position inside text-buffer
@@ -891,6 +910,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @trans   <Key>BackSpace: backward_char() remove_char()
 @trans   <Key>Return:    key_return()
 @trans   <Ctrl>v:        insert_selection()
+@trans   <Ctrl>a:        select_all()
 @trans   <Key>:          insert_char()
 
 
@@ -930,6 +950,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
 @proc prev_line
 {
+    $has_selection = False;
     if( $rsel.y == 0 ) {
         TRACE(KARO_TESTING, "KaroEd prev_line cursor=(%d,%d)", $rsel.x, $rsel.y );
         return;
@@ -949,6 +970,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @proc next_line
 {
     int maxy = m_len($lines) - 1;
+    $has_selection = False;
     if( maxy < 0 ) maxy = 0;
     if( $rsel.y >= maxy ) {
         TRACE(KARO_TESTING, "KaroEd next_line cursor=(%d,%d)", $rsel.x, $rsel.y );
@@ -968,6 +990,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
 @proc backward_char
 {
+    $has_selection = False;
     if( $rsel.x == 0 ) {
         $col_hint = 0;
         TRACE(KARO_TESTING, "KaroEd backward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
@@ -992,6 +1015,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
 @proc cursor_home
 {
+    $has_selection = False;
     $rsel.x = 0;
     $col_hint = 0;
     if( $top_x != 0 ) {
@@ -1005,6 +1029,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @proc cursor_end
 {
     int len = 0;
+    $has_selection = False;
     if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
         len = utf8_strlen( STR($lines,$rsel.y) );
     $rsel.x = len;
@@ -1015,6 +1040,28 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     }
     selection_draw($);
     TRACE(KARO_TESTING, "KaroEd cursor_end cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+
+@  Select the whole buffer and place it on the clipboard.
+@proc select_all
+{
+    int last = m_len($lines) - 1;
+    if( last < 0 ) last = 0;
+
+    $sel_anchor_x = 0;
+    $sel_anchor_y = 0;
+    $rsel.y = last;
+    $rsel.x = 0;
+    if( last < m_len($lines) )
+        $rsel.x = utf8_strlen( STR($lines,last) );
+    $col_hint = $rsel.x;
+    $has_selection = True;
+    normalize_scroll($);
+    selection_draw($);
+    own_primary_selection($, XtLastTimestampProcessed(XtDisplay($)));
+    TRACE(KARO_TESTING, "KaroEd select_all anchor=(%d,%d) cursor=(%d,%d)",
+          $sel_anchor_x, $sel_anchor_y, $rsel.x, $rsel.y );
 }
 
 
@@ -1038,9 +1085,9 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
         TRACE(KARO_TESTING, "KaroEd line%d='%s'", i, STR($lines,i) );
     TRACE(KARO_TESTING, "KaroEd lines=%d", m_len($lines) );
     TRACE(KARO_TESTING, "KaroEd cursor=(%d,%d)", $rsel.x, $rsel.y );
-    TRACE(KARO_TESTING, "KaroEd selection anchor=(%d,%d) active=%d text='%.*s'",
+    TRACE(KARO_TESTING, "KaroEd selection anchor=(%d,%d) active=%d text='%s'",
           $sel_anchor_x, $sel_anchor_y, $has_selection,
-          s_strlen($selectionText), (char*)m_buf($selectionText) );
+          escape_nl( (char*)m_buf($selectionText) ) );
 }
 
 

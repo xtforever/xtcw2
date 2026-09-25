@@ -35,7 +35,9 @@ assert_seq() {
     local file="$1" desc="$2"; shift 2
     local cursor=0 pat ln
     for pat in "$@"; do
-        ln=$(awk -v c="$cursor" -v p="$pat" 'NR>c && index($0,p)>0 { print NR; exit }' "$file")
+        # Pass the pattern via the environment so awk does not interpret
+        # backslash escapes (e.g. the literal "\n" in multi-line copy traces).
+        ln=$(KARO_PAT="$pat" awk -v c="$cursor" 'NR>c && index($0,ENVIRON["KARO_PAT"])>0 { print NR; exit }' "$file")
         if [ -z "$ln" ]; then
             fail "$desc — missing (in order): $pat"
             return 1
@@ -160,6 +162,14 @@ run_scenario locked \
     "KaroEd lines=1" \
     "KaroEd cursor=(0,0)"
 assert_absent "$RESULTS_DIR/locked.log" "locked — no change callback" "KaroEd callback"
+
+# select_all: whole buffer selected and copied (multi-line selection)
+run_scenario select_all \
+    "KaroEd copy='ab\ncd'" \
+    "KaroEd select_all anchor=(0,0) cursor=(2,1)" \
+    "KaroEd line1='cd'" \
+    "KaroEd cursor=(2,1)" \
+    "KaroEd selection anchor=(0,0) active=1 text='ab\ncd'"
 
 # ── Summary ──────────────────────────────────────────────────────────────
 echo
