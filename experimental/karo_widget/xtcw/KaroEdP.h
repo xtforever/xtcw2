@@ -52,6 +52,8 @@ XRectangle  rsel;
 XRectangle  rsel_old;
 int  FRM;
 int  SCR;
+int  lines_owned;
+int  col_hint;
 } KaroEdPart;
 
 typedef struct _KaroEdRec {
