@@ -127,6 +127,19 @@ run_scenario arrows \
     "KaroEd line1='cd'" \
     "KaroEd cursor=(2,1)"
 
+run_scenario clamp_column \
+    "KaroEd insert_char len=1 'g' cursor=(4,1)" \
+    "KaroEd prev_line cursor=(1,0)" \
+    "KaroEd insert_char len=1 'X' cursor=(2,0)" \
+    "KaroEd line0='aX'" \
+    "KaroEd cursor=(2,0)"
+
+run_scenario home_end \
+    "KaroEd cursor_home cursor=(0,0)" \
+    "KaroEd cursor_end cursor=(3,0)" \
+    "KaroEd line0='abc'" \
+    "KaroEd cursor=(3,0)"
+
 # ── Summary ──────────────────────────────────────────────────────────────
 echo
 echo "=========================================="

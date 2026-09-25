@@ -75,6 +75,22 @@ static const step_t sc_arrows[] = {
     { S_KEY, NULL, XK_Right, 0 },
 };
 
+/* Up/Down must clamp the cursor to the target line length via col_hint. */
+static const step_t sc_clamp_column[] = {
+    { S_STR, "a", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "long", 0, 0 },
+    { S_KEY, NULL, XK_Up, 0 },
+    { S_STR, "X", 0, 0 },
+};
+
+/* Home/End move the cursor to column 0 / end of line. */
+static const step_t sc_home_end[] = {
+    { S_STR, "abc", 0, 0 },
+    { S_KEY, NULL, XK_Home, 0 },
+    { S_KEY, NULL, XK_End, 0 },
+};
+
 typedef struct {
     const char *name;
     const step_t *steps;
@@ -87,6 +103,8 @@ static const scenario_t scenarios[] = {
     { "backspace", sc_backspace, (int)(sizeof(sc_backspace) / sizeof(sc_backspace[0])) },
     { "delete",    sc_delete,    (int)(sizeof(sc_delete) / sizeof(sc_delete[0])) },
     { "arrows",    sc_arrows,    (int)(sizeof(sc_arrows) / sizeof(sc_arrows[0])) },
+    { "clamp_column", sc_clamp_column, (int)(sizeof(sc_clamp_column) / sizeof(sc_clamp_column[0])) },
+    { "home_end",  sc_home_end,  (int)(sizeof(sc_home_end) / sizeof(sc_home_end[0])) },
 };
 
 static const scenario_t *find_scenario(const char *name)

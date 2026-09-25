@@ -49,6 +49,8 @@
 @def KARO_TESTING = 50
 @var int FRM
 @var int SCR
+@var int lines_owned
+@var int col_hint
 
 @CLASSVARS
 @var Atom XA_UTF8_STRING = 0
@@ -59,7 +61,12 @@
     if(! $XA_UTF8_STRING )
         $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
 
-    if( $lines == 0 ) $lines = m_create(10,sizeof(char*));
+    if( $lines == 0 ) {
+        $lines = m_create(10,sizeof(char*));
+        $lines_owned = 1;
+    } else {
+        $lines_owned = 0;
+    }
     $selectionText = m_create(100,1);
 
     $do_init = 1;
@@ -71,6 +78,7 @@
     $rsel_old = $rsel;
     $selection = True;
     $selection_visible = True;
+    $col_hint = -1;
 
     int w = $xftFont->ascent + $xftFont->descent;
     $grid_pix_height  = w;
@@ -78,19 +86,24 @@
 
     /* todo: put this in a function */
     if( ! is_empty($fileForm) ) {
-    	form_from_file($fileForm, & $SCR, & $FRM );
-	m_free_strings($lines,1);
-	TRACE(3,"%s %d %d", $fileForm,$SCR,$FRM );
-	/* copy screen to work buffer */
-	int p,*d;
-	m_foreach($SCR,p,d) {
-	  char * string_line = m_buf(*d);
-	  char * line_work = strdup( string_line );
-	  m_put($lines, & line_work );
-	}
+        if( ! $lines_owned ) {
+            WARN("KaroEd: fileForm '%s' ignored, lines is externally owned", $fileForm );
+        } else {
+            form_from_file($fileForm, & $SCR, & $FRM );
+            m_free_strings($lines,1);
+            TRACE(3,"%s %d %d", $fileForm,$SCR,$FRM );
+            /* copy screen to work buffer */
+            int p,*d;
+            m_foreach($SCR,p,d) {
+              char * string_line = m_buf(*d);
+              char * line_work = strdup( string_line );
+              m_put($lines, & line_work );
+            }
+        }
     }
-    
-    
+
+    ensure_line0($);
+
     $height = $grid_pix_height * $grid_height;
     $width = $grid_pix_width * $grid_width;
     if( $height == 0 || $height > 4095 ) $height = 20;
@@ -143,6 +156,18 @@
 
 
 @UTILITIES
+
+
+@  The editor invariant is that the buffer always contains at least one
+  (possibly empty) line, so line 0 always exists.  Call after any
+  operation that can remove lines.
+@proc ensure_line0($)
+{
+    if( m_len($lines) == 0 ) {
+        char *s = strdup("");
+        m_put( $lines, &s );
+    }
+}
 
 
 @proc clip_rect($,XRectangle *r)
@@ -345,12 +370,24 @@
 
 @proc Bool coordinate_to_text($, int *x, int *y)
 {
-    Bool ret = (*x >= 0) && (*x < $width) && (*y > 0) && (*y < $height);
+    Bool ret = (*x >= 0) && (*x < $grid_width * $grid_pix_width)
+            && (*y >= 0) && (*y < $grid_height * $grid_pix_height);
 
     *x /= $grid_pix_width;
     *x += $top_x;
     *y /= $grid_pix_height;
     *y += $top_y;
+
+    /* clamp the converted position to the text buffer */
+    if( *x < 0 ) *x = 0;
+    if( *y < 0 ) *y = 0;
+    if( m_len($lines) > 0 ) {
+        if( *y >= m_len($lines) ) *y = m_len($lines) - 1;
+        int len = utf8_strlen( STR($lines,*y) );
+        if( *x > len ) *x = len;
+    } else {
+        *x = 0; *y = 0;
+    }
 
     return ret;
 
@@ -417,6 +454,49 @@
     int n,w;
     FcUtf8Len((uint8_t*)s,strlen(s), &n, &w );
     return n;
+}
+
+
+@  Clamp the cursor column to the length of the line it is on.
+  This does NOT touch col_hint, so vertical movement can restore the
+  desired column on a longer line.
+@proc cursor_clamp_to_line($)
+{
+    int len = 0;
+    if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
+        len = utf8_strlen( STR($lines,$rsel.y) );
+    if( $rsel.x < 0 ) $rsel.x = 0;
+    if( $rsel.x > len ) $rsel.x = len;
+}
+
+@  Horizontal cursor setter: clamps and records the desired column.
+@proc cursor_set_x($, int x)
+{
+    if( x < 0 ) x = 0;
+    $rsel.x = x;
+    cursor_clamp_to_line($);
+    $col_hint = $rsel.x;
+}
+
+@  Keep the cursor inside the visible viewport and the viewport inside
+  the text buffer.
+@proc normalize_scroll($)
+{
+    if( $top_x < 0 ) $top_x = 0;
+    if( $top_y < 0 ) $top_y = 0;
+    if( m_len($lines) > 0 && $top_y > m_len($lines) - 1 )
+        $top_y = m_len($lines) - 1;
+    if( $top_y < 0 ) $top_y = 0;
+
+    if( $rsel.x < $top_x ) $top_x = $rsel.x;
+    if( $rsel.x >= $top_x + $grid_width )
+        $top_x = $rsel.x - $grid_width + 1;
+    if( $rsel.y < $top_y ) $top_y = $rsel.y;
+    if( $rsel.y >= $top_y + $grid_height )
+        $top_y = $rsel.y - $grid_height + 1;
+
+    if( $top_x < 0 ) $top_x = 0;
+    if( $top_y < 0 ) $top_y = 0;
 }
 
 
@@ -498,8 +578,13 @@
 
 @proc cursor_right($)
 {
-    $rsel.x++;
-    if( $rsel.x >= $grid_width ) {
+    int len = 0;
+    if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
+        len = utf8_strlen( STR($lines,$rsel.y) );
+    if( $rsel.x < len ) $rsel.x++;
+    $col_hint = $rsel.x;
+    if( $rsel.x < $top_x ) $top_x = $rsel.x;
+    if( $rsel.x >= $top_x + $grid_width ) {
         $top_x = $rsel.x - $grid_width + 1;
         redraw_full($);
     }
@@ -510,17 +595,21 @@
 @proc Bool cursor_pos1($)
 {
     Bool redraw;
-    redraw = ( $top_x != 0 );
+    redraw = ( $top_x != 0 ) || ( $rsel.x != 0 );
     $top_x = 0;
     $rsel.x=0;
+    $col_hint=0;
     return redraw;
 }
 
 @proc Bool cursor_down($)
 {
     Bool redraw;
+    int maxy = m_len($lines) - 1;
+    if( maxy < 0 ) maxy = 0;
+    if( $rsel.y >= maxy ) return False;   /* do not move past the last line */
     $rsel.y++;
-    if( (redraw=$rsel.y >= $grid_height) ) {
+    if( (redraw=$rsel.y >= $top_y + $grid_height) ) {
         $top_y = $rsel.y - $grid_height + 1;
     }
     return redraw;
@@ -807,6 +896,8 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @trans   <Key>Left:     backward_char()
 @trans   <Key>Up:       prev_line()
 @trans   <Key>Down:     next_line()
+@trans   <Key>Home:     cursor_home()
+@trans   <Key>End:      cursor_end()
 @trans   <Key>Delete:   remove_char()
 @trans   <Key>BackSpace: backward_char() remove_char()
 @trans   <Key>Return:    key_return()
@@ -851,7 +942,10 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
         TRACE(KARO_TESTING, "KaroEd prev_line cursor=(%d,%d)", $rsel.x, $rsel.y );
         return;
     }
+    if( $col_hint < 0 ) $col_hint = $rsel.x;  /* remember desired column */
     $rsel.y--;
+    $rsel.x = $col_hint;
+    cursor_clamp_to_line($);
     if( $rsel.y < $top_y ) {
         $top_y = $rsel.y;
         redraw_full($);
@@ -862,8 +956,17 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
 @proc next_line
 {
+    int maxy = m_len($lines) - 1;
+    if( maxy < 0 ) maxy = 0;
+    if( $rsel.y >= maxy ) {
+        TRACE(KARO_TESTING, "KaroEd next_line cursor=(%d,%d)", $rsel.x, $rsel.y );
+        return;
+    }
+    if( $col_hint < 0 ) $col_hint = $rsel.x;
     $rsel.y++;
-    if( $rsel.y >= $grid_height ) {
+    $rsel.x = $col_hint;
+    cursor_clamp_to_line($);
+    if( $rsel.y >= $top_y + $grid_height ) {
         $top_y = $rsel.y - $grid_height + 1;
         redraw_full($);
     }
@@ -874,10 +977,12 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @proc backward_char
 {
     if( $rsel.x == 0 ) {
+        $col_hint = 0;
         TRACE(KARO_TESTING, "KaroEd backward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
         return;
     }
     $rsel.x--;
+    $col_hint = $rsel.x;
     if( $rsel.x < $top_x )
     {
         $top_x = $rsel.x;
@@ -891,6 +996,33 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 {
     cursor_right($);
     TRACE(KARO_TESTING, "KaroEd forward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+@proc cursor_home
+{
+    $rsel.x = 0;
+    $col_hint = 0;
+    if( $top_x != 0 ) {
+        $top_x = 0;
+        redraw_full($);
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd cursor_home cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+@proc cursor_end
+{
+    int len = 0;
+    if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
+        len = utf8_strlen( STR($lines,$rsel.y) );
+    $rsel.x = len;
+    $col_hint = len;
+    if( $rsel.x >= $top_x + $grid_width ) {
+        $top_x = $rsel.x - $grid_width + 1;
+        redraw_full($);
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd cursor_end cursor=(%d,%d)", $rsel.x, $rsel.y );
 }
 
 
