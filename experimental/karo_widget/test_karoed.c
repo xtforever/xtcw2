@@ -110,6 +110,50 @@ static String locked_resources[] = {
     NULL
 };
 
+/* Load a form file at creation time (exercises the FRM/SCR cleanup path). */
+static String fileform_resources[] = {
+    (String)"*xftFont: Sans-12",
+    (String)"*grid_width: 80",
+    (String)"*grid_height: 24",
+    (String)"*auto_resize: 0",
+    (String)"*fileForm: formtest.frm2",
+    NULL
+};
+
+/* Public API: writeln()/get_text() and the change callback. */
+static void api_trace(const char *label, const char *s)
+{
+    fprintf(stderr, "[50]api %s='", label);
+    for (; s && *s; s++) {
+        if (*s == '\n')
+            fputs("\\n", stderr);
+        else
+            fputc(*s, stderr);
+    }
+    fprintf(stderr, "'\n");
+}
+
+static void act_api(Widget w)
+{
+    char *t;
+    karoEd_writeln(w, "hello");
+    karoEd_writeln(w, "world");
+    t = karoEd_get_text(w);
+    api_trace("get_text", t);
+    if (t)
+        XtFree(t);
+}
+
+/* Exercise the public API and change callback. */
+static const step_t sc_api[] = {
+    { S_CALL, NULL, 0, 0, act_api, 0 },
+};
+
+/* Just create (fileForm loads) and destroy. */
+static const step_t sc_fileform[] = {
+    { S_WAIT, NULL, 0, 0, NULL, 100 },
+};
+
 /* With `locked`, type/backspace/return/paste must not modify the buffer. */
 static const step_t sc_locked[] = {
     { S_STR, "x", 0, 0 },
@@ -228,6 +272,8 @@ static const scenario_t scenarios[] = {
     { "copy_paste", sc_copy_paste, (int)(sizeof(sc_copy_paste) / sizeof(sc_copy_paste[0])), NULL },
     { "copy_action", sc_copy_action, (int)(sizeof(sc_copy_action) / sizeof(sc_copy_action[0])), NULL },
     { "cut_action", sc_cut_action, (int)(sizeof(sc_cut_action) / sizeof(sc_cut_action[0])), NULL },
+    { "api", sc_api, (int)(sizeof(sc_api) / sizeof(sc_api[0])), NULL },
+    { "fileform", sc_fileform, (int)(sizeof(sc_fileform) / sizeof(sc_fileform[0])), fileform_resources },
 };
 
 static const scenario_t *find_scenario(const char *name)
@@ -353,6 +399,7 @@ int main(int argc, char **argv)
     XtAppMainLoop(app);
 
     XtDestroyWidget(top);
+    mv_destroy();
     m_destruct();
     return 0;
 }

@@ -12,9 +12,23 @@ _XFUNCPROTOBEGIN
 #define KARO_TESTING 50 
 
 
+typedef void (*writeln_Proc)(
+#if NeedFunctionPrototypes
+Widget,char *
+#endif
+);
+#define XtInherit_writeln ((writeln_Proc) _XtInherit)
+typedef char * (*get_text_Proc)(
+#if NeedFunctionPrototypes
+Widget
+#endif
+);
+#define XtInherit_get_text ((get_text_Proc) _XtInherit)
 
 typedef struct {
 /* methods */
+writeln_Proc writeln;
+get_text_Proc get_text;
 /* class variables */
 Atom  XA_UTF8_STRING;
 } KaroEdClassPart;

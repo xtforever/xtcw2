@@ -80,6 +80,10 @@ run_scenario() {
         fail "$name — no TRACE(50) output (see $logfile)"
         return
     fi
+    if grep -q 'still allocated' "$logfile"; then
+        fail "$name — memory leak detected (see $logfile)"
+        return
+    fi
     assert_seq "$logfile" "$name" "$@"
 }
 
@@ -158,6 +162,18 @@ run_scenario cut_action \
     "KaroEd line0=''" \
     "KaroEd lines=1" \
     "KaroEd cursor=(0,0)"
+
+# public API: writeln appends, get_text round-trips, callback fires
+run_scenario api \
+    "KaroEd callback kind=6" \
+    "KaroEd callback kind=6" \
+    "api get_text='\nhello\nworld'" \
+    "KaroEd line1='hello'" \
+    "KaroEd line2='world'"
+
+# fileForm creation path (FRM/SCR lifetime, no leaks)
+run_scenario fileform \
+    "KaroEd line0="
 
 run_scenario delete \
     "KaroEd insert_char len=1 'c' cursor=(3,0)" \

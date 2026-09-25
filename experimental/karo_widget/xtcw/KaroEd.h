@@ -20,6 +20,11 @@ void  karoEd_writeln(
 Widget ,char *
 #endif
 );
+char * karoEd_get_text(
+#if NeedFunctionPrototypes
+Widget 
+#endif
+);
 #ifndef XtNlocked
 #define XtNlocked "locked"
 #endif

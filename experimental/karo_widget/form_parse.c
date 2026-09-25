@@ -112,7 +112,7 @@ static int file_to_marr(FILE *fp)
     while(1) {
 	int ln = m_create(50,1);
 	int ret = m_fscan(ln,'\n',fp);
-	if( ret != '\n' ) break;
+	if( ret != '\n' ) { m_free(ln); break; }
 	m_put(scr,&ln);
     }
     return scr;

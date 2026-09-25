@@ -20,11 +20,20 @@
 @proc void karoEd_writeln(Widget w, char *s)
 {
   KaroEdWidgetClass wc = (KaroEdWidgetClass)XtClass(w);
-   /*  if( XtIsSubclass( w, karoEdWidgetClass) && wc->karoEd_class.writeln )
+  if( XtIsSubclass( w, karoEdWidgetClass) && wc->karoEd_class.writeln )
     {
       wc->karoEd_class.writeln(w,s);
     }
-    */
+}
+
+@proc char* karoEd_get_text(Widget w)
+{
+  KaroEdWidgetClass wc = (KaroEdWidgetClass)XtClass(w);
+  if( XtIsSubclass( w, karoEdWidgetClass) && wc->karoEd_class.get_text )
+    {
+      return wc->karoEd_class.get_text(w);
+    }
+  return 0;
 }
 
 
@@ -122,6 +131,40 @@
 
 
 
+@  Append one line of text to the buffer (public API via
+  karoEd_writeln()).
+@proc writeln($, char *s)
+{
+    char *copy = strdup( s ? s : "" );
+    m_put( $lines, &copy );
+    if( $rsel.y >= m_len($lines) ) $rsel.y = m_len($lines) - 1;
+    normalize_scroll($);
+    selection_draw($);
+    edit_notify($, KEDIT_LOAD);
+}
+
+@  Return the whole buffer as one XtMalloc'd, '\n'-separated string.
+  The caller owns the returned storage (XtFree()).
+@proc char* get_text($)
+{
+    int i;
+    int total = 1;
+    char *out, *p;
+
+    for( i=0; i<m_len($lines); i++ )
+        total += strlen(STR($lines,i)) + 1;
+    out = (char*) XtMalloc(total);
+    p = out;
+    for( i=0; i<m_len($lines); i++ ) {
+        int l = strlen(STR($lines,i));
+        memcpy(p, STR($lines,i), l);
+        p += l;
+        if( i < m_len($lines) - 1 ) *p++ = '\n';
+    }
+    *p = 0;
+    return out;
+}
+
 @ marker setzen damit das folgende expose das Window
   neu zeichnen kann, resize wird beim initialisieren der application
   vor realize aufgerufen daher die abfrage ob es sicher ist das
@@ -134,7 +177,30 @@
 
 @proc set_values
 {
- return True;
+    if( $lines != $old$lines ) {
+        if( $lines_owned && $old$lines ) {
+            m_free_strings( $old$lines, 0 );
+        }
+        if( $lines == 0 ) {
+            $lines = m_create(10,sizeof(char*));
+            $lines_owned = 1;
+        } else {
+            $lines_owned = 0;
+        }
+        ensure_line0($);
+        $has_selection = False;
+        $rsel.x = 0;
+        $rsel.y = 0;
+        cursor_clamp_to_line($);
+        $col_hint = $rsel.x;
+        normalize_scroll($);
+        if( XtIsRealized($) ) {
+            form_update($);
+            redraw_full($);
+        }
+        edit_notify($, KEDIT_LOAD);
+    }
+    return True;
 }
 
 
@@ -160,6 +226,34 @@
 	form_update($);
         XClearWindow(  XtDisplay($), XtWindow($) );
         redraw_full($);
+}
+
+
+@proc destroy
+{
+    if( $draw ) {
+        XftDrawDestroy($draw);
+        $draw = 0;
+    }
+    if( $selectionText ) {
+        m_free($selectionText);
+        $selectionText = 0;
+    }
+    if( $FRM ) {
+        if( $SCR ) {
+            int i;
+            for( i=0; i<m_len($SCR); i++ )
+                m_free( INT($SCR,i) );
+            m_free($SCR);
+            $SCR = 0;
+        }
+        form_free($FRM);
+        $FRM = 0;
+    }
+    if( $lines_owned && $lines ) {
+        m_free_strings($lines, 0);
+        $lines = 0;
+    }
 }
 
 
