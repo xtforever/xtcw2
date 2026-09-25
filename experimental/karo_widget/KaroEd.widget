@@ -801,16 +801,61 @@
     return True;
 }
 
+@  Insert pasted text at the cursor, splitting on LF / CRLF / CR.
+@proc paste_text($, char *text)
+{
+    char *p = text;
+    while( *p ) {
+        char *nl = p;
+        int seglen;
+        while( *nl && *nl != '\n' && *nl != '\r' ) nl++;
+        seglen = (int)(nl - p);
+        if( seglen > 0 ) {
+            int n = 0;
+            char *q = p;
+            insert_char_at_cursor($, p, seglen);
+            while( q < nl ) { if( utf8char(&q) == -1 ) break; n++; }
+            cursor_set_x($, $rsel.x + n);
+            draw_line_from($, $rsel.x, $rsel.y);
+        }
+        if( *nl == 0 ) break;
+        if( *nl == '\r' && nl[1] == '\n' ) nl++;   /* CRLF */
+        nl++;
+        split_line_at_cursor($);
+        cursor_down($);
+        cursor_pos1($);
+        p = nl;
+    }
+    normalize_scroll($);
+}
+
 @ callback function, called by XtGetSelectionValue()
 @proc RequestSelection($, XtPointer client, Atom * selection, Atom * type,
                        XtPointer value, unsigned long *length, int *format)
 {
-    char *s = value;
-    int len = *length;
-    if( is_empty(s) || len <= 0 ) return;
-    insert_char_at_cursor($,s,len);
-    while( utf8char(&s) != -1 ) cursor_right($);
-    draw_line_from($, $rsel.x, $rsel.y);
+    char *src = (char*) value;
+    unsigned long len = length ? *length : 0;
+    char *s;
+
+    if( ! src ) return;
+    if( type && *type != $XA_UTF8_STRING ) { XtFree(src); return; }
+    if( format && *format != 8 ) { XtFree(src); return; }
+    if( $locked ) { XtFree(src); return; }
+    if( len == 0 ) { XtFree(src); return; }
+
+    /* Xt does not guarantee NUL termination: copy a bounded, terminated
+       string and release the selection value immediately. */
+    s = (char*) malloc(len + 1);
+    if( ! s ) { XtFree(src); return; }
+    memcpy(s, src, len);
+    s[len] = 0;
+    XtFree(src);
+
+    replace_selection_if_any($);
+    paste_text($, s);
+    free(s);
+    selection_draw($);
+    edit_notify($, KEDIT_PASTE);
 }
 
 @proc utf8_copy_char(int buf, char **strp)
@@ -873,7 +918,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @  Build the selected text (document order, '\n' between lines, no
   trailing NUL in the advertised length) and offer it as PRIMARY and
   CUT_BUFFER0.
-@proc own_primary_selection($,ulong time)
+@proc do_copy_selection($,ulong time)
 {
     int sx,sy,ex,ey;
     int y;
@@ -1037,23 +1082,27 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @trans   <Key>Delete:   remove_char()
 @trans   <Key>BackSpace: backspace()
 @trans   <Key>Return:    key_return()
+@trans   <Ctrl>c:        copy_selection()
+@trans   <Ctrl>x:        cut_selection()
 @trans   <Ctrl>v:        insert_selection()
 @trans   <Ctrl>a:        select_all()
+@trans   <Key>Escape:    selection_clear()
 @trans   <Key>:          insert_char()
 
 
 @ACTIONS
 @proc copy_selection
 {
-    /*
-    XStoreBuffer(display, bytes, nbytes, buffer)
-      Display *display;
-      char *bytes;
-      int nbytes;
-      int buffer;
-    */
+    if( $locked ) return;
+    do_copy_selection($, XtLastTimestampProcessed(XtDisplay($)));
+}
 
 
+@proc cut_selection
+{
+    if( $locked ) return;
+    do_copy_selection($, XtLastTimestampProcessed(XtDisplay($)));
+    delete_selection($);
 }
 
 
@@ -1218,7 +1267,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     $has_selection = True;
     normalize_scroll($);
     selection_draw($);
-    own_primary_selection($, XtLastTimestampProcessed(XtDisplay($)));
+    do_copy_selection($, XtLastTimestampProcessed(XtDisplay($)));
     TRACE(KARO_TESTING, "KaroEd select_all anchor=(%d,%d) cursor=(%d,%d)",
           $sel_anchor_x, $sel_anchor_y, $rsel.x, $rsel.y );
 }
@@ -1368,7 +1417,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @proc selection_end
 {
     ulong t = (ulong ) event->xbutton.time;
-    if( $has_selection ) own_primary_selection($,t);
+    if( $has_selection ) do_copy_selection($,t);
 }
 
 

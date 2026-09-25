@@ -137,6 +137,28 @@ run_scenario join_delete \
     "KaroEd lines=1" \
     "KaroEd cursor=(2,0)"
 
+# select_all -> delete selection -> paste reconstructs both lines
+run_scenario copy_paste \
+    "KaroEd copy='xy\nzw'" \
+    "KaroEd line0='xy'" \
+    "KaroEd line1='zw'" \
+    "KaroEd lines=2" \
+    "KaroEd cursor=(2,1)"
+
+# Ctrl+C copies the selection without modifying the buffer
+run_scenario copy_action \
+    "KaroEd select_range anchor=(0,0) cursor=(1,0)" \
+    "KaroEd copy='a'" \
+    "KaroEd line0='ab'" \
+    "KaroEd lines=2"
+
+# Ctrl+X copies then deletes the multi-line selection
+run_scenario cut_action \
+    "KaroEd copy='ab\ncd'" \
+    "KaroEd line0=''" \
+    "KaroEd lines=1" \
+    "KaroEd cursor=(0,0)"
+
 run_scenario delete \
     "KaroEd insert_char len=1 'c' cursor=(3,0)" \
     "KaroEd backward_char cursor=(2,0)" \

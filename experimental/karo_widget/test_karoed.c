@@ -110,11 +110,23 @@ static String locked_resources[] = {
     NULL
 };
 
-/* With `locked`, type/backspace/return must not modify the buffer. */
+/* With `locked`, type/backspace/return/paste must not modify the buffer. */
 static const step_t sc_locked[] = {
     { S_STR, "x", 0, 0 },
     { S_KEY, NULL, XK_BackSpace, 0 },
     { S_KEY, NULL, XK_Return, 0 },
+    { S_KEY, NULL, XK_v, ControlMask },
+};
+
+/* Copy a multi-line selection and paste it back after deleting the buffer. */
+static const step_t sc_copy_paste[] = {
+    { S_STR, "xy", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "zw", 0, 0 },
+    { S_KEY, NULL, XK_a, ControlMask },       /* select all + copy */
+    { S_KEY, NULL, XK_BackSpace, 0 },         /* delete selection */
+    { S_KEY, NULL, XK_v, ControlMask },       /* paste */
+    { S_WAIT, NULL, 0, 0, NULL, 300 },        /* settle */
 };
 
 /* Ctrl+A selects all lines and copies them to PRIMARY/CUT_BUFFER0. */
@@ -137,6 +149,30 @@ static void act_sel_reverse(Widget w)
     String p[] = { (String)"2", (String)"1", (String)"0", (String)"0" };
     XtCallActionProc(w, "select_range", NULL, p, 4);
 }
+
+static void act_sel_first_char(Widget w)
+{
+    String p[] = { (String)"0", (String)"0", (String)"1", (String)"0" };
+    XtCallActionProc(w, "select_range", NULL, p, 4);
+}
+
+/* Ctrl+C on a selection (no select_all shortcut). */
+static const step_t sc_copy_action[] = {
+    { S_STR, "ab", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "cd", 0, 0 },
+    { S_CALL, NULL, 0, 0, act_sel_first_char, 0 },
+    { S_KEY, NULL, XK_c, ControlMask },
+};
+
+/* Ctrl+X copies then deletes the selection. */
+static const step_t sc_cut_action[] = {
+    { S_STR, "ab", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "cd", 0, 0 },
+    { S_CALL, NULL, 0, 0, act_sel_forward, 0 },
+    { S_KEY, NULL, XK_x, ControlMask },
+};
 
 /* Typing over a multi-line selection replaces the whole range. */
 static const step_t sc_type_over_selection[] = {
@@ -189,6 +225,9 @@ static const scenario_t scenarios[] = {
     { "type_over_selection_rev", sc_type_over_selection_rev, (int)(sizeof(sc_type_over_selection_rev) / sizeof(sc_type_over_selection_rev[0])), NULL },
     { "join_backspace", sc_join_backspace, (int)(sizeof(sc_join_backspace) / sizeof(sc_join_backspace[0])), NULL },
     { "join_delete", sc_join_delete, (int)(sizeof(sc_join_delete) / sizeof(sc_join_delete[0])), NULL },
+    { "copy_paste", sc_copy_paste, (int)(sizeof(sc_copy_paste) / sizeof(sc_copy_paste[0])), NULL },
+    { "copy_action", sc_copy_action, (int)(sizeof(sc_copy_action) / sizeof(sc_copy_action[0])), NULL },
+    { "cut_action", sc_cut_action, (int)(sizeof(sc_cut_action) / sizeof(sc_cut_action[0])), NULL },
 };
 
 static const scenario_t *find_scenario(const char *name)
