@@ -156,6 +156,25 @@ static const step_t sc_type_over_selection_rev[] = {
     { S_STR, "X", 0, 0 },
 };
 
+/* Backspace at column 0 of line 1 joins it with line 0. */
+static const step_t sc_join_backspace[] = {
+    { S_STR, "ab", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "cd", 0, 0 },
+    { S_KEY, NULL, XK_Left, 0 },
+    { S_KEY, NULL, XK_Left, 0 },
+    { S_KEY, NULL, XK_BackSpace, 0 },
+};
+
+/* Delete at end of line 0 joins line 1 into line 0. */
+static const step_t sc_join_delete[] = {
+    { S_STR, "ab", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "cd", 0, 0 },
+    { S_KEY, NULL, XK_Up, 0 },
+    { S_KEY, NULL, XK_Delete, 0 },
+};
+
 static const scenario_t scenarios[] = {
     { "type",      sc_type,      (int)(sizeof(sc_type) / sizeof(sc_type[0])), NULL },
     { "return",    sc_return,    (int)(sizeof(sc_return) / sizeof(sc_return[0])), NULL },
@@ -168,6 +187,8 @@ static const scenario_t scenarios[] = {
     { "select_all", sc_select_all, (int)(sizeof(sc_select_all) / sizeof(sc_select_all[0])), NULL },
     { "type_over_selection", sc_type_over_selection, (int)(sizeof(sc_type_over_selection) / sizeof(sc_type_over_selection[0])), NULL },
     { "type_over_selection_rev", sc_type_over_selection_rev, (int)(sizeof(sc_type_over_selection_rev) / sizeof(sc_type_over_selection_rev[0])), NULL },
+    { "join_backspace", sc_join_backspace, (int)(sizeof(sc_join_backspace) / sizeof(sc_join_backspace[0])), NULL },
+    { "join_delete", sc_join_delete, (int)(sizeof(sc_join_delete) / sizeof(sc_join_delete[0])), NULL },
 };
 
 static const scenario_t *find_scenario(const char *name)

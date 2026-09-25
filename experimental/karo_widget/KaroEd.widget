@@ -557,6 +557,61 @@
     return delete_selection($);
 }
 
+@  Backspace at column 0: append the current line to the previous one.
+@proc join_line_prev($)
+{
+    int y = $rsel.y;
+    int joinx;
+    char *s, *p;
+
+    if( y <= 0 || y >= m_len($lines) ) return;
+
+    joinx = utf8_strlen( STR($lines, y-1) );   /* cursor target, before append */
+    s = STR($lines, y);
+    p = STR($lines, y-1);
+    p = realloc(p, strlen(p) + strlen(s) + 1);
+    if( ! p ) return;
+    strcat(p, s);
+    STR($lines, y-1) = p;
+    free( s );
+    m_del($lines, y);
+
+    $rsel.y = y - 1;
+    cursor_set_x($, joinx);
+    ensure_line0($);
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd join_prev cursor=(%d,%d)", $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_JOIN);
+}
+
+@  Delete at end of line: append the next line to the current one.
+@proc join_line_next($)
+{
+    int y = $rsel.y;
+    int joinx;
+    char *s, *n;
+
+    if( y < 0 || y+1 >= m_len($lines) ) return;
+
+    joinx = utf8_strlen( STR($lines, y) );     /* join point = end of line */
+    s = STR($lines, y);
+    n = STR($lines, y+1);
+    s = realloc(s, strlen(s) + strlen(n) + 1);
+    if( ! s ) return;
+    strcat(s, n);
+    STR($lines, y) = s;
+    free( n );
+    m_del($lines, y+1);
+
+    cursor_set_x($, joinx);
+    ensure_line0($);
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd join_next cursor=(%d,%d)", $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_JOIN);
+}
+
 
 @proc remove_char_at_cursor($)
 {
@@ -980,7 +1035,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @trans   <Key>Home:     cursor_home()
 @trans   <Key>End:      cursor_end()
 @trans   <Key>Delete:   remove_char()
-@trans   <Key>BackSpace: backward_char() remove_char()
+@trans   <Key>BackSpace: backspace()
 @trans   <Key>Return:    key_return()
 @trans   <Ctrl>v:        insert_selection()
 @trans   <Ctrl>a:        select_all()
@@ -1080,6 +1135,36 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     selection_draw($);
     TRACE(KARO_TESTING, "KaroEd backward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
 }
+
+@proc backspace
+{
+    int y;
+    if( $locked ) return;
+    if( replace_selection_if_any($) ) return;
+    cursor_clamp_to_line($);
+    y = $rsel.y;
+    if( y >= m_len($lines) ) return;
+
+    if( $rsel.x > 0 ) {
+        /* delete the character before the cursor */
+        $rsel.x--;
+        $col_hint = $rsel.x;
+        remove_char_at_cursor($);
+        if( $rsel.x < $top_x ) $top_x = $rsel.x;
+        selection_draw($);
+        TRACE(KARO_TESTING, "KaroEd backspace type=char cursor=(%d,%d)", $rsel.x, $rsel.y );
+        edit_notify($, KEDIT_REMOVE);
+        return;
+    }
+
+    if( y > 0 ) {
+        join_line_prev($);
+        return;
+    }
+
+    TRACE(KARO_TESTING, "KaroEd backspace type=none cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
 
 @proc forward_char
 {
@@ -1201,6 +1286,11 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
         removed_line = 1;
     }
     else {
+        int len = utf8_strlen( STR($lines,$rsel.y) );
+        if( $rsel.x >= len && $rsel.y + 1 < m_len($lines) ) {
+            join_line_next($);
+            return;   /* join_line_next fires its own notification */
+        }
         remove_char_at_cursor($);
         draw_line_from($, $rsel.x, $rsel.y );
     }

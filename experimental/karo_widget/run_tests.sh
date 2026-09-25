@@ -117,9 +117,24 @@ run_scenario return \
 
 run_scenario backspace \
     "KaroEd insert_char len=1 'c' cursor=(3,0)" \
-    "KaroEd backward_char cursor=(2,0)" \
-    "KaroEd remove_char line=0 cursor=(2,0)" \
+    "KaroEd backspace type=char cursor=(2,0)" \
     "KaroEd line0='ab'" \
+    "KaroEd cursor=(2,0)"
+
+# Backspace at column 0 joins the line with the previous one
+run_scenario join_backspace \
+    "KaroEd backward_char cursor=(0,1)" \
+    "KaroEd join_prev cursor=(2,0)" \
+    "KaroEd line0='abcd'" \
+    "KaroEd lines=1" \
+    "KaroEd cursor=(2,0)"
+
+# Delete at end of line joins the next line into the current one
+run_scenario join_delete \
+    "KaroEd prev_line cursor=(2,0)" \
+    "KaroEd join_next cursor=(2,0)" \
+    "KaroEd line0='abcd'" \
+    "KaroEd lines=1" \
     "KaroEd cursor=(2,0)"
 
 run_scenario delete \
