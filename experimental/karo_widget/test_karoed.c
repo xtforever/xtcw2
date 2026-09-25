@@ -95,16 +95,35 @@ typedef struct {
     const char *name;
     const step_t *steps;
     int count;
+    String *resources;   /* per-scenario Xt fallback resources (NULL = default) */
 } scenario_t;
 
+/* Set `locked` before widget creation so initialize() sees it. */
+static String locked_resources[] = {
+    (String)"*xftFont: Sans-12",
+    (String)"*grid_width: 80",
+    (String)"*grid_height: 24",
+    (String)"*auto_resize: 0",
+    (String)"*locked: True",
+    NULL
+};
+
+/* With `locked`, type/backspace/return must not modify the buffer. */
+static const step_t sc_locked[] = {
+    { S_STR, "x", 0, 0 },
+    { S_KEY, NULL, XK_BackSpace, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+};
+
 static const scenario_t scenarios[] = {
-    { "type",      sc_type,      (int)(sizeof(sc_type) / sizeof(sc_type[0])) },
-    { "return",    sc_return,    (int)(sizeof(sc_return) / sizeof(sc_return[0])) },
-    { "backspace", sc_backspace, (int)(sizeof(sc_backspace) / sizeof(sc_backspace[0])) },
-    { "delete",    sc_delete,    (int)(sizeof(sc_delete) / sizeof(sc_delete[0])) },
-    { "arrows",    sc_arrows,    (int)(sizeof(sc_arrows) / sizeof(sc_arrows[0])) },
-    { "clamp_column", sc_clamp_column, (int)(sizeof(sc_clamp_column) / sizeof(sc_clamp_column[0])) },
-    { "home_end",  sc_home_end,  (int)(sizeof(sc_home_end) / sizeof(sc_home_end[0])) },
+    { "type",      sc_type,      (int)(sizeof(sc_type) / sizeof(sc_type[0])), NULL },
+    { "return",    sc_return,    (int)(sizeof(sc_return) / sizeof(sc_return[0])), NULL },
+    { "backspace", sc_backspace, (int)(sizeof(sc_backspace) / sizeof(sc_backspace[0])), NULL },
+    { "delete",    sc_delete,    (int)(sizeof(sc_delete) / sizeof(sc_delete[0])), NULL },
+    { "arrows",    sc_arrows,    (int)(sizeof(sc_arrows) / sizeof(sc_arrows[0])), NULL },
+    { "clamp_column", sc_clamp_column, (int)(sizeof(sc_clamp_column) / sizeof(sc_clamp_column[0])), NULL },
+    { "home_end",  sc_home_end,  (int)(sizeof(sc_home_end) / sizeof(sc_home_end[0])), NULL },
+    { "locked",    sc_locked,    (int)(sizeof(sc_locked) / sizeof(sc_locked[0])), locked_resources },
 };
 
 static const scenario_t *find_scenario(const char *name)
@@ -131,6 +150,15 @@ static String fallback_resources[] = {
     (String)"*auto_resize: 0",
     NULL
 };
+
+/* Change-callback probe: records every edit notification via TRACE so the
+ * runner can assert that locked widgets emit none. */
+static void karo_cb(Widget w, XtPointer client, XtPointer call)
+{
+    (void)w;
+    (void)client;
+    fprintf(stderr, "[50]KaroEd callback kind=%ld\n", (long)call);
+}
 
 static void do_step(XtPointer client_data, XtIntervalId *id)
 {
@@ -185,11 +213,13 @@ int main(int argc, char **argv)
     XSetErrorHandler(x_error_handler);
 
     top = XtOpenApplication(&app, "test_karoed", NULL, 0, &argc, argv,
-                            fallback_resources, sessionShellWidgetClass, NULL, 0);
+                            scen->resources ? scen->resources : fallback_resources,
+                            sessionShellWidgetClass, NULL, 0);
 
     trace_level = KARO_TESTING;
 
     ed = XtVaCreateManagedWidget("ed", karoEdWidgetClass, top, NULL);
+    XtAddCallback(ed, "callback", karo_cb, NULL);
 
     XtRealizeWidget(top);
     XtMapWidget(top);

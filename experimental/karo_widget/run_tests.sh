@@ -46,6 +46,17 @@ assert_seq() {
     return 0
 }
 
+# assert_absent <logfile> <desc> <pattern>
+# Fails if the literal pattern occurs anywhere in the log.
+assert_absent() {
+    local file="$1" desc="$2" pat="$3"
+    if grep -qF -- "$pat" "$file"; then
+        fail "$desc — unexpected match: $pat"
+    else
+        pass "$desc"
+    fi
+}
+
 # run_scenario <name> <expected TRACE substrings...>
 run_scenario() {
     local name="$1"; shift
@@ -139,6 +150,13 @@ run_scenario home_end \
     "KaroEd cursor_end cursor=(3,0)" \
     "KaroEd line0='abc'" \
     "KaroEd cursor=(3,0)"
+
+# locked: mutations must be rejected and no change callback fired
+run_scenario locked \
+    "KaroEd line0=''" \
+    "KaroEd lines=1" \
+    "KaroEd cursor=(0,0)"
+assert_absent "$RESULTS_DIR/locked.log" "locked — no change callback" "KaroEd callback"
 
 # ── Summary ──────────────────────────────────────────────────────────────
 echo

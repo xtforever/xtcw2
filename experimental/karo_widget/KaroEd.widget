@@ -6,6 +6,17 @@
 
 @exports
 
+@  Classification of a buffer mutation, passed to the change callback.
+@type edit_kind = enum {
+  KEDIT_INSERT = 0,
+  KEDIT_REMOVE,
+  KEDIT_SPLIT,
+  KEDIT_JOIN,
+  KEDIT_PASTE,
+  KEDIT_REPLACE,
+  KEDIT_LOAD
+}
+
 @proc void karoEd_writeln(Widget w, char *s)
 {
   KaroEdWidgetClass wc = (KaroEdWidgetClass)XtClass(w);
@@ -51,6 +62,7 @@
 @var int SCR
 @var int lines_owned
 @var int col_hint
+@var int in_notify
 
 @CLASSVARS
 @var Atom XA_UTF8_STRING = 0
@@ -167,6 +179,19 @@
         char *s = strdup("");
         m_put( $lines, &s );
     }
+}
+
+
+@  Fire the widget's change callback exactly once per logical edit.
+  Honours `$locked` and guards against re-entrancy (a callback may
+  itself trigger another edit).
+@proc edit_notify($, int kind)
+{
+    if( $locked ) return;
+    if( $in_notify ) return;
+    $in_notify = 1;
+    XtCallCallbackList( $, $callback, (XtPointer)(long)kind );
+    $in_notify = 0;
 }
 
 
@@ -930,10 +955,13 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
 @proc key_return
 {
-    Bool d = split_line_at_cursor($) | cursor_down($) | cursor_pos1($);
+    Bool d;
+    if( $locked ) return;
+    d = split_line_at_cursor($) | cursor_down($) | cursor_pos1($);
     if( d )  redraw_full($);
     selection_draw($);
     TRACE(KARO_TESTING, "KaroEd key_return cursor=(%d,%d)", $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_SPLIT);
 }
 
 @proc prev_line
@@ -1052,9 +1080,11 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @proc remove_char
 {
     int removed_line = 0;
+    if( $locked ) return;
     /* could be expanded to remove region */
     if( current_line_empty($) ) {
         remove_current_line($);
+        ensure_line0($);
         redraw_full($);
         removed_line = 1;
     }
@@ -1064,6 +1094,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     }
     TRACE(KARO_TESTING, "KaroEd remove_char line=%d cursor=(%d,%d)",
           removed_line, $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_REMOVE);
 }
 
 
@@ -1073,6 +1104,8 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     unsigned char buf[32];
     KeySym key_sim;
 
+    if( $locked ) return;
+
     len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
     if (len <= 0) return;
 
@@ -1081,6 +1114,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     cursor_right($);
     TRACE(KARO_TESTING, "KaroEd insert_char len=%d '%.*s' cursor=(%d,%d)",
           len, len, (char*)buf, $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_INSERT);
 }
 
 

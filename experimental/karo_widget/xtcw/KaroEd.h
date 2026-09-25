@@ -5,6 +5,16 @@
 #define XTCW_KAROED_H
 #include <xtcw/Wheel.h>
 _XFUNCPROTOBEGIN
+typedef enum {
+  KEDIT_INSERT = 0,
+  KEDIT_REMOVE,
+  KEDIT_SPLIT,
+  KEDIT_JOIN,
+  KEDIT_PASTE,
+  KEDIT_REPLACE,
+  KEDIT_LOAD
+} edit_kind;
+
 void  karoEd_writeln(
 #if NeedFunctionPrototypes
 Widget ,char *

@@ -54,6 +54,7 @@ int  FRM;
 int  SCR;
 int  lines_owned;
 int  col_hint;
+int  in_notify;
 } KaroEdPart;
 
 typedef struct _KaroEdRec {
