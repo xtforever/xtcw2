@@ -728,7 +728,8 @@
     }
 
     memcpy( s+byte_pos, s+byte_pos + w, byte_len - byte_pos - w );
-    STR($lines,y) = realloc(s, byte_len - w);
+    s = realloc(s, byte_len - w);
+    if( s ) STR($lines,y) = s;
 }
 
 
@@ -759,7 +760,9 @@
     if( x >= utf8_len ) {
         /* fill byte_len .. x */
         int n = x - utf8_len; /* append space */
-        s = realloc(s,byte_len+n+len+1);
+        char *t = realloc(s,byte_len+n+len+1);
+        if( ! t ) return;
+        s = t;
         while( n-- ) s[byte_len++] = 32;
         memcpy( s+byte_len, buf, len );
         s[byte_len+len] = 0;
@@ -777,7 +780,11 @@
         if( w <=0 ) break;
         byte_pos+=w; p++;	/* find next character position */
     }
-    s = realloc(s, byte_len+len);
+    {
+        char *t = realloc(s, byte_len+len);
+        if( ! t ) return;
+        s = t;
+    }
     STR($lines,y) = s;
     memcpy( s + byte_pos + len, s+byte_pos, byte_len - byte_pos );
     memcpy( s + byte_pos, buf, len );
@@ -885,7 +892,10 @@
         s2 = utf8_skip(s, crsr_x);
         new_line = strdup(s2);
         *s2 = 0;
-        s = realloc(s, s2-s +1 );
+        {
+            char *t = realloc(s, s2-s +1 );
+            if( t ) s = t;
+        }
         STR($lines,ln) = s;
     } else new_line = strdup("");  /* am ende einer zeile */
 
@@ -1108,6 +1118,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
    */ 
    int q = XrmStringToQuark( (char*)m_buf(fe->label) );
    int d = *mv_var(q); if( d <= 0 ) return "";   
+   return "";
 }
 
 
@@ -1128,9 +1139,10 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
  printf("%s %d\n", line, strlen(line) );
  */
  
- if( strlen( line ) < len ) {
-   ERR("buffer error, not enough free space in form line for field at %d %d",x,y);
- }
+  if( strlen( line ) < len ) {
+    ERR("buffer error, not enough free space in form line for field at %d %d",x,y);
+    return;
+  }
 
  
  /* copy field data to screen buffer */
@@ -1153,6 +1165,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 {
  struct form_entry *fe;
  int n;
+ if( ! $FRM ) return;
  m_foreach($FRM,n,fe) {
    char *field =   (char*)m_buf(fe->label);
    form_field_print( $, field, fe->x, fe->y, fe->len ); 
