@@ -54,9 +54,16 @@ void xkey_type(Display *dpy, const char *ascii)
 
     for (; *p; p++) {
         char s[2] = { (char)*p, '\0' };
-        KeySym ks = XStringToKeysym(s);
+        KeySym ks;
         KeyCode kc;
         unsigned int mods = 0;
+
+        /* Printable ASCII maps directly to its Latin-1 keysym; this also
+         * covers values (like space) that XStringToKeysym() cannot name. */
+        if (*p >= 0x20 && *p < 0x7f)
+            ks = (KeySym)*p;
+        else
+            ks = XStringToKeysym(s);
 
         if (ks == NoSymbol)
             continue;

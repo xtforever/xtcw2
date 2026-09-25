@@ -1176,6 +1176,9 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @trans   <Key>Delete:   remove_char()
 @trans   <Key>BackSpace: backspace()
 @trans   <Key>Return:    key_return()
+@trans   <Key>Prior:     page_up()
+@trans   <Key>Next:      page_down()
+@trans   <Key>Tab:       insert_tab()
 @trans   <Ctrl>c:        copy_selection()
 @trans   <Ctrl>x:        cut_selection()
 @trans   <Ctrl>v:        insert_selection()
@@ -1211,13 +1214,87 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @proc key_return
 {
     Bool d;
+    char indent[256];
+    int n = 0;
     if( $locked ) return;
     replace_selection_if_any($);
+
+    /* capture the leading whitespace of the current line, if any */
+    if( $rsel.y >= 0 && $rsel.y < m_len($lines) ) {
+        char *s = STR($lines,$rsel.y);
+        while( (*s == ' ' || *s == '\t') && n < (int)sizeof(indent)-1 )
+            indent[n++] = *s++;
+    }
+    indent[n] = 0;
+
     d = split_line_at_cursor($) | cursor_down($) | cursor_pos1($);
     if( d )  redraw_full($);
+
+    if( n > 0 ) {
+        insert_char_at_cursor($, indent, n);
+        cursor_set_x($, $rsel.x + n);
+        draw_line_from($, $rsel.x, $rsel.y);
+    }
     selection_draw($);
     TRACE(KARO_TESTING, "KaroEd key_return cursor=(%d,%d)", $rsel.x, $rsel.y );
     edit_notify($, KEDIT_SPLIT);
+}
+
+
+@  Insert spaces up to the next tab stop (width 8).
+@proc insert_tab
+{
+    char spaces[16];
+    int pad, i;
+    if( $locked ) return;
+    replace_selection_if_any($);
+    pad = 8 - ($rsel.x % 8);
+    if( pad < 1 ) pad = 8;
+    if( pad > (int)sizeof(spaces)-1 ) pad = (int)sizeof(spaces)-1;
+    for( i=0; i<pad; i++ ) spaces[i] = ' ';
+    spaces[pad] = 0;
+    insert_char_at_cursor($, spaces, pad);
+    cursor_set_x($, $rsel.x + pad);
+    draw_line_from($, $rsel.x, $rsel.y);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd insert_tab cursor=(%d,%d)", $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_INSERT);
+}
+
+
+@proc page_up
+{
+    int n = $grid_height;
+    if( n < 1 ) n = 1;
+    $has_selection = False;
+    $rsel.y -= n;
+    if( $rsel.y < 0 ) $rsel.y = 0;
+    if( $col_hint >= 0 ) {
+        $rsel.x = $col_hint;
+        cursor_clamp_to_line($);
+    }
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd page_up cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+
+@proc page_down
+{
+    int n = $grid_height;
+    int maxy = m_len($lines) - 1;
+    if( n < 1 ) n = 1;
+    if( maxy < 0 ) maxy = 0;
+    $has_selection = False;
+    $rsel.y += n;
+    if( $rsel.y > maxy ) $rsel.y = maxy;
+    if( $col_hint >= 0 ) {
+        $rsel.x = $col_hint;
+        cursor_clamp_to_line($);
+    }
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd page_down cursor=(%d,%d)", $rsel.x, $rsel.y );
 }
 
 @proc prev_line
@@ -1480,6 +1557,9 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 {
     int y = event->xbutton.y;
     int x = event->xbutton.x;
+    Widget shell = $;
+    while( shell && ! XtIsShell(shell) ) shell = XtParent(shell);
+    if( shell ) XtSetKeyboardFocus(shell, (Widget) $);
     coordinate_to_text($,&x,&y);
     $rsel.y = y;
     cursor_set_x($, x);

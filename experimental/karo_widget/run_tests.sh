@@ -175,6 +175,19 @@ run_scenario api \
 run_scenario fileform \
     "KaroEd line0="
 
+# Return auto-indents the new line to match the current line
+run_scenario indent \
+    "KaroEd key_return cursor=(2,1)" \
+    "KaroEd line0='  ab'" \
+    "KaroEd line1='  cd'" \
+    "KaroEd cursor=(4,1)"
+
+# Tab inserts spaces up to the next 8-column stop
+run_scenario tab \
+    "KaroEd insert_tab cursor=(8,0)" \
+    "KaroEd insert_char len=1 'b' cursor=(9,0)" \
+    "KaroEd line0='a"
+
 run_scenario delete \
     "KaroEd insert_char len=1 'c' cursor=(3,0)" \
     "KaroEd backward_char cursor=(2,0)" \

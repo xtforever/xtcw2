@@ -144,6 +144,20 @@ static void act_api(Widget w)
         XtFree(t);
 }
 
+/* Return preserves the current line's leading whitespace. */
+static const step_t sc_indent[] = {
+    { S_STR, "  ab", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "cd", 0, 0 },
+};
+
+/* Tab inserts spaces up to the next tab stop (width 8). */
+static const step_t sc_tab[] = {
+    { S_STR, "a", 0, 0 },
+    { S_KEY, NULL, XK_Tab, 0 },
+    { S_STR, "b", 0, 0 },
+};
+
 /* Exercise the public API and change callback. */
 static const step_t sc_api[] = {
     { S_CALL, NULL, 0, 0, act_api, 0 },
@@ -274,6 +288,8 @@ static const scenario_t scenarios[] = {
     { "cut_action", sc_cut_action, (int)(sizeof(sc_cut_action) / sizeof(sc_cut_action[0])), NULL },
     { "api", sc_api, (int)(sizeof(sc_api) / sizeof(sc_api[0])), NULL },
     { "fileform", sc_fileform, (int)(sizeof(sc_fileform) / sizeof(sc_fileform[0])), fileform_resources },
+    { "indent", sc_indent, (int)(sizeof(sc_indent) / sizeof(sc_indent[0])), NULL },
+    { "tab", sc_tab, (int)(sizeof(sc_tab) / sizeof(sc_tab[0])), NULL },
 };
 
 static const scenario_t *find_scenario(const char *name)
