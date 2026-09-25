@@ -125,6 +125,37 @@ static const step_t sc_select_all[] = {
     { S_KEY, NULL, XK_a, ControlMask },
 };
 
+/* Test-hook actions that impose an arbitrary selection range. */
+static void act_sel_forward(Widget w)
+{
+    String p[] = { (String)"0", (String)"0", (String)"2", (String)"1" };
+    XtCallActionProc(w, "select_range", NULL, p, 4);
+}
+
+static void act_sel_reverse(Widget w)
+{
+    String p[] = { (String)"2", (String)"1", (String)"0", (String)"0" };
+    XtCallActionProc(w, "select_range", NULL, p, 4);
+}
+
+/* Typing over a multi-line selection replaces the whole range. */
+static const step_t sc_type_over_selection[] = {
+    { S_STR, "ab", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "cd", 0, 0 },
+    { S_CALL, NULL, 0, 0, act_sel_forward, 0 },
+    { S_STR, "X", 0, 0 },
+};
+
+/* Same, with the anchor after the cursor (reversed selection). */
+static const step_t sc_type_over_selection_rev[] = {
+    { S_STR, "ab", 0, 0 },
+    { S_KEY, NULL, XK_Return, 0 },
+    { S_STR, "cd", 0, 0 },
+    { S_CALL, NULL, 0, 0, act_sel_reverse, 0 },
+    { S_STR, "X", 0, 0 },
+};
+
 static const scenario_t scenarios[] = {
     { "type",      sc_type,      (int)(sizeof(sc_type) / sizeof(sc_type[0])), NULL },
     { "return",    sc_return,    (int)(sizeof(sc_return) / sizeof(sc_return[0])), NULL },
@@ -135,6 +166,8 @@ static const scenario_t scenarios[] = {
     { "home_end",  sc_home_end,  (int)(sizeof(sc_home_end) / sizeof(sc_home_end[0])), NULL },
     { "locked",    sc_locked,    (int)(sizeof(sc_locked) / sizeof(sc_locked[0])), locked_resources },
     { "select_all", sc_select_all, (int)(sizeof(sc_select_all) / sizeof(sc_select_all[0])), NULL },
+    { "type_over_selection", sc_type_over_selection, (int)(sizeof(sc_type_over_selection) / sizeof(sc_type_over_selection[0])), NULL },
+    { "type_over_selection_rev", sc_type_over_selection_rev, (int)(sizeof(sc_type_over_selection_rev) / sizeof(sc_type_over_selection_rev[0])), NULL },
 };
 
 static const scenario_t *find_scenario(const char *name)

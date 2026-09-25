@@ -485,6 +485,79 @@
 }
 
 
+@  Remove characters [x0,x1) from line y.
+@proc delete_range_same_line($, int y, int x0, int x1)
+{
+    char *s = STR($lines,y);
+    char *p0 = utf8_skip(s, x0);
+    char *p1 = utf8_skip(s, x1);
+    int newlen = (int)strlen(s) - (int)(p1 - p0);
+    memmove(p0, p1, strlen(p1) + 1);
+    s = realloc(s, newlen + 1);
+    if( s ) STR($lines,y) = s;
+}
+
+@  Delete the current selection [anchor,cursor) in document order and
+  collapse the cursor to its start.  Returns True if anything was
+  deleted.  Fires exactly one change notification.
+@proc Bool delete_selection($)
+{
+    int sx,sy,ex,ey;
+    int i, count;
+    char *s1, *p1, *s2, *p2, *merged;
+
+    if( $locked ) return False;
+    if( ! $has_selection ) return False;
+
+    if( $sel_anchor_y < $rsel.y ||
+        ( $sel_anchor_y == $rsel.y && $sel_anchor_x <= $rsel.x ) ) {
+        sy = $sel_anchor_y; sx = $sel_anchor_x;
+        ey = $rsel.y; ex = $rsel.x;
+    } else {
+        sy = $rsel.y; sx = $rsel.x;
+        ey = $sel_anchor_y; ex = $sel_anchor_x;
+    }
+
+    if( sy == ey ) {
+        delete_range_same_line($, sy, sx, ex);
+    } else {
+        /* truncate the first line, append the remainder of the last */
+        s1 = STR($lines,sy);
+        p1 = utf8_skip(s1, sx);
+        s2 = STR($lines,ey);
+        p2 = utf8_skip(s2, ex);
+        *p1 = 0;
+        merged = realloc(s1, strlen(s1) + strlen(p2) + 1);
+        if( ! merged ) return False;
+        strcat(merged, p2);
+        STR($lines,sy) = merged;
+        count = ey - sy;
+        for( i=0; i<count; i++ ) {
+            free( STR($lines, sy+1) );
+            m_del($lines, sy+1);
+        }
+    }
+
+    $has_selection = False;
+    $rsel.y = sy;
+    cursor_set_x($, sx);
+    ensure_line0($);
+    normalize_scroll($);
+    selection_draw($);
+    edit_notify($, KEDIT_REPLACE);
+    return True;
+}
+
+@  Replace the selection (if any) before an insertion.  Returns True
+  when a selection was consumed.
+@proc Bool replace_selection_if_any($)
+{
+    if( $locked ) return False;
+    if( ! $has_selection ) return False;
+    return delete_selection($);
+}
+
+
 @proc remove_char_at_cursor($)
 {
     uint32_t ucs4;
@@ -941,6 +1014,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 {
     Bool d;
     if( $locked ) return;
+    replace_selection_if_any($);
     d = split_line_at_cursor($) | cursor_down($) | cursor_pos1($);
     if( d )  redraw_full($);
     selection_draw($);
@@ -1065,6 +1139,29 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 }
 
 
+@  Test hook: set an arbitrary selection range (anchor -> cursor) so a
+  keystroke test can exercise reversed and multi-line selections.
+@proc select_range
+{
+    int x0=0,y0=0,x1=0,y1=0;
+    if( *num_params > 0 ) x0 = atoi( params[0] );
+    if( *num_params > 1 ) y0 = atoi( params[1] );
+    if( *num_params > 2 ) x1 = atoi( params[2] );
+    if( *num_params > 3 ) y1 = atoi( params[3] );
+    $sel_anchor_x = x0;
+    $sel_anchor_y = y0;
+    $rsel.x = x1;
+    $rsel.y = y1;
+    $col_hint = x1;
+    $has_selection = ( x0 != x1 || y0 != y1 );
+    cursor_clamp_to_line($);
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd select_range anchor=(%d,%d) cursor=(%d,%d)",
+          $sel_anchor_x, $sel_anchor_y, $rsel.x, $rsel.y );
+}
+
+
 @proc info
 {
     int i;
@@ -1095,6 +1192,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 {
     int removed_line = 0;
     if( $locked ) return;
+    if( replace_selection_if_any($) ) return;   /* delete selection only */
     /* could be expanded to remove region */
     if( current_line_empty($) ) {
         remove_current_line($);
@@ -1123,6 +1221,8 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
     len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
     if (len <= 0) return;
+
+    replace_selection_if_any($);
 
     insert_char_at_cursor($, (char*)buf, len );
     draw_line_from($, $rsel.x, $rsel.y );

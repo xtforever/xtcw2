@@ -171,6 +171,20 @@ run_scenario select_all \
     "KaroEd cursor=(2,1)" \
     "KaroEd selection anchor=(0,0) active=1 text='ab\ncd'"
 
+# typing over a multi-line selection replaces the whole range
+run_scenario type_over_selection \
+    "KaroEd select_range anchor=(0,0) cursor=(2,1)" \
+    "KaroEd line0='X'" \
+    "KaroEd lines=1" \
+    "KaroEd cursor=(1,0)"
+
+# reversed anchor (cursor before anchor) must replace the same range
+run_scenario type_over_selection_rev \
+    "KaroEd select_range anchor=(2,1) cursor=(0,0)" \
+    "KaroEd line0='X'" \
+    "KaroEd lines=1" \
+    "KaroEd cursor=(1,0)"
+
 # ── Summary ──────────────────────────────────────────────────────────────
 echo
 echo "=========================================="
