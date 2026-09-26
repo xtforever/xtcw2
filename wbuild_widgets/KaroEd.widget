@@ -80,10 +80,10 @@
 @proc initialize
 {
     if(! $XA_UTF8_STRING )
-        $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+        $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", False);
 
     if( $lines == 0 ) {
-        $lines = m_create(10,sizeof(char*));
+        $lines = m_create(10,sizeof(int));   /* list of MLS string handles */
         $lines_owned = 1;
     } else {
         $lines_owned = 0;
@@ -109,14 +109,13 @@
             WARN("KaroEd: fileForm '%s' ignored, lines is externally owned", $fileForm );
         } else {
             form_from_file($fileForm, & $SCR, & $FRM );
-            m_free_strings($lines,1);
+            lines_clear($);
             TRACE(3,"%s %d %d", $fileForm,$SCR,$FRM );
             /* copy screen to work buffer */
             int p,*d;
             m_foreach($SCR,p,d) {
-              char * string_line = m_buf(*d);
-              char * line_work = strdup( string_line );
-              m_put($lines, & line_work );
+              int line_handle_new = new_line_handle($, m_buf(*d) );
+              m_put($lines, & line_handle_new );
             }
         }
     }
@@ -135,8 +134,8 @@
   karoEd_writeln()).
 @proc writeln($, char *s)
 {
-    char *copy = strdup( s ? s : "" );
-    m_put( $lines, &copy );
+    int h = new_line_handle($, s);
+    m_put( $lines, &h );
     if( $rsel.y >= m_len($lines) ) $rsel.y = m_len($lines) - 1;
     normalize_scroll($);
     selection_draw($);
@@ -152,12 +151,12 @@
     char *out, *p;
 
     for( i=0; i<m_len($lines); i++ )
-        total += strlen(STR($lines,i)) + 1;
+        total += strlen(line_str($,i)) + 1;
     out = (char*) XtMalloc(total);
     p = out;
     for( i=0; i<m_len($lines); i++ ) {
-        int l = strlen(STR($lines,i));
-        memcpy(p, STR($lines,i), l);
+        int l = strlen(line_str($,i));
+        memcpy(p, line_str($,i), l);
         p += l;
         if( i < m_len($lines) - 1 ) *p++ = '\n';
     }
@@ -179,10 +178,10 @@
 {
     if( $lines != $old$lines ) {
         if( $lines_owned && $old$lines ) {
-            m_free_strings( $old$lines, 0 );
+            free_lines_handle( $, $old$lines );
         }
         if( $lines == 0 ) {
-            $lines = m_create(10,sizeof(char*));
+            $lines = m_create(10,sizeof(int));
             $lines_owned = 1;
         } else {
             $lines_owned = 0;
@@ -251,7 +250,7 @@
         $FRM = 0;
     }
     if( $lines_owned && $lines ) {
-        m_free_strings($lines, 0);
+        free_lines_handle( $, $lines );
         $lines = 0;
     }
 }
@@ -262,14 +261,71 @@
 @UTILITIES
 
 
+@  Line storage uses the MLS string API: |$lines| is a list of MLS string
+  handles (int), not raw char* pointers.  All text access goes through
+  mls()/m_str()/m_write()/m_remove(), so MLS_DEBUG adds bounds and
+  use-after-free checking, and the library owns the memory (no hand-rolled
+  realloc/free/strdup).
+
+@  MLS string handle of line |i| (0 if out of range).
+@proc int line_handle($, int i)
+{
+    if( i < 0 || i >= m_len($lines) ) return 0;
+    return INT($lines,i);
+}
+
+@  NUL-terminated text of line |i| ("" if out of range).
+@proc char* line_str($, int i)
+{
+    return m_str( line_handle($,i) );
+}
+
+@  Create a new MLS string for |s| and return its handle.
+@proc int new_line_handle($, char *s)
+{
+    return s_printf( 0, 0, "%s", s ? s : "" );
+}
+
+@  Store handle |h| at line index |i| (index must already exist).
+  m_write() takes an element count, and |$lines| has int elements.
+@proc int line_set($, int i, int h)
+{
+    m_write( $lines, i, &h, 1 );
+    return h;
+}
+
+@  Free every line handle in |list| and the list itself.
+@proc free_lines_handle($, int list)
+{
+    int i;
+    if( list < 1 ) return;
+    for( i=0; i<m_len(list); i++ ) {
+        int h = INT(list,i);
+        if( h ) m_free(h);
+    }
+    m_free(list);
+}
+
+@  Free every line handle but keep the |$lines| list itself (empty).
+@proc lines_clear($)
+{
+    int i;
+    for( i=0; i<m_len($lines); i++ ) {
+        int h = INT($lines,i);
+        if( h ) m_free(h);
+    }
+    m_clear($lines);
+}
+
+
 @  The editor invariant is that the buffer always contains at least one
   (possibly empty) line, so line 0 always exists.  Call after any
   operation that can remove lines.
 @proc ensure_line0($)
 {
     if( m_len($lines) == 0 ) {
-        char *s = strdup("");
-        m_put( $lines, &s );
+        int h = new_line_handle($, "");
+        m_put( $lines, &h );
     }
 }
 
@@ -381,20 +437,22 @@
     int len, p  = $top_x + x;
     int l;
     uint8_t *string;
+    uint8_t *base;
     uint32_t ucs4;
 
     *ret_line = -1;
     *ret_charpos = -1;
 
-    if( ln >= m_len($lines) ) return 0;
+    if( ln < 0 || ln >= m_len($lines) ) return 0;
     if(ret_line) *ret_line = ln;
-    string = (uint8_t *)STR($lines,ln);
+    base = (uint8_t *)line_str($,ln);
+    string = base;
     len = strlen( (char*)string);
     while(1) {
             l = FcUtf8ToUcs4 (string, &ucs4, len);
             if( l<= 0 || len <=0 ) return 0;
             if( p <=0 ) {
-                if( ret_charpos ) *ret_charpos = string - (uint8_t*)STR($lines,ln);
+                if( ret_charpos ) *ret_charpos = string - base;
                 return ucs4;
             }
 
@@ -484,7 +542,7 @@
     if( *y < 0 ) *y = 0;
     if( m_len($lines) > 0 ) {
         if( *y >= m_len($lines) ) *y = m_len($lines) - 1;
-        int len = utf8_strlen( STR($lines,*y) );
+        int len = utf8_strlen( line_str($,*y) );
         if( *x > len ) *x = len;
     } else {
         *x = 0; *y = 0;
@@ -543,7 +601,7 @@
 {
     int len = 0;
     if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
-        len = utf8_strlen( STR($lines,$rsel.y) );
+        len = utf8_strlen( line_str($,$rsel.y) );
     if( $rsel.x < 0 ) $rsel.x = 0;
     if( $rsel.x > len ) $rsel.x = len;
 }
@@ -582,13 +640,18 @@
 @  Remove characters [x0,x1) from line y.
 @proc delete_range_same_line($, int y, int x0, int x1)
 {
-    char *s = STR($lines,y);
-    char *p0 = utf8_skip(s, x0);
-    char *p1 = utf8_skip(s, x1);
-    int newlen = (int)strlen(s) - (int)(p1 - p0);
-    memmove(p0, p1, strlen(p1) + 1);
-    s = realloc(s, newlen + 1);
-    if( s ) STR($lines,y) = s;
+    int h = line_handle($,y);
+    int b0, b1, len;
+    char *s;
+    if( !h ) return;
+    s = m_str(h);
+    len = utf8_strlen(s);
+    if( x0 < 0 ) x0 = 0;
+    if( x1 > len ) x1 = len;
+    if( x1 <= x0 ) return;
+    b0 = (int)( utf8_skip(s, x0) - s );
+    b1 = (int)( utf8_skip(s, x1) - s );
+    m_remove( h, b0, b1 - b0 );   /* MLS shifts and shrinks safely */
 }
 
 @  Delete the current selection [anchor,cursor) in document order and
@@ -598,7 +661,6 @@
 {
     int sx,sy,ex,ey;
     int i, count;
-    char *s1, *p1, *s2, *p2, *merged;
 
     if( $locked ) return False;
     if( ! $has_selection ) return False;
@@ -615,19 +677,31 @@
     if( sy == ey ) {
         delete_range_same_line($, sy, sx, ex);
     } else {
-        /* truncate the first line, append the remainder of the last */
-        s1 = STR($lines,sy);
-        p1 = utf8_skip(s1, sx);
-        s2 = STR($lines,ey);
-        p2 = utf8_skip(s2, ex);
-        *p1 = 0;
-        merged = realloc(s1, strlen(s1) + strlen(p2) + 1);
-        if( ! merged ) return False;
-        strcat(merged, p2);
-        STR($lines,sy) = merged;
+        /* append the remainder of the last line to the first, then drop
+           the lines in between (freeing their handles). */
+        int h1 = line_handle($,sy);
+        int h2 = line_handle($,ey);
+        if( h1 == 0 || h2 == 0 ) return False;
+        {
+            char *s1 = m_str(h1);
+            char *p1 = utf8_skip(s1, sx);
+            int b1 = (int)(p1 - s1);
+            char *s2 = m_str(h2);
+            char *p2 = utf8_skip(s2, ex);
+            int append_len = s_strlen(h2) - (int)(p2 - s2);
+            /* truncate the first line at the selection start, then append
+               the remainder of the last line */
+            m_remove( h1, b1, s_strlen(h1) - b1 );
+            if( append_len > 0 ) {
+                int oldlen = s_strlen(h1);
+                m_ins( h1, oldlen, append_len );
+                m_write( h1, oldlen, p2, append_len );
+            }
+        }
         count = ey - sy;
         for( i=0; i<count; i++ ) {
-            free( STR($lines, sy+1) );
+            int h = INT($lines, sy+1);
+            if( h ) m_free(h);
             m_del($lines, sy+1);
         }
     }
@@ -656,18 +730,24 @@
 {
     int y = $rsel.y;
     int joinx;
-    char *s, *p;
+    int hp, hc;
 
     if( y <= 0 || y >= m_len($lines) ) return;
+    hp = line_handle($, y-1);
+    hc = line_handle($, y);
+    if( hp == 0 || hc == 0 ) return;
 
-    joinx = utf8_strlen( STR($lines, y-1) );   /* cursor target, before append */
-    s = STR($lines, y);
-    p = STR($lines, y-1);
-    p = realloc(p, strlen(p) + strlen(s) + 1);
-    if( ! p ) return;
-    strcat(p, s);
-    STR($lines, y-1) = p;
-    free( s );
+    joinx = utf8_strlen( m_str(hp) );   /* cursor target, before append */
+    {
+        int oldlen = s_strlen(hp);
+        int n = s_strlen(hc);
+        char *sc = m_str(hc);
+        if( n > 0 ) {
+            m_ins( hp, oldlen, n );        /* make room at end of prev line */
+            m_write( hp, oldlen, sc, n );  /* copy current line in */
+        }
+    }
+    m_free(hc);
     m_del($lines, y);
 
     $rsel.y = y - 1;
@@ -684,18 +764,24 @@
 {
     int y = $rsel.y;
     int joinx;
-    char *s, *n;
+    int hc, hn;
 
     if( y < 0 || y+1 >= m_len($lines) ) return;
+    hc = line_handle($, y);
+    hn = line_handle($, y+1);
+    if( hc == 0 || hn == 0 ) return;
 
-    joinx = utf8_strlen( STR($lines, y) );     /* join point = end of line */
-    s = STR($lines, y);
-    n = STR($lines, y+1);
-    s = realloc(s, strlen(s) + strlen(n) + 1);
-    if( ! s ) return;
-    strcat(s, n);
-    STR($lines, y) = s;
-    free( n );
+    joinx = utf8_strlen( m_str(hc) );     /* join point = end of line */
+    {
+        int oldlen = s_strlen(hc);
+        int n = s_strlen(hn);
+        char *sn = m_str(hn);
+        if( n > 0 ) {
+            m_ins( hc, oldlen, n );        /* make room at end of current line */
+            m_write( hc, oldlen, sn, n );  /* copy next line in */
+        }
+    }
+    m_free(hn);
     m_del($lines, y+1);
 
     cursor_set_x($, joinx);
@@ -709,85 +795,68 @@
 
 @proc remove_char_at_cursor($)
 {
-    uint32_t ucs4;
-    int x,y,p,byte_len,byte_pos,w;
-    x=$rsel.x;
-    y=$rsel.y;
+    int x = $rsel.x;
+    int y = $rsel.y;
+    int h, len, b0, b1;
+    char *s;
+
     if( y >= m_len($lines) ) return;
-    char *s = STR($lines,y);
-    if( x >= utf8_strlen(s) ) return;
-
-    p=0;
-    byte_len = strlen(s) +1;
-    byte_pos = 0;
-    while(1) {
-        w = FcUtf8ToUcs4 ((uint8_t*)s + byte_pos, &ucs4, byte_len - byte_pos);
-        if( w <=0 ) return;
-        if( p >= x ) break;
-        byte_pos+=w; p++;
-    }
-
-    memmove( s+byte_pos, s+byte_pos + w, byte_len - byte_pos - w );
-    s = realloc(s, byte_len - w);
-    if( s ) STR($lines,y) = s;
+    h = line_handle($,y);
+    if( !h ) return;
+    s = m_str(h);
+    len = utf8_strlen(s);
+    if( x < 0 || x >= len ) return;
+    b0 = (int)( utf8_skip(s, x)   - s );
+    b1 = (int)( utf8_skip(s, x+1) - s );
+    m_remove( h, b0, b1 - b0 );
 }
 
 
+@  Insert |buf| (|len| bytes) at the cursor.  All editing goes through the
+  MLS string API: m_ins() makes room (bounds-checked, shifts safely) and
+  m_write()/mls() copy the new bytes; no raw realloc/free.
 @proc insert_char_at_cursor($, char *buf, int len )
 {
-    uint32_t ucs4;
-    int p;
-    int x,y,w;
-    char *s;
-    int byte_len;
-    int utf8_len;
-    int byte_pos;
+    int x=$rsel.x;
+    int y=$rsel.y;
+    int h, byte_len, utf8_len, byte_pos;
 
-    x=$rsel.x;
-    y=$rsel.y;
+    if( len <= 0 ) return;
 
     while( y >= m_len($lines) ) {
-        s=strdup("");
-        m_put( $lines, &s );
+        int nh = new_line_handle($, "");
+        m_put( $lines, &nh );
     }
 
+    h = line_handle($,y);
+    if( !h ) {
+        h = new_line_handle($, "");
+        line_set($,y,h);
+    }
 
-    s=STR($lines,y);
-    byte_len = strlen(s);
-    utf8_len = utf8_strlen(s);
+    byte_len = s_strlen(h);
+    utf8_len = utf8_strlen( m_str(h) );
 
-    /* append data */
+    /* cursor at or past end of line: pad with spaces, then append */
     if( x >= utf8_len ) {
-        /* fill byte_len .. x */
-        int n = x - utf8_len; /* append space */
-        char *t = realloc(s,byte_len+n+len+1);
-        if( ! t ) return;
-        s = t;
-        while( n-- ) s[byte_len++] = 32;
-        memcpy( s+byte_len, buf, len );
-        s[byte_len+len] = 0;
-        STR($lines,y) = s;
+        int pad = x - utf8_len;
+        m_ins( h, byte_len, pad + len );       /* grow + shift terminator */
+        {
+            char *dst = (char*) mls(h, byte_len);
+            int i;
+            for( i=0; i<pad; i++ ) dst[i] = ' ';
+            memcpy( dst + pad, buf, len );
+        }
         return;
     }
 
-    /* insert data, because this string is utf8 encoded
-     we need to check the size of each character */
-    p=0;
-    byte_len = strlen(s) +1;
-    byte_pos = 0;
-    while( p < x ) {
-        w = FcUtf8ToUcs4 ((uint8_t*)s + byte_pos, &ucs4, byte_len - byte_pos); /* get number of bytes for s[byte_pos) */
-        if( w <=0 ) break;
-        byte_pos+=w; p++;	/* find next character position */
-    }
+    /* insert before existing characters: find the byte offset, shift, copy */
     {
-        char *t = realloc(s, byte_len+len);
-        if( ! t ) return;
-        s = t;
+        char *s = m_str(h);
+        byte_pos = (int)( utf8_skip(s, x) - s );
     }
-    STR($lines,y) = s;
-    memmove( s + byte_pos + len, s+byte_pos, byte_len - byte_pos );
-    memcpy( s + byte_pos, buf, len );
+    m_ins( h, byte_pos, len );
+    m_write( h, byte_pos, buf, len );
 }
 
 @proc cursor_right($)
@@ -795,7 +864,7 @@
     int len = 0;
     $has_selection = False;
     if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
-        len = utf8_strlen( STR($lines,$rsel.y) );
+        len = utf8_strlen( line_str($,$rsel.y) );
     if( $rsel.x < len ) $rsel.x++;
     $col_hint = $rsel.x;
     if( $rsel.x < $top_x ) $top_x = $rsel.x;
@@ -834,31 +903,33 @@
 @proc Bool current_line_empty($)
 {
     int ln = $rsel.y;
-    if( ln >= m_len($lines) ) return True;
-    char *s = STR($lines,ln);
-    return *s == 0;
+    if( ln < 0 || ln >= m_len($lines) ) return True;
+    return s_strlen( line_handle($,ln) ) == 0;
 }
 
 @proc Bool remove_current_line($)
 {
     int ln = $rsel.y;
-    if( ln >= m_len($lines) ) return False;
-    free( STR($lines, ln) );
+    int h;
+    if( ln < 0 || ln >= m_len($lines) ) return False;
+    h = INT($lines,ln);
+    if( h ) m_free(h);
     m_del($lines,ln);
     return True;
 }
 
 @proc Bool insert_line($)
 {
-    char *s;
     int y = $rsel.y;
+    int h;
     if( y < m_len($lines) ) {
         m_ins($lines,y,1);
-        STR($lines,y) = strdup("");
+        h = new_line_handle($, "");
+        line_set($,y,h);
     } else {
         while( y >= m_len($lines) ) {
-            s=strdup("");
-            m_put( $lines, &s );
+            h = new_line_handle($, "");
+            m_put( $lines, &h );
         }
     }
     return True;
@@ -880,28 +951,27 @@
 @proc Bool split_line_at_cursor($)
 {
     int ln = $rsel.y;
+    int h, nh, cut_bytes;
+    char *s;
 
-    if( ln >= m_len($lines) ) return False;     /* kein text */
+    if( ln < 0 || ln >= m_len($lines) ) return False;   /* kein text */
 
-    char *s = STR($lines,ln);
-    int utf8_len = utf8_strlen(s);
-    char *s2, *new_line;
-    int crsr_x = $rsel.x;
+    h = line_handle($,ln);
+    if( !h ) return False;
+    s = m_str(h);
 
-    if( $rsel.x < utf8_len ) {     /* innerhalb einer zeile */
-        s2 = utf8_skip(s, crsr_x);
-        new_line = strdup(s2);
-        *s2 = 0;
-        {
-            char *t = realloc(s, s2-s +1 );
-            if( t ) s = t;
-        }
-        STR($lines,ln) = s;
-    } else new_line = strdup("");  /* am ende einer zeile */
+    if( $rsel.x < utf8_strlen(s) ) {   /* innerhalb einer zeile */
+        char *s2 = utf8_skip(s, $rsel.x);
+        cut_bytes = (int)( s2 - s );
+        nh = new_line_handle($, s2);   /* tail becomes the new line */
+        m_remove( h, cut_bytes, s_strlen(h) - cut_bytes );
+    } else {
+        nh = new_line_handle($, "");   /* am ende einer zeile */
+    }
 
     ln++;
     m_ins($lines,ln,1);
-    STR($lines,ln) = new_line;
+    line_set($,ln,nh);
     return True;
 }
 
@@ -1040,7 +1110,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
     m_clear( $selectionText );
     for( y = sy; y <= ey && y < m_len($lines); y++ ) {
-        char *s = STR($lines,y);
+        char *s = line_str($,y);
         int len = utf8_strlen(s);
         int from = ( y == sy ) ? sx : 0;
         int to   = ( y == ey ) ? ex : len;
@@ -1128,7 +1198,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
  /* printf("%s %d %d %d\n", name, x, y, len ); */
 
  /* find field position in screen buffer */
- char *line = STR($lines, y);
+ char *line = line_str($, y);
  int pos = 0;
  while( pos < x ) {
    if( utf8char(&line) == -1 ) return;
@@ -1234,7 +1304,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
     /* capture the leading whitespace of the current line, if any */
     if( $rsel.y >= 0 && $rsel.y < m_len($lines) ) {
-        char *s = STR($lines,$rsel.y);
+        char *s = line_str($,$rsel.y);
         while( (*s == ' ' || *s == '\t') && n < (int)sizeof(indent)-1 )
             indent[n++] = *s++;
     }
@@ -1423,7 +1493,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     int len = 0;
     $has_selection = False;
     if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
-        len = utf8_strlen( STR($lines,$rsel.y) );
+        len = utf8_strlen( line_str($,$rsel.y) );
     $rsel.x = len;
     $col_hint = len;
     if( $rsel.x >= $top_x + $grid_width ) {
@@ -1446,7 +1516,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     $rsel.y = last;
     $rsel.x = 0;
     if( last < m_len($lines) )
-        $rsel.x = utf8_strlen( STR($lines,last) );
+        $rsel.x = utf8_strlen( line_str($,last) );
     $col_hint = $rsel.x;
     $has_selection = True;
     normalize_scroll($);
@@ -1485,7 +1555,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     int i;
     for(i=0;i<m_len($lines);i++) {
 
-        printf("'%s'\n", STR($lines,i));
+        printf("'%s'\n", line_str($,i));
     }
     printf("\n");
 }
@@ -1497,7 +1567,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 {
     int i;
     for( i=0; i<m_len($lines); i++ )
-        TRACE(KARO_TESTING, "KaroEd line%d='%s'", i, STR($lines,i) );
+        TRACE(KARO_TESTING, "KaroEd line%d='%s'", i, line_str($,i) );
     TRACE(KARO_TESTING, "KaroEd lines=%d", m_len($lines) );
     TRACE(KARO_TESTING, "KaroEd cursor=(%d,%d)", $rsel.x, $rsel.y );
     TRACE(KARO_TESTING, "KaroEd selection anchor=(%d,%d) active=%d text='%s'",
@@ -1519,7 +1589,7 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
         removed_line = 1;
     }
     else {
-        int len = utf8_strlen( STR($lines,$rsel.y) );
+        int len = utf8_strlen( line_str($,$rsel.y) );
         if( $rsel.x >= len && $rsel.y + 1 < m_len($lines) ) {
             join_line_next($);
             return;   /* join_line_next fires its own notification */
