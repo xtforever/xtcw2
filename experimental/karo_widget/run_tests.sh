@@ -196,6 +196,15 @@ run_scenario insert_midline \
     "KaroEd line0='abc'" \
     "KaroEd cursor=(2,0)"
 
+# a-diaeresis (Latin-1 keysym) must be inserted as two UTF-8 bytes
+run_scenario utf8_input \
+    "KaroEd insert_char len=1 'a' cursor=(1,0)" \
+    "KaroEd insert_char len=2 'ä' cursor=(2,0)" \
+    "KaroEd insert_char len=1 'b' cursor=(3,0)" \
+    "KaroEd insert_char len=1 'c' cursor=(4,0)" \
+    "KaroEd line0='aäbc'" \
+    "KaroEd cursor=(4,0)"
+
 run_scenario delete \
     "KaroEd insert_char len=1 'c' cursor=(3,0)" \
     "KaroEd backward_char cursor=(2,0)" \

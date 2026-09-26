@@ -588,9 +588,88 @@
 
 @proc int utf8_strlen( char *s )
 {
-    int n,w;
-    FcUtf8Len((uint8_t*)s,strlen(s), &n, &w );
+    int n=0,w=0;
+    if( ! FcUtf8Len((uint8_t*)s,strlen(s), &n, &w ) )
+        return (int)strlen(s);   /* tolerate invalid input: count bytes */
     return n;
+}
+
+@  True if |buf[0..len)| is well-formed UTF-8.
+@proc Bool is_valid_utf8(unsigned char *buf, int len)
+{
+    int n=0,w=0;
+    if( len <= 0 ) return False;
+    return FcUtf8Len(buf, len, &n, &w) ? True : False;
+}
+
+@  Encode a Unicode code point as UTF-8; returns the byte count (0 if none).
+@proc int char_to_utf8(unsigned int cp, unsigned char *out)
+{
+    if( cp < 0x80 ) {
+        out[0] = (unsigned char)cp;
+        return 1;
+    }
+    if( cp < 0x800 ) {
+        out[0] = (unsigned char)(0xC0 | (cp >> 6));
+        out[1] = (unsigned char)(0x80 | (cp & 0x3F));
+        return 2;
+    }
+    if( cp < 0x10000 ) {
+        out[0] = (unsigned char)(0xE0 | (cp >> 12));
+        out[1] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
+        out[2] = (unsigned char)(0x80 | (cp & 0x3F));
+        return 3;
+    }
+    if( cp < 0x110000 ) {
+        out[0] = (unsigned char)(0xF0 | (cp >> 18));
+        out[1] = (unsigned char)(0x80 | ((cp >> 12) & 0x3F));
+        out[2] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
+        out[3] = (unsigned char)(0x80 | (cp & 0x3F));
+        return 4;
+    }
+    return 0;
+}
+
+@  Map an X keysym to a Unicode code point (0 if it is not a printable
+  Latin-1/Unicode character).
+@proc unsigned int keysym_to_ucs(KeySym ks)
+{
+    unsigned int cp = (unsigned int) ks;
+    if( cp >= 0x01000000 ) return cp - 0x01000000;   /* Unicode keysym */
+    if( cp >= 0x20 && cp < 0x80 ) return cp;         /* ASCII */
+    if( cp >= 0xA0 && cp <= 0xFF ) return cp;        /* Latin-1 */
+    return 0;
+}
+
+@  Turn the raw key string from _XawLookupString() into valid UTF-8.
+  _XawLookupString/XLookupString return Latin-1 for many keysyms (e.g.
+  a-diaeresis arrives as the single byte 0xE4), which would corrupt the
+  UTF-8 text buffer.  Prefer already-valid UTF-8; otherwise encode the
+  keysym's code point.  Returns the number of bytes written to |out|.
+@proc int normalize_key_input(unsigned char *buf, int len, KeySym ks,
+                              unsigned char *out, int outsize)
+{
+    int n;
+    if( len > 0 && is_valid_utf8(buf, len) && len <= outsize ) {
+        memcpy(out, buf, len);
+        return len;
+    }
+    n = char_to_utf8( keysym_to_ucs(ks), out );
+    if( n > outsize ) return 0;
+    return n;
+}
+
+@  Shared tail of a text insertion: replace any selection, insert the
+  (already UTF-8) bytes, advance the cursor and notify.
+@proc commit_input($, unsigned char *u8, int outlen)
+{
+    replace_selection_if_any($);
+    insert_char_at_cursor($, (char*)u8, outlen );
+    draw_line_from($, $rsel.x, $rsel.y );
+    cursor_right($);
+    TRACE(KARO_TESTING, "KaroEd insert_char len=%d '%.*s' cursor=(%d,%d)",
+          outlen, outlen, (char*)u8, $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_INSERT);
 }
 
 
@@ -1550,6 +1629,22 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 }
 
 
+@  Test hook: simulate _XawLookupString() returning a single Latin-1 byte
+  for |cp| (e.g. 0xE4 = a-diaeresis) and run it through the same UTF-8
+  normalisation as insert_char().
+@proc insert_latin1
+{
+    int cp = 0xE4;
+    unsigned char raw[2];
+    unsigned char out[8];
+    int n;
+    if( *num_params > 0 ) cp = (int) strtol( params[0], NULL, 0 );
+    raw[0] = (unsigned char) cp;
+    n = normalize_key_input(raw, 1, (KeySym) cp, out, sizeof out);
+    if( n > 0 ) commit_input($, out, n);
+}
+
+
 @proc info
 {
     int i;
@@ -1606,8 +1701,9 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
 @proc insert_char
 {
-    int len;
-    unsigned char buf[32];
+    int len, outlen;
+    unsigned char buf[64];
+    unsigned char u8[64];
     KeySym key_sim;
 
     if( $locked ) return;
@@ -1615,14 +1711,12 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
     if (len <= 0) return;
 
-    replace_selection_if_any($);
+    /* Normalise to UTF-8: XLookupString reports Latin-1 for keysyms such
+       as a-diaeresis, which would corrupt the UTF-8 text buffer. */
+    outlen = normalize_key_input(buf, len, key_sim, u8, sizeof u8);
+    if( outlen <= 0 ) return;
 
-    insert_char_at_cursor($, (char*)buf, len );
-    draw_line_from($, $rsel.x, $rsel.y );
-    cursor_right($);
-    TRACE(KARO_TESTING, "KaroEd insert_char len=%d '%.*s' cursor=(%d,%d)",
-          len, len, (char*)buf, $rsel.x, $rsel.y );
-    edit_notify($, KEDIT_INSERT);
+    commit_input($, u8, outlen);
 }
 
 

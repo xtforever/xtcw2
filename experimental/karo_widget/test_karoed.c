@@ -35,6 +35,8 @@
 
 extern int trace_level;
 
+static void act_insert_latin1(Widget w);
+
 typedef enum { S_STR, S_KEY, S_CALL, S_WAIT } step_kind;
 
 typedef struct {
@@ -144,6 +146,13 @@ static void act_api(Widget w)
         XtFree(t);
 }
 
+/* Non-ASCII input (a-diaeresis) must be normalised to UTF-8, not Latin-1. */
+static const step_t sc_utf8_input[] = {
+    { S_STR, "a", 0, 0 },
+    { S_CALL, NULL, 0, 0, act_insert_latin1, 0 },
+    { S_STR, "bc", 0, 0 },
+};
+
 /* Inserting in the middle of a line shifts the tail (memmove path). */
 static const step_t sc_insert_midline[] = {
     { S_STR, "ac", 0, 0 },
@@ -219,6 +228,13 @@ static void act_sel_first_char(Widget w)
 {
     String p[] = { (String)"0", (String)"0", (String)"1", (String)"0" };
     XtCallActionProc(w, "select_range", NULL, p, 4);
+}
+
+/* Simulate _XawLookupString returning the Latin-1 byte for a-diaeresis. */
+static void act_insert_latin1(Widget w)
+{
+    String p[] = { (String)"0xE4" };
+    XtCallActionProc(w, "insert_latin1", NULL, p, 1);
 }
 
 /* Ctrl+C on a selection (no select_all shortcut). */
@@ -298,6 +314,7 @@ static const scenario_t scenarios[] = {
     { "indent", sc_indent, (int)(sizeof(sc_indent) / sizeof(sc_indent[0])), NULL },
     { "tab", sc_tab, (int)(sizeof(sc_tab) / sizeof(sc_tab[0])), NULL },
     { "insert_midline", sc_insert_midline, (int)(sizeof(sc_insert_midline) / sizeof(sc_insert_midline[0])), NULL },
+    { "utf8_input", sc_utf8_input, (int)(sizeof(sc_utf8_input) / sizeof(sc_utf8_input[0])), NULL },
 };
 
 static const scenario_t *find_scenario(const char *name)
