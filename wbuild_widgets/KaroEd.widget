@@ -1,0 +1,1661 @@
+@ Das Widget |KaroEd| kann zur Anzeige und zum Editieren von Texten
+  verwendet werden
+
+
+@class KaroEd (Wheel)
+
+@exports
+
+@  Classification of a buffer mutation, passed to the change callback.
+@type edit_kind = enum {
+  KEDIT_INSERT = 0,
+  KEDIT_REMOVE,
+  KEDIT_SPLIT,
+  KEDIT_JOIN,
+  KEDIT_PASTE,
+  KEDIT_REPLACE,
+  KEDIT_LOAD
+}
+
+@proc void karoEd_writeln(Widget w, char *s)
+{
+  KaroEdWidgetClass wc = (KaroEdWidgetClass)XtClass(w);
+  if( XtIsSubclass( w, karoEdWidgetClass) && wc->karoEd_class.writeln )
+    {
+      wc->karoEd_class.writeln(w,s);
+    }
+}
+
+@proc char* karoEd_get_text(Widget w)
+{
+  KaroEdWidgetClass wc = (KaroEdWidgetClass)XtClass(w);
+  if( XtIsSubclass( w, karoEdWidgetClass) && wc->karoEd_class.get_text )
+    {
+      return wc->karoEd_class.get_text(w);
+    }
+  return 0;
+}
+
+
+
+@PUBLIC
+@var Bool locked = 0
+@var StringMArray lines = 0
+@var int min_lines = 1
+@var int grid_width = 1
+@var int grid_height = 1
+@var int auto_resize = 1
+@var String fileForm = ""
+
+
+@PRIVATE
+@var int drag_last_y
+@var int drag_last_x
+@var int drag_update
+@var int top_x
+@var int top_y
+@var int grid_pix_width
+@var int grid_pix_height
+@var int value
+@var Bool do_init
+@var XftDraw *draw
+@var int selectionText
+
+@var XRectangle rsel
+@var int sel_anchor_x
+@var int sel_anchor_y
+@var Bool has_selection
+@def debug = 5
+@def KARO_TESTING = 50
+@var int FRM
+@var int SCR
+@var int lines_owned
+@var int col_hint
+@var int in_notify
+
+@CLASSVARS
+@var Atom XA_UTF8_STRING = 0
+
+@METHODS
+@proc initialize
+{
+    if(! $XA_UTF8_STRING )
+        $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+
+    if( $lines == 0 ) {
+        $lines = m_create(10,sizeof(char*));
+        $lines_owned = 1;
+    } else {
+        $lines_owned = 0;
+    }
+    $selectionText = m_create(100,1);
+
+    $do_init = 1;
+    $top_x = $top_y = 0;
+    $rsel.x = 0;
+    $rsel.y = 0;
+    $sel_anchor_x = 0;
+    $sel_anchor_y = 0;
+    $has_selection = False;
+    $col_hint = -1;
+
+    int w = $xftFont->ascent + $xftFont->descent;
+    $grid_pix_height  = w;
+    $grid_pix_width = xft_textwidth(XtDisplay($), $xftFont, "w" );
+
+    /* todo: put this in a function */
+    if( ! is_empty($fileForm) ) {
+        if( ! $lines_owned ) {
+            WARN("KaroEd: fileForm '%s' ignored, lines is externally owned", $fileForm );
+        } else {
+            form_from_file($fileForm, & $SCR, & $FRM );
+            m_free_strings($lines,1);
+            TRACE(3,"%s %d %d", $fileForm,$SCR,$FRM );
+            /* copy screen to work buffer */
+            int p,*d;
+            m_foreach($SCR,p,d) {
+              char * string_line = m_buf(*d);
+              char * line_work = strdup( string_line );
+              m_put($lines, & line_work );
+            }
+        }
+    }
+
+    ensure_line0($);
+
+    $height = $grid_pix_height * $grid_height;
+    $width = $grid_pix_width * $grid_width;
+    if( $height == 0 || $height > 4095 ) $height = 20;
+    if( $width == 0 || $width > 4095  ) $width = 20;
+}
+
+
+
+@  Append one line of text to the buffer (public API via
+  karoEd_writeln()).
+@proc writeln($, char *s)
+{
+    char *copy = strdup( s ? s : "" );
+    m_put( $lines, &copy );
+    if( $rsel.y >= m_len($lines) ) $rsel.y = m_len($lines) - 1;
+    normalize_scroll($);
+    selection_draw($);
+    edit_notify($, KEDIT_LOAD);
+}
+
+@  Return the whole buffer as one XtMalloc'd, '\n'-separated string.
+  The caller owns the returned storage (XtFree()).
+@proc char* get_text($)
+{
+    int i;
+    int total = 1;
+    char *out, *p;
+
+    for( i=0; i<m_len($lines); i++ )
+        total += strlen(STR($lines,i)) + 1;
+    out = (char*) XtMalloc(total);
+    p = out;
+    for( i=0; i<m_len($lines); i++ ) {
+        int l = strlen(STR($lines,i));
+        memcpy(p, STR($lines,i), l);
+        p += l;
+        if( i < m_len($lines) - 1 ) *p++ = '\n';
+    }
+    *p = 0;
+    return out;
+}
+
+@ marker setzen damit das folgende expose das Window
+  neu zeichnen kann, resize wird beim initialisieren der application
+  vor realize aufgerufen daher die abfrage ob es sicher ist das
+  window zu bearbeiten.
+@proc resize
+{
+    /* if( XtIsRealized($) ) reshape_widget($); */
+    $do_init=1;
+}
+
+@proc set_values
+{
+    if( $lines != $old$lines ) {
+        if( $lines_owned && $old$lines ) {
+            m_free_strings( $old$lines, 0 );
+        }
+        if( $lines == 0 ) {
+            $lines = m_create(10,sizeof(char*));
+            $lines_owned = 1;
+        } else {
+            $lines_owned = 0;
+        }
+        ensure_line0($);
+        $has_selection = False;
+        $rsel.x = 0;
+        $rsel.y = 0;
+        cursor_clamp_to_line($);
+        $col_hint = $rsel.x;
+        normalize_scroll($);
+        if( XtIsRealized($) ) {
+            form_update($);
+            redraw_full($);
+        }
+        edit_notify($, KEDIT_LOAD);
+    }
+    return True;
+}
+
+
+@proc realize
+{
+    Display *dpy = XtDisplay($);
+    XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent, *mask, attributes);
+    $draw = XftDrawCreate(dpy, XtWindow($),
+                       DefaultVisual(dpy, DefaultScreen(dpy)), None);
+}
+
+@proc expose
+{
+        if( $do_init ) {
+            if( $auto_resize ) {
+              $grid_width = $width / $grid_pix_width;
+              $grid_height = $height / $grid_pix_height;
+            }
+            $do_init=0;
+         }
+
+	form_update($);
+        XClearWindow(  XtDisplay($), XtWindow($) );
+        redraw_full($);
+}
+
+
+@proc destroy
+{
+    if( $draw ) {
+        XftDrawDestroy($draw);
+        $draw = 0;
+    }
+    if( $selectionText ) {
+        m_free($selectionText);
+        $selectionText = 0;
+    }
+    if( $FRM ) {
+        if( $SCR ) {
+            int i;
+            for( i=0; i<m_len($SCR); i++ )
+                m_free( INT($SCR,i) );
+            m_free($SCR);
+            $SCR = 0;
+        }
+        form_free($FRM);
+        $FRM = 0;
+    }
+    if( $lines_owned && $lines ) {
+        m_free_strings($lines, 0);
+        $lines = 0;
+    }
+}
+
+
+
+
+@UTILITIES
+
+
+@  The editor invariant is that the buffer always contains at least one
+  (possibly empty) line, so line 0 always exists.  Call after any
+  operation that can remove lines.
+@proc ensure_line0($)
+{
+    if( m_len($lines) == 0 ) {
+        char *s = strdup("");
+        m_put( $lines, &s );
+    }
+}
+
+
+@  Return `s` with newlines/tabs escaped so it can be emitted on a
+  single TRACE line.
+@proc char* escape_nl(char *s)
+{
+    static char buf[1024];
+    int i = 0, j = 0;
+    while( s[i] && j < (int)sizeof(buf) - 3 ) {
+        if( s[i] == '\n' ) { buf[j++] = '\\'; buf[j++] = 'n'; }
+        else if( s[i] == '\t' ) { buf[j++] = '\\'; buf[j++] = 't'; }
+        else buf[j++] = s[i];
+        i++;
+    }
+    buf[j] = 0;
+    return buf;
+}
+
+
+@  Fire the widget's change callback exactly once per logical edit.
+  Honours `$locked` and guards against re-entrancy (a callback may
+  itself trigger another edit).
+@proc edit_notify($, int kind)
+{
+    if( $locked ) return;
+    if( $in_notify ) return;
+    $in_notify = 1;
+    XtCallCallbackList( $, $callback, (XtPointer)(long)kind );
+    $in_notify = 0;
+}
+
+
+@proc clip_rect($,XRectangle *r)
+{
+    int x0,y0,x1,y1;
+    x0 = r->x;
+    y0 = r->y;
+    x1 = x0 + r->width;
+    y1 = y0 + r->height;
+
+    /* oben links ausserhalb */
+    if( x0 >= $grid_width || y0 >= $grid_height ) goto empty_rect;
+
+    /* unten rechts ausserhalb */
+    if( y1 < 0 || x1 < 0 ) goto empty_rect;
+
+    /* auf window zurechtschneiden */
+    if( x0 < 0 ) x0=0;
+    if( y0 < 0 ) y0=0;
+    if( x1 > $grid_width ) x1 = $grid_width;
+    if( y1 > $grid_height) y1 = $grid_height;
+
+    r->x = x0; r->y = y0;
+    r->width = x1-x0;
+    r->height = y1-y0;
+    return;
+
+ empty_rect:
+    memset(r, 0, sizeof(*r));
+}
+
+
+@  Half-open document-order test: is (x,y) inside the current selection?
+  A multi-line selection includes whole interior lines.
+@proc Bool char_in_selection($, int x, int y)
+{
+    int sx,sy,ex,ey;
+    if( ! $has_selection ) return False;
+
+    if( $sel_anchor_y < $rsel.y ||
+        ( $sel_anchor_y == $rsel.y && $sel_anchor_x <= $rsel.x ) ) {
+        sy = $sel_anchor_y; sx = $sel_anchor_x;
+        ey = $rsel.y; ex = $rsel.x;
+    } else {
+        sy = $rsel.y; sx = $rsel.x;
+        ey = $sel_anchor_y; ex = $sel_anchor_x;
+    }
+
+    if( y < sy || y > ey ) return False;
+    if( sy == ey ) return ( x >= sx && x < ex );
+    if( y == sy ) return ( x >= sx );
+    if( y == ey ) return ( x < ex );
+    return True;   /* interior line: select the whole line */
+}
+
+@  Selection and caret are painted by draw_glyph; a full redraw keeps
+  them correct for arbitrary (multi-line) ranges.
+@proc selection_draw($)
+{
+    redraw_full($);
+}
+
+
+@proc redraw_full($)
+{
+        int x; int y;
+        for( x=0; x < $grid_width; x++ ) {
+            for(y=0; y < $grid_height; y++ ) {
+                draw_glyph($,x,y );
+            }
+        }
+}
+
+@proc uint32_t find_charpos($, int x, int y, int *ret_line, int *ret_charpos )
+{
+    int ln = $top_y + y;
+    int len, p  = $top_x + x;
+    int l;
+    uint8_t *string;
+    uint32_t ucs4;
+
+    *ret_line = -1;
+    *ret_charpos = -1;
+
+    if( ln >= m_len($lines) ) return 0;
+    if(ret_line) *ret_line = ln;
+    string = (uint8_t *)STR($lines,ln);
+    len = strlen( (char*)string);
+    while(1) {
+            l = FcUtf8ToUcs4 (string, &ucs4, len);
+            if( l<= 0 || len <=0 ) return 0;
+            if( p <=0 ) {
+                if( ret_charpos ) *ret_charpos = string - (uint8_t*)STR($lines,ln);
+                return ucs4;
+            }
+
+            string += l;
+            len -= l;
+            p--;
+    }
+
+}
+
+
+@proc uint32_t get_ucs4($, int x, int y )
+{
+
+    int d1,d2;
+    return find_charpos($,x,y,&d1,&d2);
+}
+
+@proc draw_glyph($, int x, int y)
+{
+    int fg = 0;
+    int bg = 3;
+    int tx, ty;
+
+    if( x < 0 || x >= $grid_width ) return;
+    if( y < 0 || y >= $grid_height ) return;
+
+    tx = x + $top_x;
+    ty = y + $top_y;
+    if( char_in_selection($, tx, ty) ) {
+        fg = 1;
+        bg = 4;
+    }
+    else if( ! $has_selection && tx == $rsel.x && ty == $rsel.y ) {
+        /* keep the caret visible when nothing is selected */
+        fg = 1;
+        bg = 4;
+        TRACE(KARO_TESTING, "KaroEd caret=(%d,%d)", tx, ty );
+    }
+
+    draw_glyph_color($,x,y,fg,bg);
+}
+
+@proc draw_glyph_color($, int x, int y, int fg, int bg )
+{
+    int x0,y0,w,h;
+    uint32_t ucs4, glyph;
+
+    x0 = x * $grid_pix_width;
+    y0 = y * $grid_pix_height;
+    w = $grid_pix_width;
+    h = $grid_pix_height;
+
+    XftDrawRect($draw,$xft_col+bg, x0,y0,w,h );
+    ucs4 = get_ucs4($, x, y );
+    if( ucs4 == 0 || ucs4 == 32 ) return;
+    glyph = XftCharIndex ( XtDisplay($), $xftFont, ucs4 );
+    XftDrawGlyphs ($draw, $xft_col+fg, $xftFont,
+                   x0, y0+$xftFont->ascent,
+                   &glyph, 1);
+}
+
+
+@proc String get_name($)
+{
+          return "";
+}
+
+@proc void normalize_pos($)
+{
+        if( $top_x < 0 ) $top_x = 0;
+        if( $top_y < 0 ) $top_y = 0;
+}
+
+@proc Bool coordinate_to_text($, int *x, int *y)
+{
+    Bool ret = (*x >= 0) && (*x < $grid_width * $grid_pix_width)
+            && (*y >= 0) && (*y < $grid_height * $grid_pix_height);
+
+    *x /= $grid_pix_width;
+    *x += $top_x;
+    *y /= $grid_pix_height;
+    *y += $top_y;
+
+    /* clamp the converted position to the text buffer */
+    if( *x < 0 ) *x = 0;
+    if( *y < 0 ) *y = 0;
+    if( m_len($lines) > 0 ) {
+        if( *y >= m_len($lines) ) *y = m_len($lines) - 1;
+        int len = utf8_strlen( STR($lines,*y) );
+        if( *x > len ) *x = len;
+    } else {
+        *x = 0; *y = 0;
+    }
+
+    return ret;
+
+}
+
+@proc selection_start($, int x, int y)
+{
+    $sel_anchor_x = x;
+    $sel_anchor_y = y;
+    $rsel.x = x;
+    $rsel.y = y;
+    $col_hint = x;
+    $has_selection = False;
+}
+
+@  Extend the selection from the anchor to (x,y).  Returns True if the
+  cursor (and therefore the highlighted range) moved.
+@proc Bool selection_resize($, int x, int y)
+{
+    Bool changed = ( $rsel.x != x || $rsel.y != y );
+    $rsel.x = x;
+    $rsel.y = y;
+    $has_selection = ( x != $sel_anchor_x || y != $sel_anchor_y );
+    return changed;
+}
+
+
+@proc draw_line_from($, int x, int y )
+{
+
+    x -= $top_x;
+    y -= $top_y;
+    while( x < $grid_width ) {
+        draw_glyph($,x,y);
+        x++;
+    }
+}
+
+
+@proc int utf8_strlen( char *s )
+{
+    int n,w;
+    FcUtf8Len((uint8_t*)s,strlen(s), &n, &w );
+    return n;
+}
+
+
+@  Clamp the cursor column to the length of the line it is on.
+  This does NOT touch col_hint, so vertical movement can restore the
+  desired column on a longer line.
+@proc cursor_clamp_to_line($)
+{
+    int len = 0;
+    if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
+        len = utf8_strlen( STR($lines,$rsel.y) );
+    if( $rsel.x < 0 ) $rsel.x = 0;
+    if( $rsel.x > len ) $rsel.x = len;
+}
+
+@  Horizontal cursor setter: clamps and records the desired column.
+@proc cursor_set_x($, int x)
+{
+    if( x < 0 ) x = 0;
+    $rsel.x = x;
+    cursor_clamp_to_line($);
+    $col_hint = $rsel.x;
+}
+
+@  Keep the cursor inside the visible viewport and the viewport inside
+  the text buffer.
+@proc normalize_scroll($)
+{
+    if( $top_x < 0 ) $top_x = 0;
+    if( $top_y < 0 ) $top_y = 0;
+    if( m_len($lines) > 0 && $top_y > m_len($lines) - 1 )
+        $top_y = m_len($lines) - 1;
+    if( $top_y < 0 ) $top_y = 0;
+
+    if( $rsel.x < $top_x ) $top_x = $rsel.x;
+    if( $rsel.x >= $top_x + $grid_width )
+        $top_x = $rsel.x - $grid_width + 1;
+    if( $rsel.y < $top_y ) $top_y = $rsel.y;
+    if( $rsel.y >= $top_y + $grid_height )
+        $top_y = $rsel.y - $grid_height + 1;
+
+    if( $top_x < 0 ) $top_x = 0;
+    if( $top_y < 0 ) $top_y = 0;
+}
+
+
+@  Remove characters [x0,x1) from line y.
+@proc delete_range_same_line($, int y, int x0, int x1)
+{
+    char *s = STR($lines,y);
+    char *p0 = utf8_skip(s, x0);
+    char *p1 = utf8_skip(s, x1);
+    int newlen = (int)strlen(s) - (int)(p1 - p0);
+    memmove(p0, p1, strlen(p1) + 1);
+    s = realloc(s, newlen + 1);
+    if( s ) STR($lines,y) = s;
+}
+
+@  Delete the current selection [anchor,cursor) in document order and
+  collapse the cursor to its start.  Returns True if anything was
+  deleted.  Fires exactly one change notification.
+@proc Bool delete_selection($)
+{
+    int sx,sy,ex,ey;
+    int i, count;
+    char *s1, *p1, *s2, *p2, *merged;
+
+    if( $locked ) return False;
+    if( ! $has_selection ) return False;
+
+    if( $sel_anchor_y < $rsel.y ||
+        ( $sel_anchor_y == $rsel.y && $sel_anchor_x <= $rsel.x ) ) {
+        sy = $sel_anchor_y; sx = $sel_anchor_x;
+        ey = $rsel.y; ex = $rsel.x;
+    } else {
+        sy = $rsel.y; sx = $rsel.x;
+        ey = $sel_anchor_y; ex = $sel_anchor_x;
+    }
+
+    if( sy == ey ) {
+        delete_range_same_line($, sy, sx, ex);
+    } else {
+        /* truncate the first line, append the remainder of the last */
+        s1 = STR($lines,sy);
+        p1 = utf8_skip(s1, sx);
+        s2 = STR($lines,ey);
+        p2 = utf8_skip(s2, ex);
+        *p1 = 0;
+        merged = realloc(s1, strlen(s1) + strlen(p2) + 1);
+        if( ! merged ) return False;
+        strcat(merged, p2);
+        STR($lines,sy) = merged;
+        count = ey - sy;
+        for( i=0; i<count; i++ ) {
+            free( STR($lines, sy+1) );
+            m_del($lines, sy+1);
+        }
+    }
+
+    $has_selection = False;
+    $rsel.y = sy;
+    cursor_set_x($, sx);
+    ensure_line0($);
+    normalize_scroll($);
+    selection_draw($);
+    edit_notify($, KEDIT_REPLACE);
+    return True;
+}
+
+@  Replace the selection (if any) before an insertion.  Returns True
+  when a selection was consumed.
+@proc Bool replace_selection_if_any($)
+{
+    if( $locked ) return False;
+    if( ! $has_selection ) return False;
+    return delete_selection($);
+}
+
+@  Backspace at column 0: append the current line to the previous one.
+@proc join_line_prev($)
+{
+    int y = $rsel.y;
+    int joinx;
+    char *s, *p;
+
+    if( y <= 0 || y >= m_len($lines) ) return;
+
+    joinx = utf8_strlen( STR($lines, y-1) );   /* cursor target, before append */
+    s = STR($lines, y);
+    p = STR($lines, y-1);
+    p = realloc(p, strlen(p) + strlen(s) + 1);
+    if( ! p ) return;
+    strcat(p, s);
+    STR($lines, y-1) = p;
+    free( s );
+    m_del($lines, y);
+
+    $rsel.y = y - 1;
+    cursor_set_x($, joinx);
+    ensure_line0($);
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd join_prev cursor=(%d,%d)", $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_JOIN);
+}
+
+@  Delete at end of line: append the next line to the current one.
+@proc join_line_next($)
+{
+    int y = $rsel.y;
+    int joinx;
+    char *s, *n;
+
+    if( y < 0 || y+1 >= m_len($lines) ) return;
+
+    joinx = utf8_strlen( STR($lines, y) );     /* join point = end of line */
+    s = STR($lines, y);
+    n = STR($lines, y+1);
+    s = realloc(s, strlen(s) + strlen(n) + 1);
+    if( ! s ) return;
+    strcat(s, n);
+    STR($lines, y) = s;
+    free( n );
+    m_del($lines, y+1);
+
+    cursor_set_x($, joinx);
+    ensure_line0($);
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd join_next cursor=(%d,%d)", $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_JOIN);
+}
+
+
+@proc remove_char_at_cursor($)
+{
+    uint32_t ucs4;
+    int x,y,p,byte_len,byte_pos,w;
+    x=$rsel.x;
+    y=$rsel.y;
+    if( y >= m_len($lines) ) return;
+    char *s = STR($lines,y);
+    if( x >= utf8_strlen(s) ) return;
+
+    p=0;
+    byte_len = strlen(s) +1;
+    byte_pos = 0;
+    while(1) {
+        w = FcUtf8ToUcs4 ((uint8_t*)s + byte_pos, &ucs4, byte_len - byte_pos);
+        if( w <=0 ) return;
+        if( p >= x ) break;
+        byte_pos+=w; p++;
+    }
+
+    memcpy( s+byte_pos, s+byte_pos + w, byte_len - byte_pos - w );
+    s = realloc(s, byte_len - w);
+    if( s ) STR($lines,y) = s;
+}
+
+
+@proc insert_char_at_cursor($, char *buf, int len )
+{
+    uint32_t ucs4;
+    int p;
+    int x,y,w;
+    char *s;
+    int byte_len;
+    int utf8_len;
+    int byte_pos;
+
+    x=$rsel.x;
+    y=$rsel.y;
+
+    while( y >= m_len($lines) ) {
+        s=strdup("");
+        m_put( $lines, &s );
+    }
+
+
+    s=STR($lines,y);
+    byte_len = strlen(s);
+    utf8_len = utf8_strlen(s);
+
+    /* append data */
+    if( x >= utf8_len ) {
+        /* fill byte_len .. x */
+        int n = x - utf8_len; /* append space */
+        char *t = realloc(s,byte_len+n+len+1);
+        if( ! t ) return;
+        s = t;
+        while( n-- ) s[byte_len++] = 32;
+        memcpy( s+byte_len, buf, len );
+        s[byte_len+len] = 0;
+        STR($lines,y) = s;
+        return;
+    }
+
+    /* insert data, because this string is utf8 encoded
+     we need to check the size of each character */
+    p=0;
+    byte_len = strlen(s) +1;
+    byte_pos = 0;
+    while( p < x ) {
+        w = FcUtf8ToUcs4 ((uint8_t*)s + byte_pos, &ucs4, byte_len - byte_pos); /* get number of bytes for s[byte_pos) */
+        if( w <=0 ) break;
+        byte_pos+=w; p++;	/* find next character position */
+    }
+    {
+        char *t = realloc(s, byte_len+len);
+        if( ! t ) return;
+        s = t;
+    }
+    STR($lines,y) = s;
+    memcpy( s + byte_pos + len, s+byte_pos, byte_len - byte_pos );
+    memcpy( s + byte_pos, buf, len );
+}
+
+@proc cursor_right($)
+{
+    int len = 0;
+    $has_selection = False;
+    if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
+        len = utf8_strlen( STR($lines,$rsel.y) );
+    if( $rsel.x < len ) $rsel.x++;
+    $col_hint = $rsel.x;
+    if( $rsel.x < $top_x ) $top_x = $rsel.x;
+    if( $rsel.x >= $top_x + $grid_width ) {
+        $top_x = $rsel.x - $grid_width + 1;
+        redraw_full($);
+    }
+    selection_draw($);
+}
+
+
+@proc Bool cursor_pos1($)
+{
+    Bool redraw;
+    redraw = ( $top_x != 0 ) || ( $rsel.x != 0 );
+    $top_x = 0;
+    $rsel.x=0;
+    $col_hint=0;
+    $has_selection = False;
+    return redraw;
+}
+
+@proc Bool cursor_down($)
+{
+    Bool redraw;
+    int maxy = m_len($lines) - 1;
+    if( maxy < 0 ) maxy = 0;
+    if( $rsel.y >= maxy ) return False;   /* do not move past the last line */
+    $rsel.y++;
+    if( (redraw=$rsel.y >= $top_y + $grid_height) ) {
+        $top_y = $rsel.y - $grid_height + 1;
+    }
+    return redraw;
+}
+
+@proc Bool current_line_empty($)
+{
+    int ln = $rsel.y;
+    if( ln >= m_len($lines) ) return True;
+    char *s = STR($lines,ln);
+    return *s == 0;
+}
+
+@proc Bool remove_current_line($)
+{
+    int ln = $rsel.y;
+    if( ln >= m_len($lines) ) return False;
+    free( STR($lines, ln) );
+    m_del($lines,ln);
+    return True;
+}
+
+@proc Bool insert_line($)
+{
+    char *s;
+    int y = $rsel.y;
+    if( y < m_len($lines) ) {
+        m_ins($lines,y,1);
+        STR($lines,y) = strdup("");
+    } else {
+        while( y >= m_len($lines) ) {
+            s=strdup("");
+            m_put( $lines, &s );
+        }
+    }
+    return True;
+
+}
+
+
+@proc char* utf8_skip(char *str, int cnt)
+{
+    uint8_t *s = (uint8_t *) str;
+    while( cnt && *s ) {
+        cnt--;
+        s++;
+        while( (*s & 0b11000000) == 0b10000000 ) s++; /* utf8 */
+    }
+    return (char*) s;
+}
+
+@proc Bool split_line_at_cursor($)
+{
+    int ln = $rsel.y;
+
+    if( ln >= m_len($lines) ) return False;     /* kein text */
+
+    char *s = STR($lines,ln);
+    int utf8_len = utf8_strlen(s);
+    char *s2, *new_line;
+    int crsr_x = $rsel.x;
+
+    if( $rsel.x < utf8_len ) {     /* innerhalb einer zeile */
+        s2 = utf8_skip(s, crsr_x);
+        new_line = strdup(s2);
+        *s2 = 0;
+        {
+            char *t = realloc(s, s2-s +1 );
+            if( t ) s = t;
+        }
+        STR($lines,ln) = s;
+    } else new_line = strdup("");  /* am ende einer zeile */
+
+    ln++;
+    m_ins($lines,ln,1);
+    STR($lines,ln) = new_line;
+    return True;
+}
+
+@  Insert pasted text at the cursor, splitting on LF / CRLF / CR.
+@proc paste_text($, char *text)
+{
+    char *p = text;
+    while( *p ) {
+        char *nl = p;
+        int seglen;
+        while( *nl && *nl != '\n' && *nl != '\r' ) nl++;
+        seglen = (int)(nl - p);
+        if( seglen > 0 ) {
+            int n = 0;
+            char *q = p;
+            insert_char_at_cursor($, p, seglen);
+            while( q < nl ) { if( utf8char(&q) == -1 ) break; n++; }
+            cursor_set_x($, $rsel.x + n);
+            draw_line_from($, $rsel.x, $rsel.y);
+        }
+        if( *nl == 0 ) break;
+        if( *nl == '\r' && nl[1] == '\n' ) nl++;   /* CRLF */
+        nl++;
+        split_line_at_cursor($);
+        cursor_down($);
+        cursor_pos1($);
+        p = nl;
+    }
+    normalize_scroll($);
+}
+
+@ callback function, called by XtGetSelectionValue()
+@proc RequestSelection($, XtPointer client, Atom * selection, Atom * type,
+                       XtPointer value, unsigned long *length, int *format)
+{
+    char *src = (char*) value;
+    unsigned long len = length ? *length : 0;
+    char *s;
+
+    if( ! src ) return;
+    if( type && *type != $XA_UTF8_STRING ) { XtFree(src); return; }
+    if( format && *format != 8 ) { XtFree(src); return; }
+    if( $locked ) { XtFree(src); return; }
+    if( len == 0 ) { XtFree(src); return; }
+
+    /* Xt does not guarantee NUL termination: copy a bounded, terminated
+       string and release the selection value immediately. */
+    s = (char*) malloc(len + 1);
+    if( ! s ) { XtFree(src); return; }
+    memcpy(s, src, len);
+    s[len] = 0;
+    XtFree(src);
+
+    replace_selection_if_any($);
+    paste_text($, s);
+    free(s);
+    selection_draw($);
+    edit_notify($, KEDIT_PASTE);
+}
+
+@proc utf8_copy_char(int buf, char **strp)
+{
+    char *s = *strp;
+    do {
+        m_putc(buf,*s++);
+    }
+    while( (*s & 0b11000000) == 0b10000000 ); /* utf8 */
+    *strp = s;
+}
+
+@proc Boolean
+ConvertSelection($, Atom * selection, Atom * target, Atom * type,
+  XtPointer * value, unsigned long *length, int *format)
+{
+
+  XSelectionRequestEvent *req = XtGetSelectionRequest($, *selection, NULL);
+
+  /* client ask for possible types */
+  if (*target == XA_TARGETS(XtDisplay($))) {
+      Atom *targetP, *std_targets;
+      unsigned long std_length;
+
+      /* get possible targets */
+      XmuConvertStandardSelection($, req->time, selection,
+                                  target, type, (XPointer *) & std_targets,
+                                  &std_length, format);
+
+      *value = XtMalloc((unsigned) sizeof(Atom) * (std_length + 1));
+      targetP = *(Atom **) value;
+
+      *length = std_length + 1;     /* list of standard types */
+      *targetP++ = $XA_UTF8_STRING;  /* prefered target */
+      /* append standard targets */
+      memmove((char *) targetP, (char *) std_targets, sizeof(Atom) * std_length);
+      XtFree((char *) std_targets); /* remove original list */
+      *type = XA_ATOM;
+      *format = sizeof(Atom) * 8;
+      return True;
+  }
+  else if (*target == $XA_UTF8_STRING) {
+      *length = (long) s_strlen($selectionText);
+      if( *length ) *value = strdup(m_buf($selectionText));
+      else *value = 0;
+      *type = $XA_UTF8_STRING;
+      *format = 8;
+      return True;
+  }
+  return False;
+}
+
+
+@proc LoseSelection($, Atom * selection)
+{
+  $has_selection = False;
+  selection_draw($);
+}
+
+@  Build the selected text (document order, '\n' between lines, no
+  trailing NUL in the advertised length) and offer it as PRIMARY and
+  CUT_BUFFER0.
+@proc do_copy_selection($,ulong time)
+{
+    int sx,sy,ex,ey;
+    int y;
+
+    if( ! $has_selection ) return;
+
+    if( $sel_anchor_y < $rsel.y ||
+        ( $sel_anchor_y == $rsel.y && $sel_anchor_x <= $rsel.x ) ) {
+        sy = $sel_anchor_y; sx = $sel_anchor_x;
+        ey = $rsel.y; ex = $rsel.x;
+    } else {
+        sy = $rsel.y; sx = $rsel.x;
+        ey = $sel_anchor_y; ex = $sel_anchor_x;
+    }
+
+    m_clear( $selectionText );
+    for( y = sy; y <= ey && y < m_len($lines); y++ ) {
+        char *s = STR($lines,y);
+        int len = utf8_strlen(s);
+        int from = ( y == sy ) ? sx : 0;
+        int to   = ( y == ey ) ? ex : len;
+        char *p;
+        int cnt;
+        if( from < 0 ) from = 0;
+        if( to > len ) to = len;
+        if( from > to ) from = to;
+        p = utf8_skip( s, from );
+        cnt = to - from;
+        while( cnt > 0 && *p ) {
+            utf8_copy_char( $selectionText, &p );
+            cnt--;
+        }
+        if( y < ey ) m_putc( $selectionText, '\n' );
+    }
+    m_putc( $selectionText, 0 );
+
+    if( s_strlen($selectionText) <= 0 ) return;   /* never own empty text */
+
+    XtOwnSelection($, XA_PRIMARY, time,
+                   ConvertSelection, LoseSelection, NULL);
+    XChangeProperty(XtDisplay($), DefaultRootWindow(XtDisplay($)),
+                    XA_CUT_BUFFER0, $XA_UTF8_STRING, 8, PropModeReplace,
+                    (unsigned char *) m_buf($selectionText),
+                    s_strlen($selectionText));
+    TRACE(KARO_TESTING, "KaroEd copy='%s'", escape_nl( (char*)m_buf($selectionText) ) );
+}
+
+@  x,y - position inside text-buffer
+@proc draw_character_at($, int x, int y)
+{
+   int rx,ry;
+   rx = x - $top_x; /* position on screen */
+   ry = y - $top_y;
+   if( rx < 0 || ry < 0 || rx >= $grid_width || ry >= $grid_height ) return;
+   draw_glyph($,rx,ry);
+}
+
+@proc update_display($, int x, int y, int w, int h )
+{
+    for( int x0=x; x0 < x+w; x0++ ) {
+       for( int y0=y; y0 < y+h; y0++ ) {
+	  draw_character_at($, x0,y0 );
+       }
+    }
+}
+
+@proc copy_data_to_scr($,int buf, int x, int y, int len )
+{
+}
+
+@proc format_data($, int buf,struct form_entry *fe)
+{
+}
+
+@proc update_form_field($,int num)
+{
+   int buf = m_create(50,1);
+   struct form_entry *fe = mls($FRM,num);
+   format_data($,buf,fe);
+   copy_data_to_scr($,buf, fe->x, fe->y, fe->len );
+   update_display($, fe->x, fe->y, fe->len, 1 );
+}
+
+@proc char* form_field_data($,int num, int *size)
+{
+ int len;
+   static char buf[1024];
+   struct form_entry *fe = mls($FRM,num);
+   if( fe->len >= sizeof(buf) ) len=sizeof(buf)-1;
+
+   /* get data from micro_vars. 
+      todo: use type to convert data to string
+   */ 
+   int q = XrmStringToQuark( (char*)m_buf(fe->label) );
+   int d = *mv_var(q); if( d <= 0 ) return "";   
+   return "";
+}
+
+
+@proc form_field_print($,char *name, int x, int y, int len)
+{
+
+ /* printf("%s %d %d %d\n", name, x, y, len ); */
+
+ /* find field position in screen buffer */
+ char *line = STR($lines, y);
+ int pos = 0;
+ while( pos < x ) {
+   if( utf8char(&line) == -1 ) return;
+   pos++;
+ }
+
+ /*
+ printf("%s %d\n", line, strlen(line) );
+ */
+ 
+  if( strlen( line ) < len ) {
+    ERR("buffer error, not enough free space in form line for field at %d %d",x,y);
+    return;
+  }
+
+ 
+ /* copy field data to screen buffer */
+ int q = XrmStringToQuark(name);
+ int d = *mv_var(q); if( d <= 0 ) return;
+ TRACE(3,"%s %d %d %d", name, d, m_len(d),x );
+ 
+ int ch;
+ for( int i = 0; i < len; i++ ) {
+   if( i < m_len(d) -1 )
+     ch = CHAR(d,i);
+   else
+     ch = '_';
+   line[i] = ch;
+ }
+}
+
+
+@proc form_update($)
+{
+ struct form_entry *fe;
+ int n;
+ if( ! $FRM ) return;
+ m_foreach($FRM,n,fe) {
+   char *field =   (char*)m_buf(fe->label);
+   form_field_print( $, field, fe->x, fe->y, fe->len ); 
+ }
+}
+
+
+ @TRANSLATIONS
+@trans   <EnterWindow>: highlight()
+@trans   <LeaveWindow>: reset()
+@trans   <Btn2Down>:    info()
+@trans   <Btn1Down>:    selection_set()
+@trans   <Btn1Motion>:  motion_start()
+@trans   <Btn1Up>:      selection_end()
+@trans   <Key>Right:    forward_char()
+@trans   <Key>Left:     backward_char()
+@trans   <Key>Up:       prev_line()
+@trans   <Key>Down:     next_line()
+@trans   <Key>Home:     cursor_home()
+@trans   <Key>End:      cursor_end()
+@trans   <Key>Delete:   remove_char()
+@trans   <Key>BackSpace: backspace()
+@trans   <Key>Return:    key_return()
+@trans   <Key>Prior:     page_up()
+@trans   <Key>Next:      page_down()
+@trans   <Key>Tab:       insert_tab()
+@trans   <Ctrl>c:        copy_selection()
+@trans   <Ctrl>x:        cut_selection()
+@trans   <Ctrl>v:        insert_selection()
+@trans   <Ctrl>a:        select_all()
+@trans   <Key>Escape:    selection_clear()
+@trans   <Key>:          insert_char()
+
+
+@ACTIONS
+@proc copy_selection
+{
+    if( $locked ) return;
+    do_copy_selection($, XtLastTimestampProcessed(XtDisplay($)));
+}
+
+
+@proc cut_selection
+{
+    if( $locked ) return;
+    do_copy_selection($, XtLastTimestampProcessed(XtDisplay($)));
+    delete_selection($);
+}
+
+
+@proc insert_selection
+{
+    XtGetSelectionValue($, XA_PRIMARY, $XA_UTF8_STRING,
+                        RequestSelection,
+                        NULL, 0 );
+}
+
+
+@proc key_return
+{
+    Bool d;
+    char indent[256];
+    int n = 0;
+    if( $locked ) return;
+    replace_selection_if_any($);
+
+    /* capture the leading whitespace of the current line, if any */
+    if( $rsel.y >= 0 && $rsel.y < m_len($lines) ) {
+        char *s = STR($lines,$rsel.y);
+        while( (*s == ' ' || *s == '\t') && n < (int)sizeof(indent)-1 )
+            indent[n++] = *s++;
+    }
+    indent[n] = 0;
+
+    d = split_line_at_cursor($) | cursor_down($) | cursor_pos1($);
+    if( d )  redraw_full($);
+
+    if( n > 0 ) {
+        insert_char_at_cursor($, indent, n);
+        cursor_set_x($, $rsel.x + n);
+        draw_line_from($, $rsel.x, $rsel.y);
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd key_return cursor=(%d,%d)", $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_SPLIT);
+}
+
+
+@  Insert spaces up to the next tab stop (width 8).
+@proc insert_tab
+{
+    char spaces[16];
+    int pad, i;
+    if( $locked ) return;
+    replace_selection_if_any($);
+    pad = 8 - ($rsel.x % 8);
+    if( pad < 1 ) pad = 8;
+    if( pad > (int)sizeof(spaces)-1 ) pad = (int)sizeof(spaces)-1;
+    for( i=0; i<pad; i++ ) spaces[i] = ' ';
+    spaces[pad] = 0;
+    insert_char_at_cursor($, spaces, pad);
+    cursor_set_x($, $rsel.x + pad);
+    draw_line_from($, $rsel.x, $rsel.y);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd insert_tab cursor=(%d,%d)", $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_INSERT);
+}
+
+
+@proc page_up
+{
+    int n = $grid_height;
+    if( n < 1 ) n = 1;
+    $has_selection = False;
+    $rsel.y -= n;
+    if( $rsel.y < 0 ) $rsel.y = 0;
+    if( $col_hint >= 0 ) {
+        $rsel.x = $col_hint;
+        cursor_clamp_to_line($);
+    }
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd page_up cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+
+@proc page_down
+{
+    int n = $grid_height;
+    int maxy = m_len($lines) - 1;
+    if( n < 1 ) n = 1;
+    if( maxy < 0 ) maxy = 0;
+    $has_selection = False;
+    $rsel.y += n;
+    if( $rsel.y > maxy ) $rsel.y = maxy;
+    if( $col_hint >= 0 ) {
+        $rsel.x = $col_hint;
+        cursor_clamp_to_line($);
+    }
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd page_down cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+@proc prev_line
+{
+    $has_selection = False;
+    if( $rsel.y == 0 ) {
+        TRACE(KARO_TESTING, "KaroEd prev_line cursor=(%d,%d)", $rsel.x, $rsel.y );
+        return;
+    }
+    if( $col_hint < 0 ) $col_hint = $rsel.x;  /* remember desired column */
+    $rsel.y--;
+    $rsel.x = $col_hint;
+    cursor_clamp_to_line($);
+    if( $rsel.y < $top_y ) {
+        $top_y = $rsel.y;
+        redraw_full($);
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd prev_line cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+@proc next_line
+{
+    int maxy = m_len($lines) - 1;
+    $has_selection = False;
+    if( maxy < 0 ) maxy = 0;
+    if( $rsel.y >= maxy ) {
+        TRACE(KARO_TESTING, "KaroEd next_line cursor=(%d,%d)", $rsel.x, $rsel.y );
+        return;
+    }
+    if( $col_hint < 0 ) $col_hint = $rsel.x;
+    $rsel.y++;
+    $rsel.x = $col_hint;
+    cursor_clamp_to_line($);
+    if( $rsel.y >= $top_y + $grid_height ) {
+        $top_y = $rsel.y - $grid_height + 1;
+        redraw_full($);
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd next_line cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+@proc backward_char
+{
+    $has_selection = False;
+    if( $rsel.x == 0 ) {
+        $col_hint = 0;
+        TRACE(KARO_TESTING, "KaroEd backward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
+        return;
+    }
+    $rsel.x--;
+    $col_hint = $rsel.x;
+    if( $rsel.x < $top_x )
+    {
+        $top_x = $rsel.x;
+        redraw_full($);
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd backward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+@proc backspace
+{
+    int y;
+    if( $locked ) return;
+    if( replace_selection_if_any($) ) return;
+    cursor_clamp_to_line($);
+    y = $rsel.y;
+    if( y >= m_len($lines) ) return;
+
+    if( $rsel.x > 0 ) {
+        /* delete the character before the cursor */
+        $rsel.x--;
+        $col_hint = $rsel.x;
+        remove_char_at_cursor($);
+        if( $rsel.x < $top_x ) $top_x = $rsel.x;
+        selection_draw($);
+        TRACE(KARO_TESTING, "KaroEd backspace type=char cursor=(%d,%d)", $rsel.x, $rsel.y );
+        edit_notify($, KEDIT_REMOVE);
+        return;
+    }
+
+    if( y > 0 ) {
+        join_line_prev($);
+        return;
+    }
+
+    TRACE(KARO_TESTING, "KaroEd backspace type=none cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+
+@proc forward_char
+{
+    cursor_right($);
+    TRACE(KARO_TESTING, "KaroEd forward_char cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+@proc cursor_home
+{
+    $has_selection = False;
+    $rsel.x = 0;
+    $col_hint = 0;
+    if( $top_x != 0 ) {
+        $top_x = 0;
+        redraw_full($);
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd cursor_home cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+@proc cursor_end
+{
+    int len = 0;
+    $has_selection = False;
+    if( $rsel.y >= 0 && $rsel.y < m_len($lines) )
+        len = utf8_strlen( STR($lines,$rsel.y) );
+    $rsel.x = len;
+    $col_hint = len;
+    if( $rsel.x >= $top_x + $grid_width ) {
+        $top_x = $rsel.x - $grid_width + 1;
+        redraw_full($);
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd cursor_end cursor=(%d,%d)", $rsel.x, $rsel.y );
+}
+
+
+@  Select the whole buffer and place it on the clipboard.
+@proc select_all
+{
+    int last = m_len($lines) - 1;
+    if( last < 0 ) last = 0;
+
+    $sel_anchor_x = 0;
+    $sel_anchor_y = 0;
+    $rsel.y = last;
+    $rsel.x = 0;
+    if( last < m_len($lines) )
+        $rsel.x = utf8_strlen( STR($lines,last) );
+    $col_hint = $rsel.x;
+    $has_selection = True;
+    normalize_scroll($);
+    selection_draw($);
+    do_copy_selection($, XtLastTimestampProcessed(XtDisplay($)));
+    TRACE(KARO_TESTING, "KaroEd select_all anchor=(%d,%d) cursor=(%d,%d)",
+          $sel_anchor_x, $sel_anchor_y, $rsel.x, $rsel.y );
+}
+
+
+@  Test hook: set an arbitrary selection range (anchor -> cursor) so a
+  keystroke test can exercise reversed and multi-line selections.
+@proc select_range
+{
+    int x0=0,y0=0,x1=0,y1=0;
+    if( *num_params > 0 ) x0 = atoi( params[0] );
+    if( *num_params > 1 ) y0 = atoi( params[1] );
+    if( *num_params > 2 ) x1 = atoi( params[2] );
+    if( *num_params > 3 ) y1 = atoi( params[3] );
+    $sel_anchor_x = x0;
+    $sel_anchor_y = y0;
+    $rsel.x = x1;
+    $rsel.y = y1;
+    $col_hint = x1;
+    $has_selection = ( x0 != x1 || y0 != y1 );
+    cursor_clamp_to_line($);
+    normalize_scroll($);
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd select_range anchor=(%d,%d) cursor=(%d,%d)",
+          $sel_anchor_x, $sel_anchor_y, $rsel.x, $rsel.y );
+}
+
+
+@proc info
+{
+    int i;
+    for(i=0;i<m_len($lines);i++) {
+
+        printf("'%s'\n", STR($lines,i));
+    }
+    printf("\n");
+}
+
+
+@  Test hook: report the full text buffer and cursor via TRACE so a
+  keystroke-injection test can verify state without screenshots.
+@proc dump
+{
+    int i;
+    for( i=0; i<m_len($lines); i++ )
+        TRACE(KARO_TESTING, "KaroEd line%d='%s'", i, STR($lines,i) );
+    TRACE(KARO_TESTING, "KaroEd lines=%d", m_len($lines) );
+    TRACE(KARO_TESTING, "KaroEd cursor=(%d,%d)", $rsel.x, $rsel.y );
+    TRACE(KARO_TESTING, "KaroEd selection anchor=(%d,%d) active=%d text='%s'",
+          $sel_anchor_x, $sel_anchor_y, $has_selection,
+          escape_nl( (char*)m_buf($selectionText) ) );
+}
+
+
+@proc remove_char
+{
+    int removed_line = 0;
+    if( $locked ) return;
+    if( replace_selection_if_any($) ) return;   /* delete selection only */
+    /* could be expanded to remove region */
+    if( current_line_empty($) ) {
+        remove_current_line($);
+        ensure_line0($);
+        redraw_full($);
+        removed_line = 1;
+    }
+    else {
+        int len = utf8_strlen( STR($lines,$rsel.y) );
+        if( $rsel.x >= len && $rsel.y + 1 < m_len($lines) ) {
+            join_line_next($);
+            return;   /* join_line_next fires its own notification */
+        }
+        remove_char_at_cursor($);
+        draw_line_from($, $rsel.x, $rsel.y );
+    }
+    selection_draw($);
+    TRACE(KARO_TESTING, "KaroEd remove_char line=%d cursor=(%d,%d)",
+          removed_line, $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_REMOVE);
+}
+
+
+@proc insert_char
+{
+    int len;
+    unsigned char buf[32];
+    KeySym key_sim;
+
+    if( $locked ) return;
+
+    len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
+    if (len <= 0) return;
+
+    replace_selection_if_any($);
+
+    insert_char_at_cursor($, (char*)buf, len );
+    draw_line_from($, $rsel.x, $rsel.y );
+    cursor_right($);
+    TRACE(KARO_TESTING, "KaroEd insert_char len=%d '%.*s' cursor=(%d,%d)",
+          len, len, (char*)buf, $rsel.x, $rsel.y );
+    edit_notify($, KEDIT_INSERT);
+}
+
+
+
+
+@proc selection_clear
+{
+    if( $has_selection ) {
+        $has_selection = False;
+        selection_draw($);
+    }
+}
+
+@proc selection_set
+{
+    int y = event->xbutton.y;
+    int x = event->xbutton.x;
+    Widget shell = $;
+    while( shell && ! XtIsShell(shell) ) shell = XtParent(shell);
+    if( shell ) XtSetKeyboardFocus(shell, (Widget) $);
+    coordinate_to_text($,&x,&y);
+    $rsel.y = y;
+    cursor_set_x($, x);
+    $sel_anchor_x = $rsel.x;
+    $sel_anchor_y = $rsel.y;
+    $has_selection = False;
+    normalize_scroll($);
+    selection_draw($);
+}
+
+
+@proc highlight
+{
+  if( $locked ) return;
+}
+
+@proc reset
+{
+}
+
+@proc notify
+{
+  if( $locked ) return;
+  $value = $value +1;
+  XtVaSetValues($,"label", get_name($), NULL );
+  XtCallCallbackList( $, $callback, (XtPointer) $value );
+}
+
+@proc selection_end
+{
+    ulong t = (ulong ) event->xbutton.time;
+    if( $has_selection ) do_copy_selection($,t);
+}
+
+
+
+@proc motion_start
+{
+  int y, x, tx, ty;
+  ulong t;
+  if( $locked ) return;
+
+  y = event->xbutton.y;
+  x = event->xbutton.x;
+  t = (ulong ) event->xbutton.time;
+
+  tx = x;
+  ty = y;
+  coordinate_to_text($,&tx,&ty);
+
+  /* drag startete vor über einer sekunde, seitdem keine änderung */
+  /* darum: vergessen und neu starten */
+  if( $drag_update + 1000 < t ) goto restart_drag;
+  $drag_update = t;
+
+  if( selection_resize($,tx,ty) ) {
+      $drag_last_x = x;
+      $drag_last_y = y;
+      normalize_scroll($);
+      selection_draw($);
+  }
+  return; /* drag in progress */
+
+  restart_drag:
+  $drag_last_y = event->xbutton.y;
+  $drag_last_x = event->xbutton.x;
+  $drag_update = t;
+  selection_start($,tx,ty);
+  selection_draw($);
+}
+
+
+
+
+@IMPORTS
+
+@incl <stdint.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xmu/Xmu.h>
+@incl "xutil.h"
+@incl "converters.h"
+@incl "mls.h"
+@incl "form_parse.h"
+@incl "micro_vars.h"

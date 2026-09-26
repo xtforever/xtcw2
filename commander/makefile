@@ -31,8 +31,11 @@ ${T}: ${D}
 ../LuaRunner/luaxt_wrap.c: ../LuaRunner/luaxt.i ../LuaRunner/luaxt.c
 	swig -lua -o $@ $<
 
-commander_runner: commander_runner.o task_manager.o lua_task_bindings.o lua_bridge.o xt_bridge.o file_ops.o ../LuaRunner/luaxt.o ../LuaRunner/luaxt_wrap.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LOADLIBES) $(LUA_LIBS) $(XORGLIB) -lpthread
+# Depend on the toolkit archives so a rebuilt widget library forces a relink.
+COMMANDER_LIBS=$(libdir)/libxtcw.a $(libdir)/libwcl.a $(libdir)/libutils.a $(libdir)/libretex.a $(libdir)/libplainc.a
+
+commander_runner: commander_runner.o task_manager.o lua_task_bindings.o lua_bridge.o xt_bridge.o file_ops.o ../LuaRunner/luaxt.o ../LuaRunner/luaxt_wrap.o $(COMMANDER_LIBS)
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(LOADLIBES) $(LUA_LIBS) $(XORGLIB) -lpthread
 
 clean:
 	-${RM} *.o ${T}

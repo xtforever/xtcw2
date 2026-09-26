@@ -70,5 +70,7 @@ M.register('pixbtn', { class = 'WpixBtn' })
 M.register('board', { class = 'Board' })
 M.register('dartboard', { class = 'Dartboard' })
 M.register('selectreq', { class = 'SelectReq' })
+M.register('karoed', { class = 'KaroEd' })
+M.register('multiline', { class = 'KaroEd' })
 
 return M
