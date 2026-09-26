@@ -727,7 +727,7 @@
         byte_pos+=w; p++;
     }
 
-    memcpy( s+byte_pos, s+byte_pos + w, byte_len - byte_pos - w );
+    memmove( s+byte_pos, s+byte_pos + w, byte_len - byte_pos - w );
     s = realloc(s, byte_len - w);
     if( s ) STR($lines,y) = s;
 }
@@ -786,7 +786,7 @@
         s = t;
     }
     STR($lines,y) = s;
-    memcpy( s + byte_pos + len, s+byte_pos, byte_len - byte_pos );
+    memmove( s + byte_pos + len, s+byte_pos, byte_len - byte_pos );
     memcpy( s + byte_pos, buf, len );
 }
 

@@ -144,6 +144,13 @@ static void act_api(Widget w)
         XtFree(t);
 }
 
+/* Inserting in the middle of a line shifts the tail (memmove path). */
+static const step_t sc_insert_midline[] = {
+    { S_STR, "ac", 0, 0 },
+    { S_KEY, NULL, XK_Left, 0 },
+    { S_STR, "b", 0, 0 },
+};
+
 /* Return preserves the current line's leading whitespace. */
 static const step_t sc_indent[] = {
     { S_STR, "  ab", 0, 0 },
@@ -290,6 +297,7 @@ static const scenario_t scenarios[] = {
     { "fileform", sc_fileform, (int)(sizeof(sc_fileform) / sizeof(sc_fileform[0])), fileform_resources },
     { "indent", sc_indent, (int)(sizeof(sc_indent) / sizeof(sc_indent[0])), NULL },
     { "tab", sc_tab, (int)(sizeof(sc_tab) / sizeof(sc_tab[0])), NULL },
+    { "insert_midline", sc_insert_midline, (int)(sizeof(sc_insert_midline) / sizeof(sc_insert_midline[0])), NULL },
 };
 
 static const scenario_t *find_scenario(const char *name)

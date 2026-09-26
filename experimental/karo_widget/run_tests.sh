@@ -188,6 +188,14 @@ run_scenario tab \
     "KaroEd insert_char len=1 'b' cursor=(9,0)" \
     "KaroEd line0='a"
 
+# Inserting in the middle of a line shifts the tail (memmove path)
+run_scenario insert_midline \
+    "KaroEd insert_char len=1 'c' cursor=(2,0)" \
+    "KaroEd backward_char cursor=(1,0)" \
+    "KaroEd insert_char len=1 'b' cursor=(2,0)" \
+    "KaroEd line0='abc'" \
+    "KaroEd cursor=(2,0)"
+
 run_scenario delete \
     "KaroEd insert_char len=1 'c' cursor=(3,0)" \
     "KaroEd backward_char cursor=(2,0)" \
