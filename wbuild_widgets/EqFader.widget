@@ -159,6 +159,37 @@
     request->request_mode = CWWidth | CWHeight;
 }
 
+@ override the Wheel theme hook: our backing GC caches the background pixel,
+@ and our tick/label colours are EqFader resources (not Wheel ones), so derive
+@ them from the theme foreground to stay readable on dark themes.
+@proc void colors_changed
+{
+    #colors_changed($);
+
+    if (theme_color_defined("tick_color"))
+        $tickColor = get_color("tick_color");
+    else if (theme_color_defined("fg_norm"))
+        $tickColor = get_color("fg_norm");
+
+    if (theme_color_defined("label_color"))
+        $labelColor = get_color("label_color");
+    else if (theme_color_defined("fg_norm"))
+        $labelColor = get_color("fg_norm");
+
+    if (theme_color_defined("thumb_color"))
+        $thumbColor = get_color("thumb_color");
+
+    col_set($);
+
+    if ($gc_bg) XtReleaseGC($, $gc_bg);
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.foreground = $background_pixel;
+    $gc_bg = XtGetGC($, GCForeground, &values);
+
+    if (XtIsRealized($)) redraw($);
+}
+
 @TRANSLATIONS
 @trans <Btn1Down>:   fader_press()
 @trans <Btn1Motion>: fader_drag()

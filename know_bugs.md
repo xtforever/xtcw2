@@ -160,3 +160,27 @@ acceptable for a test/theme toggle.
 
 **File:** `wbuild_widgets/Wheel.widget` (`colors_changed`).
 
+
+## Theming: widget-owned colours/caches are not covered by Wheel.colors_changed
+
+**Symptom:** under a dark theme (e.g. `dracula`) an EqFader's dB labels stayed
+dark/unreadable, and its background stayed the old colour: widget-specific
+colours and cached GCs/pixmaps did not follow the theme.
+
+**Cause:** `Wheel.colors_changed` only reassigns Wheel's six colour resources
+(`bg_norm`, `bg_sel`, `bg_hi`, `fg_norm`, `fg_sel`, `fg_hi`) plus the border. A
+widget that caches its own `GC`/Pixmap (EqFader's `gc_bg`) or uses extra colour
+resources (EqFader's `tickColor`/`labelColor`) never sees the change.
+
+**Fix:** override `colors_changed` in the widget: call `#colors_changed($)` for
+the Wheel base behaviour, then re-derive the widget's own colours (e.g. from
+`get_color("fg_norm")`, or optional theme names such as `tick_color`,
+`label_color`, `thumb_color`), rebuild any cached GC/pixmap, and redraw.
+See `wbuild_widgets/EqFader.widget`.
+
+## Widgets that do not inherit Wheel register directly
+
+Widgets not derived from `Wheel` can still take part in theming by calling
+`theme_register($, own_apply_fn)` in their `initialize` (and
+`theme_unregister($)` in `destroy`), where `own_apply_fn(Widget)` re-resolves
+their colours via `get_color()`/`theme_get_int()` and redraws.

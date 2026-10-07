@@ -5,6 +5,8 @@
 ;
 ; "default" and "highcontrast" are production themes (borders off).
 ; "test" uses a thick, bright border so widget bounds are easy to see.
+; "dracula" and "solarized_dark" are widely used, officially defined colour
+; schemes used to test the widgets under realistic conditions.
 
 (theme default (
     bg_norm 0xadd8e6
@@ -35,4 +37,29 @@
     fg_hi   0xffffff
     borderwidth 6
     bordercolor 0xff0000
+))
+
+; ---- commonly used themes (official palettes) --------------------------
+; Dracula - https://draculatheme.com/contribute  (palette by Zeno Rocha)
+(theme dracula (
+    bg_norm 0x282a36     ; background
+    bg_sel  0x44475a     ; current line / selection
+    bg_hi   0x6272a4     ; comment (muted active)
+    fg_norm 0xf8f8f2     ; foreground
+    fg_sel  0x50fa7b     ; green
+    fg_hi   0xff5555     ; red
+    borderwidth 0
+    bordercolor 0x6272a4
+))
+
+; Solarized Dark - https://ethanschoonover.com/solarized  (Ethan Schoonover)
+(theme solarized_dark (
+    bg_norm 0x002b36     ; base03
+    bg_sel  0x073642     ; base02
+    bg_hi   0x586e75     ; base01
+    fg_norm 0x839496     ; base0
+    fg_sel  0x268bd2     ; blue
+    fg_hi   0xdc322f     ; red/emphasis
+    borderwidth 0
+    bordercolor 0x586e75 ; base01
 ))
