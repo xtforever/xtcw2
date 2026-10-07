@@ -1,0 +1,38 @@
+; xtcw theme store (hdf s-expression format)
+; (theme NAME (name value name value ...))
+;   colour  := 0xRRGGBB
+;   integer := decimal (e.g. borderwidth, 0 = no border)
+;
+; "default" and "highcontrast" are production themes (borders off).
+; "test" uses a thick, bright border so widget bounds are easy to see.
+
+(theme default (
+    bg_norm 0xadd8e6
+    bg_sel  0xffff00
+    bg_hi   0xff0000
+    fg_norm 0x000000
+    fg_sel  0x008000
+    fg_hi   0xffffff
+    borderwidth 0
+))
+
+(theme highcontrast (
+    bg_norm 0xffffff
+    bg_sel  0x000000
+    bg_hi   0x00eeee
+    fg_norm 0x000000
+    fg_sel  0xffffff
+    fg_hi   0x000000
+    borderwidth 0
+))
+
+(theme test (
+    bg_norm 0xadd8e6
+    bg_sel  0xffff00
+    bg_hi   0xff0000
+    fg_norm 0x000000
+    fg_sel  0x008000
+    fg_hi   0xffffff
+    borderwidth 6
+    bordercolor 0xff0000
+))

@@ -17,6 +17,7 @@
 
 /* Global Lua callback name set from Lua */
 static char *lua_handler_name = NULL;
+extern lua_State *L_GLOBAL;
 
 static void internal_event_cb(task_msg_t *msg) {
     if (!lua_handler_name) return;
@@ -26,7 +27,17 @@ static void internal_event_cb(task_msg_t *msg) {
     snprintf(buf, sizeof(buf), "%s({job_id=%d, type=%d, progress=%.2f, message=[[%s]]})",
              lua_handler_name, msg->job_id, msg->type, msg->progress, msg->message);
     
-    luaxt_pushcallback(buf, "");
+    /* Execute immediately (no callback queue — matches the commander_runner
+     * event-loop model where callbacks run as soon as they fire). */
+    if (luaL_loadstring(L_GLOBAL, buf) != LUA_OK) {
+        fprintf(stderr, "Task event error: %s\n", lua_tostring(L_GLOBAL, -1));
+        lua_pop(L_GLOBAL, 1);
+        return;
+    }
+    if (lua_pcall(L_GLOBAL, 0, 0, 0) != LUA_OK) {
+        fprintf(stderr, "Task event error: %s\n", lua_tostring(L_GLOBAL, -1));
+        lua_pop(L_GLOBAL, 1);
+    }
 }
 
 static Widget luaarg_to_widget( lua_State *L, int index )
@@ -43,6 +54,7 @@ static Widget luaarg_to_widget( lua_State *L, int index )
 }
 
 #include "Wheel.h"
+#include "theme.h"
 
 static int l_wheel_exec_command(lua_State *L) {
     Widget w = luaarg_to_widget(L, 1);
@@ -53,83 +65,6 @@ static int l_wheel_exec_command(lua_State *L) {
         return 1;
     }
     return 0;
-}
-
-static int l_xtsetvalue(lua_State *L) {
-    Widget w = luaarg_to_widget(L, 1);
-    const char *res = luaL_checkstring(L, 2);
-    if (!w || !res) return 0;
-
-    if (lua_isnumber(L, 3)) {
-        int val = lua_tointeger(L, 3);
-        XtVaSetValues(w, res, val, NULL);
-    } else {
-        const char *val = luaL_checkstring(L, 3);
-        XtVaSetValues(w, XtVaTypedArg, res, XtRString, (char*)val, strlen(val)+1, NULL);
-    }
-    return 0;
-}
-
-static int l_mls_create(lua_State *L) {
-    int size = luaL_checkinteger(L, 1);
-    int width = luaL_checkinteger(L, 2);
-    lua_pushinteger(L, m_create(size, width));
-    return 1;
-}
-
-static int l_mls_put_string(lua_State *L) {
-    int handle = luaL_checkinteger(L, 1);
-    const char *s = luaL_checkstring(L, 2);
-    char *dup = strdup(s);
-    m_put(handle, &dup);
-    return 0;
-}
-
-static int l_mls_clear(lua_State *L) {
-    int handle = luaL_checkinteger(L, 1);
-    m_clear_stringlist(handle);
-    return 0;
-}
-
-static int l_mls_len(lua_State *L) {
-    int handle = luaL_checkinteger(L, 1);
-    lua_pushinteger(L, m_len(handle));
-    return 1;
-}
-
-static int l_xtgetvalue(lua_State *L) {
-    Widget w = luaarg_to_widget(L, 1);
-    const char *res = luaL_checkstring(L, 2);
-    if (!w || !res) {
-        printf("xtgetvalue: widget or resource null\n");
-        return 0;
-    }
-
-    String res_type = WcGetResourceType(w, (char*)res);
-    if (res_type == NULL) {
-        printf("xtgetvalue: resource type not found for %s\n", res);
-        lua_pushnil(L);
-        return 1;
-    }
-
-    if (strcmp(res_type, "Int") == 0 || strcmp(res_type, "UnsignedInt") == 0 || 
-        strcmp(res_type, "Short") == 0 ||
-        strcmp(res_type, "Long") == 0 || strcmp(res_type, "Dimension") == 0 ||
-        strcmp(res_type, "Position") == 0 || strcmp(res_type, "Cardinal") == 0) {
-        int val;
-        XtVaGetValues(w, res, &val, NULL);
-        lua_pushinteger(L, val);
-    } else if (strcmp(res_type, XtRBoolean) == 0) {
-        Boolean val;
-        XtVaGetValues(w, res, &val, NULL);
-        lua_pushboolean(L, val);
-    } else {
-        char *val = NULL;
-        XtVaGetValues(w, res, &val, NULL);
-        if (val) lua_pushstring(L, val);
-        else lua_pushnil(L);
-    }
-    return 1;
 }
 
 static int l_ls(lua_State *L) {
@@ -230,15 +165,17 @@ static int l_task_set_handler(lua_State *L) {
     return 0;
 }
 
+static int l_theme_select(lua_State *L) {
+    const char *name = luaL_checkstring(L, 1);
+    theme_select(name);
+    lua_pushstring(L, theme_active() ? theme_active() : "");
+    return 1;
+}
+
 void register_task_lua(lua_State *L) {
-    lua_register(L, "xtgetvalue", l_xtgetvalue);
     lua_register(L, "wheel_exec_command", l_wheel_exec_command);
-    lua_register(L, "xtsetvalue", l_xtsetvalue);
+    lua_register(L, "theme_select", l_theme_select);
     lua_register(L, "task_copy", l_task_copy);
-    lua_register(L, "mls_create", l_mls_create);
-    lua_register(L, "mls_put_string", l_mls_put_string);
-    lua_register(L, "mls_clear", l_mls_clear);
-    lua_register(L, "mls_len", l_mls_len);
     lua_register(L, "ls", l_ls);
     lua_register(L, "task_spawn", l_task_spawn);
     lua_register(L, "task_control", l_task_control);

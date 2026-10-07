@@ -239,6 +239,13 @@
     redraw_label($);
 }
 
+@ override the Wheel theme hook: our pixmap cache must be rebuilt
+@proc void colors_changed
+{
+    $dirty = 1;
+    #colors_changed($);
+}
+
 @TRANSLATIONS
 @trans <Btn1Down>: select_start()
 @trans <Btn1Motion>: select_extend()

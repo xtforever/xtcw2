@@ -89,9 +89,16 @@ static void xpixmap_get_char_metrics(Backend *self, int c, CharMetrics *metrics)
     cairo_text_extents_t extents;
     
     cairo_text_extents(bp->cr, str, &extents);
+    /* Use the font's nominal ascent/descent (the TeX line box), not the
+     * glyph's ink extents.  Ink extents describe only this glyph's painted
+     * bounds, so a line of text would report a height with no leading and
+     * clip against the top/bottom of a label.  The advance width still
+     * comes from the glyph's text extents. */
+    cairo_font_extents_t font_extents;
+    cairo_font_extents(bp->cr, &font_extents);
     metrics->width = extents.x_advance;
-    metrics->height = -extents.y_bearing;
-    metrics->depth = extents.height + extents.y_bearing;
+    metrics->height = font_extents.ascent;
+    metrics->depth = font_extents.descent;
 }
 
 static void xpixmap_draw_char(Backend *self, double x, double y, int c) {

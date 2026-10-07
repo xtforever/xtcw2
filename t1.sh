@@ -19,6 +19,8 @@ DEMOS=(
   "calc|Calculator|4x6 grid with gridWidth spanning"
   "contacts|Contacts|multi-row form, spinbox, property round-trip"
   "drawcanvas|DrawCanvas|custom drawing via a plug-in C callback"
+  "eqfader|EQ Fader|10-band Cairo vertical EQ fader"
+  "theme|Theme|central theme registry: colours + borders"
   "form|Form|Gridbox layout: labels, edit, spinbox, toggle"
   "karoed|KaroEd|multiline editor: joins, selection, clipboard, tab"
   "login|Login|password fields, toggles, feedback"
@@ -132,7 +134,7 @@ pick_demo() {
     done
     items+=("quit" "Exit the launcher")
     whiptail --title "XTCW Demo Launcher" \
-        --menu "Select a demo to run:" 20 78 12 \
+        --menu "Select a demo to run:" 20 78 14 \
         "${items[@]}" 3>&1 1>&2 2>&3
 }
 

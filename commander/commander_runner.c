@@ -16,15 +16,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <xtcw/Wheel.h>
+#include "theme.h"
+#include "theme_parse.h"
 
 void register_task_lua(lua_State *L);
 void *copy_task(task_thread_args_t *args);
+void drawcanvas_plugin_init(Widget top);
 
 #define APP_NAME "luarunner"
 
 static XrmOptionDescRec options[] = {
     { "-Luafile",    "*luafile",    XrmoptionSepArg, NULL },
     { "-Tracelevel", "*traceLevel", XrmoptionSepArg, NULL },
+    { "-theme",      "*theme",      XrmoptionSepArg, NULL },
+    { "-themeFile",  "*themeFile",  XrmoptionSepArg, NULL },
     WCL_XRM_OPTIONS
 };
 
@@ -35,12 +42,16 @@ char *fallback_resources[] = {
     "*height: 400",
     "*traceLevel: 2",
     "*luafile: ex.lua",
+    "*themeFile: themes.hdf",
+    "*theme: default",
     NULL
 };
 
 typedef struct COMMANDER_CONFIG {
     int traceLevel;
     char *luafile;
+    char *theme;
+    char *themeFile;
 } COMMANDER_CONFIG;
 
 #define FLD(n)  XtOffsetOf(COMMANDER_CONFIG, n)
@@ -50,6 +61,10 @@ static XtResource COMMANDER_CONFIG_RES[] = {
       FLD(traceLevel), XtRImmediate, 0 },
     { "luafile", "Luafile", XtRString, sizeof(String),
       FLD(luafile), XtRString, NULL },
+    { "theme", "Theme", XtRString, sizeof(String),
+      FLD(theme), XtRString, NULL },
+    { "themeFile", "ThemeFile", XtRString, sizeof(String),
+      FLD(themeFile), XtRString, NULL },
 };
 
 #undef FLD
@@ -59,6 +74,8 @@ static struct COMMANDER_CONFIG COMMANDER = { 0 };
 extern lua_State *L_GLOBAL;
 XtAppContext LUAXT_APP;
 Widget TopLevel;
+
+static void run_lua_chunk(const char *code);
 
 void quit_cb(Widget w, void *u, void *c)
 {
@@ -104,7 +121,7 @@ static void LUA_callback(Widget w, XtPointer client_data, XtPointer call_data)
         /* No data: funcname() */
         snprintf(buf, sizeof(buf), "%s()", funcname);
     }
-    luaxt_pushcallback(buf, "");
+    run_lua_chunk(buf);
 }
 
 /* LUA action function - called when action "LUA(funcname)" or "LUA(funcname, data)" is triggered */
@@ -150,20 +167,21 @@ static void LUA_action(Widget w, XEvent* e, String* s, Cardinal* n)
         m = s_printf(0, 0, "%s()", funcname);
     }
     
-    luaxt_pushcallback(m_str(m), "");
+    run_lua_chunk(m_str(m));
     m_free(m);
 }
 
-static void process_lua_cbs(XtPointer data, XtIntervalId *id) {
-    char *cb;
-    while (1) {
-        cb = luaxt_pullcallback();
-        if (!cb || !*cb) break;
-        if (luaL_dostring(L_GLOBAL, cb) != LUA_OK) {
-            fprintf(stderr, "Lua CB Error: %s\n", lua_tostring(L_GLOBAL, -1));
-        }
+static void run_lua_chunk(const char *code)
+{
+    if (luaL_loadstring(L_GLOBAL, code) != LUA_OK) {
+        fprintf(stderr, "Lua CB Error: %s\n", lua_tostring(L_GLOBAL, -1));
+        lua_pop(L_GLOBAL, 1);
+        return;
     }
-    XtAppAddTimeOut(LUAXT_APP, 100, process_lua_cbs, NULL);
+    if (lua_pcall(L_GLOBAL, 0, 0, 0) != LUA_OK) {
+        fprintf(stderr, "Lua CB Error: %s\n", lua_tostring(L_GLOBAL, -1));
+        lua_pop(L_GLOBAL, 1);
+    }
 }
 
 static int lui_bootstrap(lua_State *L, const char *luafile, const char *shell_name)
@@ -206,6 +224,8 @@ int main(int argc, char **argv) {
     XtcwRegister(app);
     XpRegisterAll(app);
 
+    theme_init(TopLevel);
+
     task_manager_init(app);
     task_register_func("copy_task", (task_func_t)copy_task);
 
@@ -214,6 +234,7 @@ int main(int argc, char **argv) {
     luaL_openlibs(L_GLOBAL);
 
     lua_bridge_register_bindings();
+    register_task_lua(L_GLOBAL);
 
     extern int luaopen_luaxt(lua_State* L);
     luaopen_luaxt(L_GLOBAL);
@@ -227,6 +248,7 @@ int main(int argc, char **argv) {
 
     RCB(TopLevel, quit_cb);
     wcreg_callback(TopLevel, LUA_callback, "LUA" );
+    drawcanvas_plugin_init(TopLevel);
     
     WcInitialize(TopLevel);
     WcRootWidget(TopLevel);
@@ -238,6 +260,23 @@ int main(int argc, char **argv) {
 
     trace_level = COMMANDER.traceLevel;
 
+    /* Load and select the theme store.  Try the configured file first,
+     * then locations relative to the usual run directories. */
+    {
+        const char *cand[3];
+        int ci;
+        cand[0] = COMMANDER.themeFile;
+        cand[1] = "../themes.hdf";
+        cand[2] = "themes.hdf";
+        for (ci = 0; ci < 3; ci++) {
+            if (cand[ci] && access(cand[ci], R_OK) == 0) {
+                theme_load(cand[ci]);
+                break;
+            }
+        }
+    }
+    if (COMMANDER.theme) theme_select(COMMANDER.theme);
+
     /* Load LUI early - before realize, so widgets are created first */
     if (COMMANDER.luafile && strlen(COMMANDER.luafile) > 0) {
         /* Hide shell temporarily - LUI will create managed children */
@@ -247,6 +286,7 @@ int main(int argc, char **argv) {
             luaxt_destroy();
             lua_close(L_GLOBAL);
             task_manager_cleanup();
+            theme_destroy();
             m_destruct();
             exit(1);
         }
@@ -274,6 +314,9 @@ int main(int argc, char **argv) {
         }
     }
 
+    /* Apply the active theme to all widgets created so far, before realize. */
+    if (theme_active()) theme_apply();
+
     XtRealizeWidget(TopLevel);
 
     /* Make shell visible now that LUI widgets are created */
@@ -281,12 +324,13 @@ int main(int argc, char **argv) {
         XtMapWidget(TopLevel);
     }
 
-    XtAppAddTimeOut(app, 100, process_lua_cbs, NULL);
-
+    /* Run the Xt event loop. Lua callbacks execute immediately when their
+     * widget action/callback fires (see LUA_callback / LUA_action). */
     XtAppMainLoop(app);
 
     luaxt_destroy();
     lua_close(L_GLOBAL);
+    theme_destroy();
     m_destruct();
 	printf("terminated normaly\n");
     return 0;

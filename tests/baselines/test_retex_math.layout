@@ -1,6 +1,6 @@
-[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 327680, height 327680, x 0, y 0, color 00000000, content a
-[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 327680, height 458752, x 0, y 0, color 00000000, content b
-[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 327680, height 327680, x 0, y 0, color 00000000, content 
-[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 327680, height 458752, x 0, y 0, color 00000000, content 
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 327680, height 589824, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 327680, height 589824, x 0, y 0, color 00000000, content b
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 327680, height 589824, x 0, y 0, color 00000000, content 
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 327680, height 589824, x 0, y 0, color 00000000, content 
 [2]node_create_vbox: LAYOUT handle MASKED, class NODE_VBOX, name , width 0, height 0, x 0, y 0, color 00000000, content 
-[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 13107200, height 688128, x 0, y 0, color 00000000, content 
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 13107200, height 1146880, x 0, y 0, color 00000000, content 

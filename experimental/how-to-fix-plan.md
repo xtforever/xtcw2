@@ -363,7 +363,7 @@ Verifies: no crash, no X11 errors, no geometry warnings on startup.
 
 ### Task 5.3: Port C demos to LUI demos
 
-- Convert `demos/demo_form.c` → `experimental/demo_form.lua`
+- Convert `demos/demo_form.c` → `demos/demo_form.lua`
 - Convert other C demos to LUI equivalents
 - Run existing `t1.sh` demos, fix any remaining issues
 

@@ -240,5 +240,10 @@ function M.load(path)
     return M.run(source)
 end
 
+function M.load_css(path)
+    print("Warning: stylesheets not implemented, ignoring: " .. tostring(path))
+    return false
+end
+
 _G.gui = M
 return M

@@ -37,6 +37,9 @@ GTAGS
 TAGS
 *.kdev4
 wbuild/wbuild
+KaroEd.c
+test_karoed
+experimental/karo_widget/test_results/
 experimental/hash_test
 experimental/var5-test
 compile_commands.json

@@ -97,16 +97,19 @@ function M.process_property(clean_k, v, widget_class)
         if M.handler_registrar then
             local cb_id = 'lua_cb_' .. tostring(math.random(100000, 999999))
             M.handler_registrar(cb_id, v)
+            _G[cb_id] = v   -- also expose as global so commander_runner's immediate
+                            -- chunk dispatch (funcname()) can find it
             v = 'LUA(' .. cb_id .. ')'
         else
             print('Warning: No handler registrar set, cannot handle function property:', clean_k)
             return nil, nil
         end
-    elseif (clean_k == 'callback' or clean_k == 'notify' or clean_k == 'vscroll' or clean_k == 'pos') and type(v) == 'string' then
-        if not v:match('^LUA%(') then
-            v = 'LUA(' .. v .. ')'
-        end
     end
+    -- String callback values are passed through unchanged so Wcl resolves them:
+    --   * "LUA(funcname)" -> the LUA callback proc -> runs the Lua global funcname
+    --   * "some_name"     -> a C callback registered via wcreg_callback/RCB
+    -- Never auto-wrap strings in LUA(...): that would make registered non-Lua
+    -- callbacks (e.g. quit_cb) unreachable.
 
     return clean_k, v
 end

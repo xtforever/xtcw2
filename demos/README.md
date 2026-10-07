@@ -33,6 +33,8 @@ cd commander
 | `demo_calc.lua` | Calculator — 4×6 grid with `gridWidth` spanning |
 | `demo_contacts.lua` | Contact manager — multi-row form, spinbox, property round-trip |
 | `demo_drawcanvas.lua` | DrawCanvas — custom drawing via a plug-in C callback |
+| `demo_eqfader.lua` | EQ Fader — 10-band vertical Cairo/Xft EQ fader with dB scale |
+| `demo_theme.lua` | Theme — central colour registry: switch themes and toggle borders |
 | `demo_form.lua` | Gridbox layout — labels, edit, spinbox, toggle |
 | `demo_karoed.lua` | KaroEd — multiline text editor (joins, selection, clipboard, tabs) |
 | `demo_login.lua` | Login dialog — password fields, toggles, feedback |

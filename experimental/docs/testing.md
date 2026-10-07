@@ -379,25 +379,31 @@ Returns the number of X11 protocol errors since the last reset. Call `xterror_co
 
 ## Interactive Demos
 
-The `t1.sh` script at the project root launches Gridbox demos that exercise multi-widget layouts interactively:
+`t1.sh` at the project root is a whiptail TUI launcher for the demo scripts in `demos/`.
+With no arguments it shows an interactive menu; a demo name can be passed directly.
+`xvfb-run` is used automatically when no `DISPLAY` is set, and the launcher runs
+`start.sh` first to auto-build any missing libraries or `commander_runner`.
 
 ```
-./t1.sh          # default: form demo
-./t1.sh form     # Form with labels, edits, spinbox, toggle
-./t1.sh calc     # Calculator — 4-column grid with gridWidth spanning
-./t1.sh contacts # Contact manager — multi-row form with SpinBox area code
-./t1.sh login    # Login dialog — password fields, toggle, feedback
-./t1.sh native   # Native C Gridbox constraint resource test (test_gridbox/)
+./t1.sh                    # interactive whiptail menu (all demos)
+./t1.sh form               # run a demo directly
+./t1.sh --trace 50 form    # run with TRACE(50) output
+./t1.sh native             # native C Gridbox test (window kept open)
 ```
 
 ### Demo Files
 
 | File | Description | Gridbox Features |
 |------|-------------|------------------|
-| `experimental/demo_form.lua` | 3-column form: Name/Age/Active toggle, OK/Cancel | `gridx`, `gridy`, `gridWidth`, `weightx`, `fill` |
-| `experimental/demo_calc.lua` | 4×6 calculator: display spans 4 columns, "0" spans 2 | `gridWidth` spanning, full grid layout |
-| `experimental/demo_contacts.lua` | Contact manager: multi-row form with SpinBox phone area code | `gridWidth`, `weightx`, `weighty`, `fill both`, multi-type widgets |
-| `experimental/demo_login.lua` | Login dialog: Wpassword fields, toggle, feedback | `gridWidth`, `weightx`, `fill width`, Wpassword widget |
+| `demos/demo_calc.lua` | 4×6 calculator: display spans 4 columns, "0" spans 2 | `gridWidth` spanning, full grid layout |
+| `demos/demo_contacts.lua` | Contact manager: multi-row form with SpinBox phone area code | `gridWidth`, `weightx`, `weighty`, `fill both`, multi-type widgets |
+| `demos/demo_drawcanvas.lua` | DrawCanvas custom drawing via a plug-in C callback | — |
+| `demos/demo_form.lua` | 3-column form: Name/Age/Active toggle, OK/Cancel | `gridx`, `gridy`, `gridWidth`, `weightx`, `fill` |
+| `demos/demo_login.lua` | Login dialog: Wpassword fields, toggle, feedback | `gridWidth`, `weightx`, `fill width`, Wpassword widget |
+| `demos/demo_wbutton.lua` | Wbutton variants: macros, sizes, alignment, callbacks | — |
+| `demos/demo_wlabel_svg.lua` | Wlabel with inline SVG images | — |
+| `demos/demo_wretex.lua` | Wretex multiline retex text with inline SVG | — |
+| `demos/demo_wretex_debug.lua` | Wretex debug: fixed-size widgets | — |
 
 ### Native C Test: test_gridbox/
 

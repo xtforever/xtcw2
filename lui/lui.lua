@@ -7,7 +7,6 @@ require('list_scrollbar')
 local M = {}
 
 function M.run(lui_source)
-    print("DEBUG M.run: length", #lui_source, "first 30:", string.sub(lui_source, 1, 30))
     local ast = parser.parse(lui_source)
     if not ast then return nil, "Parse error" end
     local expanded_ast = macros.expand(ast)

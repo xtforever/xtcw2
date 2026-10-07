@@ -67,6 +67,19 @@
   return 0;
 }
 
+@ Called by the theme registry to (re)apply all theme properties.  Widgets
+@ must override |colors_changed| to handle their own extra colours.
+@proc void wheel_colors_changed($)
+{
+  if( XtIsSubclass( $, wheelWidgetClass) && $colors_changed )
+    {
+      $colors_changed($);
+      return;
+    }
+
+  XtWarning( "Widget is not subclass of wheel" );
+}
+
 @PRIVATE
 
 @ vorderung und hintergrund farben
@@ -92,6 +105,50 @@
 {
   XtWarning( "Wheel Widget needs sig_recv to be redefined" );
   return 0;
+}
+
+@ default implementation: reassign all theme colours/border and expose
+@proc void colors_changed($)
+{
+  if( theme_color_defined("bg_norm") ) $bg_norm = get_color("bg_norm");
+  if( theme_color_defined("bg_sel") )  $bg_sel  = get_color("bg_sel");
+  if( theme_color_defined("bg_hi") )   $bg_hi   = get_color("bg_hi");
+  if( theme_color_defined("fg_norm") ) $fg_norm = get_color("fg_norm");
+  if( theme_color_defined("fg_sel") )  $fg_sel  = get_color("fg_sel");
+  if( theme_color_defined("fg_hi") )   $fg_hi   = get_color("fg_hi");
+
+  col_set($, COLOR_FG_NORM);
+  col_set($, COLOR_FG_SEL);
+  col_set($, COLOR_FG_HI);
+  col_set($, COLOR_BG_NORM);
+  col_set($, COLOR_BG_SEL);
+  col_set($, COLOR_BG_HI);
+
+  $background_pixel = $pixel[STATE_NORMAL + 3];
+
+  /* Borders: set the core fields (used at realize time) and update the
+   * X window directly.  We deliberately avoid XtVaSetValues here because a
+   * borderWidth change on a child of a geometry-managing parent (Gridbox)
+   * causes an endless geometry negotiation loop. */
+  if( theme_color_defined("bordercolor") ) {
+      $border_pixel = get_color("bordercolor");
+      if( XtIsRealized($) )
+          XSetWindowBorder(XtDisplay($), XtWindow($), $border_pixel);
+  }
+
+  if( theme_int_defined("borderwidth") ) {
+      int bw = 0;
+      if( theme_get_int("borderwidth", &bw) ) {
+          $border_width = (Dimension)bw;
+          if( XtIsRealized($) )
+              XSetWindowBorderWidth(XtDisplay($), XtWindow($), (unsigned int)bw);
+      }
+  }
+
+  if( XtIsRealized($) ) {
+      XSetWindowBackground(XtDisplay($), XtWindow($), $background_pixel);
+      XClearArea(XtDisplay($), XtWindow($), 0, 0, 0, 0, True);
+  }
 }
 
 
@@ -131,11 +188,14 @@
       focus_add2( $, $focus_group );
   }
 
+  theme_register($, wheel_colors_changed);
 }
 
 @proc destroy
 {
   Display *dpy = XtDisplay($);
+
+  theme_unregister($);
 
   int i;
   for(i=0;i<6;i++) {
@@ -185,3 +245,4 @@
 @incl "focus-group.h"
 @incl "apputil.h"
 @incl "xutil.h"
+@incl "theme.h"

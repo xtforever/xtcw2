@@ -7,6 +7,7 @@ return {
     "Common",
     "Dartboard",
     "DrawCanvas",
+    "EqFader",
     "Frame",
     "Gauge",
     "Gridbox",

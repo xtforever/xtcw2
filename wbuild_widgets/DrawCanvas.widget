@@ -1,0 +1,148 @@
+@class DrawCanvas(Core)
+@ Demo widget: drawing is delegated to a plug-in callback
+
+@classvars
+        @var compress_motion = True
+        @var compress_exposure = XtExposeCompressMultiple
+        @var compress_enterleave = True
+
+@PUBLIC
+@var <XftFont> XftFont* xftFont = <String> "Serif-22"
+@var Pixel foreground = XtDefaultForeground
+@var <Callback> XtCallbackList callback = NULL
+
+@PRIVATE
+@var draw_canvas_t canv
+
+@def BG   = $canv.xcol
+@def FG   = ($canv.xcol+1)
+@def DRAW = $canv.xdraw
+
+
+@METHODS
+@proc expose
+{
+    XTFUNC();
+    paint1($);
+}
+
+@proc initialize
+{
+
+    XTFUNC();
+    memset(& $canv, 0, sizeof ($canv));
+
+	if( $width <=0 ) $width = 20;
+	if( $height <=0 ) $height = 20;
+	init_colors($);
+	DRAW=0;
+}
+
+@proc destroy
+{
+        XTFUNC();
+        if( DRAW ) XftDrawDestroy( DRAW );
+        XtReleaseGC( $, $canv.gc[0] );
+        XtReleaseGC( $, $canv.gc[1] );
+}
+
+@proc query_geometry
+{
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = 200;
+    reply->height = 200;
+    if ((request->request_mode & CWWidth) && request->width > reply->width)
+        reply->width = request->width;
+    if ((request->request_mode & CWHeight) && request->height > reply->height)
+        reply->height = request->height;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc resize
+{
+	XTFUNC();
+    $canv.win_width  = $width;
+    $canv.win_height = $height;
+
+}
+
+@proc realize
+ {
+    XTFUNC();
+	XtCreateWindow($, (unsigned int) InputOutput,
+        		  (Visual *) CopyFromParent,
+			  *mask, attributes);
+    Display *dpy = XtDisplay($);
+  	DRAW = XftDrawCreate(dpy, XtWindow($),
+                 DefaultVisual(dpy, DefaultScreen(dpy)), None);
+
+    $canv.xfont    = $xftFont;
+    $canv.dpy      =  dpy;
+    $canv.screen   = DefaultScreen(dpy);
+    
+    XGCValues     values;
+    values.graphics_exposures = False;
+    values.foreground = $foreground;
+    values.background = $background_pixel;
+
+    $canv.gc[0] = XtGetGC( $,
+      (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
+      &values);
+
+    values.foreground = $background_pixel;
+    $canv.gc[1] = XtGetGC( $,
+      (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
+      &values);
+
+     $canv.app_context = XtWidgetToApplicationContext( $ );
+}
+
+@proc set_values
+{
+	return True; /* yes we want a redraw */	
+}
+
+
+@UTILITIES
+@proc paint1($)
+{
+    XTFUNC();
+    XtCallCallbackList( $, $callback, (XtPointer) & $canv );
+}
+
+@proc init_colors($)
+{
+	pixel_to_xftcolor( $, $background_pixel, BG );
+ 	pixel_to_xftcolor( $, $foreground,       FG );
+}
+
+
+@EXPORTS
+@incl "drawcanvas-draw.h"
+@proc draw_canvas_t* drawcanvas_get_priv($)
+{
+    if( XtIsSubclass( $,drawCanvasWidgetClass ) )
+      return & $canv;
+    XtWarning( "Widget is not subclass of DrawCanvas" );
+    return NULL;
+}
+
+
+@IMPORTS
+@incl <assert.h>
+@incl <stdint.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xregion.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "drawcanvas-draw.h"

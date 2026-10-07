@@ -8,6 +8,7 @@ OBJS += ini_parse.tab.o ini_lex.lex.o ini_read2.o
 OBJS += njson_parse.tab.o njson_lex.lex.o njson_read.o
 OBJS += converters.o util.o xlayout.o wcreg2.o xprint2.o
 OBJS += micro_vars.o form_parse.o parser_util.o communication.o socket_log.o
+OBJS += theme.o theme_parse.o
 OBJS += XCC.o long.o icon.o choosecol.o strarray.o StrToPmap.o
 OBJS += Pen.o str2color.o
 OBJS += font.o ctx.o table256-crc16.o timer.o

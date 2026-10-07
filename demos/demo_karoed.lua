@@ -17,7 +17,7 @@ local ui = [[
     (KaroEd :id "ed"
             :gridx 0 :gridy 1 :gridWidth 2 :weightx 1 :weighty 1 :fill 3
             :xftFont "Monospace-14"
-            :grid_width 80 :grid_height 24 :auto_resize 0
+            :grid_width 80 :grid_height 9 :auto_resize 0
             :bg_norm "#101018" :fg_norm "#e8e8e8"
             :callback "LUA(on_edit)")
     (label :id "status"

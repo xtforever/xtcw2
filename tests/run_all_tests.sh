@@ -58,4 +58,7 @@ fi
 echo "15. KaroEd multiline editor (keystroke-injection)"
 make -C "$ROOT/experimental/karo_widget" test
 
+echo "16. test_theme_parse"
+"$ROOT/tests/test_theme_parse"
+
 echo "All tests PASSED."

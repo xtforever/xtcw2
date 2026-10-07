@@ -1,0 +1,632 @@
+@class EqFader (Wheel)
+@ Vertical audio-EQ fader (Cairo track, Xft dB scale), value in centibel.
+
+@PUBLIC
+@ frequency label shown below the fader (e.g. "1 kHz")
+@var String label = <String> ""
+@ current gain in centibel (1/100 dB)
+@var int value = 0
+@ bottom of the dB range in centibel
+@var int minValue = -1200
+@ top of the dB range in centibel
+@var int maxValue = 1200
+@ spacing between dB ticks in centibel
+@var int tickStep = 300
+@var <Pixel> Pixel trackColor = <String> "#2a2a2a"
+@var <Pixel> Pixel fillLow = <String> "#2ecc71"
+@var <Pixel> Pixel fillMid = <String> "#f1c40f"
+@var <Pixel> Pixel fillHigh = <String> "#e74c3c"
+@var <Pixel> Pixel thumbColor = <String> "#f7f7f7"
+@var <Pixel> Pixel thumbBorder = <String> "#b0b0b0"
+@var <Pixel> Pixel tickColor = <String> "#555555"
+@var <Pixel> Pixel labelColor = <String> "#222222"
+
+@PRIVATE
+@var String label_mem
+@var Pixmap pixmap
+@var cairo_surface_t *surface
+@var XftDraw *draw
+@var GC gc_copy
+@var GC gc_bg
+@var XftColor col[3]
+@var Boolean dragging
+@var int pref_w
+@var int pref_h
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+
+@proc initialize
+{
+    XTFUNC();
+    $label = $label_mem = XtNewString($label ? $label : "");
+    $pixmap = 0;
+    $surface = NULL;
+    $draw = NULL;
+    $dragging = False;
+    $pref_w = 64;
+    $pref_h = 240;
+
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.graphics_exposures = False;
+    $gc_copy = XtGetGC($, GCGraphicsExposures, &values);
+
+    memset(&values, 0, sizeof values);
+    values.foreground = $background_pixel;
+    $gc_bg = XtGetGC($, GCForeground, &values);
+
+    memset($col, 0, sizeof($col));
+    col_set($);
+
+    if ($minValue == $maxValue) { $minValue = -1200; $maxValue = 1200; }
+    if ($value < $minValue) $value = $minValue;
+    if ($value > $maxValue) $value = $maxValue;
+}
+
+@proc realize
+{
+    XTFUNC();
+    XtCreateWindow($, (unsigned int) InputOutput,
+                      (Visual *) CopyFromParent, *mask, attributes);
+}
+
+@proc resize
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if (XtIsRealized($)) redraw($);
+}
+
+@proc expose
+{
+    XTFUNC();
+    redraw($);
+}
+
+@proc set_values
+{
+    Boolean do_redraw = False;
+
+    if ($label != $old$label) {
+        XtFree($old$label_mem);
+        if ($label == 0) $label = "";
+        $label = $label_mem = XtNewString($label);
+        do_redraw = True;
+    }
+
+    if ($value != $old$value || $minValue != $old$minValue ||
+        $maxValue != $old$maxValue || $tickStep != $old$tickStep) {
+        if ($minValue == $maxValue) {
+            $minValue = $old$minValue;
+            $maxValue = $old$maxValue;
+        }
+        if ($value < $minValue) $value = $minValue;
+        if ($value > $maxValue) $value = $maxValue;
+        do_redraw = True;
+    }
+
+    if ($tickColor != $old$tickColor || $labelColor != $old$labelColor ||
+        $thumbColor != $old$thumbColor) {
+        col_set($);
+        do_redraw = True;
+    }
+
+    return do_redraw;
+}
+
+@proc destroy
+{
+    XTFUNC();
+    if ($dragging) XUngrabPointer(XtDisplay($), CurrentTime);
+    destroy_pixmap($);
+    if ($label_mem) XtFree($label_mem);
+    if ($gc_copy) XtReleaseGC($, $gc_copy);
+    if ($gc_bg) XtReleaseGC($, $gc_bg);
+    int i;
+    Display *dpy = XtDisplay($);
+    Visual *v = DefaultVisual(dpy, DefaultScreen(dpy));
+    for (i = 0; i < 3; i++)
+        XftColorFree(dpy, v, None, $col + i);
+}
+
+@proc accept_focus
+{
+    return True;
+}
+
+@proc query_geometry
+{
+    int w = (request->request_mode & CWWidth) ? request->width : 0;
+    int h = (request->request_mode & CWHeight) ? request->height : 0;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = $pref_w;
+    reply->height = $pref_h;
+    if (w > reply->width) reply->width = w;
+    if (h > reply->height) reply->height = h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>:   fader_press()
+@trans <Btn1Motion>: fader_drag()
+@trans <Btn1Up>:     fader_release()
+@trans <Btn4Up>:     fader_scroll_up()
+@trans <Btn5Up>:     fader_scroll_down()
+@trans <Key>Up:      fader_key_up()
+@trans <Key>Down:    fader_key_down()
+@trans <Key>Home:    fader_key_home()
+@trans <Key>End:     fader_key_end()
+
+@ACTIONS
+
+@proc fader_press
+{
+    if (!event) return;
+    $dragging = True;
+    XGrabPointer(XtDisplay($), XtWindow($), False,
+                 ButtonReleaseMask | PointerMotionMask,
+                 GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+
+    /* take the keyboard focus so the key bindings work */
+    Widget w = $;
+    while (w && !XtIsShell(w)) w = XtParent(w);
+    if (w) XtSetKeyboardFocus(w, $);
+
+    set_value($, y_to_value($, event->xbutton.y));
+}
+
+@proc fader_drag
+{
+    if (!event) return;
+    if (!$dragging) return;
+    set_value($, y_to_value($, event->xbutton.y));
+}
+
+@proc fader_release
+{
+    if (!$dragging) return;
+    $dragging = False;
+    XUngrabPointer(XtDisplay($), CurrentTime);
+}
+
+@proc fader_scroll_up
+{
+    set_value($, $value + $tickStep);
+}
+
+@proc fader_scroll_down
+{
+    set_value($, $value - $tickStep);
+}
+
+@proc fader_key_up
+{
+    set_value($, $value + $tickStep);
+}
+
+@proc fader_key_down
+{
+    set_value($, $value - $tickStep);
+}
+
+@proc fader_key_home
+{
+    set_value($, $maxValue);
+}
+
+@proc fader_key_end
+{
+    set_value($, $minValue);
+}
+
+@UTILITIES
+
+@ height needed by the frequency label at the bottom
+@proc int fader_label_h($)
+{
+    int w, h;
+    if (!$label || !$label[0]) return 0;
+    xft_calc_string_size($, $xftFont, $label, &w, &h);
+    return h + 4;
+}
+
+@proc int fader_track_top($)
+{
+    return 14;
+}
+
+@proc int fader_track_bottom($)
+{
+    int b = (int)$height - fader_label_h($) - 6;
+    if (b < fader_track_top($) + 1) b = fader_track_top($) + 1;
+    return b;
+}
+
+@ map a centibel value to a y pixel (top == maxValue, bottom == minValue)
+@proc int value_to_y($, int v)
+{
+    int top = fader_track_top($);
+    int bot = fader_track_bottom($);
+    int span = bot - top;
+
+    if (span < 1) return top;
+    if ($maxValue == $minValue) return top + span / 2;
+    if (v < $minValue) v = $minValue;
+    if (v > $maxValue) v = $maxValue;
+
+    double f = (double)(v - $minValue) / (double)($maxValue - $minValue);
+    int y = top + (int)((1.0 - f) * span + 0.5);
+    if (y < top) y = top;
+    if (y > bot) y = bot;
+    return y;
+}
+
+@proc int y_to_value($, int y)
+{
+    int top = fader_track_top($);
+    int bot = fader_track_bottom($);
+    int span = bot - top;
+
+    if ($maxValue == $minValue || span < 1) return $minValue;
+    if (y < top) y = top;
+    if (y > bot) y = bot;
+
+    double f = (double)(bot - y) / (double)span;
+    int v = $minValue + (int)(f * (double)($maxValue - $minValue) + 0.5);
+    if (v < $minValue) v = $minValue;
+    if (v > $maxValue) v = $maxValue;
+    return v;
+}
+
+@ set the value, redraw and notify the callback
+@proc set_value($, int v)
+{
+    if (v < $minValue) v = $minValue;
+    if (v > $maxValue) v = $maxValue;
+    if (v == $value) return;
+
+    $value = v;
+    if (XtIsRealized($)) redraw($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$value);
+}
+
+@ Pixel -> normalized RGB (reuses the robust helpers from xutil)
+@proc pixel_rgb($, Pixel px, double *r, double *g, double *b)
+{
+    XftColor c;
+    memset(&c, 0, sizeof c);
+    pixel_to_xftcolor($, px, &c);
+    *r = (double)c.color.red   / 65535.0;
+    *g = (double)c.color.green / 65535.0;
+    *b = (double)c.color.blue  / 65535.0;
+}
+
+@ (re)allocate the Xft colors used for text/tick drawing
+@proc col_set($)
+{
+    Display *dpy = XtDisplay($);
+    Visual *v = DefaultVisual(dpy, DefaultScreen(dpy));
+
+    XftColorFree(dpy, v, None, $col + 0);
+    XftColorFree(dpy, v, None, $col + 1);
+    XftColorFree(dpy, v, None, $col + 2);
+
+    xft_color_alloc($, $tickColor,  $col + 0);
+    xft_color_alloc($, $labelColor, $col + 1);
+    xft_color_alloc($, $thumbColor, $col + 2);
+}
+
+@ free the backing pixmap, cairo surface and Xft drawable
+@proc destroy_pixmap($)
+{
+    if ($surface) { cairo_surface_destroy($surface); $surface = NULL; }
+    if ($draw)    { XftDrawDestroy($draw); $draw = NULL; }
+    if ($pixmap)  { XFreePixmap(XtDisplay($), $pixmap); $pixmap = 0; }
+}
+
+@ create the backing pixmap + cairo surface + Xft drawable (after realize)
+@proc alloc_pixmap($)
+{
+    if (!XtIsRealized($)) return;
+    if ($width < 1 || $height < 1) return;
+
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, scr));
+    if (!$pixmap) return;
+
+    $surface = cairo_xlib_surface_create(dpy, $pixmap,
+                        DefaultVisual(dpy, scr), $width, $height);
+    $draw = XftDrawCreate(dpy, $pixmap, DefaultVisual(dpy, scr), None);
+}
+
+@ build a rounded-rectangle path in the given cairo context
+@proc add_rounded_rect(cairo_t *cr, double x, double y,
+                       double w, double h, double r)
+{
+    double x1 = x + w;
+    double y1 = y + h;
+    if (r > w / 2.0) r = w / 2.0;
+    if (r > h / 2.0) r = h / 2.0;
+    if (r < 0) r = 0;
+
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x1 - r, y + r, r, -M_PI / 2.0, 0);
+    cairo_arc(cr, x1 - r, y1 - r, r, 0, M_PI / 2.0);
+    cairo_arc(cr, x + r, y1 - r, r, M_PI / 2.0, M_PI);
+    cairo_arc(cr, x + r, y + r, r, M_PI, 3.0 * M_PI / 2.0);
+    cairo_close_path(cr);
+}
+
+@ x of the groove (14px wide, horizontally centred)
+@proc int groove_x($)
+{
+    int x = ($width - 14) / 2;
+    if (x < 2) x = 2;
+    return x;
+}
+
+@ draw the recessed track with a subtle vertical gradient
+@proc draw_track($, cairo_t *cr)
+{
+    int top = fader_track_top($);
+    int bot = fader_track_bottom($);
+    int gh = bot - top;
+    int gw = 14;
+    int gx = groove_x($);
+
+    if (gh < 1) return;
+
+    double r, g, b;
+    pixel_rgb($, $trackColor, &r, &g, &b);
+
+    double rl = r * 1.35; if (rl > 1) rl = 1;
+    double gl = g * 1.35; if (gl > 1) gl = 1;
+    double bl = b * 1.35; if (bl > 1) bl = 1;
+    double rd = r * 0.55, gd = g * 0.55, bd = b * 0.55;
+
+    cairo_pattern_t *pat = cairo_pattern_create_linear(0, top, 0, bot);
+    cairo_pattern_add_color_stop_rgb(pat, 0.0, rd, gd, bd);
+    cairo_pattern_add_color_stop_rgb(pat, 0.5, rl, gl, bl);
+    cairo_pattern_add_color_stop_rgb(pat, 1.0, rd, gd, bd);
+    cairo_set_source(cr, pat);
+    add_rounded_rect(cr, gx, top, gw, gh, gw / 2.0);
+    cairo_fill(cr);
+    cairo_pattern_destroy(pat);
+
+    cairo_set_source_rgb(cr, rd, gd, bd);
+    cairo_set_line_width(cr, 1.0);
+    add_rounded_rect(cr, gx + 0.5, top + 0.5, gw - 1, gh - 1, (gw - 1) / 2.0);
+    cairo_stroke(cr);
+}
+
+@ fill from the 0 dB centre to the current value, coloured by gain position
+@proc draw_fill($, cairo_t *cr)
+{
+    int top = fader_track_top($);
+    int bot = fader_track_bottom($);
+    int gh = bot - top;
+    int gw = 14;
+    int gx = groove_x($);
+
+    if (gh < 1) return;
+
+    double zy = value_to_y($, 0);
+    double vy = value_to_y($, $value);
+    if (zy < top) zy = top;
+    if (zy > bot) zy = bot;
+    if (vy < top) vy = top;
+    if (vy > bot) vy = bot;
+
+    double y0 = (zy < vy) ? zy : vy;
+    double y1 = (zy > vy) ? zy : vy;
+    if (y1 - y0 < 0.5) return;
+
+    double lr, lg, lb, mr, mg, mb, hr, hg, hb;
+    pixel_rgb($, $fillLow,  &lr, &lg, &lb);
+    pixel_rgb($, $fillMid,  &mr, &mg, &mb);
+    pixel_rgb($, $fillHigh, &hr, &hg, &hb);
+
+    /* the gradient spans the whole track (bottom = cut, top = boost), so the
+     * fill colour always reflects the absolute gain position */
+    cairo_pattern_t *pat = cairo_pattern_create_linear(0, bot, 0, top);
+    cairo_pattern_add_color_stop_rgb(pat, 0.0, lr, lg, lb);
+    cairo_pattern_add_color_stop_rgb(pat, 0.5, mr, mg, mb);
+    cairo_pattern_add_color_stop_rgb(pat, 1.0, hr, hg, hb);
+    cairo_set_source(cr, pat);
+
+    double rr = gw / 2.0;
+    double half = (y1 - y0) / 2.0;
+    if (rr > half) rr = half;
+    add_rounded_rect(cr, gx, y0, gw, y1 - y0, rr);
+    cairo_fill(cr);
+    cairo_pattern_destroy(pat);
+}
+
+@ draw the handle: soft glow + rounded body + border + grip line
+@proc draw_thumb($, cairo_t *cr)
+{
+    int w = $width;
+    int vy = value_to_y($, $value);
+
+    double tw = 26.0;
+    double th = 12.0;
+    if (tw > w - 6) tw = w - 6;
+    if (tw < 8) tw = 8;
+    double tx = (w - tw) / 2.0;
+    double ty = vy - th / 2.0;
+
+    double r, g, b;
+    pixel_rgb($, $thumbColor, &r, &g, &b);
+
+    /* soft glow */
+    cairo_set_source_rgba(cr, r, g, b, 0.25);
+    add_rounded_rect(cr, tx - 3, ty - 3, tw + 6, th + 6, (th + 6) / 2.0);
+    cairo_fill(cr);
+
+    /* body */
+    cairo_set_source_rgb(cr, r, g, b);
+    add_rounded_rect(cr, tx, ty, tw, th, th / 2.0);
+    cairo_fill_preserve(cr);
+
+    pixel_rgb($, $thumbBorder, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+    cairo_set_line_width(cr, 1.0);
+    cairo_stroke(cr);
+
+    /* grip line */
+    cairo_set_source_rgba(cr, 0, 0, 0, 0.25);
+    cairo_set_line_width(cr, 1.0);
+    cairo_move_to(cr, tx + 5, ty + th / 2.0);
+    cairo_line_to(cr, tx + tw - 5, ty + th / 2.0);
+    cairo_stroke(cr);
+}
+
+@ draw the dB scale: tick marks plus numeric labels (Xft)
+@proc draw_ticks($)
+{
+    if (!$draw) return;
+    if ($tickStep <= 0) return;
+
+    int top = fader_track_top($);
+    int bot = fader_track_bottom($);
+    if (bot <= top) return;
+
+    int gx = groove_x($);
+    int gw = 14;
+    int tx = gx + gw;       /* right tick starts at the groove edge */
+    int lx = gx + gw + 9;   /* numeric labels sit just past the tick */
+
+    double step = (double)$tickStep;
+    int n0 = (int)ceil((double)$minValue / step);
+    int n1 = (int)floor((double)$maxValue / step);
+
+    /* only label every other tick when they are closer than the text height */
+    int label_every = 1;
+    if (n1 > n0) {
+        int y0 = value_to_y($, (int)lround(n0 * step));
+        int y1 = value_to_y($, (int)lround((n0 + 1) * step));
+        int gap = (y0 > y1) ? (y0 - y1) : (y1 - y0);
+        if (gap < 13) label_every = 2;
+    }
+
+    int i;
+    for (i = n0; i <= n1; i++) {
+        int v = (int)lround(i * step);
+        int y = value_to_y($, v);
+        int is_zero = (v == 0);
+
+        XftColor *tc = ($col + 0);
+
+        /* tick marks bracket the groove; the right one sits next to the label */
+        if (is_zero) {
+            XftDrawRect($draw, tc, gx - 4, y, gw + 12, 1);
+        } else {
+            XftDrawRect($draw, tc, gx - 4, y, 4, 1);
+            XftDrawRect($draw, tc, tx, y, 6, 1);
+        }
+
+        if (((i - n0) % label_every) != 0) continue;
+
+        char buf[24];
+        if (is_zero) {
+            snprintf(buf, sizeof buf, "0");
+        } else {
+            double db = v / 100.0;
+            if (db == (double)(int)db)
+                snprintf(buf, sizeof buf, "%+d", (int)db);
+            else
+                snprintf(buf, sizeof buf, "%+.1f", db);
+        }
+
+        int w, h;
+        xft_calc_string_size($, $xftFont, buf, &w, &h);
+        int px = lx;
+        if (px + w > (int)$width - 2) px = (int)$width - w - 2;
+        if (px < 0) px = 0;
+        int py = y + ($xftFont->ascent - $xftFont->descent) / 2;
+        XftDrawStringUtf8($draw, $col + 1, $xftFont, px, py,
+                          (FcChar8*)buf, (int)strlen(buf));
+    }
+}
+
+@ draw the frequency label centred below the track
+@proc draw_label($)
+{
+    if (!$draw) return;
+    if (!$label || !$label[0]) return;
+
+    int w, h;
+    xft_calc_string_size($, $xftFont, $label, &w, &h);
+    int x = ((int)$width - w) / 2;
+    if (x < 2) x = 2;
+
+    int y = fader_track_bottom($) + 2;
+    if (y + h > (int)$height) y = (int)$height - h;
+
+    XftDrawStringUtf8($draw, $col + 1, $xftFont, x, y + $xftFont->ascent,
+                      (FcChar8*)$label, (int)strlen($label));
+}
+
+@proc redraw($)
+{
+    if (!XtIsRealized($)) return;
+    if (!$pixmap) alloc_pixmap($);
+    if (!$pixmap) return;
+
+    Display *dpy = XtDisplay($);
+    int w = $width;
+    int h = $height;
+
+    /* opaque background first (avoids source-over ghosting on the pixmap) */
+    XFillRectangle(dpy, $pixmap, $gc_bg, 0, 0, w, h);
+
+    if ($surface) {
+        cairo_t *cr = cairo_create($surface);
+        cairo_rectangle(cr, 0, 0, w, h);
+        cairo_clip(cr);
+
+        draw_track($, cr);
+        draw_fill($, cr);
+        draw_thumb($, cr);
+
+        cairo_destroy(cr);
+        cairo_surface_flush($surface);
+    }
+
+    /* Xft text drawn after the cairo pass */
+    draw_ticks($);
+    draw_label($);
+
+    if ($surface) cairo_surface_mark_dirty($surface);
+
+    XCopyArea(dpy, $pixmap, XtWindow($), $gc_copy, 0, 0, w, h, 0, 0);
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <string.h>
+@incl <math.h>
+@incl <stdint.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"

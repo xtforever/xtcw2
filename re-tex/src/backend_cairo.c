@@ -79,9 +79,14 @@ static void backend_cairo_get_char_metrics(Backend *self, int c, CharMetrics *me
     cairo_text_extents_t extents;
     
     cairo_text_extents(bc->cr, str, &extents);
+    /* Use the font's nominal ascent/descent (the TeX line box), not the
+     * glyph's ink extents.  See backend_xpixmap.c for rationale.  The
+     * advance width still comes from the glyph's text extents. */
+    cairo_font_extents_t font_extents;
+    cairo_font_extents(bc->cr, &font_extents);
     metrics->width = extents.x_advance;
-    metrics->height = -extents.y_bearing;
-    metrics->depth = extents.height + extents.y_bearing;
+    metrics->height = font_extents.ascent;
+    metrics->depth = font_extents.descent;
 }
 
 static void cairo_draw_char(Backend *self, double x, double y, int c) {
