@@ -63,6 +63,9 @@ image_view/xtcw/
 timemon/xtcw/
 var5-widget/xtcw/
 LuaRunner/x
+LuaRunner/luaxt.o
+LuaRunner/luaxt_wrap.o
+LuaRunner/luaxt_wrap.c
 AdmPnl/jsn.c
 AdmPnl/kunde-auswahl.ad
 AdmPnl/rlayout

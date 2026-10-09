@@ -10,9 +10,22 @@ libexecdir  ?= $(exec_prefix)/libexec
 PKGDATADIR  ?= $(prefix)/etc/xtcw
 
 
-CC=gcc -I. -I../utils -ggdb -O0 -DMLS_DEBUG -Wall -fsanitize=address -fno-omit-frame-pointer
-CFLAGS += -D_GNU_SOURCE -fms-extensions
+# Build mode. When driven from the root makefile, debug_enable and CFLAGS are
+# exported (debug = -g -DMLS_DEBUG -O0, release = -O3). Standalone builds of
+# commander/ default to debug for backward compatibility; always prefer building
+# from the repository root so that the toolkit libraries and commander_runner
+# use the same MLS_DEBUG setting (mixing them crashes at runtime).
+debug_enable ?= 1
+
+CC = gcc
+CFLAGS += -Wall -D_GNU_SOURCE -fms-extensions
 CFLAGS += -I$(incdir) -I$(incdir)/xtcw -I/usr/include/freetype2 -I/usr/local/include/freetype2 -I. -I../utils -Ixtcw
+
+ifeq ($(debug_enable),1)
+CFLAGS += -g -O0 -DMLS_DEBUG -fsanitize=address -fno-omit-frame-pointer
+else
+CFLAGS += -O3
+endif
 
 LOADLIBES=$(libdir)/libxtcw.a $(libdir)/libwcl.a $(libdir)/libutils.a $(libdir)/libretex.a $(libdir)/libplainc.a -lm
 
@@ -39,4 +52,4 @@ commander_runner: commander_runner.o task_manager.o lua_task_bindings.o lua_brid
 
 clean:
 	-${RM} *.o ${T}
-	rm -f ../LuaRunner/luaxt_wrap.c
+	rm -f ../LuaRunner/luaxt.o ../LuaRunner/luaxt_wrap.o ../LuaRunner/luaxt_wrap.c

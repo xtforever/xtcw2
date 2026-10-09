@@ -22,7 +22,7 @@ endif
 export CFLAGS
 export LDFLAGS += -L$(libdir) $(shell pkg-config --libs cairo cairo-xlib) -lXaw -lXmu -lXft -lfontconfig -lXrender -lXpm -lXext -lX11 -lXt -lm
 
-.PHONY: all nanosvg plainc wcl core retex widgets commander tests clean run_tests build_tools libxtcw
+.PHONY: all nanosvg plainc wcl core retex widgets commander tests clean distclean run_tests build_tools libxtcw
 
 # Build the proven core and the commander_runner Lua/Xt application
 all: nanosvg plainc build_tools widgets wcl core retex libxtcw commander tests
@@ -98,3 +98,9 @@ clean:
 	$(MAKE) -C wcl clean
 	$(MAKE) -C plainc_widgets clean
 	$(MAKE) -C LuaRunner/nanosvg/src clean
+
+# Full clean, including artifacts that `clean` leaves behind. Needed when
+# switching between the debug (MLS_DEBUG + ASan) and production build modes,
+# because the Makefiles do not track CFLAGS changes.
+distclean: clean
+	rm -f LuaRunner/luaxt.o LuaRunner/luaxt_wrap.o LuaRunner/luaxt_wrap.c
