@@ -11,11 +11,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+      with:
+        submodules: recursive
+
     - name: Install dependencies
       run: |
         sudo apt-get update
@@ -24,6 +26,9 @@ jobs:
           gcc \
           make \
           pkg-config \
+          bison \
+          flex \
+          swig \
           libx11-dev \
           libxt-dev \
           libxaw7-dev \
@@ -35,36 +40,39 @@ jobs:
           libxext-dev \
           libcairo2-dev \
           liblua5.3-dev \
-          lua5.3
-    
+          lua5.3 \
+          lua-lpeg
+
     - name: Clean build
       run: make distclean
-    
+
     - name: Build all
       run: make all
-    
-    - name: Build LuaRunner
-      run: make luarunner
-    
-    - name: Build CommanderRunner
-      run: cd experimental && make commander_runner
-    
-    - name: Build tests
-      run: make tests
 
   test:
     runs-on: ubuntu-latest
     needs: build
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+      with:
+        submodules: recursive
+
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y \
+          build-essential \
+          gcc \
+          make \
+          pkg-config \
+          bison \
+          flex \
+          swig \
+          libxtst-dev \
           xvfb \
+          x11-utils \
           libx11-dev \
           libxt-dev \
           libxaw7-dev \
@@ -76,25 +84,17 @@ jobs:
           libxext-dev \
           libcairo2-dev \
           liblua5.3-dev \
-          lua5.3
-    
-    - name: Restore build artifacts
-      uses: actions/cache@v4
-      with:
-        path: |
-          build/
-          LuaRunner/luarunner
-          tests/
-        key: ${{ runner.os }}-build-${{ hashFiles('makefile', 'utils/**', 'wbuild_widgets/**') }}
-    
-    - name: Run tests with xvfb
+          lua5.3 \
+          lua-lpeg
+
+    - name: Build tests (clean, no stale artifacts)
       run: |
-        # Rebuild if needed
-        make tests || make tests
-        
-        # Run tests in headless mode
-        xvfb-run -a ./tests/run_all_tests.sh
-    
+        make clean
+        make tests
+
+    - name: Run tests with xvfb
+      run: xvfb-run -a ./tests/run_all_tests.sh
+
     - name: Upload test logs
       if: failure()
       uses: actions/upload-artifact@v4
@@ -102,18 +102,57 @@ jobs:
         name: test-logs
         path: tests/*.log
 
-  lint:
+  cookbook:
     runs-on: ubuntu-latest
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          gcc \
+          make \
+          pkg-config \
+          bison \
+          flex \
+          swig \
+          libx11-dev \
+          libxt-dev \
+          libxaw7-dev \
+          libxmu-dev \
+          libxft-dev \
+          libfontconfig1-dev \
+          libxrender-dev \
+          libxpm-dev \
+          libxext-dev \
+          libcairo2-dev \
+          liblua5.3-dev \
+          lua5.3 \
+          lua-lpeg \
+          xvfb \
+          x11-utils \
+          fonts-dejavu-core
+
+    - name: Build + smoke-test cookbook (debug and production)
+      run: ./cookbook/scripts/test-all.sh
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Install clang-format
       run: |
         sudo apt-get update
         sudo apt-get install -y clang-format
-    
+
     - name: Check code formatting
       run: |
         # Check for common formatting issues
@@ -123,11 +162,11 @@ jobs:
 
   docs:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
+
     - name: Verify documentation
       run: |
         # Check that key docs exist
