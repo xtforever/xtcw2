@@ -47,7 +47,7 @@ Conventions the agents expect:
 Build tools:
 
 ```bash
-gcc make bison flex pkg-config
+gcc make bison flex pkg-config swig
 ```
 
 Development libraries:
@@ -55,6 +55,7 @@ Development libraries:
 - X11 / Xt / Xaw / Xmu / Xft / Xpm / Xext / Xrender / fontconfig
 - **cairo** (and cairo-xlib) — required by the root build (`pkg-config cairo cairo-xlib`)
 - **lua5.3** development package — required by `commander_runner` (`pkg-config lua5.3`)
+- **lpeg** for Lua 5.3 — required by `lui/parser.lua` (Debian/Ubuntu: `lua-lpeg`)
 - **MySQL client dev** (e.g. `libmysqlclient-dev`) — required *only* to build
   `experimental/AdmPnl` (it links `-lmysqlclient`)
 
@@ -153,11 +154,15 @@ build the sample applications. Those live under `experimental/` with their own m
 
 | App | Location | Build & run |
 |-----|----------|-------------|
+| **cookbook** (reference recipe manager) | `cookbook/` | `./cookbook/scripts/build.sh debug` then `./cookbook/scripts/run.sh`; `./cookbook/scripts/test-all.sh` builds + smoke-tests debug and production; `docker build -f cookbook/Dockerfile --target production .` |
 | **AdmPnl** (admin panel) | `experimental/AdmPnl/` | `cd experimental/AdmPnl && make && ./admpanel` (needs MySQL client dev) |
 | **todomgr** | `experimental/todomgr/` | `cd experimental/todomgr && make` |
 | **test_file_sel** | `experimental/test_file_sel/` | `cd experimental/test_file_sel && make` |
 
-LUI demo scripts that `commander_runner` loads directly live in `demos/`.
+LUI demo scripts that `commander_runner` loads directly live in `demos/`. The
+`cookbook/` reference app is the recommended starting point for a real project
+(LUI app + theme + assets + debug/production build + Docker). The gaps it
+surfaces are tracked in [`plan-xtcw-completed.md`](plan-xtcw-completed.md).
 
 ---
 

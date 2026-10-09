@@ -184,3 +184,89 @@ Widgets not derived from `Wheel` can still take part in theming by calling
 `theme_register($, own_apply_fn)` in their `initialize` (and
 `theme_unregister($)` in `destroy`), where `own_apply_fn(Widget)` re-resolves
 their colours via `get_color()`/`theme_get_int()` and redraws.
+## No production build: `commander/makefile` hardcodes MLS_DEBUG + ASan
+
+**Symptom:** `make debug_enable=0` builds the toolkit libraries as release
+(`-O3`, no `-DMLS_DEBUG`) but `commander_runner` is still compiled with
+`-DMLS_DEBUG -O0 -fsanitize=address` and links `libasan`. There is no way to
+produce a real, sanitizer-free production binary of the host application.
+
+**Cause:** `commander/makefile` line 13 set the compiler command itself:
+`CC=gcc -I. -I../utils -ggdb -O0 -DMLS_DEBUG -Wall -fsanitize=address
+-fno-omit-frame-pointer`. Because the flags live in `$(CC)`, the root
+`debug_enable` switch (and the exported `CFLAGS`) had no effect on the host.
+Worse, mixing `-DMLS_DEBUG` objects with non-debug toolkit libraries crashes at
+runtime (see `overview.md` §9.1).
+
+**Fix:** move the mode flags out of `$(CC)` into `$(CFLAGS)`, gated on
+`debug_enable`:
+
+```
+debug_enable ?= 1
+CC = gcc
+CFLAGS += -Wall -D_GNU_SOURCE -fms-extensions
+...
+ifeq ($(debug_enable),1)
+CFLAGS += -g -O0 -DMLS_DEBUG -fsanitize=address -fno-omit-frame-pointer
+else
+CFLAGS += -O3
+endif
+```
+
+Always build from the repository root (`make commander [debug_enable=0]`) so the
+libraries and the host agree on `MLS_DEBUG`.
+
+**Files:** `commander/makefile` (fixed); `makefile` (root)
+
+## `make clean` leaves ASan `LuaRunner/*.o` and deletes a tracked source
+
+**Symptom:** after a debug build, switching to `make debug_enable=0` and
+relinking can fail with undefined `__asan_*` symbols or silently link
+instrumented objects — the build is not actually clean. Additionally
+`make clean` removes `LuaRunner/luaxt_wrap.c`, which is tracked by git, leaving
+the worktree dirty.
+
+**Cause:** `commander/makefile`'s `clean` only ran `rm *.o ${T}` in `commander/`
+and removed `../LuaRunner/luaxt_wrap.c`; it never removed
+`LuaRunner/luaxt.o` / `LuaRunner/luaxt_wrap.o` (which hold `__asan` symbols
+after a debug build), and the root `clean` did not touch `LuaRunner` either.
+
+**Fix:** `commander/makefile` clean now removes
+`../LuaRunner/luaxt.o ../LuaRunner/luaxt_wrap.o ../LuaRunner/luaxt_wrap.c`; a
+new root `distclean` target (`clean` + the same removals) is the supported way
+to switch build modes. `LuaRunner/luaxt*.o` and `luaxt_wrap.c` are now in
+`.gitignore` (swig regenerates `luaxt_wrap.c` on the next build).
+
+**Files:** `commander/makefile`, `makefile`, `.gitignore` (fixed)
+
+## WlsMulti / WlistMulti: BadAlloc on X_CreatePixmap in a nested Gridbox
+
+**Symptom:** an application that puts a `list-view` (class `WlsMulti`, which
+renders through `WlistMulti`) inside a nested `Gridbox` aborts at startup with
+
+```
+X Error of failed request:  BadAlloc (insufficient resources for operation)
+  Major opcode of failed request:  53 (X_CreatePixmap)
+```
+
+The error is the last thing logged after a run of
+`[2]get_line_intern: WlistMulti:list ...` / `[2]print_pixmap: ...` lines.
+Reported while building the `cookbook/` demo (three `list-view` widgets in
+nested screen grids).
+
+**Cause:** `WlistMulti` creates a pixmap per visible line/resize; in a nested
+`Gridbox` the size negotiation can hand it an oversized (or repeatedly
+changing) width, exceeding the X server's pixmap limits. Xt's default error
+handler turns the resulting `BadAlloc` into a fatal error. The debug build
+(`-fsanitize=address`, `-O0`) sometimes survives longer because the allocator
+and timing differ, so a 3-second smoke test can pass on debug while the release
+build dies — the build mode is not the root cause.
+
+**Workaround / fix:** avoid `list-view`/`WlsMulti` in nested layout managers
+until the sizing is fixed; the `cookbook/` reference app uses `Wlabel` for its
+lists. A proper fix needs a size audit of `WlistMulti`/`WlsMulti` (clamp the
+pixmap dimensions, avoid re-creating pixmaps during `resize`) and a regression
+test with a `list-view` inside a nested `Gridbox`.
+
+**Files:** `wbuild_widgets/WlsMulti.widget`, `wbuild_widgets/WlistMulti.widget`
+(latent; worked around in `cookbook/`)

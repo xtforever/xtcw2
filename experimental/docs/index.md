@@ -78,3 +78,7 @@ The remaining files are still current and live in `experimental/`:
 - Overall plan: `ultimate_plan.md`
 - Current test status: `ultimate_plan.md` → Critical Findings
 - Missing widgets: `docs/widgets.md` → Missing Widgets
+- Cookbook-driven growth plan: [`../../plan-xtcw-completed.md`](../../plan-xtcw-completed.md)
+  (cleanroom recipe-app requirements, gap analysis, roadmap)
+- Reference application: [`../../cookbook/`](../../cookbook/) — LUI app + theme +
+  debug/production build + Docker + headless smoke test
