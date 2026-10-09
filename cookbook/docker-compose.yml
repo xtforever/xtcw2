@@ -1,0 +1,54 @@
+# cookbook/docker-compose.yml — run the cookbook app from the built images.
+#
+# The build context is the repository root (one level up), because the whole
+# xtcw2 toolkit is required. Build/run with:
+#
+#   docker compose -f cookbook/docker-compose.yml run --rm production
+#   docker compose -f cookbook/docker-compose.yml run --rm debug
+#
+# Each service starts an Xvfb server inside the container and runs the app
+# against it (there is no host X server involved).
+
+services:
+  production:
+    build:
+      context: ..
+      dockerfile: cookbook/Dockerfile
+      target: production
+    image: xtcw-cookbook:production
+    working_dir: /app/commander
+    environment:
+      DISPLAY: ":99"
+    command:
+      - bash
+      - -lc
+      - >-
+        Xvfb :99 -screen 0 1280x800x24 >/tmp/xvfb.log 2>&1 &
+        sleep 1;
+        exec ./commander_runner -Luafile ../cookbook/app/main.lua
+        -themeFile ../cookbook/themes/cookbook.hdf
+
+  debug:
+    build:
+      context: ..
+      dockerfile: cookbook/Dockerfile
+      target: debug
+    image: xtcw-cookbook:debug
+    working_dir: /app/commander
+    environment:
+      DISPLAY: ":99"
+      ASAN_OPTIONS: "detect_leaks=0"
+    # AddressSanitizer needs to control the address-space layout; a relaxed
+    # seccomp profile is the reliable way to run it in a container.
+    security_opt:
+      - seccomp:unconfined
+    command:
+      - bash
+      - -lc
+      - >-
+        Xvfb :99 -screen 0 1280x800x24 >/tmp/xvfb.log 2>&1 &
+        sleep 1;
+        RUN="";
+        if setarch "$$(uname -m)" -R true 2>/dev/null; then RUN="setarch $$(uname -m) -R"; fi;
+        exec $$RUN ./commander_runner -Luafile ../cookbook/app/main.lua
+        -themeFile ../cookbook/themes/cookbook.hdf

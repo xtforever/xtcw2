@@ -1,0 +1,15 @@
+# Keep generated/build artifacts and unrelated trees out of the Docker context.
+# NOTE: do NOT exclude tests/ — the root `make clean` recurses into tests/.
+.git
+.gitnexus
+build
+cookbook/dist
+experimental
+**/*.o
+*.a
+LuaRunner/luaxt_wrap.c
+LuaRunner/luaxt.o
+LuaRunner/luaxt_wrap.o
+*.png
+*.pdf
+color-theme-success.md
