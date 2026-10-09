@@ -1,0 +1,39 @@
+; cookbook theme store (xtcw hdf s-expression format)
+; Used by cookbook/scripts/run.sh and the Docker/smoke scripts via:
+;   commander_runner -themeFile ../cookbook/themes/cookbook.hdf ...
+;
+; The host defaults to theme "default" and calls theme_select("default"), so a
+; theme named `default` MUST exist here or selection silently no-ops.
+
+(theme default (
+    bg_norm 0xfdf6e3      ; warm paper
+    bg_sel  0xffe8a3      ; highlighted row
+    bg_hi   0xe07a5f      ; accent
+    fg_norm 0x3d405b      ; dark text
+    fg_sel  0x2a9d8f      ; greenish selection text
+    fg_hi   0xffffff
+    switch_off 0xd8c3a5
+    switch_on 0x2a9d8f
+    switch_knob_off 0xf2f2f2
+    switch_knob_on 0xffffff
+    gridbox_bg 0xfdf6e3
+    gridbox_border 0x3d405b
+    borderwidth 0
+))
+
+(theme cookbook_warm (
+    bg_norm 0x3d405b
+    bg_sel  0xe07a5f
+    bg_hi   0xf2cc8f
+    fg_norm 0xf4f1de
+    fg_sel  0xf2cc8f
+    fg_hi   0xffffff
+    switch_off 0x5c5f7a
+    switch_on 0xe07a5f
+    switch_knob_off 0xf4f1de
+    switch_knob_on 0xffffff
+    gridbox_bg 0x3d405b
+    gridbox_border 0xf2cc8f
+    borderwidth 0
+    bordercolor 0xf2cc8f
+))
