@@ -270,3 +270,54 @@ test with a `list-view` inside a nested `Gridbox`.
 
 **Files:** `wbuild_widgets/WlsMulti.widget`, `wbuild_widgets/WlistMulti.widget`
 (latent; worked around in `cookbook/`)
+## Shell sizing reads uninitialised width/height (breaks every -O3 build)
+
+**Symptom:** every LUI demo started with a full-screen-width window of (near)
+zero height — only the titlebar was visible. Debug builds
+(`-O0 -fsanitize=address`) were fine; `make debug_enable=0` (`-O3`, no ASan)
+broke *all* demos, because they all use `Gridbox`.
+
+**Cause:** `commander/commander_runner.c` sized the shell from its first child
+with a positive size, using uninitialised locals:
+
+```c
+WidgetList children; Cardinal num_children;
+XtVaGetValues(TopLevel, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+for (...) {
+    Dimension width, height;                 /* uninitialised */
+    XtVaGetValues(children[i], XtNwidth, &width, XtNheight, &height, NULL);
+    if (width > 0 && height > 0)
+        XtVaSetValues(TopLevel, XtNwidth, width, XtNheight, height, NULL);
+}
+```
+
+The shell's internal `shellext` child does **not** expose `XtNwidth`/`XtNheight`
+through `XtVaGetValues`, so `width`/`height` keep their stale stack contents.
+With `-O0`/ASan those happen to be `0` (child skipped, the real size is found);
+with `-O3` they are large garbage (e.g. `58576x1`), which is then applied to the
+shell. `Gridbox` is laid out far below its preferred size, its `Position`
+(16-bit) accumulators overflow to negative coordinates, and the first
+`X_CreatePixmap` fails with `BadAlloc`, aborting the app.
+
+Found with Valgrind (`Conditional jump ... depends on uninitialised value`,
+origin `main`'s stack) plus a sentinel-value experiment that showed the
+sentinel survived for the `shellext` child.
+
+**Fix:** initialise the locals and skip NULL entries:
+
+```c
+WidgetList children = NULL; Cardinal num_children = 0;
+XtVaGetValues(TopLevel, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+for (...) {
+    Dimension width = 0, height = 0;
+    Widget child = children ? children[i] : NULL;
+    if (!child) continue;
+    XtVaGetValues(child, XtNwidth, &width, XtNheight, &height, NULL);
+    if (width > 0 && height > 0) { ... }
+}
+```
+
+**Files:** `commander/commander_runner.c` (fixed)
+
+**Regression test:** `cookbook/scripts/smoke-test.sh` now asserts the toplevel
+window has a positive width *and* height (not merely that a window exists).

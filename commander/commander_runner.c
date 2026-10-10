@@ -299,14 +299,24 @@ int main(int argc, char **argv) {
      * size has already been forced onto the child during the initial
      * geometry negotiation, and the LUI `:width`/`:height` are lost. */
     if (COMMANDER.luafile && strlen(COMMANDER.luafile) > 0) {
-        WidgetList children;
-        Cardinal num_children;
+        WidgetList children = NULL;
+        Cardinal num_children = 0;
         XtVaGetValues(TopLevel, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
         /* Find the first managed child with a positive size (skip the
-         * shell's internal "shellext" child, which has size 0x0). */
+         * shell's internal "shellext" child, which has size 0x0).
+         *
+         * `width`/`height` MUST be initialised: the shell's internal child
+         * does not expose XtNwidth/XtNheight through XtVaGetValues, so the
+         * values are left untouched.  Without this the stale stack contents
+         * are mistaken for a real size, and at -O3 the shell gets sized to
+         * garbage (e.g. 58576x1), which overflows Gridbox and aborts with
+         * `X_CreatePixmap BadAlloc`. */
         for (Cardinal i = 0; i < num_children; i++) {
-            Dimension width, height;
-            XtVaGetValues(children[i], XtNwidth, &width, XtNheight, &height, NULL);
+            Dimension width = 0, height = 0;
+            Widget child = children ? children[i] : NULL;
+            if (!child)
+                continue;
+            XtVaGetValues(child, XtNwidth, &width, XtNheight, &height, NULL);
             if (width > 0 && height > 0) {
                 XtVaSetValues(TopLevel, XtNwidth, width, XtNheight, height, NULL);
                 break;

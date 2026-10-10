@@ -71,10 +71,25 @@ alive=0
 kill -0 "$APP_PID" 2>/dev/null && alive=1
 
 window=0
+win_geom=""
 if [ -n "${DISPLAY:-}" ] && command -v xwininfo >/dev/null 2>&1; then
     xwininfo -root -tree >"$LOG.tree" 2>&1 || true
-    if grep -q "luarunner" "$LOG.tree"; then
-        window=1
+    # Toplevel app window line, e.g.:
+    #   0x200022 "commander_runner": ("commander_runner" "luarunner")  600x400+0+0  +0+0
+    # Assert the window has a real (positive) size, not a 0-height/0-width
+    # shell left behind by a failed geometry negotiation.
+    win_geom=$(grep -m1 '"luarunner")' "$LOG.tree" \
+        | sed -E 's/.*"luarunner"\)[[:space:]]+([0-9]+x[0-9]+).*/\1/')
+    case "$win_geom" in
+        [0-9]*x[0-9]*) ;;
+        *) win_geom="" ;;
+    esac
+    if [ -n "$win_geom" ]; then
+        win_w=${win_geom%x*}
+        win_h=${win_geom#*x}
+        if [ "${win_w:-0}" -gt 0 ] && [ "${win_h:-0}" -gt 0 ]; then
+            window=1
+        fi
     fi
 fi
 
@@ -93,10 +108,10 @@ if [ "$fatal" -eq 1 ]; then
 fi
 
 if [ "$alive" -eq 1 ] && [ "$window" -eq 1 ]; then
-    echo "[smoke] PASS ($MODE): process alive, window present"
+    echo "[smoke] PASS ($MODE): process alive, window ${win_geom} present"
     exit 0
 fi
 
-echo "[smoke] FAIL ($MODE): alive=$alive window=$window (see $LOG)"
+echo "[smoke] FAIL ($MODE): alive=$alive window=$window geom=${win_geom:-none} (see $LOG)"
 tail -n 10 "$LOG" | sed 's/^/    /'
 exit 1
