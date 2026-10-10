@@ -4,6 +4,7 @@
 #   ./t1.sh                      interactive menu (whiptail)
 #   ./t1.sh form                 run a demo directly
 #   ./t1.sh --trace 50 form      run with TRACE(50) output
+#   ./t1.sh cookbook             LUI reference app (multi-screen recipe manager)
 #   ./t1.sh native               native Gridbox C test (window kept open)
 #
 # When no DISPLAY is set, xvfb-run is used automatically.
@@ -28,6 +29,7 @@ DEMOS=(
   "wlabel_svg|Wlabel SVG|labels with inline SVG images"
   "wretex|Wretex|multiline retex text with inline SVG"
   "wretex_debug|Wretex debug|fixed-size retex widgets"
+  "cookbook|Cookbook|LUI reference app (multi-screen recipe manager)"
   "native|Native C|Gridbox constraint-resource C test"
 )
 
@@ -125,6 +127,15 @@ run_native() {
     ( cd "$DIR/experimental/test_gridbox" && make >/dev/null && $RUN ./test_gridbox -keep )
 }
 
+# The cookbook reference app lives outside demos/ and ships its own theme.
+run_cookbook() {
+    local trace="${1:-}" dargs=()
+    dargs=(-Luafile "../cookbook/app/main.lua"
+           -themeFile "../cookbook/themes/cookbook.hdf")
+    [ -n "$trace" ] && dargs+=(-Tracelevel "$trace")
+    ( cd "$DIR/commander" && $RUN ./commander_runner "${dargs[@]}" )
+}
+
 # --- interactive whiptail menu ---------------------------------------------
 pick_demo() {
     local d key title desc items=()
@@ -134,7 +145,7 @@ pick_demo() {
     done
     items+=("quit" "Exit the launcher")
     whiptail --title "XTCW Demo Launcher" \
-        --menu "Select a demo to run:" 20 78 14 \
+        --menu "Select a demo to run:" 22 78 15 \
         "${items[@]}" 3>&1 1>&2 2>&3
 }
 
@@ -169,7 +180,10 @@ interactive_main() {
             *) trace="$tsel" ;;
         esac
 
-        run_lua_demo "$sel" "$trace" || true
+        case "$sel" in
+            cookbook) run_cookbook "$trace" || true ;;
+            *)        run_lua_demo "$sel" "$trace" || true ;;
+        esac
     done
 }
 
@@ -195,6 +209,8 @@ select_main() {
             k="${keys[$((REPLY - 1))]}"
             if [ "$k" = native ]; then
                 run_native || true
+            elif [ "$k" = cookbook ]; then
+                run_cookbook || true
             else
                 run_lua_demo "$k" || true
             fi
@@ -207,6 +223,8 @@ select_main() {
 if [ -n "$DEMO_KEY" ]; then
     if [ "$DEMO_KEY" = native ]; then
         run_native
+    elif [ "$DEMO_KEY" = cookbook ]; then
+        run_cookbook "$TRACE"
     else
         run_lua_demo "$DEMO_KEY" "$TRACE"
     fi
