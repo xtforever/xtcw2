@@ -321,3 +321,26 @@ for (...) {
 
 **Regression test:** `cookbook/scripts/smoke-test.sh` now asserts the toplevel
 window has a positive width *and* height (not merely that a window exists).
+## Inline SVG icons float above the text baseline (viewBox padding)
+
+**Symptom:** in a Wlabel/Wretex line that mixes text with
+`\includesvg{file}{w}{h}`, the inline icons sat a little too high — not on the
+text baseline (see `demos/demo_wlabel_svg.lua`).
+
+**Cause:** the SVG node is created with `height = h, depth = 0`, and the
+renderer draws it with its box bottom on the baseline
+(`re-tex/src/renderer.c`, `NODE_SVG`). Both backends' `draw_svg`
+(`backend_cairo.c`, `backend_xpixmap.c`) scaled the **full nanoSVG viewBox**
+(`image->width` × `image->height`) onto the `w` × `h` box. Most icon assets
+carry padding in their viewBox (e.g. `LuaRunner/alert.svg` uses
+`viewBox="-10 -10 380 380"`), so the visible content stopped short of the box
+bottom and the icon appeared to float above the baseline (and slightly small).
+
+**Fix:** in both `draw_svg` implementations, compute the bounding box of the
+*visible* shapes (`NSVGshape.bounds`) and map that content box onto the
+`w` × `h` box (`translate(x,y); scale(w/(maxx-minx), h/(maxy-miny));
+translate(-minx,-miny)`), falling back to the viewBox when there is no visible
+content. The icon's visible bottom then lands on the baseline and its horizontal
+padding is removed too.
+
+**Files:** `re-tex/src/backend_cairo.c`, `re-tex/src/backend_xpixmap.c` (fixed)

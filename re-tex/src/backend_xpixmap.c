@@ -174,10 +174,30 @@ static void xpixmap_draw_svg(Backend *self, double x, double y, double w, double
     }
 
     cairo_save(bp->cr);
+
+    /* Crop to the visible content's bounding box instead of the full viewBox:
+     * SVG assets often carry padding in their viewBox, which would otherwise
+     * leave the icon floating above the text baseline (and off-centre). The
+     * renderer draws this box with its bottom edge on the baseline, so mapping
+     * the content bounds to the box puts the icon's visible bottom on the
+     * baseline. */
+    float minx = 1e30f, miny = 1e30f, maxx = -1e30f, maxy = -1e30f;
+    for (NSVGshape *s = image->shapes; s != NULL; s = s->next) {
+        if (!(s->flags & NSVG_FLAGS_VISIBLE)) continue;
+        if (s->bounds[0] < minx) minx = s->bounds[0];
+        if (s->bounds[1] < miny) miny = s->bounds[1];
+        if (s->bounds[2] > maxx) maxx = s->bounds[2];
+        if (s->bounds[3] > maxy) maxy = s->bounds[3];
+    }
+    if (maxx <= minx || maxy <= miny) {   /* no visible content */
+        minx = miny = 0.0f;
+        maxx = image->width;
+        maxy = image->height;
+    }
+
     cairo_translate(bp->cr, x, y);
-    double scale_x = w / image->width;
-    double scale_y = h / image->height;
-    cairo_scale(bp->cr, scale_x, scale_y);
+    cairo_scale(bp->cr, w / (maxx - minx), h / (maxy - miny));
+    cairo_translate(bp->cr, -minx, -miny);
 
     for (NSVGshape *shape = image->shapes; shape != NULL; shape = shape->next) {
         if (!(shape->flags & NSVG_FLAGS_VISIBLE)) continue;
