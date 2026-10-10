@@ -163,20 +163,28 @@ static void cairo_draw_svg(Backend *self, double x, double y, double w, double h
     cairo_save(bc->cr);
 
     /* Crop to the visible content's bounding box instead of the full viewBox:
-     * SVG assets often carry padding in their viewBox, which would otherwise
-     * leave the icon floating above the text baseline (and off-centre). The
-     * renderer draws this box with its bottom edge on the baseline, so mapping
-     * the content bounds to the box puts the icon's visible bottom on the
-     * baseline. */
-    float minx = 1e30f, miny = 1e30f, maxx = -1e30f, maxy = -1e30f;
+     * SVG assets often carry padding in their viewBox, and shadow/glow shapes
+     * (low opacity) extend the bounds far below the solid artwork. Map the
+     * bounds of the *solid* shapes onto the box so the icon's visible bottom
+     * sits on the text baseline (and its padding is removed). */
+    float minx = 1e30f, miny = 1e30f, maxx = -1e30f, maxy = -1e30f;   /* solid */
+    float aminx = 1e30f, aminy = 1e30f, amaxx = -1e30f, amaxy = -1e30f; /* all */
     for (NSVGshape *s = image->shapes; s != NULL; s = s->next) {
         if (!(s->flags & NSVG_FLAGS_VISIBLE)) continue;
+        if (s->bounds[0] < aminx) aminx = s->bounds[0];
+        if (s->bounds[1] < aminy) aminy = s->bounds[1];
+        if (s->bounds[2] > amaxx) amaxx = s->bounds[2];
+        if (s->bounds[3] > amaxy) amaxy = s->bounds[3];
+        if (s->opacity < 0.9f) continue;   /* skip shadows/glows */
         if (s->bounds[0] < minx) minx = s->bounds[0];
         if (s->bounds[1] < miny) miny = s->bounds[1];
         if (s->bounds[2] > maxx) maxx = s->bounds[2];
         if (s->bounds[3] > maxy) maxy = s->bounds[3];
     }
-    if (maxx <= minx || maxy <= miny) {   /* no visible content */
+    if (maxx <= minx || maxy <= miny) {   /* no solid content: use all visible */
+        minx = aminx; miny = aminy; maxx = amaxx; maxy = amaxy;
+    }
+    if (maxx <= minx || maxy <= miny) {   /* no visible content: use viewBox */
         minx = miny = 0.0f;
         maxx = image->width;
         maxy = image->height;

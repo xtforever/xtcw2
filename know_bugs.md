@@ -184,6 +184,7 @@ Widgets not derived from `Wheel` can still take part in theming by calling
 `theme_register($, own_apply_fn)` in their `initialize` (and
 `theme_unregister($)` in `destroy`), where `own_apply_fn(Widget)` re-resolves
 their colours via `get_color()`/`theme_get_int()` and redraws.
+
 ## No production build: `commander/makefile` hardcodes MLS_DEBUG + ASan
 
 **Symptom:** `make debug_enable=0` builds the toolkit libraries as release
@@ -270,6 +271,7 @@ test with a `list-view` inside a nested `Gridbox`.
 
 **Files:** `wbuild_widgets/WlsMulti.widget`, `wbuild_widgets/WlistMulti.widget`
 (latent; worked around in `cookbook/`)
+
 ## Shell sizing reads uninitialised width/height (breaks every -O3 build)
 
 **Symptom:** every LUI demo started with a full-screen-width window of (near)
@@ -321,6 +323,7 @@ for (...) {
 
 **Regression test:** `cookbook/scripts/smoke-test.sh` now asserts the toplevel
 window has a positive width *and* height (not merely that a window exists).
+
 ## Inline SVG icons float above the text baseline (viewBox padding)
 
 **Symptom:** in a Wlabel/Wretex line that mixes text with
@@ -336,11 +339,18 @@ carry padding in their viewBox (e.g. `LuaRunner/alert.svg` uses
 `viewBox="-10 -10 380 380"`), so the visible content stopped short of the box
 bottom and the icon appeared to float above the baseline (and slightly small).
 
+A first attempt cropped to the bounds of *all* visible shapes. That over-crops
+when the asset contains soft shadows/glows: `alert.svg`'s blurred circle has
+opacity 0.59 and extends ~10 units below the white circle, so the visible icon
+was pushed up (most obvious on the large `\includesvg{...}{24pt}{24pt}` icon in
+`demos/demo_wlabel_svg.lua`).
+
 **Fix:** in both `draw_svg` implementations, compute the bounding box of the
-*visible* shapes (`NSVGshape.bounds`) and map that content box onto the
-`w` × `h` box (`translate(x,y); scale(w/(maxx-minx), h/(maxy-miny));
-translate(-minx,-miny)`), falling back to the viewBox when there is no visible
-content. The icon's visible bottom then lands on the baseline and its horizontal
-padding is removed too.
+**solid** shapes only (`NSVGshape.bounds` for shapes with `opacity >= 0.9`;
+nanosvg ignores SVG filters, so blurred shadows are not applied but would still
+pollute the bounds), and map that box onto the `w` × `h` box
+(`translate(x,y); scale(w/(maxx-minx), h/(maxy-miny)); translate(-minx,-miny)`).
+Fall back to all visible shapes, then to the viewBox. The icon's visible bottom
+then lands on the baseline and its horizontal padding is removed too.
 
 **Files:** `re-tex/src/backend_cairo.c`, `re-tex/src/backend_xpixmap.c` (fixed)
