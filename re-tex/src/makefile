@@ -2,7 +2,7 @@ CC ?= gcc
 CFLAGS ?= -I../utils -I../include -I. -DMLS_DEBUG
 LIBS = $(shell pkg-config --libs cairo) -lm
 
-SRCS = scaled.c glue.c node.c token.c builder.c linebreak.c retex.c renderer.c math_node.c math_layout.c backend_cairo.c backend_xpixmap.c
+SRCS = scaled.c glue.c node.c token.c builder.c linebreak.c retex.c renderer.c math_node.c math_layout.c backend_cairo.c backend_xpixmap.c svg_factory.c
 OBJS = $(SRCS:.c=.o)
 
 LIB = libretex.a
