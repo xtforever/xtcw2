@@ -1,5 +1,6 @@
 #include "rtable.h"
 #include "mls.h"
+#include "conststr.h"
 #include "utf8.h"
 #include "utf32.h"
 
@@ -684,4 +685,406 @@ int rtable_undo_depth(const RTable *t)
 int rtable_redo_depth(const RTable *t)
 {
     return t ? t->redo_n : 0;
+}
+
+/* ---- full-state serialization ----------------------------------------- */
+
+#define RTABLE_STATE_MAGIC 0x4C425452u /* "RTBL" (little-endian) */
+#define RTABLE_STATE_VERSION 1u
+
+typedef struct {
+    unsigned char *p;
+    int n, cap;
+    int ok;
+} SerBuf;
+
+static int sb_reserve(SerBuf *b, int need)
+{
+    if (need <= b->cap)
+        return 0;
+    {
+        int nc = b->cap ? b->cap : 256;
+        unsigned char *np;
+        while (nc < need)
+            nc *= 2;
+        np = (unsigned char *)realloc(b->p, (size_t)nc);
+        if (!np) {
+            b->ok = 0;
+            return -1;
+        }
+        b->p = np;
+        b->cap = nc;
+    }
+    return 0;
+}
+
+static void sb_u32(SerBuf *b, uint32_t v)
+{
+    if (sb_reserve(b, b->n + 4) != 0)
+        return;
+    b->p[b->n++] = (unsigned char)(v & 0xff);
+    b->p[b->n++] = (unsigned char)((v >> 8) & 0xff);
+    b->p[b->n++] = (unsigned char)((v >> 16) & 0xff);
+    b->p[b->n++] = (unsigned char)((v >> 24) & 0xff);
+}
+
+static void sb_i32(SerBuf *b, int v) { sb_u32(b, (uint32_t)v); }
+
+static void sb_f32(SerBuf *b, float v)
+{
+    uint32_t u;
+    memcpy(&u, &v, 4);
+    sb_u32(b, u);
+}
+
+static void sb_str(SerBuf *b, const char *s)
+{
+    int n = s ? (int)strlen(s) : 0;
+    sb_u32(b, (uint32_t)n);
+    if (n > 0) {
+        if (sb_reserve(b, b->n + n) != 0)
+            return;
+        memcpy(b->p + b->n, s, (size_t)n);
+        b->n += n;
+    }
+}
+
+/* Font faces and object payloads are stored as strings so a snapshot can be
+ * loaded in a different process (conststr handles are process-local). */
+static void sb_atom(SerBuf *b, const RAtom *a)
+{
+    sb_u32(b, (uint32_t)a->kind);
+    sb_u32(b, a->cp);
+    sb_i32(b, a->look.style);
+    sb_f32(b, a->look.size);
+    sb_str(b, m_str(a->look.face));
+    sb_str(b, m_str(a->payload));
+}
+
+static void sb_piece(SerBuf *b, const RPiece *p)
+{
+    sb_i32(b, p->buf);
+    sb_i32(b, p->start);
+    sb_i32(b, p->len);
+}
+
+static void sb_span(SerBuf *b, const RSpan *s)
+{
+    int i;
+    sb_u32(b, (uint32_t)s->n);
+    sb_u32(b, (uint32_t)s->add_len);
+    for (i = 0; i < s->n; i++)
+        sb_piece(b, &s->pieces[i]);
+}
+
+unsigned char *rtable_serialize(const RTable *t, int *len)
+{
+    SerBuf b;
+    int i, max_add;
+
+    if (!t || !len)
+        return NULL;
+    memset(&b, 0, sizeof(b));
+    b.ok = 1;
+
+    /* The add buffer is append-only and is not truncated by undo: redo
+     * snapshots can reference atoms beyond the current logical add_len.
+     * Save the whole physical range so redo history survives. */
+    max_add = t->add_len;
+    for (i = 0; i < t->undo_n; i++)
+        if (t->undo[i].add_len > max_add) max_add = t->undo[i].add_len;
+    for (i = 0; i < t->redo_n; i++)
+        if (t->redo[i].add_len > max_add) max_add = t->redo[i].add_len;
+
+    sb_u32(&b, RTABLE_STATE_MAGIC);
+    sb_u32(&b, RTABLE_STATE_VERSION);
+
+    sb_u32(&b, (uint32_t)t->orig_len);
+    for (i = 0; i < t->orig_len; i++)
+        sb_atom(&b, &t->orig[i]);
+
+    sb_u32(&b, (uint32_t)t->add_len);   /* current logical length */
+    sb_u32(&b, (uint32_t)max_add);      /* physical atoms saved */
+    for (i = 0; i < max_add; i++)
+        sb_atom(&b, &t->add[i]);
+
+    sb_u32(&b, (uint32_t)t->npieces);
+    for (i = 0; i < t->npieces; i++)
+        sb_piece(&b, &t->pieces[i]);
+
+    sb_u32(&b, (uint32_t)t->undo_n);
+    for (i = 0; i < t->undo_n; i++)
+        sb_span(&b, &t->undo[i]);
+
+    sb_u32(&b, (uint32_t)t->redo_n);
+    for (i = 0; i < t->redo_n; i++)
+        sb_span(&b, &t->redo[i]);
+
+    if (!b.ok) {
+        free(b.p);
+        return NULL;
+    }
+    *len = b.n;
+    return b.p;
+}
+
+typedef struct {
+    const unsigned char *p;
+    int n, pos;
+    int ok;
+} DesBuf;
+
+static uint32_t db_u32(DesBuf *d)
+{
+    uint32_t v;
+    if (!d->ok || d->pos + 4 > d->n) {
+        d->ok = 0;
+        return 0;
+    }
+    v = (uint32_t)d->p[d->pos] |
+        ((uint32_t)d->p[d->pos + 1] << 8) |
+        ((uint32_t)d->p[d->pos + 2] << 16) |
+        ((uint32_t)d->p[d->pos + 3] << 24);
+    d->pos += 4;
+    return v;
+}
+
+static int db_i32(DesBuf *d) { return (int)db_u32(d); }
+
+static float db_f32(DesBuf *d)
+{
+    uint32_t u = db_u32(d);
+    float f;
+    memcpy(&f, &u, 4);
+    return f;
+}
+
+static char *db_str(DesBuf *d)
+{
+    uint32_t n = db_u32(d);
+    char *s;
+    if (!d->ok || n > (uint32_t)(d->n - d->pos)) {
+        d->ok = 0;
+        return NULL;
+    }
+    s = (char *)malloc((size_t)n + 1);
+    if (!s) {
+        d->ok = 0;
+        return NULL;
+    }
+    if (n > 0)
+        memcpy(s, d->p + d->pos, n);
+    s[n] = 0;
+    d->pos += (int)n;
+    return s;
+}
+
+static int db_atom(DesBuf *d, RAtom *a)
+{
+    char *face, *payload;
+
+    a->kind = (int)db_u32(d);
+    a->cp = db_u32(d);
+    a->look.style = db_i32(d);
+    a->look.size = db_f32(d);
+    face = db_str(d);
+    payload = db_str(d);
+    if (!d->ok) {
+        free(face);
+        free(payload);
+        return -1;
+    }
+    a->look.face = (face && face[0]) ? conststr_lookup_c(face) : 0;
+    a->payload = (payload && payload[0]) ? conststr_lookup_c(payload) : 0;
+    free(face);
+    free(payload);
+    if (!atom_valid(a)) {
+        d->ok = 0;
+        return -1;
+    }
+    return 0;
+}
+
+static int db_piece(DesBuf *d, RPiece *p, int orig_len, int add_len)
+{
+    p->buf = db_i32(d);
+    p->start = db_i32(d);
+    p->len = db_i32(d);
+    if (!d->ok)
+        return -1;
+    if (p->buf != 0 && p->buf != 1)
+        goto bad;
+    if (p->start < 0 || p->len < 0)
+        goto bad;
+    {
+        int full = p->buf ? add_len : orig_len;
+        if (p->start > full || p->len > full - p->start)
+            goto bad;
+    }
+    return 0;
+bad:
+    d->ok = 0;
+    return -1;
+}
+
+static int db_span(DesBuf *d, RSpan *s, int orig_len, int max_add)
+{
+    int i;
+
+    s->n = (int)db_u32(d);
+    s->add_len = (int)db_u32(d);
+    s->pieces = NULL;
+    if (!d->ok)
+        return -1;
+    if (s->n < 0 || s->n > (d->n - d->pos) / 12)
+        goto bad;
+    if (s->add_len < 0 || s->add_len > max_add)
+        goto bad;
+    if (s->n > 0) {
+        s->pieces = (RPiece *)malloc((size_t)s->n * sizeof(RPiece));
+        if (!s->pieces) {
+            d->ok = 0;
+            return -1;
+        }
+        for (i = 0; i < s->n; i++)
+            if (db_piece(d, &s->pieces[i], orig_len, s->add_len) != 0)
+                return -1;
+    }
+    return 0;
+bad:
+    d->ok = 0;
+    return -1;
+}
+
+static void spans_free_partial(RSpan *arr, int n)
+{
+    int i;
+    if (!arr)
+        return;
+    for (i = 0; i < n; i++)
+        free(arr[i].pieces);
+    free(arr);
+}
+
+int rtable_deserialize(RTable *t, const unsigned char *buf, int len)
+{
+    DesBuf d;
+    int orig_len = 0, add_len = 0, max_add = 0, npieces = 0, undo_n = 0, redo_n = 0, i;
+    int ok = 0;
+    RAtom *orig = NULL, *add = NULL;
+    RPiece *pieces = NULL;
+    RSpan *undo = NULL, *redo = NULL;
+
+    if (!t || (!buf && len > 0) || len < 8)
+        return -1;
+
+    d.p = buf;
+    d.n = len;
+    d.pos = 0;
+    d.ok = 1;
+
+    if (db_u32(&d) != RTABLE_STATE_MAGIC ||
+        db_u32(&d) != RTABLE_STATE_VERSION)
+        goto done;
+
+    orig_len = (int)db_u32(&d);
+    if (!d.ok || orig_len < 0 || orig_len > (d.n - d.pos) / 24)
+        goto done;
+    if (orig_len > 0) {
+        orig = (RAtom *)malloc((size_t)orig_len * sizeof(RAtom));
+        if (!orig)
+            goto done;
+        for (i = 0; i < orig_len; i++)
+            if (db_atom(&d, &orig[i]) != 0)
+                goto done;
+    }
+
+    add_len = (int)db_u32(&d);
+    max_add = (int)db_u32(&d);
+    if (!d.ok || add_len < 0 || max_add < add_len ||
+        max_add > (d.n - d.pos) / 24)
+        goto done;
+    if (max_add > 0) {
+        add = (RAtom *)malloc((size_t)max_add * sizeof(RAtom));
+        if (!add)
+            goto done;
+        for (i = 0; i < max_add; i++)
+            if (db_atom(&d, &add[i]) != 0)
+                goto done;
+    }
+
+    npieces = (int)db_u32(&d);
+    if (!d.ok || npieces < 0 || npieces > (d.n - d.pos) / 12)
+        goto done;
+    if (npieces > 0) {
+        pieces = (RPiece *)malloc((size_t)npieces * sizeof(RPiece));
+        if (!pieces)
+            goto done;
+        for (i = 0; i < npieces; i++)
+            if (db_piece(&d, &pieces[i], orig_len, add_len) != 0)
+                goto done;
+    }
+
+    undo_n = (int)db_u32(&d);
+    if (!d.ok || undo_n < 0 || undo_n > (d.n - d.pos) / 8)
+        goto done;
+    if (undo_n > 0) {
+        undo = (RSpan *)calloc((size_t)undo_n, sizeof(RSpan));
+        if (!undo)
+            goto done;
+        for (i = 0; i < undo_n; i++)
+            if (db_span(&d, &undo[i], orig_len, max_add) != 0)
+                goto done;
+    }
+
+    redo_n = (int)db_u32(&d);
+    if (!d.ok || redo_n < 0 || redo_n > (d.n - d.pos) / 8)
+        goto done;
+    if (redo_n > 0) {
+        redo = (RSpan *)calloc((size_t)redo_n, sizeof(RSpan));
+        if (!redo)
+            goto done;
+        for (i = 0; i < redo_n; i++)
+            if (db_span(&d, &redo[i], orig_len, max_add) != 0)
+                goto done;
+    }
+
+    if (!d.ok || d.pos != d.n)
+        goto done;
+
+    ok = 1;
+
+done:
+    if (!ok) {
+        free(orig);
+        free(add);
+        free(pieces);
+        spans_free_partial(undo, undo_n);
+        spans_free_partial(redo, redo_n);
+        return -1;
+    }
+
+    free(t->orig);
+    free(t->add);
+    free(t->pieces);
+    snaps_clear(&t->undo, &t->undo_n, &t->undo_cap);
+    snaps_clear(&t->redo, &t->redo_n, &t->redo_cap);
+
+    t->orig = orig;
+    t->orig_len = orig_len;
+    t->orig_cap = orig_len;
+    t->add = add;
+    t->add_len = add_len;
+    t->add_cap = max_add;
+    t->pieces = pieces;
+    t->npieces = npieces;
+    t->pieces_cap = npieces;
+    t->undo = undo;
+    t->undo_n = undo_n;
+    t->undo_cap = undo_n;
+    t->redo = redo;
+    t->redo_n = redo_n;
+    t->redo_cap = redo_n;
+    t->len = pieces_total(t);
+    return 0;
 }

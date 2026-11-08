@@ -26,6 +26,39 @@ objects.
 - [ ] Paragraph-format "painting" on select-all / paste of multiple paragraphs
       (splitting an existing paragraph currently inherits the containing format).
 
+## External action interface
+
+- [x] All editing/formatting commands are Xt action procs, callable from other
+      applications with
+      `XtCallActionProc(w, "name", NULL, params, nparams)`.
+- [x] Document: `set_text`, `insert_text`, `insert_newline`,
+      `delete_backward`/`delete_forward`, `undo`/`redo`,
+      `cut_selection`/`copy_selection`/`paste`.
+- [x] Caret/selection: `set_caret` (code points), `set_caret_byte` (UTF-8
+      bytes), `set_selection` (anchor, caret), `select_all`, movement/paging.
+- [x] Text style: `bold`/`italic`/`roman` (toggles), `set_bold`/`set_italic`
+      (explicit), `set_font`, `set_size`.
+- [x] Paragraph: `align_*`, `set_alignment` (name or 0..3), `indent`/`outdent`
+      family, `set_indent_left`/`set_indent_right`/`set_first_line_indent`,
+      `set_space_before`/`set_space_after`.
+- [ ] Read-back: actions are void, so query caret/selection/paragraph state via
+      the `text` resource today; add explicit read resources or a query
+      callback if external callers need them.
+
+## Full-state snapshots (debugging)
+
+- [x] `save_state <path>` / `load_state <path>` actions write/read a binary
+      snapshot of the whole editor: rich document (atoms + looks), paragraph
+      formats, caret/anchor/scroll, font face/size, gaps, pending look and the
+      complete undo/redo history (rtable piece snapshots + caret/para entries).
+- [x] `rtable_serialize()` / `rtable_deserialize()` cover buffers, pieces and
+      undo/redo spans; faces and object payloads are stored as strings so a
+      snapshot can be loaded in another process.
+- [x] Demo "State" tab: save/load `/tmp/wbravo_state.snap`.
+- [x] Test: `tests/test_wbravo_state.c` (round-trip, byte-identical re-save,
+      undo/redo replication).
+- [ ] Optional: file chooser instead of the fixed demo path.
+
 ## Inline SVG objects
 
 - [ ] Implement `RATOM_OBJECT` handling in `retex_layout_styled()` (it currently

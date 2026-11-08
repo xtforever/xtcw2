@@ -158,6 +158,60 @@ int main(int argc, char **argv)
         assert(pf[1].indent_left >= 20.0);
     }
 
+    /* ---- external control interface: explicit style + paragraph setters -- */
+    {
+        String arg[1];
+
+        arg[0] = (String)"one\n\ntwo";
+        act("set_text", arg, 1);
+        assert(((WbravoWidget)ed)->wbravo.para_n == 2);
+
+        /* set_bold/set_italic are explicit (not toggles) on a selection */
+        set_sel(0, 3);
+        act("set_bold", NULL, 0);
+        assert(atom_at(0).look.style & 1);
+        act("set_bold", NULL, 0);          /* already bold, still bold */
+        assert(atom_at(0).look.style & 1);
+        arg[0] = (String)"0";
+        act("set_bold", arg, 1);
+        assert((atom_at(0).look.style & 1) == 0);
+        act("set_italic", NULL, 0);
+        assert(atom_at(0).look.style & 2);
+        act("italic", NULL, 0);            /* toggle off */
+        assert((atom_at(0).look.style & 2) == 0);
+
+        /* set_alignment accepts names and numbers */
+        set_sel(5, 5);                     /* second paragraph ("two") */
+        arg[0] = (String)"right";
+        act("set_alignment", arg, 1);
+        {
+            RetexParaFormat *pf = (RetexParaFormat *)((WbravoWidget)ed)->wbravo.para_fmt;
+            assert(pf[1].align == RETEX_ALIGN_RIGHT);
+            assert(pf[0].align == RETEX_ALIGN_LEFT);
+        }
+        arg[0] = (String)"1";              /* 1 = center */
+        act("set_alignment", arg, 1);
+        {
+            RetexParaFormat *pf = (RetexParaFormat *)((WbravoWidget)ed)->wbravo.para_fmt;
+            assert(pf[1].align == RETEX_ALIGN_CENTER);
+        }
+
+        /* absolute indents */
+        arg[0] = (String)"36";
+        act("set_indent_left", arg, 1);
+        arg[0] = (String)"8";
+        act("set_indent_right", arg, 1);
+        arg[0] = (String)"12";
+        act("set_first_line_indent", arg, 1);
+        {
+            RetexParaFormat *pf = (RetexParaFormat *)((WbravoWidget)ed)->wbravo.para_fmt;
+            assert(pf[1].indent_left == 36.0);
+            assert(pf[1].indent_right == 8.0);
+            assert(pf[1].first_line == 12.0);
+            assert(pf[0].indent_left == 0.0);
+        }
+    }
+
     XtDestroyWidget(toplevel);
     printf("test_rich_wbravo passed\n");
     return 0;

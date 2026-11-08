@@ -110,4 +110,16 @@ int rtable_redo(RTable *t);
 int rtable_undo_depth(const RTable *t);
 int rtable_redo_depth(const RTable *t);
 
+/* Full-state serialization for editor snapshots.
+ *
+ * The blob covers the original/add atom buffers, the piece list and the
+ * undo/redo spans, so a restored table has the same document *and* the same
+ * undo history.  Font faces and object payloads are stored as strings (not
+ * interned handles), so a blob can be loaded in another process after
+ * conststr_init().  The caller owns the buffer returned by
+ * rtable_serialize(); rtable_deserialize() replaces the whole state.
+ */
+unsigned char *rtable_serialize(const RTable *t, int *len);
+int rtable_deserialize(RTable *t, const unsigned char *buf, int len);
+
 #endif /* XTCW_RTABLE_H */

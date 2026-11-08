@@ -25,7 +25,7 @@ DEMOS=(
   "form|Form|Gridbox layout: labels, edit, spinbox, toggle"
   "karoed|KaroEd|multiline editor: joins, selection, clipboard, tab"
   "bravo|Wbravo|piece-table editor: retex, undo/redo, clipboard"
-  "rich_bravo|Wbravo rich|piece-table editor: styles + paragraph formatting menu"
+  "rich_bravo|Wbravo rich|piece-table editor: styles, paragraph menu, state snapshots"
   "login|Login|password fields, toggles, feedback"
   "wbutton|Wbutton|button variants: macros, sizes, alignment, callbacks"
   "wlabel_svg|Wlabel SVG|labels with inline SVG images"

@@ -112,6 +112,55 @@ int main(int argc, char **argv)
         act("move_end", NULL, 0);
     }
 
+    /* ---- external control interface (XtCallActionProc) --------------- */
+    {
+        String a1[1], sell[2];
+
+        /* replace the document */
+        a1[0] = (String)"hello world";
+        act("set_text", a1, 1);
+        expect("hello world");
+
+        /* absolute caret (code points) */
+        a1[0] = (String)"5";
+        act("set_caret", a1, 1);
+        ins[0] = (String)"!";
+        act("insert_text", ins, 1);
+        expect("hello! world");
+
+        /* select all, then replace the selection */
+        act("select_all", NULL, 0);
+        ins[0] = (String)"Z";
+        act("insert_text", ins, 1);
+        expect("Z");
+
+        /* explicit selection (anchor, caret) then delete it */
+        a1[0] = (String)"abcdef";
+        act("set_text", a1, 1);
+        sell[0] = (String)"1";
+        sell[1] = (String)"4";
+        act("set_selection", sell, 2);
+        act("delete_backward", NULL, 0);
+        expect("aef");
+
+        /* caret by UTF-8 byte offset with a multi-byte character */
+        a1[0] = (String)"a\xC3\xA9";
+        act("set_text", a1, 1);
+        a1[0] = (String)"1";       /* just after 'a' */
+        act("set_caret_byte", a1, 1);
+        ins[0] = (String)"X";
+        act("insert_text", ins, 1);
+        expect("aX\xC3\xA9");
+
+        /* caret by code point at the end */
+        a1[0] = (String)"3";
+        act("set_caret", a1, 1);
+        ins[0] = (String)"Y";
+        act("insert_text", ins, 1);
+        expect("aX\xC3\xA9Y");
+
+    }
+
     XtDestroyWidget(toplevel);
     printf("test_wbravo passed\n");
     return 0;

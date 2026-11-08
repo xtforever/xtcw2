@@ -1044,3 +1044,23 @@ no header-dependency tracking, so the binary is not relinked.
 directly with hand-written flags during a debug build.
 
 **Files:** `tests/Makefile`, `re-tex/src/makefile`, root `makefile`
+
+## rtable: serialized undo/redo snapshots reference add-buffer atoms past `add_len`
+
+**Symptom:** saving an editor snapshot after an undo and loading it back failed
+(`rtable_deserialize` returned an error / the restored document was empty).
+
+**Cause:** the add buffer is append-only. `rtable_undo()` restores the logical
+`add_len` from the snapshot but does not truncate the buffer, so a *redo*
+span can legitimately have `span.add_len > table.add_len` (it references atoms
+that are still physically present but were "removed" by the undo). A
+serializer that writes only `table.add_len` atoms loses those bytes and the
+span fails validation on load.
+
+**Fix:** `rtable_serialize()` computes `max_add` over the current state and all
+undo/redo spans, writes both `add_len` (current logical) and `max_add`
+(physical), and saves `max_add` atoms. `rtable_deserialize()` restores
+`add_len = current` but `add_cap = max_add`, matching the piece-table
+invariant that stale add-buffer atoms remain available to redo.
+
+**Files:** `utils/rtable.c` (`rtable_serialize`, `rtable_deserialize`)

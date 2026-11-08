@@ -103,6 +103,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wbravo"
 echo "26b. test_rich_wbravo (WYSIWYG style editing)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_rich_wbravo"
 
+echo "26c. test_wbravo_state (full-state snapshot save/load)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wbravo_state"
+
 echo "27. test_mls_trace (trace level + post-mortem source lookup)"
 "$ROOT/tests/test_mls_trace"
 

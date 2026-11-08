@@ -51,6 +51,12 @@ function on_outdent_first() menu_fmt("outdent_first") end
 function on_space_before()  menu_fmt("set_space_before", "6") end
 function on_space_after()   menu_fmt("set_space_after", "6")  end
 
+-- Full-state snapshot for reproducing bugs (document + looks + paragraphs +
+-- undo history + editor resources).  Fixed path is convenient for testing.
+local SNAP = "/tmp/wbravo_state.snap"
+function on_save_state() menu_fmt("save_state", SNAP) end
+function on_load_state() menu_fmt("load_state", SNAP) end
+
 local ui = [[
 (window :id "win" :title "Wbravo — rich text" :width 900 :height 640
   (grid :id "main" :weightx 1 :weighty 1
@@ -58,6 +64,9 @@ local ui = [[
                  :gridx 0 :gridy 0 :buttonSize 40 :fill 0
                  :popupWidth 360 :popupHeight 340
       (tabs :id "fmt_tabs" :weightx 1 :weighty 1 :fill 3
+        (grid :id "file" :tab-title "State"
+          (button :label "Save state" :gridx 0 :gridy 0 :weightx 1 :fill 3 :callback "LUA(on_save_state)")
+          (button :label "Load state" :gridx 0 :gridy 1 :weightx 1 :fill 3 :callback "LUA(on_load_state)"))
         (grid :id "style" :tab-title "Style"
           (button :label "Bold"   :gridx 0 :gridy 0 :weightx 1 :fill 3 :callback "LUA(on_bold)")
           (button :label "Italic" :gridx 0 :gridy 1 :weightx 1 :fill 3 :callback "LUA(on_italic)")

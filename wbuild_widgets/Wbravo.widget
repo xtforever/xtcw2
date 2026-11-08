@@ -52,6 +52,8 @@
 @var GC blit_gc
 @var XftColor xcol[4]
 @var String text_mem
+@ Owned copy of $fontFace when the font name came from a loaded state file.
+@var char *fontFace_mem
 @var int caret_cp
 @var int anchor_cp
 @var int scroll_line
@@ -121,6 +123,7 @@
     $old_para_start = NULL; $old_para_n = 0; $edit_old_len = 0;
     $undo_para = NULL; $undo_para_n = NULL;
     $redo_para = NULL; $redo_para_n = NULL;
+    $fontFace_mem = NULL;
 
     $utf8_atom = XInternAtom(dpy, "UTF8_STRING", False);
 
@@ -153,6 +156,7 @@
     free($redo_para); free($redo_para_n);
     free($para_fmt);
     free($old_para_start);
+    free($fontFace_mem);
 
     free_colors($);
     XtFree($text_mem);
@@ -440,6 +444,23 @@
     return k;
 }
 
+@ Parse an alignment action argument: 0..3 or left/center/right/justify.
+@ Returns -1 for an unrecognised value.
+@proc int parse_alignment($, const char *s)
+{
+    if (!s || !*s) return -1;
+    if (s[0] >= '0' && s[0] <= '9') {
+        int v = atoi(s);
+        return (v >= 0 && v <= 3) ? v : -1;
+    }
+    if (strcmp(s, "left") == 0)    return RETEX_ALIGN_LEFT;
+    if (strcmp(s, "center") == 0 ||
+        strcmp(s, "centre") == 0)  return RETEX_ALIGN_CENTER;
+    if (strcmp(s, "right") == 0)   return RETEX_ALIGN_RIGHT;
+    if (strcmp(s, "justify") == 0) return RETEX_ALIGN_JUSTIFY;
+    return -1;
+}
+
 @ Capture the paragraph starts before an edit (edit_begin).
 @proc void para_snapshot($)
 {
@@ -536,6 +557,27 @@
         }
         *v += delta;
         if (*v < 0.0) *v = 0.0;
+    }
+    para_commit($);
+}
+
+@ field: 1 = left indent, 2 = right indent, 3 = first-line indent.
+@ Set an absolute indent (points) on the caret/selection paragraphs.
+@proc void para_set_indent($, int field, double value)
+{
+    int p0, p1, i;
+    double *v;
+    if ($para_n <= 0 || !$para_fmt) return;
+    if (value < 0.0) value = 0.0;
+    para_selection($, &p0, &p1);
+    edit_begin($);
+    for (i = p0; i <= p1 && i < $para_n; i++) {
+        switch (field) {
+            case 2: v = &((RetexParaFormat*)$para_fmt)[i].indent_right; break;
+            case 3: v = &((RetexParaFormat*)$para_fmt)[i].first_line; break;
+            default: v = &((RetexParaFormat*)$para_fmt)[i].indent_left; break;
+        }
+        *v = value;
     }
     para_commit($);
 }
@@ -1077,7 +1119,460 @@
     redraw($);
 }
 
+@ ---------------------------------------------------------------------
+@ Full-state snapshot (save/load) for debugging and error reproduction.
+@ The file is a binary container: widget resources, the rich document
+@ (atoms + looks), paragraph formats, caret/selection and the complete
+@ undo/redo history (including the rtable piece snapshots).
+@ ---------------------------------------------------------------------
+
+@proc int st_wr(FILE *f, const void *p, int n)
+{
+    if (n <= 0) return 0;
+    return fwrite(p, 1, (size_t)n, f) == (size_t)n ? 0 : -1;
+}
+
+@proc int st_rd(FILE *f, void *p, int n)
+{
+    if (n <= 0) return 0;
+    return fread(p, 1, (size_t)n, f) == (size_t)n ? 0 : -1;
+}
+
+@proc int st_wr_u32(FILE *f, uint32_t v)
+{
+    unsigned char b[4];
+    b[0] = (unsigned char)(v & 0xff);
+    b[1] = (unsigned char)((v >> 8) & 0xff);
+    b[2] = (unsigned char)((v >> 16) & 0xff);
+    b[3] = (unsigned char)((v >> 24) & 0xff);
+    return st_wr(f, b, 4);
+}
+
+@proc uint32_t st_rd_u32(FILE *f, int *ok)
+{
+    unsigned char b[4];
+    if (st_rd(f, b, 4) != 0) {
+        if (ok) *ok = 0;
+        return 0;
+    }
+    return (uint32_t)b[0] | ((uint32_t)b[1] << 8) |
+           ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
+}
+
+@proc int st_wr_i32(FILE *f, int v) { return st_wr_u32(f, (uint32_t)v); }
+
+@proc int st_rd_i32(FILE *f, int *ok) { return (int)st_rd_u32(f, ok); }
+
+@proc int st_wr_f32(FILE *f, float v)
+{
+    uint32_t u;
+    memcpy(&u, &v, 4);
+    return st_wr_u32(f, u);
+}
+
+@proc float st_rd_f32(FILE *f, int *ok)
+{
+    uint32_t u = st_rd_u32(f, ok);
+    float v;
+    memcpy(&v, &u, 4);
+    return v;
+}
+
+@proc int st_wr_f64(FILE *f, double v)
+{
+    uint64_t u;
+    unsigned char b[8];
+    int i;
+    memcpy(&u, &v, 8);
+    for (i = 0; i < 8; i++)
+        b[i] = (unsigned char)((u >> (8 * i)) & 0xff);
+    return st_wr(f, b, 8);
+}
+
+@proc double st_rd_f64(FILE *f, int *ok)
+{
+    unsigned char b[8];
+    uint64_t u = 0;
+    double v;
+    int i;
+    if (st_rd(f, b, 8) != 0) {
+        if (ok) *ok = 0;
+        return 0.0;
+    }
+    for (i = 0; i < 8; i++)
+        u |= ((uint64_t)b[i]) << (8 * i);
+    memcpy(&v, &u, 8);
+    return v;
+}
+
+@proc int st_wr_str(FILE *f, const char *s)
+{
+    int n = s ? (int)strlen(s) : 0;
+    if (st_wr_u32(f, (uint32_t)n) != 0) return -1;
+    return st_wr(f, s, n);
+}
+
+@proc char* st_rd_str(FILE *f, int *ok)
+{
+    uint32_t n = st_rd_u32(f, ok);
+    char *s;
+    if (!ok || !*ok) return NULL;
+    if (n > (uint32_t)(64 * 1024 * 1024)) {
+        *ok = 0;
+        return NULL;
+    }
+    s = (char*)malloc((size_t)n + 1);
+    if (!s) {
+        *ok = 0;
+        return NULL;
+    }
+    if (st_rd(f, s, (int)n) != 0) {
+        free(s);
+        *ok = 0;
+        return NULL;
+    }
+    s[n] = 0;
+    return s;
+}
+
+@proc int st_wr_para(FILE *f, const RetexParaFormat *p)
+{
+    int ok = 1;
+    ok &= st_wr_i32(f, p->align) == 0;
+    ok &= st_wr_f64(f, p->indent_left) == 0;
+    ok &= st_wr_f64(f, p->indent_right) == 0;
+    ok &= st_wr_f64(f, p->first_line) == 0;
+    ok &= st_wr_f64(f, p->space_before) == 0;
+    ok &= st_wr_f64(f, p->space_after) == 0;
+    return ok ? 0 : -1;
+}
+
+@proc int st_rd_para(FILE *f, RetexParaFormat *p, int *ok)
+{
+    p->align = st_rd_i32(f, ok);
+    p->indent_left = st_rd_f64(f, ok);
+    p->indent_right = st_rd_f64(f, ok);
+    p->first_line = st_rd_f64(f, ok);
+    p->space_before = st_rd_f64(f, ok);
+    p->space_after = st_rd_f64(f, ok);
+    return (ok && *ok) ? 0 : -1;
+}
+
+@ Write the complete editor state to path.  Returns 1 on success.
+@proc int save_state_file($, const char *path)
+{
+    FILE *f;
+    unsigned char *blob = NULL;
+    int blob_len = 0, ok = 1, i, j, h;
+    RetexParaFormat **up, **rp;
+    const char *text;
+
+    if (!path || !$ptable) return 0;
+    f = fopen(path, "wb");
+    if (!f) return 0;
+
+    ok &= st_wr(f, "WBRAVOST", 8) == 0;
+    ok &= st_wr_u32(f, 1) == 0;          /* format version */
+    ok &= st_wr_u32(f, 0) == 0;          /* reserved */
+
+    /* widget resources / current editing state */
+    ok &= st_wr_str(f, $fontFace ? $fontFace : "") == 0;
+    ok &= st_wr_i32(f, $fontSize) == 0;
+    ok &= st_wr_i32(f, $alignment) == 0;
+    ok &= st_wr_i32(f, $topGap) == 0;
+    ok &= st_wr_i32(f, $bottomGap) == 0;
+    ok &= st_wr_i32(f, $leftGap) == 0;
+    ok &= st_wr_i32(f, $rightGap) == 0;
+    ok &= st_wr_i32(f, $scroll_line) == 0;
+    ok &= st_wr_i32(f, $caret_cp) == 0;
+    ok &= st_wr_i32(f, $anchor_cp) == 0;
+    ok &= st_wr_str(f, m_str($look.face)) == 0;
+    ok &= st_wr_i32(f, $look.style) == 0;
+    ok &= st_wr_f32(f, $look.size) == 0;
+
+    /* current text (redundant with the atoms, kept for readability/tools) */
+    h = make_utf8($);
+    text = h ? (const char*)m_buf(h) : "";
+    ok &= st_wr_str(f, text) == 0;
+    if (h) m_free(h);
+
+    /* per-paragraph formats */
+    ok &= st_wr_u32(f, (uint32_t)$para_n) == 0;
+    for (i = 0; i < $para_n && $para_fmt; i++)
+        ok &= st_wr_para(f, &((RetexParaFormat*)$para_fmt)[i]) == 0;
+
+    /* rich piece table: atoms, looks, pieces and undo/redo spans */
+    blob = rtable_serialize((RTable*)$ptable, &blob_len);
+    if (!blob) {
+        ok = 0;
+    } else {
+        ok &= st_wr_u32(f, (uint32_t)blob_len) == 0;
+        ok &= st_wr(f, blob, blob_len) == 0;
+        free(blob);
+    }
+
+    /* widget-level undo history (caret + paragraph snapshot per entry) */
+    up = (RetexParaFormat**)$undo_para;
+    ok &= st_wr_u32(f, (uint32_t)$undo_n) == 0;
+    for (i = 0; i < $undo_n; i++) {
+        int pn = (up && up[i]) ? $undo_para_n[i] : 0;
+        ok &= st_wr_i32(f, $undo_cp[i]) == 0;
+        ok &= st_wr_i32(f, $undo_anchor[i]) == 0;
+        ok &= st_wr_u32(f, (uint32_t)pn) == 0;
+        for (j = 0; j < pn; j++)
+            ok &= st_wr_para(f, &up[i][j]) == 0;
+    }
+
+    rp = (RetexParaFormat**)$redo_para;
+    ok &= st_wr_u32(f, (uint32_t)$redo_n) == 0;
+    for (i = 0; i < $redo_n; i++) {
+        int pn = (rp && rp[i]) ? $redo_para_n[i] : 0;
+        ok &= st_wr_i32(f, $redo_cp[i]) == 0;
+        ok &= st_wr_i32(f, $redo_anchor[i]) == 0;
+        ok &= st_wr_u32(f, (uint32_t)pn) == 0;
+        for (j = 0; j < pn; j++)
+            ok &= st_wr_para(f, &rp[i][j]) == 0;
+    }
+
+    if (fclose(f) != 0) ok = 0;
+    return ok;
+}
+
+@ Restore the complete editor state from path.  Returns 1 on success.
+@proc int load_state_file($, const char *path)
+{
+    FILE *f;
+    int ok = 1, version = 0, i, j;
+    char magic[8];
+    char *face = NULL, *look_face = NULL, *saved_text = NULL;
+    int fontSize = 0, align = 0, tg = 0, bg = 0, lg = 0, rg = 0;
+    int scroll = 0, caret = 0, anchor = 0, look_style = 0;
+    float look_size = 0.0f;
+    int pn = 0, blob_len = 0, undo_n = 0, redo_n = 0;
+    RetexParaFormat *pf = NULL;
+    unsigned char *blob = NULL;
+    int *ucp = NULL, *uanchor = NULL, *upn = NULL;
+    int *rcp = NULL, *ranchor = NULL, *rpn = NULL;
+    RetexParaFormat **upara = NULL, **rpara = NULL;
+
+    if (!path || !$ptable) return 0;
+    f = fopen(path, "rb");
+    if (!f) return 0;
+
+    if (st_rd(f, magic, 8) != 0 || memcmp(magic, "WBRAVOST", 8) != 0)
+        goto fail;
+    version = st_rd_i32(f, &ok);
+    if (!ok || version != 1) goto fail;
+    (void)st_rd_u32(f, &ok);            /* reserved */
+
+    face = st_rd_str(f, &ok);
+    fontSize = st_rd_i32(f, &ok);
+    align = st_rd_i32(f, &ok);
+    tg = st_rd_i32(f, &ok);
+    bg = st_rd_i32(f, &ok);
+    lg = st_rd_i32(f, &ok);
+    rg = st_rd_i32(f, &ok);
+    scroll = st_rd_i32(f, &ok);
+    caret = st_rd_i32(f, &ok);
+    anchor = st_rd_i32(f, &ok);
+    look_face = st_rd_str(f, &ok);
+    look_style = st_rd_i32(f, &ok);
+    look_size = st_rd_f32(f, &ok);
+    saved_text = st_rd_str(f, &ok);
+    if (!ok) goto fail;
+
+    pn = (int)st_rd_u32(f, &ok);
+    if (!ok || pn < 0 || pn > 1000000) goto fail;
+    if (pn < 1) pn = 1;
+    pf = (RetexParaFormat*)calloc((size_t)pn, sizeof(RetexParaFormat));
+    if (!pf) goto fail;
+    for (i = 0; i < pn; i++)
+        if (st_rd_para(f, &pf[i], &ok) != 0) goto fail;
+
+    blob_len = (int)st_rd_u32(f, &ok);
+    if (!ok || blob_len <= 0 || blob_len > (1 << 30)) goto fail;
+    blob = (unsigned char*)malloc((size_t)blob_len);
+    if (!blob) goto fail;
+    if (st_rd(f, blob, blob_len) != 0) goto fail;
+
+    undo_n = (int)st_rd_u32(f, &ok);
+    if (!ok || undo_n < 0 || undo_n > 1000000) goto fail;
+    if (undo_n > 0) {
+        ucp = (int*)calloc((size_t)undo_n, sizeof(int));
+        uanchor = (int*)calloc((size_t)undo_n, sizeof(int));
+        upn = (int*)calloc((size_t)undo_n, sizeof(int));
+        upara = (RetexParaFormat**)calloc((size_t)undo_n, sizeof(RetexParaFormat*));
+        if (!ucp || !uanchor || !upn || !upara) goto fail;
+        for (i = 0; i < undo_n; i++) {
+            ucp[i] = st_rd_i32(f, &ok);
+            uanchor[i] = st_rd_i32(f, &ok);
+            upn[i] = (int)st_rd_u32(f, &ok);
+            if (!ok || upn[i] < 0 || upn[i] > 1000000) goto fail;
+            if (upn[i] > 0) {
+                upara[i] = (RetexParaFormat*)calloc((size_t)upn[i], sizeof(RetexParaFormat));
+                if (!upara[i]) goto fail;
+                for (j = 0; j < upn[i]; j++)
+                    if (st_rd_para(f, &upara[i][j], &ok) != 0) goto fail;
+            }
+        }
+    }
+
+    redo_n = (int)st_rd_u32(f, &ok);
+    if (!ok || redo_n < 0 || redo_n > 1000000) goto fail;
+    if (redo_n > 0) {
+        rcp = (int*)calloc((size_t)redo_n, sizeof(int));
+        ranchor = (int*)calloc((size_t)redo_n, sizeof(int));
+        rpn = (int*)calloc((size_t)redo_n, sizeof(int));
+        rpara = (RetexParaFormat**)calloc((size_t)redo_n, sizeof(RetexParaFormat*));
+        if (!rcp || !ranchor || !rpn || !rpara) goto fail;
+        for (i = 0; i < redo_n; i++) {
+            rcp[i] = st_rd_i32(f, &ok);
+            ranchor[i] = st_rd_i32(f, &ok);
+            rpn[i] = (int)st_rd_u32(f, &ok);
+            if (!ok || rpn[i] < 0 || rpn[i] > 1000000) goto fail;
+            if (rpn[i] > 0) {
+                rpara[i] = (RetexParaFormat*)calloc((size_t)rpn[i], sizeof(RetexParaFormat));
+                if (!rpara[i]) goto fail;
+                for (j = 0; j < rpn[i]; j++)
+                    if (st_rd_para(f, &rpara[i][j], &ok) != 0) goto fail;
+            }
+        }
+    }
+
+    if (!ok) goto fail;
+    fclose(f);
+    f = NULL;
+
+    /* apply the rich document + history */
+    if (rtable_deserialize((RTable*)$ptable, blob, blob_len) != 0) goto fail;
+    free(blob);
+    blob = NULL;
+
+    /* Keep widget-level stacks within the restored rtable depths. */
+    {
+        int ud = rtable_undo_depth((RTable*)$ptable);
+        int rd = rtable_redo_depth((RTable*)$ptable);
+        if (undo_n > ud) {
+            for (i = ud; i < undo_n; i++) free(upara[i]);
+            undo_n = ud;
+        }
+        if (redo_n > rd) {
+            for (i = rd; i < redo_n; i++) free(rpara[i]);
+            redo_n = rd;
+        }
+    }
+
+    /* text resource mirrors the restored document */
+    {
+        int h = make_utf8($);
+        const char *s = h ? (const char*)m_buf(h) : "";
+        XtFree($text_mem);
+        $text_mem = XtNewString(s);
+        $text = $text_mem;
+        if (h) m_free(h);
+    }
+
+    /* replace widget-level history and paragraph formats */
+    para_clear_history($);
+    free($undo_cp); free($undo_anchor); free($undo_para); free($undo_para_n);
+    free($redo_cp); free($redo_anchor); free($redo_para); free($redo_para_n);
+    $undo_cp = ucp; $undo_anchor = uanchor; $undo_para = upara; $undo_para_n = upn;
+    $undo_n = undo_n; $undo_cap = undo_n;
+    $redo_cp = rcp; $redo_anchor = ranchor; $redo_para = rpara; $redo_para_n = rpn;
+    $redo_n = redo_n; $redo_cap = redo_n;
+    ucp = NULL; uanchor = NULL; upara = NULL; upn = NULL;
+    rcp = NULL; ranchor = NULL; rpara = NULL; rpn = NULL;
+
+    free($para_fmt);
+    $para_fmt = pf;
+    $para_n = pn;
+    $para_cap = pn;
+    pf = NULL;
+
+    free($old_para_start);
+    $old_para_start = NULL;
+    $old_para_n = 0;
+    $edit_old_len = rtable_len((RTable*)$ptable);
+
+    /* resources / pending look / caret */
+    $fontSize = fontSize;
+    $alignment = align;
+    $topGap = tg;
+    $bottomGap = bg;
+    $leftGap = lg;
+    $rightGap = rg;
+
+    free($fontFace_mem);
+    if (!face || !*face) {
+        free(face);
+        face = XtNewString("Sans");
+    }
+    $fontFace_mem = face;
+    $fontFace = $fontFace_mem;
+    face = NULL;
+
+    $look.face = (look_face && *look_face) ? conststr_lookup_c(look_face) : 0;
+    $look.style = look_style;
+    $look.size = look_size;
+
+    {
+        int len = doc_len($);
+        if (caret < 0) caret = 0;
+        if (caret > len) caret = len;
+        if (anchor < 0) anchor = 0;
+        if (anchor > len) anchor = len;
+        $caret_cp = caret;
+        $anchor_cp = anchor;
+        $scroll_line = scroll < 0 ? 0 : scroll;
+    }
+
+    free(look_face);
+    free(saved_text);
+    $dirty = 1;
+    if (XtIsRealized($)) redraw($);
+    return 1;
+
+fail:
+    if (f) fclose(f);
+    free(face);
+    free(look_face);
+    free(saved_text);
+    free(pf);
+    free(blob);
+    if (upara) {
+        for (i = 0; i < undo_n; i++) free(upara[i]);
+        free(upara);
+    }
+    free(ucp); free(uanchor); free(upn);
+    if (rpara) {
+        for (i = 0; i < redo_n; i++) free(rpara[i]);
+        free(rpara);
+    }
+    free(rcp); free(ranchor); free(rpn);
+    return 0;
+}
+
+
 @ACTIONS
+
+@ External control interface.  All of these are ordinary Xt action procs, so
+@ any application can drive the editor with
+@     XtCallActionProc(w, "name", NULL, params, nparams);
+@ without linking Wbravo's private helpers.  Groups:
+@   document    set_text, insert_text, insert_newline, delete_backward,
+@               delete_forward, undo, redo, cut_selection, copy_selection, paste
+@   caret/sel   set_caret, set_caret_byte, set_selection, select_all, move_*,
+@               forward_char, backward_char, page_up, page_down
+@   text style  bold, italic, roman, set_bold, set_italic, set_font, set_size
+@   paragraph   align_left/center/right/justify, set_alignment, indent,
+@               outdent, indent_right, outdent_right, indent_first,
+@               outdent_first, set_indent_left, set_indent_right,
+@               set_first_line_indent, set_space_before, set_space_after
+@   focus       SetFocus, set_cursor, extend_selection
+@   snapshot    save_state <path>, load_state <path> (complete editor state:
+@               document + looks + paragraphs + undo/redo + resources)
+@ Parameters are the action's String arguments (params[0], params[1], ...);
+@ numeric actions clamp or ignore malformed values.
 
 @proc SetFocus
 {
@@ -1141,6 +1636,133 @@
 {
     if (num_params && *num_params >= 1 && params[0])
         para_set_space($, 1, atof(params[0]));
+}
+
+@ External control interface.  Every action below can be invoked from another
+@ application with XtCallActionProc(); parameters are the action's String args.
+
+@ Replace the whole document (keeps the text resource in sync).
+@proc set_text
+{
+    if (num_params && *num_params >= 1 && params[0]) {
+        XtVaSetValues($, XtNtext, params[0], NULL);
+        if (XtIsRealized($)) redraw($);
+    }
+}
+
+@ Save the complete editor state (document + looks + paragraphs + undo/redo
+@ + resources) to params[0].  Intended for debugging/error reproduction.
+@proc save_state
+{
+    if (num_params && *num_params >= 1 && params[0])
+        save_state_file($, params[0]);
+}
+
+@ Restore a complete editor state previously written by save_state.
+@proc load_state
+{
+    if (num_params && *num_params >= 1 && params[0])
+        load_state_file($, params[0]);
+}
+
+@ Move the caret to a code-point offset (0 = before the first character).
+@proc set_caret
+{
+    if (num_params && *num_params >= 1 && params[0]) {
+        set_caret_cp($, atoi(params[0]), False);
+        $dirty = 1;
+        redraw($);
+    }
+}
+
+@ Move the caret to a UTF-8 byte offset.
+@proc set_caret_byte
+{
+    if (num_params && *num_params >= 1 && params[0]) {
+        set_caret_from_byte($, atoi(params[0]), False);
+        $dirty = 1;
+        redraw($);
+    }
+}
+
+@ Set the selection: params[0] = anchor (start), params[1] = caret (end),
+@ both code-point offsets.  Equal values collapse the selection.
+@proc set_selection
+{
+    int a, b, len;
+    if (num_params && *num_params >= 2 && params[0] && params[1]) {
+        len = doc_len($);
+        a = atoi(params[0]);
+        b = atoi(params[1]);
+        if (a < 0) a = 0;
+        if (a > len) a = len;
+        if (b < 0) b = 0;
+        if (b > len) b = len;
+        $anchor_cp = a;
+        $caret_cp = b;
+        sync_look($);
+        $dirty = 1;
+        ensure_visible($);
+        redraw($);
+    }
+}
+
+@ Select the whole document.
+@proc select_all
+{
+    $anchor_cp = 0;
+    $caret_cp = doc_len($);
+    sync_look($);
+    $dirty = 1;
+    ensure_visible($);
+    redraw($);
+}
+
+@ Set paragraph alignment: 0|1|2|3 or left|center|right|justify.
+@proc set_alignment
+{
+    int al;
+    if (num_params && *num_params >= 1 && params[0]) {
+        al = parse_alignment($, params[0]);
+        if (al >= 0) para_set_align($, al);
+    }
+}
+
+@ Absolute paragraph indents in points (left / right / first line).
+@proc set_indent_left
+{
+    if (num_params && *num_params >= 1 && params[0])
+        para_set_indent($, 1, atof(params[0]));
+}
+
+@proc set_indent_right
+{
+    if (num_params && *num_params >= 1 && params[0])
+        para_set_indent($, 2, atof(params[0]));
+}
+
+@proc set_first_line_indent
+{
+    if (num_params && *num_params >= 1 && params[0])
+        para_set_indent($, 3, atof(params[0]));
+}
+
+@ Explicitly set bold/italic on the selection, or on the pending typing look:
+@ params[0] is 1/0 (default 1 when omitted).
+@proc set_bold
+{
+    int on = 1;
+    if (num_params && *num_params >= 1 && params[0])
+        on = atoi(params[0]) != 0;
+    apply_style_bits($, on ? 1 : 0, on ? 0 : 1);
+}
+
+@proc set_italic
+{
+    int on = 1;
+    if (num_params && *num_params >= 1 && params[0])
+        on = atoi(params[0]) != 0;
+    apply_style_bits($, on ? 2 : 0, on ? 0 : 2);
 }
 
 @proc insert_text
