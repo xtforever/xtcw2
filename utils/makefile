@@ -1,8 +1,10 @@
 CC ?= gcc
-CFLAGS += -fms-extensions -I. -I$(incdir) -I$(incdir)/xtcw
+CFLAGS += -fms-extensions -I. -Iutf8 -Iutf32 -I$(incdir) -I$(incdir)/xtcw
 
 # List of core objects from the original makefile_library
 OBJS = mls.o m_tool.o conststr.o m_table.o
+OBJS += ptable.o
+OBJS += rtable.o
 OBJS += focus-group.o converters-xft.o xutil.o
 OBJS += ini_parse.tab.o ini_lex.lex.o ini_read2.o
 OBJS += njson_parse.tab.o njson_lex.lex.o njson_read.o

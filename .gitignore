@@ -100,3 +100,9 @@ input_test/input_test
 experimental/lua/
 experimental/swig/
 experimental/caveman/
+
+# widget_shot.sh screenshots (debug artifacts)
+widget_photo/
+
+# local agent tooling (not part of the project)
+.opencode/

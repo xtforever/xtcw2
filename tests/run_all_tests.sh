@@ -61,4 +61,52 @@ make -C "$ROOT/experimental/karo_widget" test
 echo "16. test_theme_parse"
 "$ROOT/tests/test_theme_parse"
 
+echo "17. test_wtoggleswitch (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtoggleswitch"
+
+echo "18. test_wviewport (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wviewport"
+
+echo "19. test_wtabwidget (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtabwidget"
+
+echo "20. test_utf8"
+"$ROOT/tests/test_utf8"
+
+echo "21. test_utf32"
+"$ROOT/tests/test_utf32"
+
+echo "22. test_ptable"
+"$ROOT/tests/test_ptable"
+
+echo "22b. test_rtable (rich atom piece table)"
+"$ROOT/tests/test_rtable"
+
+echo "23. test_tokenize_plain"
+"$ROOT/tests/test_tokenize_plain"
+
+echo "24. test_retex_unicode"
+"$ROOT/tests/test_retex_unicode"
+
+echo "25. test_retex_plain"
+"$ROOT/tests/test_retex_plain"
+
+echo "25b. test_retex_rich_lines (rich TeX layout line metadata + caret)"
+"$ROOT/tests/test_retex_rich_lines"
+
+echo "25c. test_retex_styled (styled atom layout: fonts/styles/sizes)"
+"$ROOT/tests/test_retex_styled"
+
+echo "26. test_wbravo (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wbravo"
+
+echo "26b. test_rich_wbravo (WYSIWYG style editing)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_rich_wbravo"
+
+echo "27. test_mls_trace (trace level + post-mortem source lookup)"
+"$ROOT/tests/test_mls_trace"
+
+echo "28. test_wmenubutton (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wmenubutton"
+
 echo "All tests PASSED."

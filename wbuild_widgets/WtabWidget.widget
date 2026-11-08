@@ -1,0 +1,508 @@
+@class WtabWidget (Constraint)
+@ Tab group: borderless tab titles over a Wviewport-scrolled content area.
+
+@EXPORTS
+@ Index of the currently selected tab (0-based).
+@proc int wtabwidget_get_selected($)
+{
+    return $selected;
+}
+
+@PUBLIC
+@ selected tab index
+@var int selected = 0
+@ height of the tab strip in pixels
+@var Dimension tabHeight = 26
+@ extra vertical gap between the tab label and the selected underline
+@var int lineGap = 4
+@ thickness of the frame border
+@var Dimension borderThickness = 4
+@ frame background and border colour (sentinel, resolved from the theme)
+@var <Pixel> Pixel frameColor = -1
+@ content-area background colour (sentinel, resolved from the theme)
+@var <Pixel> Pixel contentBg = -1
+@ normal tab title colour (sentinel)
+@var <Pixel> Pixel tabFg = -1
+@ selected tab title colour (sentinel)
+@var <Pixel> Pixel tabFgSel = -1
+@ fired with the new selected index when the tab changes
+@var <Callback> XtCallbackList callback = NULL
+@ font used for the tab titles (Xt-owned, via the Xft converter)
+@var <XftFont> XftFont* tabFont = <String> "Sans-11"
+
+@private-constraints
+@var String tabTitle
+@var String tabTitle_mem
+@var Boolean reparented
+
+@PRIVATE
+@var Widget viewport
+@var Widget cur_page
+@var int creating_internal
+@var Boolean constructing
+@var int relayout_guard
+@var int in_select
+@var XftFont *tabFont_theme
+@var String font_name_mem
+@var XftDraw *draw
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_xft_init();
+
+    /* Register the constraint resource manually (wbuild's @constraints segfaults) */
+    static XtResource resources[] = {
+        {XtNtabTitle, XtCtabTitle, XtRString, sizeof(String),
+         XtOffsetOf(WtabWidgetConstraintRec, wtabWidget.tabTitle), XtRString, (XtPointer)NULL},
+    };
+    ConstraintWidgetClass cwc = (ConstraintWidgetClass)wtabWidgetWidgetClass;
+    cwc->constraint_class.resources = resources;
+    cwc->constraint_class.num_resources = XtNumber(resources);
+    cwc->constraint_class.initialize = tab_constraint_init;
+    cwc->constraint_class.destroy = tab_constraint_destroy;
+}
+
+@proc initialize
+{
+    XTFUNC();
+    $viewport = NULL;
+    $cur_page = NULL;
+    $creating_internal = 1;
+    $constructing = True;
+    $relayout_guard = 0;
+    $in_select = 0;
+    $tabFont_theme = NULL;
+    $font_name_mem = NULL;
+    $draw = NULL;
+
+    resolve_colors($);
+
+    if ($width == 0)  $width  = 240;
+    if ($height == 0) $height = 140;
+
+    $creating_internal = 1;
+    $viewport = XtVaCreateManagedWidget("viewport", wviewportWidgetClass, $,
+        XtNborderWidth, 0,
+        XtNbackground, $contentBg,
+        NULL);
+    $creating_internal = 0;
+
+    open_theme_font($);
+    ensure_tab_height($);
+    theme_register($, wtabwidget_colors_changed);
+
+    $constructing = False;
+}
+
+@proc destroy
+{
+    XTFUNC();
+    theme_unregister($);
+    if ($tabFont_theme) {
+        XftFontClose(XtDisplay($), $tabFont_theme);
+        $tabFont_theme = NULL;
+    }
+    if ($font_name_mem) { XtFree($font_name_mem); $font_name_mem = NULL; }
+    if ($draw) { XftDrawDestroy($draw); $draw = NULL; }
+}
+
+@proc realize
+{
+    XTFUNC();
+    #realize($, mask, attributes);
+
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+    $draw = XftDrawCreate(dpy, XtWindow($),
+                          DefaultVisual(dpy, scr), DefaultColormap(dpy, scr));
+
+    if ($viewport) XtRealizeWidget($viewport);
+
+    relayout($);
+    select_tab($, $selected, 0);
+}
+
+@proc resize
+{
+    if ($creating_internal) return;
+    relayout($);
+    draw_strip($);
+}
+
+@proc expose
+{
+    draw_strip($);
+}
+
+@proc change_managed
+{
+    if ($creating_internal) return;
+    if ($relayout_guard) return;
+    relayout($);
+    if (!$constructing && !$in_select && $cur_page == NULL && page_count($) > 0)
+        select_tab($, 0, 0);
+}
+
+@proc insert_child
+{
+    #insert_child(child);
+    if ($creating_internal) return;
+    WtabWidgetConstraintPart *cp = CTab(child);
+    if (cp && cp->tabTitle_mem == NULL) {
+        const char *t = cp->tabTitle ? cp->tabTitle : XtName(child);
+        cp->tabTitle_mem = (String)XtNewString(t ? t : "");
+    }
+}
+
+@proc delete_child
+{
+    if (!$creating_internal) {
+        free_tab_title(child);
+        if (child == $cur_page) {
+            $cur_page = NULL;
+            /* tell the viewport to drop it: its wheel handler points at the
+             * child and must be removed before the child goes away */
+            if ($viewport) wviewport_set_child($viewport, NULL);
+        }
+    }
+    #delete_child(child);
+}
+
+@proc geometry_manager
+{
+    (void)self;
+    Dimension wd = (request->request_mode & CWWidth)  ? request->width  : child->core.width;
+    Dimension ht = (request->request_mode & CWHeight) ? request->height : child->core.height;
+    XtConfigureWidget(child, child->core.x, child->core.y, wd, ht, child->core.border_width);
+    return XtGeometryDone;
+}
+
+@proc query_geometry
+{
+    int cw = 0, ch = 0;
+    content_pref($, &cw, &ch);
+
+    int w = cw;
+    int h = ch + (int)$tabHeight;
+    if (w < 80) w = 80;
+    if (h < 60) h = 60;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc set_values
+{
+    int do_redraw = False;
+
+    if ($selected != $old$selected) {
+        select_tab($, $selected, 1);
+        do_redraw = True;
+    }
+    if ($tabHeight != $old$tabHeight || $lineGap != $old$lineGap ||
+        $borderThickness != $old$borderThickness) {
+        relayout($);
+        do_redraw = True;
+    }
+    if ($frameColor != $old$frameColor || $contentBg != $old$contentBg ||
+        $tabFg != $old$tabFg || $tabFgSel != $old$tabFgSel) {
+        resolve_colors($);
+        do_redraw = True;
+    }
+    return do_redraw;
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>: tab_click()
+
+@ACTIONS
+
+@proc tab_click
+{
+    int x = event->xbutton.x;
+    int y = event->xbutton.y;
+    if (y >= (int)$tabHeight) return;
+
+    int cnt = page_count($);
+    if (cnt <= 0) return;
+    int cell = (int)$width / cnt;
+    if (cell < 1) return;
+
+    int idx = x / cell;
+    if (idx < 0) idx = 0;
+    if (idx >= cnt) idx = cnt - 1;
+    select_tab($, idx, 1);
+}
+
+@UTILITIES
+
+@proc void tab_constraint_init(Widget request, Widget cnew, ArgList args, Cardinal *num_args)
+{
+    WtabWidgetConstraintPart *cp = CTab(cnew);
+    if (cp) {
+        cp->tabTitle_mem = NULL;
+        cp->reparented = False;
+    }
+}
+
+@proc void tab_constraint_destroy(Widget child)
+{
+    free_tab_title(child);
+}
+
+@proc void free_tab_title(Widget child)
+{
+    WtabWidgetConstraintPart *cp = CTab(child);
+    if (cp && cp->tabTitle_mem) {
+        XtFree(cp->tabTitle_mem);
+        cp->tabTitle_mem = NULL;
+    }
+}
+
+@proc int page_count($)
+{
+    int n = 0;
+    for (int i = 0; i < $num_children; i++) {
+        if ($children[i] == $viewport) continue;
+        n++;
+    }
+    return n;
+}
+
+@proc Widget page_at($, int idx)
+{
+    int n = 0;
+    for (int i = 0; i < $num_children; i++) {
+        Widget ch = $children[i];
+        if (ch == $viewport) continue;
+        if (n == idx) return ch;
+        n++;
+    }
+    return NULL;
+}
+
+@proc String title_of($, Widget child)
+{
+    if (!child) return (String)"";
+    WtabWidgetConstraintPart *cp = CTab(child);
+    if (cp) {
+        if (cp->tabTitle_mem) return cp->tabTitle_mem;
+        if (cp->tabTitle) return cp->tabTitle;
+    }
+    return (String)XtName(child);
+}
+
+@proc void resolve_colors($)
+{
+    Pixel fb = BlackPixelOfScreen(XtScreen($));
+    $frameColor = theme_color_defined("gridbox_border") ? get_color("gridbox_border") : $background_pixel;
+    $contentBg  = theme_color_defined("gridbox_bg")     ? get_color("gridbox_bg")     : $background_pixel;
+    $tabFg      = theme_color_defined("fg_norm")        ? get_color("fg_norm")        : fb;
+    $tabFgSel   = theme_color_defined("fg_sel")         ? get_color("fg_sel")         : fb;
+
+    /* draw_strip() paints only the top tab strip; the left/right/bottom
+     * borderThickness area is the widget's own exposed background.  Make the
+     * Core background the frame colour so the content area is enclosed by the
+     * frame instead of the Xt default (white). */
+    $background_pixel = $frameColor;
+}
+
+@proc void open_theme_font($)
+{
+    const char *fn = theme_get_str("font_small");
+    if (!fn || !XtDisplay($)) return;
+    if ($font_name_mem && strcmp($font_name_mem, fn) == 0) return;
+
+    if ($tabFont_theme) {
+        XftFontClose(XtDisplay($), $tabFont_theme);
+        $tabFont_theme = NULL;
+    }
+    $tabFont_theme = xft_fontopen(XtDisplay($), DefaultScreen(XtDisplay($)),
+                                  (char*)fn, False, 0);
+    if ($font_name_mem) XtFree($font_name_mem);
+    $font_name_mem = (String)XtNewString(fn);
+}
+
+@ Grow the tab strip so the (theme) font always fits.  On high-DPI displays
+@ "Sans-11" renders much larger than the default and would otherwise be
+@ clipped at the top of the strip.
+@proc void ensure_tab_height($)
+{
+    XftFont *font = $tabFont_theme ? $tabFont_theme : $tabFont;
+    if (!font) return;
+    int need = font->ascent + font->descent + $lineGap + 2 /*underline*/ + 4 /*padding*/;
+    if ((int)$tabHeight < need) $tabHeight = (Dimension)need;
+}
+
+@proc void content_pref($, int *pw, int *ph)
+{
+    *pw = 0;
+    *ph = 0;
+    if ($cur_page) {
+        XtWidgetGeometry intended, preferred;
+        intended.request_mode = 0;
+        preferred.request_mode = 0;
+        XtQueryGeometry($cur_page, &intended, &preferred);
+        *pw = (preferred.request_mode & CWWidth)  ? (int)preferred.width  : (int)$cur_page->core.width;
+        *ph = (preferred.request_mode & CWHeight) ? (int)preferred.height : (int)$cur_page->core.height;
+    }
+}
+
+@proc void relayout($)
+{
+    if ($relayout_guard) return;
+    if (!$viewport) return;
+    $relayout_guard = 1;
+
+    int W = (int)$width;
+    int H = (int)$height;
+    int th = (int)$tabHeight;
+    int bt = (int)$borderThickness;
+    if (th < 1) th = 1;
+    if (bt < 0) bt = 0;
+
+    int vw = W - 2 * bt;
+    int vh = H - th - bt;
+    if (vw < 1) vw = 1;
+    if (vh < 1) vh = 1;
+
+    XtConfigureWidget($viewport, (Position)bt, (Position)th,
+                      (Dimension)vw, (Dimension)vh, 0);
+
+    $relayout_guard = 0;
+}
+
+@proc void draw_strip($)
+{
+    if (!XtIsRealized($) || !$draw || !XtWindow($)) return;
+
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    int scr = DefaultScreen(dpy);
+    GC gc = DefaultGC(dpy, scr);
+    int W = (int)$width;
+    int th = (int)$tabHeight;
+
+    /* frame background (tab strip + border share the frame colour) */
+    XSetForeground(dpy, gc, $frameColor);
+    XFillRectangle(dpy, win, gc, 0, 0, W, th);
+
+    XftFont *font = $tabFont_theme ? $tabFont_theme : $tabFont;
+    if (!font) return;
+
+    /* vertically centre the label in the strip above the underline gap */
+    int fh = font->ascent + font->descent;
+    int label_h = th - ($lineGap + 2);
+    int base = (label_h - fh) / 2 + font->ascent;
+    if (base < font->ascent) base = font->ascent;
+
+    int cnt = page_count($);
+    if (cnt <= 0) return;
+    int cell = W / cnt;
+    if (cell < 1) cell = 1;
+
+    XftColor cn, cs;
+    xft_color_alloc($, $tabFg, &cn);
+    xft_color_alloc($, $tabFgSel, &cs);
+
+    for (int i = 0; i < cnt; i++) {
+        Widget pg = page_at($, i);
+        String title = title_of($, pg);
+        int tw = xft_textwidth(dpy, font, (char*)title);
+        int x = i * cell + (cell - tw) / 2;
+        if (x < i * cell) x = i * cell;
+        XftColor *col = (i == $selected) ? &cs : &cn;
+        XftDrawStringUtf8($draw, col, font, x, base,
+                          (FcChar8*)title, (int)strlen(title));
+        if (i == $selected) {
+            int uw = cell - 4;
+            if (uw < 1) uw = 1;
+            XSetForeground(dpy, gc, $tabFgSel);
+            XFillRectangle(dpy, win, gc, i * cell + 2, th - 2, uw, 2);
+        }
+    }
+
+    XftColorFree(dpy, DefaultVisual(dpy, scr), DefaultColormap(dpy, scr), &cn);
+    XftColorFree(dpy, DefaultVisual(dpy, scr), DefaultColormap(dpy, scr), &cs);
+}
+
+@proc void select_tab($, int idx, int fire)
+{
+    if ($in_select) return;
+
+    int cnt = page_count($);
+    if (cnt <= 0) {
+        $selected = 0;
+        $cur_page = NULL;
+        if ($viewport) wviewport_set_child($viewport, NULL);
+        return;
+    }
+    if (idx < 0) idx = 0;
+    if (idx >= cnt) idx = cnt - 1;
+
+    Widget newp = page_at($, idx);
+    if (!newp) return;
+
+    $in_select = 1;
+
+    /* manage only the selected page; unmanage every other page so it does
+     * not paint over the tab strip */
+    for (int i = 0; i < $num_children; i++) {
+        Widget ch = $children[i];
+        if (ch == $viewport) continue;
+        if (ch == newp) {
+            if (!XtIsManaged(ch)) XtManageChild(ch);
+        } else if (XtIsManaged(ch)) {
+            XtUnmanageChild(ch);
+        }
+    }
+
+    if ($viewport) wviewport_set_child($viewport, newp);
+    $cur_page = newp;
+    $selected = idx;
+
+    $in_select = 0;
+
+    if (fire && $callback)
+        XtCallCallbackList($, $callback, (XtPointer)(intptr_t)idx);
+
+    if (XtIsRealized($)) draw_strip($);
+}
+
+@proc void wtabwidget_colors_changed($)
+{
+    resolve_colors($);
+    open_theme_font($);
+    ensure_tab_height($);
+    relayout($);
+
+    if (XtIsRealized($)) {
+        XSetWindowBackground(XtDisplay($), XtWindow($), $frameColor);
+        XClearWindow(XtDisplay($), XtWindow($));
+        draw_strip($);
+    }
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <X11/StringDefs.h>
+@incl <X11/Core.h>
+@incl <string.h>
+@incl <stdint.h>
+@incl "theme.h"
+@incl "WtabWidget_types.h"
+@incl "converters-xft.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "xtcw/Wviewport.h"

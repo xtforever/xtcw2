@@ -27,4 +27,11 @@ typedef struct {
  */
 void renderer_render(Backend *backend, int node_handle, double x, double y, int sel_start, int sel_end, const RendererColors *colors, int reverse_mode);
 
+/**
+ * @brief Render a single node (and its children) at (x, y).
+ *
+ * Used by retex_paragraph_render_range to draw one line at a time.
+ */
+void renderer_render_node(Backend *backend, Node *n, double x, double y, int sel_start, int sel_end, const RendererColors *colors, int reverse_mode);
+
 #endif // RENDERER_H

@@ -1,0 +1,360 @@
+@class Wviewport (Composite)
+@ Native scrollable view of a single child (clip window + reparent + VSlider/HSlider).
+
+@EXPORTS
+@ Adopt |w| as the scrolled content.  Its window is reparented into our clip.
+@ Pass NULL to clear the content.  Used by WtabWidget to swap pages.
+@proc void wviewport_set_child($, Widget w)
+{
+    set_content($, w, 1);
+}
+
+@ Return the current content widget, or NULL.
+@proc Widget wviewport_get_child($)
+{
+    return $content;
+}
+
+@PUBLIC
+@ enable the horizontal / vertical scrollbar
+@var Boolean allowHoriz = True
+@var Boolean allowVert = True
+@ place the bars on the right / bottom (else left / top)
+@var Boolean useRight = True
+@var Boolean useBottom = True
+@ always show the bars, even when the content fits
+@var Boolean forceBars = False
+@ scrollbar thickness in pixels
+@var Dimension barSize = 14
+
+@PRIVATE
+@var Widget clip
+@var Widget vsb
+@var Widget hsb
+@var Widget content
+@var Widget wheel_content
+@var int external
+@var int scroll_x
+@var int scroll_y
+@var int creating_internal
+@var int pref_w
+@var int pref_h
+
+@METHODS
+
+@proc initialize
+{
+    XTFUNC();
+    $clip = NULL;
+    $vsb = NULL;
+    $hsb = NULL;
+    $content = NULL;
+    $wheel_content = NULL;
+    $external = 0;
+    $scroll_x = 0;
+    $scroll_y = 0;
+    $pref_w = 0;
+    $pref_h = 0;
+    if ($width == 0) $width = 100;
+    if ($height == 0) $height = 100;
+
+    $creating_internal = 1;
+
+    $clip = XtVaCreateManagedWidget("clip", widgetClass, $,
+        XtNborderWidth, 0,
+        XtNbackground, $background_pixel,
+        XtNwidth, (Dimension)$width,
+        XtNheight, (Dimension)$height,
+        NULL);
+
+    $vsb = XtVaCreateManagedWidget("vsb", vSliderWidgetClass, $,
+        XtNborderWidth, 0,
+        NULL);
+    XtAddCallback($vsb, "callback", (XtCallbackProc) vscroll_cb, $);
+
+    $hsb = XtVaCreateManagedWidget("hsb", hSliderWidgetClass, $,
+        XtNborderWidth, 0,
+        NULL);
+    XtAddCallback($hsb, "callback", (XtCallbackProc) hscroll_cb, $);
+
+    $creating_internal = 0;
+
+    XtSetMappedWhenManaged($vsb, False);
+    XtSetMappedWhenManaged($hsb, False);
+
+    XtAddEventHandler($clip, ButtonPressMask, False,
+                      (XtEventHandler) wheel_proc, (XtPointer)$);
+}
+
+@proc destroy
+{
+    XTFUNC();
+    /* Event handlers live in the widget's own event table and are released
+     * with the widget; removing them here would run XtBuildEventMask during
+     * teardown.  The only handler we must drop at runtime is the one on a
+     * *live* swapped-out content, which set_content() handles. */
+    $wheel_content = NULL;
+}
+
+@proc realize
+{
+    XTFUNC();
+    #realize($, mask, attributes);
+
+    XtRealizeWidget($clip);
+
+    /* Xt only invokes change_managed once the parent is realized, so the
+     * initial (pre-realize) managed children are adopted here. */
+    sync_content($);
+
+    if ($content) {
+        if (!XtIsRealized($content)) XtRealizeWidget($content);
+        XReparentWindow(XtDisplay($), XtWindow($content), XtWindow($clip), 0, 0);
+        XtAddEventHandler($content, ButtonPressMask, False,
+                          (XtEventHandler) wheel_proc, (XtPointer)$);
+        $wheel_content = $content;
+    }
+
+    relayout($);
+}
+
+@proc resize
+{
+    if ($creating_internal) return;
+    relayout($);
+}
+
+@proc expose
+{
+    if (!XtIsRealized($)) return;
+    XClearWindow(XtDisplay($), XtWindow($));
+}
+
+@proc change_managed
+{
+    if ($creating_internal) return;
+    sync_content($);
+}
+
+@proc geometry_manager
+{
+    (void)self;
+    Dimension wd = (request->request_mode & CWWidth)  ? request->width  : child->core.width;
+    Dimension ht = (request->request_mode & CWHeight) ? request->height : child->core.height;
+    XtConfigureWidget(child, child->core.x, child->core.y, wd, ht, child->core.border_width);
+    return XtGeometryDone;
+}
+
+@proc query_geometry
+{
+    int cw = 0, ch = 0;
+    content_pref($, &cw, &ch);
+
+    int w = cw + (int)$barSize;
+    int h = ch + (int)$barSize;
+    if (w < 20) w = (int)$barSize + 6;
+    if (h < 20) h = (int)$barSize + 6;
+
+    $pref_w = w;
+    $pref_h = h;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc set_values
+{
+    int do_redraw = False;
+
+    if ($allowHoriz != $old$allowHoriz || $allowVert != $old$allowVert ||
+        $useRight != $old$useRight || $useBottom != $old$useBottom ||
+        $forceBars != $old$forceBars || $barSize != $old$barSize) {
+        relayout($);
+        do_redraw = True;
+    }
+    return do_redraw;
+}
+
+@UTILITIES
+
+@proc int is_internal($, Widget c)
+{
+    return (c == $clip || c == $vsb || c == $hsb);
+}
+
+@ Adopt the first managed non-internal child as the content (unless an
+@ external content was set via wviewport_set_child).
+@proc void sync_content($)
+{
+    if ($external) return;
+    Widget c = NULL;
+    for (int i = 0; i < $num_children; i++) {
+        Widget ch = $children[i];
+        if (XtIsManaged(ch) && !is_internal($, ch)) { c = ch; break; }
+    }
+    if (c != $content) set_content($, c, 0);
+}
+
+@proc void content_pref($, int *pw, int *ph)
+{
+    if ($content) {
+        XtWidgetGeometry intended, preferred;
+        intended.request_mode = 0;
+        preferred.request_mode = 0;
+        XtQueryGeometry($content, &intended, &preferred);
+        *pw = (preferred.request_mode & CWWidth)  ? (int)preferred.width  : (int)($content->core.width);
+        *ph = (preferred.request_mode & CWHeight) ? (int)preferred.height : (int)($content->core.height);
+    } else {
+        *pw = 0;
+        *ph = 0;
+    }
+}
+
+@proc void clamp_scroll($, int cw, int ch)
+{
+    int area_w = (int)($clip->core.width);
+    int area_h = (int)($clip->core.height);
+    int maxx = cw - area_w; if (maxx < 0) maxx = 0;
+    int maxy = ch - area_h; if (maxy < 0) maxy = 0;
+    if ($scroll_x > maxx) $scroll_x = maxx;
+    if ($scroll_x < 0)    $scroll_x = 0;
+    if ($scroll_y > maxy) $scroll_y = maxy;
+    if ($scroll_y < 0)    $scroll_y = 0;
+}
+
+@proc void set_content($, Widget w, int is_external)
+{
+    if (w == $content && is_external == $external) { relayout($); return; }
+
+    if ($wheel_content) {
+        XtRemoveEventHandler($wheel_content, ButtonPressMask, False,
+                             (XtEventHandler) wheel_proc, (XtPointer)$);
+        $wheel_content = NULL;
+    }
+
+    $content = w;
+    $external = is_external;
+    $scroll_x = 0;
+    $scroll_y = 0;
+
+    if (w && XtIsRealized($)) {
+        XtRealizeWidget($clip);
+        if (!XtIsRealized(w)) XtRealizeWidget(w);
+        XReparentWindow(XtDisplay($), XtWindow(w), XtWindow($clip), 0, 0);
+        XtAddEventHandler(w, ButtonPressMask, False,
+                          (XtEventHandler) wheel_proc, (XtPointer)$);
+        $wheel_content = w;
+    }
+
+    relayout($);
+}
+
+@proc void relayout($)
+{
+    if (!XtIsRealized($)) return;
+
+    int cw = 0, ch = 0;
+    content_pref($, &cw, &ch);
+
+    int W = (int)$width;
+    int H = (int)$height;
+    int bs = (int)$barSize;
+    if (bs < 1) bs = 1;
+
+    int show_v = $allowVert  && ($forceBars || ch > H);
+    int show_h = $allowHoriz && ($forceBars || cw > W);
+
+    int clip_w = W - (show_v ? bs : 0);
+    int clip_h = H - (show_h ? bs : 0);
+    if (clip_w < 1) clip_w = 1;
+    if (clip_h < 1) clip_h = 1;
+
+    int clip_x = $useRight  ? 0 : (show_v ? bs : 0);
+    int clip_y = $useBottom ? 0 : (show_h ? bs : 0);
+    XtConfigureWidget($clip, (Position)clip_x, (Position)clip_y,
+                      (Dimension)clip_w, (Dimension)clip_h, 0);
+
+    int vx = $useRight  ? (W - bs) : 0;
+    int vy = $useBottom ? 0 : (show_h ? bs : 0);
+    XtConfigureWidget($vsb, (Position)vx, (Position)vy,
+                      (Dimension)bs, (Dimension)clip_h, 0);
+    XtSetMappedWhenManaged($vsb, show_v);
+
+    int hy = $useBottom ? (H - bs) : 0;
+    int hx = $useRight  ? 0 : (show_v ? bs : 0);
+    XtConfigureWidget($hsb, (Position)hx, (Position)hy,
+                      (Dimension)clip_w, (Dimension)bs, 0);
+    XtSetMappedWhenManaged($hsb, show_h);
+
+    if ($vsb) {
+        int frac = (ch > 0) ? (int)((long)clip_h * 1000000L / ch) : 1000000;
+        int pos  = (ch > 0) ? (int)((long)$scroll_y * 1000000L / ch) : 0;
+        if (frac > 1000000) frac = 1000000;
+        XtVaSetValues($vsb, "frac", frac, "pos", pos, NULL);
+    }
+    if ($hsb) {
+        int frac = (cw > 0) ? (int)((long)clip_w * 1000000L / cw) : 1000000;
+        int pos  = (cw > 0) ? (int)((long)$scroll_x * 1000000L / cw) : 0;
+        if (frac > 1000000) frac = 1000000;
+        XtVaSetValues($hsb, "frac", frac, "pos", pos, NULL);
+    }
+
+    clamp_scroll($, cw, ch);
+    if ($content && XtIsRealized($content))
+        XtMoveWidget($content, (Position)(-$scroll_x), (Position)(-$scroll_y));
+}
+
+@proc void scroll_by($, int dx, int dy)
+{
+    $scroll_x += dx;
+    $scroll_y += dy;
+    relayout($);
+}
+
+@proc vscroll_cb(Widget w, $, void *d)
+{
+    int pos = (int)(intptr_t)d;
+    int cw = 0, ch = 0;
+    content_pref($, &cw, &ch);
+    int area = (int)($clip->core.height);
+    int maxy = ch - area; if (maxy < 0) maxy = 0;
+    $scroll_y = (int)((long)pos * maxy / 1000000L);
+    relayout($);
+}
+
+@proc hscroll_cb(Widget w, $, void *d)
+{
+    int pos = (int)(intptr_t)d;
+    int cw = 0, ch = 0;
+    content_pref($, &cw, &ch);
+    int area = (int)($clip->core.width);
+    int maxx = cw - area; if (maxx < 0) maxx = 0;
+    $scroll_x = (int)((long)pos * maxx / 1000000L);
+    relayout($);
+}
+
+@proc wheel_proc(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    if (ev->type != ButtonPress) return;
+    if (ev->xbutton.button == Button4)      scroll_by($, 0, -40);
+    else if (ev->xbutton.button == Button5) scroll_by($, 0,  40);
+}
+
+@IMPORTS
+@incl <X11/Core.h>
+@incl <X11/StringDefs.h>
+@incl <string.h>
+@incl <stdint.h>
+@incl "mls.h"
+@incl "xutil.h"
+@incl "xtcw/VSlider.h"
+@incl "xtcw/HSlider.h"

@@ -120,6 +120,43 @@ gcc -DMLS_DEBUG -I./utils -o my_app main.c utils/mls.c utils/m_tool.c
 gcc -O3 -I./utils -o my_app main.c utils/mls.c utils/m_tool.c
 ```
 
+### Tracing allocations and frees (`trace_level`)
+
+`trace_level` is a runtime switch (declared in `mls.h`) that enables the
+`TRACE()` messages inside the MLS library. Set it before allocating anything:
+
+```c
+extern int trace_level;
+
+m_init();
+trace_level = 1;   /* 0 = off, 1 = show every TRACE, 2 = only level >= 2 ... */
+```
+
+With `trace_level = 1`, every list creation and free is printed to `stderr`
+including the source location:
+
+```
+[1]_m_create: NEW LIST 13 allocated by load_file:212 in editor.c
+[1]_m_free: FREE LIST 13 freed by close_document:87 in editor.c
+```
+
+This is the quickest way to find the origin of a bad handle: if a crash names
+list `13`, restart with `trace_level = 1` and grep the log for `13` (or for
+`NEW LIST 13`) to get the exact allocation line.
+
+When an MLS error aborts the program, the `MLS_DEBUG` post-mortem analyser also
+prints the failing call site and the source line that created the handle (and
+the free site, if it was already freed):
+
+```
+ERROR in function: '_mls'. Handle: 13. Called by 'draw()' in 'editor.c:456'
+Checking Handle 13, uaf protection: 0
+Array was created by load_file() in editor.c:212
+Array was previously freed by close_document() in editor.c:87
+```
+
+`tests/test_mls_trace.c` is a small, self-checking example of this workflow.
+
 ### Leak Detection Output
 
 When `m_destruct()` finds unfreed lists, it prints:

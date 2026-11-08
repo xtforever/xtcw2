@@ -385,10 +385,16 @@ When a widget has BOTH a wbuild stub (generated `.c`) AND a hand-written impleme
 - [ ] Subpixel conversions use `ceil()`, not `int` cast
 - [ ] Shell allows resize: `allowShellResize = True`
 - [ ] Composite propagates properties to children in `set_values`
+- [ ] `initialize` registers with the theme registry, `destroy` unregisters it (§18)
+- [ ] Subclass `colors_changed` override declared as `@proc void colors_changed` (no parameter list) and calls `#colors_changed($)` (§19)
+- [ ] `@CLASSVARS` fields use an `=` initializer (§20)
+- [ ] Lifecycle methods trace entry with `XTFUNC()` (§21)
+- [ ] Public resources and helper functions documented with `@` comments (§21)
+- [ ] Adding a method to a base class → `make clean && make` (§18)
 - [ ] Registered in `register-widgets.sh`
 - [ ] Added to LUI registry in `lui/registry.lua`
 
-## 17. Known Bug Patterns (from errors.md)
+## 17. Known Bug Patterns (see `know_bugs.md`)
 
 | Bug | Cause | Fix |
 |-----|-------|-----|
@@ -401,3 +407,179 @@ When a widget has BOTH a wbuild stub (generated `.c`) AND a hand-written impleme
 | query_geometry missing | Widget has no preferred width | Implement `query_geometry` |
 | Link picks wrong class record | Broken wbuild stub linked first | Remove stub or reorder link line |
 | `XtFree` crash on constraints | Freeing static class data | Never free `XtGetConstraintResourceList` result |
+| Method override build failure | An override repeats the inherited parameter list, e.g. `@proc void colors_changed($)` | Omit the parameter list on overrides: `@proc void colors_changed` (§19) |
+| Widget colours/caches don't follow the theme | Widget caches a GC/pixmap or has its own colour resources; the base hook doesn't cover them | Override `colors_changed`, call `#colors_changed($)`, re-resolve and redraw (§19) |
+
+## 18. Theme / Color Registry — Registration & Calling Pattern
+
+The central registry (`utils/theme.h`) is a global, MLS-backed store of name/value
+pairs (colours and integers such as `borderwidth`). Widgets register an "apply
+theme" function; `theme_select()` copies the selected theme into the active map
+and calls `theme_apply()`, which invokes the apply function of every registered
+widget.
+
+### Registration pattern
+
+Register the **exported dispatcher**, not the virtual method — that is what lets
+subclasses override the hook:
+
+```wbuild
+@proc initialize
+{
+    ...
+    theme_register($, wheel_colors_changed);
+}
+
+@proc destroy
+{
+    ...
+    theme_unregister($);
+}
+```
+
+Any widget that does not inherit `Wheel` can still take part: define
+`own_apply_fn(Widget)` and call `theme_register($, own_apply_fn)` in `initialize`,
+and `theme_unregister($)` in `destroy`.
+
+### Calling pattern — safe dispatch from `@EXPORTS`
+
+The exported functions in `@EXPORTS` are the public C API. They guard on the class
+and method pointer, then dispatch to the overrideable virtual method; otherwise
+they warn. From `Wheel.widget`:
+
+```wbuild
+@EXPORTS
+@type wheel_colors = enum { ... }
+@def COLOR_FG_MAX = 3
+
+@ Called by the theme registry to (re)apply all theme properties.
+@ Widgets must override |colors_changed| to handle their own extra colours.
+@proc void wheel_colors_changed($)
+{
+  if( XtIsSubclass( $, wheelWidgetClass) && $colors_changed )
+    {
+      $colors_changed($);
+      return;
+    }
+
+  XtWarning( "Widget is not subclass of wheel" );
+}
+```
+
+`wheel_exec_command` and `wheel_sig_recv` follow the same shape. The registered
+callback is a plain `theme_apply_fn` (`void (*)(Widget)`), so pass the exported
+dispatcher rather than the virtual method directly.
+
+### Widget-facing query API
+
+| Function | Returns | Use |
+|----------|---------|-----|
+| `theme_color_defined(name)` | int | Is `name` a defined colour in the active theme? |
+| `get_color(name)` | `Pixel` | Resolve a theme colour to a Pixel (0 if undefined / no colour context) |
+| `theme_int_defined(name)` | int | Is `name` a defined integer? |
+| `theme_get_int(name, &out)` | int | Fetch an integer (1 on success) |
+
+`theme_select()` / `theme_apply()` are driven by the application, not by widgets;
+widgets only register and query.
+
+### Cautions
+
+- Never change `borderWidth` / `borderColor` on a geometry-managed child with
+  `XtVaSetValues` — it loops the parent's geometry negotiation. Set the core field
+  and update the X window directly with `XSetWindowBorder*` (see `Wheel.widget`'s
+  `colors_changed`).
+- Adding a method to a base class grows its ClassPart. The generated
+  `build/source/makefile` has no header dependencies, so stale subclass objects
+  alias the new slot — run `make clean && make` after changing a base class's
+  method set.
+
+## 19. Overriding `colors_changed` (Theme Hook) in Subclasses
+
+`colors_changed` is the per-widget theme hook. `Wheel` supplies a default
+implementation that reassigns its six colour resources and the border from the
+active theme. A widget that caches its own GC/pixmap, or has its own colour
+resources, must override the hook.
+
+**Rules:**
+
+1. Declare the override in `@METHODS` **without a parameter list**:
+   ```wbuild
+   @proc void colors_changed        # override — no ($)
+   ```
+   wbuild fixes an inherited method's signature. Repeating it
+   (`@proc void colors_changed($)`) makes `wbuild/generatec.c` call
+   `warn_if_params` and exit non-zero, failing the generation of every subclass'
+   header. The *first / owning* definition (e.g. in `Wheel.widget`) may keep `($)`.
+   The body still uses `$` and `#colors_changed($)` because wbuild injects `self`
+   from the inherited signature.
+2. Call `#colors_changed($)` so `Wheel`'s base colours are reapplied. The order
+   relative to your own dirty/cache flags is widget-specific: EqFader calls it
+   first, Wlabel invalidates its cache first.
+3. Re-derive your own colours, rebuild any cached GC/pixmap, and redraw if
+   realized.
+
+`EqFader.widget` (extra colours + a cached background GC):
+
+```wbuild
+@ override the Wheel theme hook: our backing GC caches the background pixel,
+@ and our tick/label colours are EqFader resources (not Wheel ones), so derive
+@ them from the theme foreground to stay readable on dark themes.
+@proc void colors_changed
+{
+    #colors_changed($);
+
+    if (theme_color_defined("tick_color"))
+        $tickColor = get_color("tick_color");
+    else if (theme_color_defined("fg_norm"))
+        $tickColor = get_color("fg_norm");
+    /* ... label/thumb colours ... */
+
+    col_set($);
+
+    if ($gc_bg) XtReleaseGC($, $gc_bg);
+    /* rebuild gc_bg from $background_pixel */
+
+    if (XtIsRealized($)) redraw($);
+}
+```
+
+`Wlabel.widget` (only invalidates its pixmap cache):
+
+```wbuild
+@ override the Wheel theme hook: our pixmap cache must be rebuilt
+@proc void colors_changed
+{
+    $dirty = 1;
+    #colors_changed($);
+}
+```
+
+## 20. Class-Level Variables (`@CLASSVARS`)
+
+`@CLASSVARS` are shared by every instance, so they **must** have an `=`
+initializer (see §2). They typically override Core/Expose class fields. From
+`EqFader.widget`:
+
+```wbuild
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+```
+
+Use a single value per `@var`: wbuild has no `OR` operator, and a bare `var` line
+that directly follows a `@` doc comment is swallowed by that comment (see
+`know_bugs.md`).
+
+## 21. Tracing & Documentation Style (EqFader)
+
+- Add `XTFUNC();` at the top of the lifecycle methods (`initialize`, `realize`,
+  `resize`, `expose`, `destroy`) for entry tracing. It comes from `utils/xutil.h`
+  (import with `@incl "xutil.h"`) and expands to
+  `fprintf(stderr, "%s: %s\n", XtName(self), __func__)`.
+- Document `@PUBLIC` resources and `@UTILITIES` helpers with a preceding `@`
+  comment line. EqFader documents most of its resources and helpers this way; it
+  makes the generated resource list and helper section self-explanatory.
+- Keep the `@class` doc comment to a single line — two or more consecutive
+  `@`-prefixed lines start a second doc block and are a parse error (see
+  `know_bugs.md`).

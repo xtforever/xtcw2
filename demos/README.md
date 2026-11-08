@@ -37,11 +37,17 @@ cd commander
 | `demo_theme.lua` | Theme — central colour registry: switch themes and toggle borders |
 | `demo_form.lua` | Gridbox layout — labels, edit, spinbox, toggle |
 | `demo_karoed.lua` | KaroEd — multiline text editor (joins, selection, clipboard, tabs) |
+| `demo_bravo.lua` | Wbravo — piece-table plain-text editor rendered with re-tex (undo/redo, clipboard) |
+| `demo_rich_bravo.lua` | Wbravo rich text — per-run bold/italic/roman, font face and size (toolbar + Ctrl+B/I/R) |
 | `demo_login.lua` | Login dialog — password fields, toggles, feedback |
 | `demo_wbutton.lua` | Wbutton variants — macros, sizes, alignment, callbacks |
 | `demo_wlabel_svg.lua` | Wlabel with inline SVG images |
 | `demo_wretex.lua` | Wretex — multiline retex text with inline SVG |
 | `demo_wretex_debug.lua` | Wretex debug — fixed-size widgets |
+| `demo_wtoggleswitch.lua` | WToggleSwitch — animated oval toggle switch with a sliding knob |
+| `demo_viewport.lua` | Viewport — scrollable view of child widgets (right/bottom scrollbars) |
+| `demo_wtabwidget.lua` | WtabWidget — tab group with scrollable pages |
+| `demo_wmenubutton.lua` | WmenuButton — burger button with a tabbed popup menu |
 
 ## Wlabel inline SVG
 

@@ -266,6 +266,32 @@ LUAEOF
 ./commander_runner -Tracelevel 2 -Luafile /tmp/demo_boxes.lua
 ```
 
+### 4c. Viewport — Scrollable view of child widgets
+
+The Xaw `Viewport` (`viewport` LUI tag) scrolls a **single** child widget when the
+window is smaller than it. Use `allowVert`/`allowHoriz` to enable the bars and
+`useRight`/`useBottom` to place them on the right/bottom. Wrap all content in one
+container (here a `grid`). See `demos/demo_viewport.lua`.
+
+```bash
+cat > /tmp/demo_viewport.lua << 'LUAEOF'
+local gui = require('gui_xt')
+local ui = [[
+(window :id "w" :title "Viewport" :width 420 :height 320
+  (viewport :id "vp" :weightx 1 :weighty 1 :fill 3
+            :allowVert 1 :allowHoriz 1 :useRight 1 :useBottom 1
+    (grid :id "content"
+      (label :label "Scroll me" :gridx 0 :gridy 0 :gridWidth 5 :fill 3)
+      (label :label "Row 1 ----" :gridx 0 :gridy 1 :fill 3)
+      (label :label "Row 2 ----" :gridx 0 :gridy 2 :fill 3)
+    )))
+]]
+lui.run(ui)
+xtapptimeout(5000, function() xtappexitflag() end)
+LUAEOF
+./commander_runner -Tracelevel 2 -Luafile /tmp/demo_viewport.lua
+```
+
 ---
 
 ## 5. SVG Images

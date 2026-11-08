@@ -15,12 +15,14 @@
 #include <string.h>
 #include <stdio.h>
 
-/* one named value inside a theme: a colour or an integer */
+/* one named value inside a theme: a colour, an integer, or a string */
 struct theme_value {
     char   *name;
-    int     is_color;   /* 1 = colour, 0 = integer */
+    int     is_color;   /* 1 = colour */
+    int     is_str;     /* 1 = string (sval); 0 otherwise */
     uint32_t rgb;       /* valid when is_color */
-    int     ival;       /* valid when !is_color */
+    int     ival;       /* valid when !is_color && !is_str */
+    char   *sval;       /* valid when is_str; heap-owned (strdup) */
     Pixel   pixel;      /* cached Pixel (colours only) */
     int     pixel_valid;
 };
@@ -66,6 +68,7 @@ static void free_map(int map)
     for (i = 0; i < m_len(map); i++) {
         v = mls(map, i);
         if (v->name) { free(v->name); v->name = NULL; }
+        if (v->sval) { free(v->sval); v->sval = NULL; }
     }
     m_free(map);
 }
@@ -101,8 +104,10 @@ static struct theme_value *append_value(const char *name)
     v = mls(building, m_new(building, 1));
     v->name = strdup(name ? name : "");
     v->is_color = 0;
+    v->is_str = 0;
     v->rgb = 0;
     v->ival = 0;
+    v->sval = NULL;
     v->pixel = 0;
     v->pixel_valid = 0;
     return v;
@@ -169,6 +174,7 @@ void theme_color(const char *name, uint32_t rgb)
 {
     struct theme_value *v = append_value(name);
     v->is_color = 1;
+    v->is_str = 0;
     v->rgb = rgb;
 }
 
@@ -176,7 +182,17 @@ void theme_int(const char *name, int value)
 {
     struct theme_value *v = append_value(name);
     v->is_color = 0;
+    v->is_str = 0;
     v->ival = value;
+}
+
+void theme_str(const char *name, const char *value)
+{
+    struct theme_value *v = append_value(name);
+    v->is_color = 0;
+    v->is_str = 1;
+    if (v->sval) free(v->sval);
+    v->sval = strdup(value ? value : "");
 }
 
 void theme_end(void)
@@ -223,8 +239,11 @@ static void set_active_from(int map)
         dst = mls(active_map, m_new(active_map, 1));
         dst->name = strdup(src->name ? src->name : "");
         dst->is_color = src->is_color;
+        dst->is_str = src->is_str;
         dst->rgb = src->rgb;
         dst->ival = src->ival;
+        dst->sval = NULL;
+        if (src->is_str && src->sval) dst->sval = strdup(src->sval);
         dst->pixel = 0;
         dst->pixel_valid = 0;
     }
@@ -260,17 +279,29 @@ int theme_color_defined(const char *name)
 int theme_int_defined(const char *name)
 {
     struct theme_value *v = active_lookup(name);
-    return (v && !v->is_color) ? 1 : 0;
+    return (v && !v->is_color && !v->is_str) ? 1 : 0;
+}
+
+int theme_str_defined(const char *name)
+{
+    struct theme_value *v = active_lookup(name);
+    return (v && v->is_str) ? 1 : 0;
 }
 
 int theme_get_int(const char *name, int *out)
 {
     struct theme_value *v = active_lookup(name);
-    if (v && !v->is_color) {
+    if (v && !v->is_color && !v->is_str) {
         if (out) *out = v->ival;
         return 1;
     }
     return 0;
+}
+
+const char *theme_get_str(const char *name)
+{
+    struct theme_value *v = active_lookup(name);
+    return (v && v->is_str) ? v->sval : NULL;
 }
 
 const char *theme_active(void)
@@ -377,6 +408,8 @@ int theme_save(const char *file)
             v = mls(e->map, j);
             if (v->is_color)
                 fprintf(f, "%s 0x%06x ", v->name, (unsigned)(v->rgb & 0xffffff));
+            else if (v->is_str)
+                fprintf(f, "%s \"%s\" ", v->name, v->sval ? v->sval : "");
             else
                 fprintf(f, "%s %d ", v->name, v->ival);
         }

@@ -1,0 +1,448 @@
+@class WToggleSwitch (Wheel)
+@ Animated oval toggle switch with a sliding filled circle (off muted, on highlight).
+
+@EXPORTS
+@ Returns the current toggle state (True = on).
+@proc Boolean wtoggleswitch_is_checked($)
+{
+    return $checked;
+}
+
+@ Programmatically set the toggle state.  Does not invoke the callback
+@ (Xt convention: resource assignments are silent).  The knob animates.
+@proc void wtoggleswitch_set_checked($, Boolean on)
+{
+    XtVaSetValues($, XtNchecked, on, NULL);
+}
+
+@PUBLIC
+@ toggle state; True = on (highlight), False = off (low light)
+@var Boolean checked = False
+@ track colour when off (muted / low light)
+@var <Pixel> Pixel trackOff = <String> "#c9c9c9"
+@ track colour when on (highlight accent)
+@var <Pixel> Pixel trackOn = <String> "#34c759"
+@ knob colour when off
+@var <Pixel> Pixel knobOff = <String> "#f2f2f2"
+@ knob colour when on
+@var <Pixel> Pixel knobOn = <String> "#ffffff"
+@ animation duration in milliseconds (0 = instant snap)
+@var int duration = 150
+@ corner diameter as a percentage of the smaller side (0 = square, 100 = full pill)
+@var int cornerRoundPercent = 100
+
+@PRIVATE
+@var Pixmap pixmap
+@var cairo_surface_t *surface
+@var GC gc_copy
+@var GC gc_bg
+@var double anim_pos
+@var double anim_from
+@var int anim_target
+@var XtIntervalId anim_timer
+@var struct timespec anim_start
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+
+@METHODS
+@proc initialize
+{
+    XTFUNC();
+    $pixmap = 0;
+    $surface = NULL;
+    $gc_copy = 0;
+    $gc_bg = 0;
+    $anim_from = 0.0;
+    $anim_timer = 0;
+    memset(&$anim_start, 0, sizeof($anim_start));
+
+    $anim_pos = $anim_target = $checked ? 1 : 0;
+
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.graphics_exposures = False;
+    $gc_copy = XtGetGC($, GCGraphicsExposures, &values);
+
+    memset(&values, 0, sizeof values);
+    values.foreground = $background_pixel;
+    $gc_bg = XtGetGC($, GCForeground, &values);
+}
+
+@proc realize
+{
+    XTFUNC();
+    XtCreateWindow($, (unsigned int) InputOutput,
+                      (Visual *) CopyFromParent, *mask, attributes);
+    reshape_widget($);
+}
+
+@proc resize
+{
+    XTFUNC();
+    if (!XtIsRealized($)) return;
+    reshape_widget($);
+    destroy_pixmap($);
+    redraw($);
+}
+
+@proc expose
+{
+    XTFUNC();
+    redraw($);
+}
+
+@proc set_values
+{
+    Boolean do_redraw = False;
+
+    if ($checked != $old$checked) {
+        $anim_target = $checked ? 1 : 0;
+        begin_anim($);
+        do_redraw = True;
+    }
+
+    if ($trackOff != $old$trackOff || $trackOn != $old$trackOn ||
+        $knobOff != $old$knobOff || $knobOn != $old$knobOn ||
+        $duration != $old$duration) {
+        do_redraw = True;
+    }
+
+    return do_redraw;
+}
+
+@proc destroy
+{
+    XTFUNC();
+    if ($anim_timer) {
+        XtRemoveTimeOut($anim_timer);
+        $anim_timer = 0;
+    }
+    destroy_pixmap($);
+    if ($gc_copy) XtReleaseGC($, $gc_copy);
+    if ($gc_bg) XtReleaseGC($, $gc_bg);
+}
+
+@proc query_geometry
+{
+    int w = (request->request_mode & CWWidth) ? request->width : 0;
+    int h = (request->request_mode & CWHeight) ? request->height : 0;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = 56;
+    reply->height = 36;
+    if (w > reply->width) reply->width = w;
+    if (h > reply->height) reply->height = h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc accept_focus
+{
+    return True;
+}
+
+@ override the Wheel theme hook: our track/knob colours are WToggleSwitch
+@ resources, so re-resolve the switch_* theme entries when a theme defines them.
+@proc void colors_changed
+{
+    #colors_changed($);
+
+    if (theme_color_defined("switch_off"))      $trackOff = get_color("switch_off");
+    if (theme_color_defined("switch_on"))       $trackOn  = get_color("switch_on");
+    if (theme_color_defined("switch_knob_off")) $knobOff  = get_color("switch_knob_off");
+    if (theme_color_defined("switch_knob_on"))  $knobOn   = get_color("switch_knob_on");
+
+    if ($gc_bg) XtReleaseGC($, $gc_bg);
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.foreground = $background_pixel;
+    $gc_bg = XtGetGC($, GCForeground, &values);
+
+    if (XtIsRealized($)) redraw($);
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>:   press_toggle()
+@trans <Key>space:   press_toggle()
+@trans <Key>Return:  press_toggle()
+
+@ACTIONS
+@proc press_toggle
+{
+    Widget w = $;
+    while (w && !XtIsShell(w)) w = XtParent(w);
+    if (w) XtSetKeyboardFocus(w, $);
+
+    set_state($, !$checked, True);
+}
+
+@UTILITIES
+
+@ set the state; when |notify| is true, invoke the callback with the new value
+@proc void set_state($, Boolean on, Boolean notify)
+{
+    $checked = on;
+    $anim_target = on ? 1 : 0;
+    begin_anim($);
+    if (XtIsRealized($)) redraw($);
+    if (notify) XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$checked);
+}
+
+@ start (or restart) the animation toward |anim_target|; snaps if not animating
+@proc void begin_anim($)
+{
+    if ($anim_timer) {
+        XtRemoveTimeOut($anim_timer);
+        $anim_timer = 0;
+    }
+    $anim_from = $anim_pos;
+
+    if ($duration <= 0 || !XtIsRealized($) ||
+        $anim_from == (double)$anim_target) {
+        $anim_pos = (double)$anim_target;
+        return;
+    }
+
+    clock_gettime(CLOCK_MONOTONIC, &$anim_start);
+    $anim_timer = XtAppAddTimeOut(XtWidgetToApplicationContext($), 16,
+                                  anim_tick, $);
+}
+
+@ XtTimerCallbackProc: advance the knob, re-arm until the target is reached
+@proc void anim_tick(XtPointer client_data, XtIntervalId *id)
+{
+    Widget self = (Widget) client_data;
+
+    if ($duration <= 0 || !XtIsRealized($)) {
+        $anim_pos = (double)$anim_target;
+        $anim_timer = 0;
+        return;
+    }
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    double elapsed_ms = (now.tv_sec - $anim_start.tv_sec) * 1000.0
+                      + (now.tv_nsec - $anim_start.tv_nsec) / 1000000.0;
+    double t = elapsed_ms / (double)$duration;
+    if (t < 0.0) t = 0.0;
+    if (t > 1.0) t = 1.0;
+
+    /* ease-out so the knob decelerates into its final position */
+    double e = 1.0 - (1.0 - t) * (1.0 - t);
+    $anim_pos = $anim_from + ((double)$anim_target - $anim_from) * e;
+
+    redraw(self);
+
+    if (t >= 1.0) {
+        $anim_pos = (double)$anim_target;
+        $anim_timer = 0;
+    } else {
+        $anim_timer = XtAppAddTimeOut(XtWidgetToApplicationContext(self), 16,
+                                      anim_tick, self);
+    }
+}
+
+@ Pixel -> normalized RGB (reuses the robust helper from xutil)
+@proc void pixel_rgb($, Pixel px, double *r, double *g, double *b)
+{
+    XftColor c;
+    memset(&c, 0, sizeof c);
+    pixel_to_xftcolor($, px, &c);
+    *r = (double)c.color.red   / 65535.0;
+    *g = (double)c.color.green / 65535.0;
+    *b = (double)c.color.blue  / 65535.0;
+}
+
+@ free the backing pixmap and cairo surface
+@proc void destroy_pixmap($)
+{
+    if ($surface) { cairo_surface_destroy($surface); $surface = NULL; }
+    if ($pixmap)  { XFreePixmap(XtDisplay($), $pixmap); $pixmap = 0; }
+}
+
+@ create the backing pixmap + cairo surface (after realize)
+@proc void alloc_pixmap($)
+{
+    if (!XtIsRealized($)) return;
+    if ($width < 1 || $height < 1) return;
+
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, scr));
+    if (!$pixmap) return;
+
+    $surface = cairo_xlib_surface_create(dpy, $pixmap,
+                        DefaultVisual(dpy, scr), $width, $height);
+}
+
+@ shape the widget window into a rounded rectangle / pill (transparent corners)
+@ The mask is built with Xlib primitives because XmuReshapeWidget's
+@ XmuShapeRoundedRectangle does not honour the corner size here (it produces a
+@ 1px-inset rectangle).  A 1-bit pixmap is filled with the rounded shape and
+@ installed with XShapeCombineMask.
+@proc void reshape_widget($)
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    int w = $width;
+    int h = $height;
+    int pct, r, mind;
+    Pixmap mask;
+    GC gc;
+
+    if (!win || w < 2 || h < 2) return;
+
+    if ($cornerRoundPercent <= 0) {
+        XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, None, ShapeSet);
+        return;
+    }
+
+    pct = $cornerRoundPercent;
+    if (pct > 100) pct = 100;
+    mind = (h < w) ? h : w;
+    r = mind * pct / 200;               /* corner radius */
+    if (r < 1) r = 1;
+    if (2 * r > h) r = h / 2;
+    if (2 * r > w) r = w / 2;
+
+    mask = XCreatePixmap(dpy, win, w, h, 1);
+    if (!mask) return;
+    gc = XCreateGC(dpy, mask, 0, NULL);
+    if (!gc) { XFreePixmap(dpy, mask); return; }
+
+    XSetForeground(dpy, gc, 0);
+    XFillRectangle(dpy, mask, gc, 0, 0, w, h);
+    XSetForeground(dpy, gc, 1);
+
+    /* cross bars + four corner quarter-discs form the rounded rectangle */
+    XFillRectangle(dpy, mask, gc, r, 0, w - 2 * r, h);
+    if (h - 2 * r > 0)
+        XFillRectangle(dpy, mask, gc, 0, r, w, h - 2 * r);
+    XFillArc(dpy, mask, gc, 0, 0, 2 * r, 2 * r, 90 * 64, 90 * 64);
+    XFillArc(dpy, mask, gc, w - 2 * r, 0, 2 * r, 2 * r, 0, 90 * 64);
+    XFillArc(dpy, mask, gc, w - 2 * r, h - 2 * r, 2 * r, 2 * r, 270 * 64, 90 * 64);
+    XFillArc(dpy, mask, gc, 0, h - 2 * r, 2 * r, 2 * r, 180 * 64, 90 * 64);
+
+    XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, mask, ShapeSet);
+    XFreeGC(dpy, gc);
+    XFreePixmap(dpy, mask);
+}
+
+@ build a rounded-rectangle path in the given cairo context
+@proc void add_rounded_rect(cairo_t *cr, double x, double y,
+                            double w, double h, double r)
+{
+    double x1 = x + w;
+    double y1 = y + h;
+    if (r > w / 2.0) r = w / 2.0;
+    if (r > h / 2.0) r = h / 2.0;
+    if (r < 0) r = 0;
+
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x1 - r, y + r, r, -M_PI / 2.0, 0);
+    cairo_arc(cr, x1 - r, y1 - r, r, 0, M_PI / 2.0);
+    cairo_arc(cr, x + r, y1 - r, r, M_PI / 2.0, M_PI);
+    cairo_arc(cr, x + r, y + r, r, M_PI, 3.0 * M_PI / 2.0);
+    cairo_close_path(cr);
+}
+
+@ draw the oval track and the sliding filled knob into the pixmap
+@proc void redraw($)
+{
+    if (!XtIsRealized($)) return;
+    if (!$pixmap) alloc_pixmap($);
+    if (!$pixmap || !$surface) return;
+
+    Display *dpy = XtDisplay($);
+    int w = $width;
+    int h = $height;
+    if (w < 1 || h < 1) return;
+
+    /* opaque clear so no uninitialised pixels are copied to the window */
+    XFillRectangle(dpy, $pixmap, $gc_bg, 0, 0, w, h);
+
+    double tro_r, tro_g, tro_b, trn_r, trn_g, trn_b;
+    double kno_r, kno_g, kno_b, knn_r, knn_g, knn_b;
+    pixel_rgb($, $trackOff, &tro_r, &tro_g, &tro_b);
+    pixel_rgb($, $trackOn,  &trn_r, &trn_g, &trn_b);
+    pixel_rgb($, $knobOff,  &kno_r, &kno_g, &kno_b);
+    pixel_rgb($, $knobOn,   &knn_r, &knn_g, &knn_b);
+
+    double f = $anim_pos;
+    if (f < 0.0) f = 0.0;
+    if (f > 1.0) f = 1.0;
+
+    double tr = tro_r + (trn_r - tro_r) * f;
+    double tg = tro_g + (trn_g - tro_g) * f;
+    double tb = tro_b + (trn_b - tro_b) * f;
+    double kr = kno_r + (knn_r - kno_r) * f;
+    double kg = kno_g + (knn_g - kno_g) * f;
+    double kb = kno_b + (knn_b - kno_b) * f;
+
+    cairo_t *cr = cairo_create($surface);
+    cairo_rectangle(cr, 0, 0, w, h);
+    cairo_clip(cr);
+
+    /* track: rounded like the window shape (a full capsule at 100%) */
+    {
+        int mind = (h < w) ? h : w;
+        int pct = $cornerRoundPercent;
+        if (pct < 0) pct = 0;
+        if (pct > 100) pct = 100;
+        add_rounded_rect(cr, 0, 0, w, h, (double)mind * pct / 200.0);
+    }
+    cairo_set_source_rgb(cr, tr, tg, tb);
+    cairo_fill(cr);
+
+    /* knob: a filled circle travelling from the left to the right */
+    double pad = h * 0.12;
+    if (pad < 2.0) pad = 2.0;
+    double kd = h - 2.0 * pad;          /* knob diameter */
+    if (kd < 1.0) kd = 1.0;
+    double kx_off = pad;
+    double kx_on  = (double)w - pad - kd;
+    double kx = kx_off + (kx_on - kx_off) * f;
+    double ky = ((double)h - kd) / 2.0;
+    double cx = kx + kd / 2.0;
+    double cy = ky + kd / 2.0;
+
+    cairo_arc(cr, cx, cy, kd / 2.0, 0, 2.0 * M_PI);
+    cairo_set_source_rgb(cr, kr, kg, kb);
+    cairo_fill(cr);
+
+    /* subtle knob outline for definition on light tracks */
+    cairo_arc(cr, cx, cy, kd / 2.0, 0, 2.0 * M_PI);
+    cairo_set_source_rgba(cr, 0, 0, 0, 0.15);
+    cairo_set_line_width(cr, 1.0);
+    cairo_stroke(cr);
+
+    cairo_destroy(cr);
+    cairo_surface_flush($surface);
+
+    XCopyArea(dpy, $pixmap, XtWindow($), $gc_copy, 0, 0, w, h, 0, 0);
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <string.h>
+@incl <math.h>
+@incl <stdint.h>
+@incl <time.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/extensions/shape.h>
+@incl "converters.h"
+@incl "converters-xft.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "theme.h"

@@ -55,6 +55,13 @@ struct lst_owner_st {
   int allocated;
   const char *fn, *fun;
   int ln;
+  /* Where (and by whom) this handle was freed, if it was freed. Kept
+     separately so the post-mortem analyser can still report the source
+     line that created the handle (the interesting one for a
+     use-after-free). */
+  int freed;
+  const char *free_fn, *free_fun;
+  int free_ln;
 };
 typedef struct lst_owner_st lst_owner;
 
@@ -1039,11 +1046,26 @@ static int _mlsdb_check_handle() {
   lst_owner *o;
   int orig = debi.handle;
   int h = orig & 0xffffff;
+  int owner_ok = 0;
   perr("Checking Handle %d, uaf protection: %d", h, orig >> 24);
 
   if (h < 1 || h > m_len(DEB)) {
     perr("Handle out of range (0 < %d < %d)", h, m_len(DEB) + 1);
     return -1;
+  }
+
+  /* Report the allocation site first. This is the information needed to
+     locate a use-after-free even when the list has already been freed (and
+     its base pointer cleared) or the handle was re-used. */
+  o = (lst_owner *)mls(DEB, h - 1);
+  if (o && o->allocated == 42) {
+    owner_ok = 1;
+    perr("Array was created by %s() in %s:%d", o->fun, o->fn, o->ln);
+    if (o->freed)
+      perr("Array was previously freed by %s() in %s:%d",
+           o->free_fun, o->free_fn, o->free_ln);
+  } else {
+    perr("No allocation record for handle %d", h);
   }
 
   lp = (lst_t *)lst(ML, h);
@@ -1058,19 +1080,10 @@ static int _mlsdb_check_handle() {
     return -1;
   }
 
-  o = (lst_owner *)mls(DEB, h - 1);
-
-  if (!o || o->allocated != 42) {
+  if (!owner_ok) {
     perr("Array was not allocated");
     return -1;
   }
-
-  if (o->ln < 0) {
-    perr("Array was previously removed by %s() in %s:%d", o->fun, o->fn, o->ln);
-    return -1;
-  }
-
-  perr("Array was created by %s in %s:%d", o->fun, o->fn, o->ln);
 
   perr("Base Address Structure: %p\n"
        "Base Address Data (d):%p\nElem.Width (w):%d\n"
@@ -1111,8 +1124,8 @@ void exit_error() {
   perr("\n"
        "POST MORTEM ANALYSER STARTED\n"
        "****************************\n"
-       "ERROR in funtion: '%s'. Called by '%s:%d' in '%s'",
-       debi.me, debi.fun, debi.ln, debi.fn);
+       "ERROR in function: '%s'. Handle: %d. Called by '%s()' in '%s:%d'",
+       debi.me, debi.handle, debi.fun, debi.fn, debi.ln);
 
   if (!ML) {
     perr("m_init not called");
@@ -1159,7 +1172,7 @@ void _m_destruct() {
   int i;
 
   for (i = -1; m_next(DEB, &i, &o);) {
-    if (o->allocated == 42 && o->ln > 0) {
+    if (o->allocated == 42 && !o->freed) {
       WARN("List %d still allocated. "
            "Source: %s() in %s:%d",
            i + 1, o->fun, o->fn, o->ln);
@@ -1196,6 +1209,10 @@ int _m_create(int ln, const char *fn, const char *fun, int n, int w) {
   lo->fn = fn;
   lo->fun = fun;
   lo->allocated = 42;
+  lo->freed = 0;
+  lo->free_ln = -1;
+  lo->free_fn = NULL;
+  lo->free_fun = NULL;
   TRACE(1, "NEW LIST %d allocated by %s:%d in %s", m, fun, ln, fn);
   return m_uaf;
 }
@@ -1247,10 +1264,11 @@ int _m_free(int ln, const char *fn, const char *fun, int m) {
   m &= 0xffffff; /* uaf protection */
   lst_owner *o = (lst_owner *)mls(DEB, m - 1);
 
-  o->ln = -ln;
-  o->fun = fun;
-  o->fn = fn;
-  TRACE(1, "Free List %d", m);
+  o->freed = 1;
+  o->free_ln = AUTO_ln;
+  o->free_fun = AUTO_fun;
+  o->free_fn = AUTO_fn;
+  TRACE(1, "FREE LIST %d freed by %s:%d in %s", m, AUTO_fun, AUTO_ln, AUTO_fn);
   AUTO_start--;
   return 0;
 }

@@ -93,6 +93,7 @@
 #include <X11/Xmu/CharSet.h>
 #include "GridboxP.h"
 #include "mls.h"
+#include "theme.h"
 
 #define debug_gridbox 3
 #define	DEFAULT_MARGIN	-1
@@ -134,6 +135,7 @@ static	void	GridboxExpose(Widget w, XEvent *event, Region region) ;
 static	void	GridboxResize(Widget w) ;
 static	Boolean	GridboxSetValues(Widget, Widget, Widget, ArgList, Cardinal *) ;
 static	void	GridboxDestroy(Widget w) ;
+static	void	gridbox_colors_changed(Widget w) ;
 static	XtGeometryResult
 	  GridboxQueryGeometry(Widget, XtWidgetGeometry *, XtWidgetGeometry *) ;
 
@@ -168,6 +170,7 @@ static	void	GridboxExpose() ;
 static	void	GridboxResize() ;
 static	Boolean	GridboxSetValues() ;
 static	void	GridboxDestroy() ;
+static	void	gridbox_colors_changed() ;
 static	void	GridboxChangeManaged() ;
 static	void	GridboxConstraintInit() ;
 static	Boolean	GridboxConstraintSetValues() ;
@@ -305,6 +308,11 @@ GridboxInit(request, new, args, num_args)
     }
 
     /* TODO: resize now, or wait until later? */
+
+    /* Follow the active theme's gridbox background/border colours.  Safe
+     * no-op when the theme registry has not been initialised. */
+    theme_register(new, gridbox_colors_changed);
+    gridbox_colors_changed((Widget)new);
 }
 
 
@@ -428,7 +436,43 @@ static	void
 GridboxDestroy(w)
 	Widget	w ;
 {
+	theme_unregister(w) ;
 	freeAll( (GridboxWidget)w ) ;
+}
+
+
+/* Re-resolve the gridbox background/border colours from the active theme.
+ * Invoked by the theme registry (theme_apply) and once from GridboxInit. */
+static	void
+gridbox_colors_changed(w)
+	Widget	w ;
+{
+	if( theme_color_defined("gridbox_bg") )
+		w->core.background_pixel = get_color("gridbox_bg") ;
+
+	if( theme_color_defined("gridbox_border") )
+		w->core.border_pixel = get_color("gridbox_border") ;
+
+	if( theme_int_defined("borderwidth") ) {
+		int bw = 0 ;
+		if( theme_get_int("borderwidth", &bw) ) {
+			/* Set the core field and update the window directly:
+			 * XtVaSetValues on a geometry resource of a managed
+			 * widget can loop the parent's geometry negotiation. */
+			w->core.border_width = (Dimension)bw ;
+			if( XtIsRealized(w) )
+				XSetWindowBorderWidth(XtDisplay(w), XtWindow(w),
+						(unsigned int)bw) ;
+		}
+	}
+
+	if( XtIsRealized(w) ) {
+		XSetWindowBackground(XtDisplay(w), XtWindow(w),
+				     w->core.background_pixel) ;
+		XSetWindowBorder(XtDisplay(w), XtWindow(w),
+				 w->core.border_pixel) ;
+		XClearArea(XtDisplay(w), XtWindow(w), 0, 0, 0, 0, True) ;
+	}
 }
 
 

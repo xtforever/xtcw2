@@ -187,7 +187,9 @@ static Scaled parse_length(int token_list, int *p_idx, Scaled em_size) {
     while (end < len) {
         Token *t = (Token*)mls(token_list, end);
         if (t->type == TOK_CHAR) {
-            if (t->char_code == '-' || isdigit(t->char_code) || t->char_code == '.' || isalpha(t->char_code)) {
+            if (t->char_code == '-' || (t->char_code >= '0' && t->char_code <= '9') ||
+                t->char_code == '.' || (t->char_code >= 'a' && t->char_code <= 'z') ||
+                (t->char_code >= 'A' && t->char_code <= 'Z')) {
                 char tmp[2] = {(char)t->char_code, 0};
                 s_app(buf, tmp, NULL);
                 end++;
@@ -254,10 +256,12 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                                      (float)TO_DOUBLE(cur_size), fs.style, face_handle, fs.reverse_mode);
             Node *cn = (Node*)mls(nodes, m_len(nodes) - 1);
             cn->source_offset = t->source_offset;
+            cn->byte_len = t->byte_len;
         } else if (t->type == TOK_SPACE) {
             node_create_glue(nodes, space_glue, fs.reverse_mode);
             Node *gn = (Node*)mls(nodes, m_len(nodes) - 1);
             gn->source_offset = t->source_offset;
+            gn->byte_len = t->byte_len;
         } else if (t->type == TOK_MATH_SHIFT) {
             idx++;
             int mlist = parse_mlist(token_list, &idx);

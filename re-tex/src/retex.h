@@ -3,6 +3,7 @@
 
 #include "backend.h"
 #include "renderer.h"
+#include "rtable.h"
 
 /**
  * @brief Opaque handle to a laid-out paragraph.
@@ -20,9 +21,99 @@ typedef enum {
 } RetexAlign;
 
 /**
+ * @brief Geometry of one laid-out visual line (plain and TeX layout).
+ *
+ * start_byte/end_byte are offsets into the source UTF-8 string; end_byte is
+ * exclusive.  The newline that ended a logical line is not part of any line's
+ * range.  y is the top of the line relative to the top of the paragraph.
+ * vbox_index is the line's HBox position in the paragraph vbox child list.
+ */
+typedef struct {
+    int start_byte;
+    int end_byte;
+    double y;
+    double height;
+    int vbox_index;
+} RetexLine;
+
+/**
  * @brief Performs layout on text and returns a persistent paragraph object.
  */
 RetexParagraph* retex_layout(Backend *be, const char *text, double width_pt, const char *font_face, double font_size_pt, RetexAlign align);
+
+/**
+ * @brief Plain-text layout: literal UTF-8, hard newlines, no TeX syntax.
+ *
+ * Wraps at spaces (a single run wider than the line overflows).  Records
+ * per-line byte ranges and geometry for hit testing and caret placement.
+ */
+RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_pt, const char *font_face, double font_size_pt, RetexAlign align);
+
+/**
+ * @brief Styled layout: build a paragraph directly from rich atoms.
+ *
+ * Each RAtom_CHAR is rendered with its own RLook (font face / style / size);
+ * RAtom_OBJECT atoms are reserved for inline objects (currently a zero-width
+ * placeholder).  Hard line breaks are RAtom_CHAR atoms with cp == '\n'.
+ * Source offsets recorded on the nodes and in the per-line metadata are
+ * UTF-8 byte offsets (objects count as U+FFFC), i.e. the same coordinate
+ * space as retex_layout_plain(), so caret/selection code is interchangeable.
+ */
+RetexParagraph* retex_layout_styled(Backend *be, const RAtom *atoms, int natoms,
+                                    double width_pt, const char *font_face,
+                                    double font_size_pt, RetexAlign align);
+
+/**
+ * @brief Font of the character at a source byte offset (styled layout).
+ *
+ * Returns 1 and fills style / size / face_handle (any may be NULL) if a
+ * character node with exactly that source offset exists, else 0.
+ */
+int retex_paragraph_get_font_at(RetexParagraph *para, int pos,
+                                int *style, double *size, int *face_handle);
+
+/**
+ * @brief Number of visual lines (plain and TeX layout).
+ */
+int retex_paragraph_get_line_count(RetexParagraph *para);
+
+/**
+ * @brief Copy up to max RetexLine records into out.  Returns the number copied.
+ */
+int retex_paragraph_get_lines(RetexParagraph *para, RetexLine *out, int max);
+
+/**
+ * @brief Fetch one line's geometry.  Returns 1 on success, 0 if out of range.
+ */
+int retex_paragraph_get_line(RetexParagraph *para, int index, RetexLine *out);
+
+/**
+ * @brief Caret rectangle for a source byte offset (plain and TeX layout).
+ *
+ * x is relative to the paragraph's left edge, y is the line top, height is the
+ * line box height.  byte_offset is clamped into the document.  Returns 1 on
+ * success, 0 if the paragraph has no plain-line metadata.
+ */
+int retex_paragraph_get_caret_pos(RetexParagraph *para, int byte_offset,
+                                  double *x, double *y, double *height);
+
+/**
+ * @brief Map paragraph coordinates (top-left origin) to a source byte offset.
+ * Uses nearest-boundary rounding.  Returns the offset, or -1 if the paragraph
+ * has no plain-line metadata.
+ */
+int retex_paragraph_get_offset_at(RetexParagraph *para, double x, double y);
+
+/**
+ * @brief Render only visual lines [first_line, last_line] (inclusive).
+ *
+ * (x, y) is the top-left of the first rendered line.  Used for viewport
+ * scrolling of long documents.
+ */
+void retex_paragraph_render_range(RetexParagraph *para, Backend *be,
+                                  int first_line, int last_line,
+                                  double x, double y,
+                                  const RendererColors *colors, int reverse_mode);
 
 /**
  * @brief Returns the measured height of a laid-out paragraph.

@@ -181,6 +181,12 @@ void renderer_render(Backend *backend, int node_handle, double x, double y, int 
     if (node_handle <= 0) return;
     Node *n = (Node*)mls(node_handle, 0);
     
+    renderer_render_node(backend, n, x, y, sel_start, sel_end, colors, reverse_mode);
+}
+
+void renderer_render_node(Backend *backend, Node *n, double x, double y, int sel_start, int sel_end, const RendererColors *colors, int reverse_mode) {
+    if (!n) return;
+
     if (sel_start != -1 && sel_end != -1) {
         if (sel_start > sel_end) {
             int tmp = sel_start;

@@ -91,6 +91,8 @@ function M.process_property(clean_k, v, widget_class)
         clean_k = 'max'
     elseif clean_k == 'spinStep' then
         clean_k = 'step'
+    elseif clean_k == 'tab-title' then
+        clean_k = 'tabTitle'
     end
 
     if type(v) == 'function' then

@@ -24,11 +24,17 @@ DEMOS=(
   "theme|Theme|central theme registry: colours + borders"
   "form|Form|Gridbox layout: labels, edit, spinbox, toggle"
   "karoed|KaroEd|multiline editor: joins, selection, clipboard, tab"
+  "bravo|Wbravo|piece-table editor: retex, undo/redo, clipboard"
+  "rich_bravo|Wbravo rich|piece-table editor: bold/italic, fonts, sizes"
   "login|Login|password fields, toggles, feedback"
   "wbutton|Wbutton|button variants: macros, sizes, alignment, callbacks"
   "wlabel_svg|Wlabel SVG|labels with inline SVG images"
   "wretex|Wretex|multiline retex text with inline SVG"
   "wretex_debug|Wretex debug|fixed-size retex widgets"
+  "wtoggleswitch|Toggle Switch|animated oval switch"
+  "viewport|Viewport|scrollable view with right/bottom scrollbars"
+  "wtabwidget|Tab Widget|tab group with scrollable pages"
+  "wmenubutton|Burger Menu|burger button with a tabbed popup menu"
   "cookbook|Cookbook|LUI reference app (multi-screen recipe manager)"
   "native|Native C|Gridbox constraint-resource C test"
 )
@@ -145,7 +151,7 @@ pick_demo() {
     done
     items+=("quit" "Exit the launcher")
     whiptail --title "XTCW Demo Launcher" \
-        --menu "Select a demo to run:" 22 78 15 \
+        --menu "Select a demo to run:" 25 78 18 \
         "${items[@]}" 3>&1 1>&2 2>&3
 }
 

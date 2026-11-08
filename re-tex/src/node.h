@@ -44,6 +44,7 @@ typedef struct {
     int font_style; // bitmask: 1:Bold, 2:Italic, 4:SmallCaps
     int font_face_handle; // Handle to interned string
     int source_offset; // Byte offset in original string
+    int byte_len; // Length in bytes of the source text for this node (0 if n/a)
     int reverse_mode; // 1 = fill char box with foreground color, draw char in white
 } Node;
 

@@ -16,73 +16,25 @@ cd "$SCRIPT_DIR"
 echo "=== XTCW Development Startup ==="
 echo ""
 
-# Check for required libraries
-LIBS=(
-    "build/lib/libxtcw.a"
-    "build/lib/libwcl.a"
-    "build/lib/libutils.a"
-    "build/lib/libretex.a"
-    "build/lib/libplainc.a"
-)
-
-MISSING_LIBS=0
-for lib in "${LIBS[@]}"; do
-    if [ ! -f "$lib" ]; then
-        echo -e "${YELLOW}Missing library: $lib${NC}"
-        MISSING_LIBS=1
-    fi
-done
-
-# Check for commander_runner
-if [ ! -f "commander/commander_runner" ]; then
-    echo -e "${YELLOW}Missing binary: commander/commander_runner${NC}"
-    MISSING_LIBS=1
-fi
-
-# Build if necessary
-if [ $MISSING_LIBS -eq 1 ]; then
-    echo ""
-    echo -e "${YELLOW}Building required libraries...${NC}"
-    echo ""
-    
-    # Run the main makefile
+# Always bring the build up to date.  The wbuild-generated sources and the
+# static archives have no automatic dependency tracking, so editing a
+# .widget does not by itself rebuild libxtcw.a -- and a stale libxtcw.a means
+# a stale commander_runner (which can crash in ways already fixed in the
+# sources).  An incremental `make all` regenerates changed widgets, rebuilds
+# the libraries and relinks the runner.
+#
+# Set START_SKIP_BUILD=1 to skip this (used by tests / when already built).
+if [ "${START_SKIP_BUILD:-0}" = "1" ]; then
+    echo -e "${GREEN}Skipping build (START_SKIP_BUILD=1).${NC}"
+else
+    echo -e "${YELLOW}Building/updating (make all)...${NC}"
     if make all; then
-        echo ""
-        echo -e "${GREEN}Build completed successfully!${NC}"
+        echo -e "${GREEN}Build up to date.${NC}"
     else
         echo ""
         echo -e "${RED}Build failed!${NC}"
         exit 1
     fi
-else
-    echo -e "${GREEN}All libraries present.${NC}"
-fi
-
-# Build commander_runner if missing or older than its prerequisites
-NEEDS_RUNNER_BUILD=0
-if [ ! -f "commander/commander_runner" ]; then
-    NEEDS_RUNNER_BUILD=1
-else
-    # Rebuild when the libraries or runner sources are newer than the binary
-    for prereq in build/lib/libxtcw.a build/lib/libwcl.a build/lib/libutils.a \
-                  build/lib/libretex.a build/lib/libplainc.a \
-                  commander/commander_runner.c commander/xt_bridge.c \
-                  commander/lua_bridge.c commander/task_manager.c \
-                  commander/lua_task_bindings.c commander/file_ops.c; do
-        if [ -e "$prereq" ] && [ "$prereq" -nt "commander/commander_runner" ]; then
-            echo -e "${YELLOW}Rebuilding commander_runner: $prereq is newer${NC}"
-            NEEDS_RUNNER_BUILD=1
-            break
-        fi
-    done
-fi
-
-if [ $NEEDS_RUNNER_BUILD -eq 1 ]; then
-    echo ""
-    echo -e "${YELLOW}Building commander_runner...${NC}"
-    cd commander
-    make commander_runner
-    cd ..
 fi
 
 echo ""

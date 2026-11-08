@@ -66,6 +66,7 @@
 | Frame | `frameWidgetClass` | Frame container | — | ❌ |
 | Canvas | `canvasWidgetClass` | Cairo drawing surface | — | ❌ |
 | ScrolledCanvas | `scrolledCanvasWidgetClass` | Scrolled canvas | `scrolled` | ❌ |
+| Viewport | `viewportWidgetClass` | Xaw scrollable view of one child (right/bottom scrollbars) | `viewport` | ❌ |
 | Board | `boardWidgetClass` | Game board | — | ❌ |
 | Dartboard | `dartboardWidgetClass` | Number board | — | ❌ |
 | MessageBox | `messageBoxWidgetClass` | Message dialog | — | ❌ |
@@ -137,6 +138,7 @@ M.register('WpixBtn', { class = 'WpixBtn' })
 M.register('separator', { class = 'WSeparator' })
 M.register('check', { class = 'Wradio' })
 M.register('scrolled', { class = 'ScrolledCanvas' })
+M.register('viewport', { class = 'Viewport' })
 M.register('list-view', { class = 'WlsMulti' })
 M.register('splitter', { class = 'Wsplitter' })
 M.register('Wsplitter', { class = 'Wsplitter' })

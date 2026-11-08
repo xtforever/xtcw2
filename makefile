@@ -22,7 +22,7 @@ endif
 export CFLAGS
 export LDFLAGS += -L$(libdir) $(shell pkg-config --libs cairo cairo-xlib) -lXaw -lXmu -lXft -lfontconfig -lXrender -lXpm -lXext -lX11 -lXt -lm
 
-.PHONY: all nanosvg plainc wcl core retex widgets commander tests clean distclean run_tests build_tools libxtcw
+.PHONY: all nanosvg plainc wcl core retex widgets commander tests clean distclean run_tests build_tools libxtcw utf8 utf32
 
 # Build the proven core and the commander_runner Lua/Xt application
 all: nanosvg plainc build_tools widgets wcl core retex libxtcw commander tests
@@ -50,8 +50,17 @@ wcl: plainc widgets
 	$(MAKE) -C wcl
 	$(MAKE) -C wcl install
 
+# unicode libraries (pure C, no X11): UTF-8 codec and UTF-32 conversions
+utf8:
+	$(MAKE) -C utils/utf8
+	$(MAKE) -C utils/utf8 install
+
+utf32: utf8
+	$(MAKE) -C utils/utf32
+	$(MAKE) -C utils/utf32 install
+
 # core depends on widget headers (e.g., focus-group.c needs Wheel.h)
-core: wcl widgets
+core: wcl widgets utf8 utf32
 	mkdir -p $(incdir)
 	cp -r XPM $(incdir)/
 	$(MAKE) -C utils
@@ -90,6 +99,8 @@ run_tests: tests
 clean:
 	rm -rf build
 	$(MAKE) -C utils clean
+	$(MAKE) -C utils/utf8 clean
+	$(MAKE) -C utils/utf32 clean
 	$(MAKE) -C wbuild clean
 	$(MAKE) -C wbuild_widgets clean
 	$(MAKE) -C re-tex/src clean

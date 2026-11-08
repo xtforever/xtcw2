@@ -2,11 +2,15 @@
 ; (theme NAME (name value name value ...))
 ;   colour  := 0xRRGGBB
 ;   integer := decimal (e.g. borderwidth, 0 = no border)
+;   string  := "..."   (double-quoted; spaces allowed, no escape sequences)
+;              or a bare token (no whitespace/parens)
 ;
 ; "default" and "highcontrast" are production themes (borders off).
 ; "test" uses a thick, bright border so widget bounds are easy to see.
 ; "dracula" and "solarized_dark" are widely used, officially defined colour
 ; schemes used to test the widgets under realistic conditions.
+;
+; font_* are the default font faces/sizes; heading1 is larger than normal.
 
 (theme default (
     bg_norm 0xadd8e6
@@ -15,6 +19,18 @@
     fg_norm 0x000000
     fg_sel  0x008000
     fg_hi   0xffffff
+    switch_off 0xc9c9c9
+    switch_on 0x34c759
+    switch_knob_off 0xf2f2f2
+    switch_knob_on 0xffffff
+    gridbox_bg 0xadd8e6
+    gridbox_border 0x000000
+    font_tiny     "Sans-9"
+    font_small    "Sans-11"
+    font_normal   "Sans-13"
+    font_large    "Sans-20"
+    font_heading2 "Sans-18"
+    font_heading1 "Sans-24"
     borderwidth 0
 ))
 
@@ -25,6 +41,18 @@
     fg_norm 0x000000
     fg_sel  0xffffff
     fg_hi   0x000000
+    switch_off 0x808080
+    switch_on 0x00cc44
+    switch_knob_off 0xf2f2f2
+    switch_knob_on 0xffffff
+    gridbox_bg 0xffffff
+    gridbox_border 0x000000
+    font_tiny     "Sans-9"
+    font_small    "Sans-11"
+    font_normal   "Sans-13"
+    font_large    "Sans-20"
+    font_heading2 "Sans-18"
+    font_heading1 "Sans-24"
     borderwidth 0
 ))
 
@@ -35,6 +63,14 @@
     fg_norm 0x000000
     fg_sel  0x008000
     fg_hi   0xffffff
+    gridbox_bg 0xadd8e6
+    gridbox_border 0xff0000
+    font_tiny     "Sans-9"
+    font_small    "Sans-11"
+    font_normal   "Sans-13"
+    font_large    "Sans-20"
+    font_heading2 "Sans-18"
+    font_heading1 "Sans-24"
     borderwidth 6
     bordercolor 0xff0000
 ))
@@ -48,6 +84,18 @@
     fg_norm 0xf8f8f2     ; foreground
     fg_sel  0x50fa7b     ; green
     fg_hi   0xff5555     ; red
+    switch_off 0x44475a
+    switch_on 0x50fa7b
+    switch_knob_off 0xf8f8f2
+    switch_knob_on 0xffffff
+    gridbox_bg 0x282a36
+    gridbox_border 0x6272a4
+    font_tiny     "Sans-9"
+    font_small    "Sans-11"
+    font_normal   "Sans-13"
+    font_large    "Sans-20"
+    font_heading2 "Sans-18"
+    font_heading1 "Sans-24"
     borderwidth 0
     bordercolor 0x6272a4
 ))
@@ -60,6 +108,18 @@
     fg_norm 0x839496     ; base0
     fg_sel  0x268bd2     ; blue
     fg_hi   0xdc322f     ; red/emphasis
+    switch_off 0x073642
+    switch_on 0x268bd2
+    switch_knob_off 0x839496
+    switch_knob_on 0xfdf6e3
+    gridbox_bg 0x002b36
+    gridbox_border 0x586e75
+    font_tiny     "Sans-9"
+    font_small    "Sans-11"
+    font_normal   "Sans-13"
+    font_large    "Sans-20"
+    font_heading2 "Sans-18"
+    font_heading1 "Sans-24"
     borderwidth 0
     bordercolor 0x586e75 ; base01
 ))

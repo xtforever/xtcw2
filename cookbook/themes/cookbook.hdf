@@ -2,8 +2,10 @@
 ; Used by cookbook/scripts/run.sh and the Docker/smoke scripts via:
 ;   commander_runner -themeFile ../cookbook/themes/cookbook.hdf ...
 ;
-; The host defaults to theme "default" and calls theme_select("default"), so a
-; theme named `default` MUST exist here or selection silently no-ops.
+; The host now defaults to theme "dracula" and calls theme_select("dracula").
+; This file intentionally ships no "dracula", so the host's fallback then
+; selects "default" below (a warning is emitted).  A theme named `default`
+; MUST exist here or widgets would have no colours.
 
 (theme default (
     bg_norm 0xfdf6e3      ; warm paper
@@ -18,6 +20,12 @@
     switch_knob_on 0xffffff
     gridbox_bg 0xfdf6e3
     gridbox_border 0x3d405b
+    font_tiny     "Sans-9"
+    font_small    "Sans-11"
+    font_normal   "Sans-13"
+    font_large    "Sans-20"
+    font_heading2 "Sans-18"
+    font_heading1 "Sans-24"
     borderwidth 0
 ))
 
@@ -34,6 +42,12 @@
     switch_knob_on 0xffffff
     gridbox_bg 0x3d405b
     gridbox_border 0xf2cc8f
+    font_tiny     "Sans-9"
+    font_small    "Sans-11"
+    font_normal   "Sans-13"
+    font_large    "Sans-20"
+    font_heading2 "Sans-18"
+    font_heading1 "Sans-24"
     borderwidth 0
     bordercolor 0xf2cc8f
 ))

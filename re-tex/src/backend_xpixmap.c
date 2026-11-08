@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include "backend_xpixmap.h"
 #include "svg_factory.h"
+#include "utf8.h"
 
 typedef struct {
     Backend base;
@@ -17,6 +18,15 @@ typedef struct {
     double dpi;
     double dpi_factor;
 } BackendXPixmap;
+
+/* Encode a Unicode code point into a NUL-terminated UTF-8 buffer.
+ * Falls back to U+FFFD for invalid scalar values. buf must hold 5 bytes. */
+static void encode_utf8(char *buf, int c) {
+    int n = utf8_encode_cp((uint32_t)c, buf);
+    if (n == 0) n = utf8_encode_cp(0xFFFD, buf);
+    if (n == 0) { buf[0] = '?'; n = 1; }
+    buf[n] = '\0';
+}
 
 static void xpixmap_draw_rect(Backend *self, double x, double y, double w, double h, uint32_t color) {
     BackendXPixmap *bp = (BackendXPixmap*)self;
@@ -63,11 +73,10 @@ static void xpixmap_set_font_face(Backend *self, const char *face, int style) {
 static double xpixmap_get_char_width(Backend *self, int c) {
     BackendXPixmap *bp = (BackendXPixmap*)self;
     if (!bp->cr) return 0;
-    char str[5] = {0};
-    if (c < 0 || c > 255) c = '?';
-    str[0] = (char)c;
+    char str[5];
     cairo_text_extents_t extents;
-    
+    encode_utf8(str, c);
+
     cairo_text_extents(bp->cr, str, &extents);
     return extents.x_advance;
 }
@@ -75,11 +84,10 @@ static double xpixmap_get_char_width(Backend *self, int c) {
 static void xpixmap_get_char_metrics(Backend *self, int c, CharMetrics *metrics) {
     BackendXPixmap *bp = (BackendXPixmap*)self;
     if (!bp->cr) { metrics->width = metrics->height = metrics->depth = 0; return; }
-    char str[5] = {0};
-    if (c < 0 || c > 255) c = '?';
-    str[0] = (char)c;
+    char str[5];
     cairo_text_extents_t extents;
-    
+    encode_utf8(str, c);
+
     cairo_text_extents(bp->cr, str, &extents);
     /* Use the font's nominal ascent/descent (the TeX line box), not the
      * glyph's ink extents.  Ink extents describe only this glyph's painted
@@ -96,9 +104,8 @@ static void xpixmap_get_char_metrics(Backend *self, int c, CharMetrics *metrics)
 static void xpixmap_draw_char(Backend *self, double x, double y, int c) {
     BackendXPixmap *bp = (BackendXPixmap*)self;
     if (!bp->cr) return;
-    char str[5] = {0};
-    if (c < 0 || c > 255) c = '?';
-    str[0] = (char)c;
+    char str[5];
+    encode_utf8(str, c);
 
     cairo_set_font_size(bp->cr, bp->font_size);
     cairo_move_to(bp->cr, x, y);

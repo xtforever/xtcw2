@@ -6,6 +6,7 @@
 
 
 #include "svg_factory.h"
+#include "utf8.h"
 
 typedef struct {
     Backend base;
@@ -15,6 +16,15 @@ typedef struct {
     double font_size;
     const char *font_face;
 } BackendCairo;
+
+/* Encode a Unicode code point into a NUL-terminated UTF-8 buffer.
+ * Falls back to U+FFFD for invalid scalar values. buf must hold 5 bytes. */
+static void encode_utf8(char *buf, int c) {
+    int n = utf8_encode_cp((uint32_t)c, buf);
+    if (n == 0) n = utf8_encode_cp(0xFFFD, buf);
+    if (n == 0) { buf[0] = '?'; n = 1; }
+    buf[n] = '\0';
+}
 
 static void cairo_draw_rect(Backend *self, double x, double y, double w, double h, uint32_t color) {
     BackendCairo *bc = (BackendCairo*)self;
@@ -56,20 +66,20 @@ static void backend_cairo_set_font_face(Backend *self, const char *face, int sty
 
 static double backend_cairo_get_char_width(Backend *self, int c) {
     BackendCairo *bc = (BackendCairo*)self;
-    char str[5] = {0};
-    str[0] = (char)c;
+    char str[5];
     cairo_text_extents_t extents;
-    
+    encode_utf8(str, c);
+
     cairo_text_extents(bc->cr, str, &extents);
     return extents.x_advance;
 }
 
 static void backend_cairo_get_char_metrics(Backend *self, int c, CharMetrics *metrics) {
     BackendCairo *bc = (BackendCairo*)self;
-    char str[5] = {0};
-    str[0] = (char)c;
+    char str[5];
     cairo_text_extents_t extents;
-    
+    encode_utf8(str, c);
+
     cairo_text_extents(bc->cr, str, &extents);
     /* Use the font's nominal ascent/descent (the TeX line box), not the
      * glyph's ink extents.  See backend_xpixmap.c for rationale.  The
@@ -83,8 +93,8 @@ static void backend_cairo_get_char_metrics(Backend *self, int c, CharMetrics *me
 
 static void cairo_draw_char(Backend *self, double x, double y, int c) {
     BackendCairo *bc = (BackendCairo*)self;
-    char str[5] = {0};
-    str[0] = (char)c;
+    char str[5];
+    encode_utf8(str, c);
 
     cairo_set_font_size(bc->cr, bc->font_size);
     cairo_move_to(bc->cr, x, y);

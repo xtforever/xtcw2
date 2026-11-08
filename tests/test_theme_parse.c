@@ -65,6 +65,51 @@ int main(void)
     CHECK(theme_list(&names) == 2);
     if (names) { free(names); names = NULL; }
 
+    /* --- string values -------------------------------------------------- */
+    /* bare token -> string; quoted token is ALWAYS a string; negative int
+     * stays an int even after we gained string support. */
+    theme_parse_string(
+        "(theme strings (font_small \"DejaVu Sans 11\" font_bare Sans-11 "
+        "num \"5\" hexlook \"0x10\" semi \";\" neg -5 pos 7))");
+    theme_select("strings");
+
+    CHECK(theme_str_defined("font_small"));
+    CHECK(strcmp(theme_get_str("font_small"), "DejaVu Sans 11") == 0);
+    CHECK(!theme_int_defined("font_small"));
+    CHECK(!theme_color_defined("font_small"));
+    CHECK(theme_str_defined("font_bare") && strcmp(theme_get_str("font_bare"), "Sans-11") == 0);
+    CHECK(!theme_int_defined("font_bare"));
+    /* a quoted numeric-looking value is a string, not an int */
+    CHECK(theme_str_defined("num") && strcmp(theme_get_str("num"), "5") == 0);
+    CHECK(!theme_int_defined("num"));
+    /* a quoted 0x-looking value is a string, not a colour */
+    CHECK(theme_str_defined("hexlook") && strcmp(theme_get_str("hexlook"), "0x10") == 0);
+    CHECK(!theme_color_defined("hexlook"));
+    /* a string may contain a comment character when quoted */
+    CHECK(theme_str_defined("semi") && strcmp(theme_get_str("semi"), ";") == 0);
+    /* integers still work, including negative ones */
+    CHECK(!theme_str_defined("neg"));
+    CHECK(theme_int_defined("neg") && theme_get_int("neg", &bn) && bn == -5);
+    CHECK(theme_int_defined("pos") && theme_get_int("pos", &bn) && bn == 7);
+    CHECK(theme_get_str("does_not_exist") == NULL);
+    CHECK(!theme_str_defined("does_not_exist"));
+
+    /* theme_save -> reparse round-trip preserves strings (incl. spaces) */
+    {
+        const char *tmp = "/tmp/xtcw_theme_roundtrip.hdf";
+        CHECK(theme_save(tmp) == 1);
+        theme_destroy();                 /* drop the store, then reload from disk */
+        CHECK(theme_load(tmp) >= 1);
+        theme_select("strings");
+        CHECK(theme_str_defined("font_small"));
+        CHECK(strcmp(theme_get_str("font_small"), "DejaVu Sans 11") == 0);
+        CHECK(strcmp(theme_get_str("num"), "5") == 0);
+        CHECK(strcmp(theme_get_str("hexlook"), "0x10") == 0);
+        CHECK(strcmp(theme_get_str("semi"), ";") == 0);
+        CHECK(theme_int_defined("neg") && theme_get_int("neg", &bn) && bn == -5);
+        remove(tmp);
+    }
+
     theme_destroy();
     m_destruct();
 

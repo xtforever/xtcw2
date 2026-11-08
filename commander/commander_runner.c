@@ -38,12 +38,12 @@ static XrmOptionDescRec options[] = {
 char *fallback_resources[] = {
     APP_NAME ".allowShellResize: False",
     APP_NAME ".name: " APP_NAME,
-    "*width: 600",
-    "*height: 400",
+    APP_NAME ".width: 600",
+    APP_NAME ".height: 400",
     "*traceLevel: 2",
     "*luafile: ex.lua",
     "*themeFile: themes.hdf",
-    "*theme: default",
+    "*theme: dracula",
     NULL
 };
 
@@ -276,6 +276,17 @@ int main(int argc, char **argv) {
         }
     }
     if (COMMANDER.theme) theme_select(COMMANDER.theme);
+    /* Fallback: the default theme is "dracula", but a theme file may not
+     * define it (e.g. the cookbook ships only its own "default").  If the
+     * requested theme was not found, fall back to "default" so widgets
+     * still get colours. */
+    if (theme_active() == NULL) {
+        char msg[256];
+        snprintf(msg, sizeof msg, "theme '%s' not found; falling back to 'default'",
+                 COMMANDER.theme ? COMMANDER.theme : "(null)");
+        XtWarning(msg);
+        theme_select("default");
+    }
 
     /* Load LUI early - before realize, so widgets are created first */
     if (COMMANDER.luafile && strlen(COMMANDER.luafile) > 0) {

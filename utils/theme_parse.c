@@ -5,6 +5,9 @@
  *
  * value := 0xRRGGBB | #RRGGBB  -> colour
  *        | [-]<digits>        -> integer
+ *        | "..."             -> string (double-quoted, spaces allowed,
+ *                               no escape sequences)
+ *        | bare-token        -> string
  */
 #include "theme_parse.h"
 #include "mls.h"
@@ -39,6 +42,28 @@ static int read_token(const char **pp, char *out, int max)
     out[n] = '\0';
     *pp = p;
     return n;
+}
+
+/* Read a double-quoted string; |*pp| must point at the opening quote.
+ * There are no escape sequences: the next '"' ends the value.  Returns 0
+ * on success, or -1 if the closing quote is missing (the value then runs
+ * to end of input).  |*truncated| is set if the value did not fit. */
+static int read_quoted(const char **pp, char *out, int max, int *truncated)
+{
+    const char *p = *pp;
+    int n = 0, trunc = 0;
+
+    if (*p == '"') p++;
+    while (*p && *p != '"') {
+        if (n < max - 1) out[n++] = *p;
+        else trunc = 1;
+        p++;
+    }
+    out[n] = '\0';
+    if (truncated) *truncated = trunc;
+    if (*p == '"') { p++; *pp = p; return 0; }
+    *pp = p;
+    return -1;
 }
 
 static int parse_color(const char *s, uint32_t *out)
@@ -101,6 +126,19 @@ int theme_parse_string(const char *buf)
             if (!read_token(&p, cname, sizeof cname)) break;
             p = skip_ws(p);
             if (*p == ')') { p++; break; }  /* dangling name, ignore */
+
+            if (*p == '"') {
+                /* quoted string: always a string value, spaces allowed */
+                char sval[TOK_MAX];
+                int truncated = 0;
+                if (read_quoted(&p, sval, sizeof sval, &truncated) != 0)
+                    WARN("theme_parse: unterminated string value for '%s'", cname);
+                if (truncated)
+                    WARN("theme_parse: string value for '%s' truncated", cname);
+                theme_str(cname, sval);
+                continue;
+            }
+
             if (!read_token(&p, cval, sizeof cval)) break;
 
             if (parse_color(cval, &rgb)) {
@@ -109,6 +147,7 @@ int theme_parse_string(const char *buf)
                 char *end;
                 long v = strtol(cval, &end, 10);
                 if (end != cval && *end == '\0') theme_int(cname, (int)v);
+                else theme_str(cname, cval);   /* bare token -> string */
             }
         }
 

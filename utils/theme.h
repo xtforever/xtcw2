@@ -4,12 +4,16 @@
 /*
  * Central theme / color registry.
  *
- * A global, MLS-backed store of name/value pairs (colours and integers,
- * e.g. borderwidth).  Widgets register themselves together with an
- * "apply theme" function; theme_apply() calls every registered function
- * so widgets can re-resolve their colours and redraw.
+ * A global, MLS-backed store of name/value pairs (colours, integers and
+ * strings, e.g. borderwidth or a font name).  Widgets register themselves
+ * together with an "apply theme" function; theme_apply() calls every
+ * registered function so widgets can re-resolve their colours and redraw.
  *
  * Use get_color("name") to obtain a Pixel for the active theme.
+ *
+ * String values must not contain a double quote, a backslash, or a
+ * newline: theme_save() emits them verbatim inside double quotes and the
+ * parser has no escape sequences.
  */
 
 #include <X11/Intrinsic.h>
@@ -34,6 +38,7 @@ void theme_destroy(void);
 void theme_begin(const char *name);
 void theme_color(const char *name, uint32_t rgb);
 void theme_int(const char *name, int value);
+void theme_str(const char *name, const char *value);
 void theme_end(void);
 
 /* --- selecting / querying ---------------------------------------------- */
@@ -47,9 +52,15 @@ uint32_t theme_get_rgb(const char *name);
 
 int theme_color_defined(const char *name);
 int theme_int_defined(const char *name);
+int theme_str_defined(const char *name);
 
 /* Returns 1 and stores the value if |name| is defined as an integer. */
 int theme_get_int(const char *name, int *out);
+
+/* Returns the string value if |name| is defined as a string, else NULL.
+ * The returned pointer is borrowed (owned by the active theme map) and is
+ * invalidated by the next theme_select()/theme_destroy(). */
+const char *theme_get_str(const char *name);
 
 /* Name of the active theme, or NULL.  Pointer is valid until the next
  * theme_select()/theme_destroy(). */

@@ -184,6 +184,83 @@ LUAEOF
     fi
 }
 
+# ── Xaw Viewport scrollable clip (regression: `*width`/`*height` fallbacks) ──
+#
+# The Viewport creates its own clip + Scrollbar children without explicit
+# sizes.  A global "*width:*height" fallback resource makes those bars inherit
+# 600x400, which drives ComputeLayout() to clamp the clip to 1x1 (blank view).
+# Assert real scrollbar thickness, not just "a window exists" (the generic
+# blank-pixel check passes on the broken 1x1-clip state).
+
+functional_viewport() {
+    local name="viewport"
+    local log="$TMPDIR/${name}.log"
+    local tmp_lua="$TMPDIR/${name}.lua"
+
+    cat > "$tmp_lua" <<'LUAEOF'
+local gui = require('gui_xt')
+local lui = require('lui')
+local lines = {}
+for r = 0, 29 do
+    lines[#lines+1] = string.format(
+        '(label :label "Row %02d %s" :gridx 0 :gridy %d :weightx 1 :weighty 0 :fill 3)',
+        r, string.rep("-", 90), r)
+end
+local ui = [[
+(window :id "w" :title "Viewport Test" :width 400 :height 300
+  (Viewport :id "vp" :weightx 1 :weighty 1 :fill 3
+            :allowVert 1 :allowHoriz 1 :useRight 1 :useBottom 1
+    (grid :id "g"
+      ]] .. table.concat(lines, "\n      ") .. [[
+    )))
+]]
+lui.run(ui)
+xtapptimeout(8000, function() xtappexitflag() end)
+LUAEOF
+
+    log "Functional: Xaw Viewport scrollable clip"
+
+    DISPLAY="$DISPLAY_NUM" "$COMMANDER" -Luafile "$tmp_lua" >"$log" 2>&1 &
+    local pid=$!
+    sleep 2.5
+
+    if ! kill -0 "$pid" 2>/dev/null; then
+        fail "viewport: process exited early (crash?)"
+        tail -n 5 "$log" | sed 's/^/      /'
+        cleanup_runner "$pid"
+        rm -f "$tmp_lua"
+        return
+    fi
+
+    # Vertical bar is thin+tall, horizontal is short+wide; thickness must be
+    # > 1 (degenerate bars are 1px).  Content rows are >= 23px so they cannot
+    # be mistaken for the ~14px bars.
+    local verdict
+    verdict=$(DISPLAY="$DISPLAY_NUM" python3 - <<'PY'
+import re, subprocess
+try:
+    out = subprocess.check_output(["xwininfo", "-root", "-tree"]).decode("latin1")
+except Exception as e:
+    print("xwininfo failed: %s" % e); raise SystemExit
+sizes = [(int(w), int(h)) for w, h in
+         re.findall(r'(\d{1,4})x(\d{1,4})[+-]-?\d+[+-]-?\d+', out)]
+vbar = any(5 <= w <= 20 and h >= 80 for w, h in sizes)
+hbar = any(5 <= h <= 20 and w >= 80 for w, h in sizes)
+print("ok" if (vbar and hbar) else
+      "vbar=%s hbar=%s sizes=%s" % (vbar, hbar, sizes))
+PY
+)
+    if [ "$verdict" = "ok" ]; then
+        pass "viewport: vertical + horizontal scrollbars mapped (clip recovered)"
+    else
+        fail "viewport: no real scrollbars -- $verdict"
+    fi
+
+    cleanup_runner "$pid"
+    rm -f "$tmp_lua"
+    sleep 0.3
+}
+
 # ── Inline function-valued callback (not LUA(name)) ──
 
 functional_inline_callback() {
@@ -327,6 +404,7 @@ for f in "$DEMOS_DIR"/demo_*.lua; do
 done
 
 functional_wbutton
+functional_viewport
 functional_inline_callback
 functional_task_copy
 

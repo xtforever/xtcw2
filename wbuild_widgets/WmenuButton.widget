@@ -1,0 +1,379 @@
+@class WmenuButton (Composite)
+@ Burger-menu button that pops up an OverrideShell containing an arbitrary child.
+
+@EXPORTS
+@ Pop the menu up (no-op if already open or there is no content child).
+@proc void wmenubutton_popup($)
+{
+    open_popup($);
+}
+
+@ Pop the menu down.  Always safe to call (also tears down the click catcher).
+@proc void wmenubutton_popdown($)
+{
+    close_popup($);
+}
+
+@ True while the menu is open.
+@proc Boolean wmenubutton_is_open($)
+{
+    return $is_open ? True : False;
+}
+
+@PUBLIC
+@ optional text label (empty = draw the three-line burger icon)
+@var String label = <String> ""
+@ padding between the popup shell edge and the content
+@var Dimension popupPadding = 8
+@ 0 = size the popup to the content's preferred size
+@var Dimension popupWidth = 0
+@var Dimension popupHeight = 0
+@ 0 = align the popup's left edge with the trigger, 1 = align the right edge
+@var int align = 0
+@ preferred (square) trigger size; the icon scales to the actual size
+@var Dimension buttonSize = 32
+@ settable open state: gui.set(id, "open", 1/0) opens/closes the menu
+@var Boolean open = False
+
+@PRIVATE
+@var Widget shell
+@var Widget content
+@var Window catcher
+@var Boolean is_open
+@var Pixel bg
+@var Pixel fg
+@var Pixel bg_sel
+@var GC gc
+
+@METHODS
+
+@proc initialize
+{
+    XTFUNC();
+    $shell = NULL;
+    $content = NULL;
+    $catcher = None;
+    $is_open = False;
+    $open = False;
+    $gc = NULL;
+
+    if ($width == 0)  $width  = $buttonSize;
+    if ($height == 0) $height = $buttonSize;
+
+    resolve_colors($);
+    $background_pixel = $bg;
+    make_gc($);
+
+    /* Popup shell: override-redirect, freely positioned, NOT grabbed. */
+    $shell = XtCreatePopupShell("popup", overrideShellWidgetClass, $, NULL, 0);
+
+    /* Receive ButtonPress events delivered to the registered click catcher.
+     * Register on the popup shell (not on $) so the catcher's events do not
+     * also run the trigger's <Btn1Down> toggle translation. */
+    XtAddEventHandler($shell, ButtonPressMask, False,
+                      (XtEventHandler) catcher_event, (XtPointer)$);
+
+    theme_register($, wmenubutton_colors_changed);
+}
+
+@proc destroy
+{
+    XTFUNC();
+    /* Guaranteed teardown: never leave the click catcher behind -- a
+     * lingering full-screen window is exactly the "invisible window swallows
+     * clicks" failure mode.  Do NOT XtPopdown the popup shell here: Xt
+     * destroys popup children itself, and calling XtPopdown during the
+     * parent's destroy dereferences an already-dying shell window. */
+    free_catcher($);
+    $is_open = False;
+    $open = False;
+    theme_unregister($);
+    if ($gc) { XtReleaseGC($, $gc); $gc = NULL; }
+}
+
+@proc resize
+{
+    if (XtIsRealized($)) {
+        XSetWindowBackground(XtDisplay($), XtWindow($), $is_open ? $bg_sel : $bg);
+        XClearWindow(XtDisplay($), XtWindow($));
+        draw_icon($);
+    }
+}
+
+@proc expose
+{
+    XClearWindow(XtDisplay($), XtWindow($));
+    draw_icon($);
+}
+
+@proc insert_child
+{
+    #insert_child(child);
+    if ($content == NULL) {
+        $content = child;
+        /* keep the content hidden until the menu is opened */
+        XtSetMappedWhenManaged(child, False);
+    }
+}
+
+@proc delete_child
+{
+    if (child == $content) $content = NULL;
+    #delete_child(child);
+}
+
+@proc geometry_manager
+{
+    (void)self;
+    Dimension wd = (request->request_mode & CWWidth)  ? request->width  : child->core.width;
+    Dimension ht = (request->request_mode & CWHeight) ? request->height : child->core.height;
+    XtConfigureWidget(child, child->core.x, child->core.y, wd, ht, child->core.border_width);
+    return XtGeometryDone;
+}
+
+@proc query_geometry
+{
+    int s = (int)$buttonSize;
+    if (s < 8) s = 8;
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width  = (Dimension)s;
+    reply->height = (Dimension)s;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc set_values
+{
+    int do_redraw = False;
+    if ($label != $old$label) do_redraw = True;
+    if ($open != $old$open) {
+        if ($open) open_popup($);
+        else       close_popup($);
+        do_redraw = True;
+    }
+    return do_redraw;
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>: toggle()
+
+@ACTIONS
+
+@proc toggle
+{
+    if ($is_open) close_popup($);
+    else          open_popup($);
+}
+
+@UTILITIES
+
+@proc void resolve_colors($)
+{
+    Pixel fb = BlackPixelOfScreen(XtScreen($));
+    $bg     = theme_color_defined("bg_norm") ? get_color("bg_norm") : $background_pixel;
+    $fg     = theme_color_defined("fg_norm") ? get_color("fg_norm") : fb;
+    $bg_sel = theme_color_defined("bg_hi")   ? get_color("bg_hi")   : $bg;
+}
+
+@proc void make_gc($)
+{
+    XGCValues v;
+    if ($gc) { XtReleaseGC($, $gc); $gc = NULL; }
+    memset(&v, 0, sizeof v);
+    v.foreground = $fg;
+    v.graphics_exposures = False;
+    $gc = XtGetGC($, GCForeground | GCGraphicsExposures, &v);
+}
+
+@proc void draw_icon($)
+{
+    if (!XtIsRealized($) || !$gc) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    int W = (int)$width, H = (int)$height;
+
+    if ($label && *$label) {
+        GC g = DefaultGC(dpy, DefaultScreen(dpy));
+        XSetForeground(dpy, g, $fg);
+        XDrawString(dpy, win, g, 4, H / 2 + 4, $label, (int)strlen($label));
+        return;
+    }
+
+    /* draw the burger in a centred square so a wide cell still looks right */
+    int s = (W < H) ? W : H;
+    int ox = (W - s) / 2, oy = (H - s) / 2;
+    int lh = s / 10; if (lh < 2) lh = 2;
+    int lw = (s * 3) / 5; if (lw < 6) lw = (s > 4 ? s - 4 : 1);
+    int x  = ox + (s - lw) / 2;
+    int y1 = oy + s / 4, y2 = oy + s / 2, y3 = oy + (3 * s) / 4;
+
+    XFillRectangle(dpy, win, $gc, x, y1 - lh / 2, lw, lh);
+    XFillRectangle(dpy, win, $gc, x, y2 - lh / 2, lw, lh);
+    XFillRectangle(dpy, win, $gc, x, y3 - lh / 2, lw, lh);
+}
+
+@ Destroy the click catcher window (if any) -- the single teardown point.
+@proc void free_catcher($)
+{
+    if ($catcher != None) {
+        Display *dpy = XtDisplay($);
+        XtUnregisterDrawable(dpy, $catcher);
+        XDestroyWindow(dpy, $catcher);
+        $catcher = None;
+    }
+}
+
+@ Create a full-app, InputOnly, override-redirect window that receives clicks
+@ outside the popup.  It is mapped under the popup and destroyed on close.
+@proc void make_catcher($)
+{
+    Display *dpy = XtDisplay($);
+    free_catcher($);
+
+    Widget top = $;
+    while (top && !XtIsShell(top)) top = XtParent(top);
+
+    Position tx = 0, ty = 0;
+    int cw = WidthOfScreen(XtScreen($));
+    int ch = HeightOfScreen(XtScreen($));
+    if (top) {
+        XtTranslateCoords(top, 0, 0, &tx, &ty);
+        if ((int)top->core.width  > 0) cw = (int)top->core.width;
+        if ((int)top->core.height > 0) ch = (int)top->core.height;
+    }
+
+    XSetWindowAttributes a;
+    memset(&a, 0, sizeof a);
+    a.override_redirect = True;
+    a.event_mask = ButtonPressMask | ButtonReleaseMask;
+
+    $catcher = XCreateWindow(dpy, DefaultRootWindow(dpy),
+                             (int)tx, (int)ty, (unsigned)cw, (unsigned)ch, 0,
+                             0 /* InputOnly depth */, InputOnly, CopyFromParent,
+                             CWOverrideRedirect | CWEventMask, &a);
+    XMapRaised(dpy, $catcher);
+    XtRegisterDrawable(dpy, $catcher, $shell);
+}
+
+@proc void open_popup($)
+{
+    if ($is_open) return;
+    if (!$content || !XtIsRealized($)) return;
+
+    Display *dpy = XtDisplay($);
+
+    int pad = (int)$popupPadding;
+    int pw = (int)$popupWidth;
+    int ph = (int)$popupHeight;
+    if (pw <= 0 || ph <= 0) {
+        XtWidgetGeometry req, pref;
+        req.request_mode = 0;
+        pref.request_mode = 0;
+        XtQueryGeometry($content, &req, &pref);
+        int cw = (pref.request_mode & CWWidth)  ? (int)pref.width  : (int)$content->core.width;
+        int chh = (pref.request_mode & CWHeight) ? (int)pref.height : (int)$content->core.height;
+        if (pw <= 0) pw = cw;
+        if (ph <= 0) ph = chh;
+    }
+    if (pw < 1) pw = 1;
+    if (ph < 1) ph = 1;
+
+    int sw = pw + 2 * pad;
+    int sh = ph + 2 * pad;
+
+    /* A Shell must never be realized with zero width/height (Xt aborts).
+     * Size it before realizing. */
+    XtVaSetValues($shell, XtNwidth, (Dimension)sw, XtNheight, (Dimension)sh, NULL);
+    XtRealizeWidget($shell);
+
+    if (!XtIsRealized($content)) XtRealizeWidget($content);
+
+    XReparentWindow(dpy, XtWindow($content), XtWindow($shell), pad, pad);
+    XtConfigureWidget($content, (Position)pad, (Position)pad,
+                      (Dimension)pw, (Dimension)ph, 0);
+    XtMapWidget($content);
+
+    /* position under the trigger */
+    Position rx, ry;
+    XtTranslateCoords($, 0, $height + $border_width, &rx, &ry);
+    int sx = (int)rx, sy = (int)ry;
+    if ($align == 1) sx = (int)rx + (int)$width - sw;
+
+    int scrw = WidthOfScreen(XtScreen($));
+    int scrh = HeightOfScreen(XtScreen($));
+    if (sx + sw > scrw) sx = scrw - sw;
+    if (sy + sh > scrh) sy = scrh - sh;
+    if (sx < 0) sx = 0;
+    if (sy < 0) sy = 0;
+    XtVaSetValues($shell, XtNx, sx, XtNy, sy, NULL);
+
+    /* map an invisible click catcher over the app, then pop the menu above it */
+    make_catcher($);
+    XtPopup($shell, XtGrabNone);
+    XRaiseWindow(dpy, XtWindow($shell));
+
+    $is_open = True;
+    $open = True;
+    if (XtIsRealized($)) {
+        XSetWindowBackground(dpy, XtWindow($), $bg_sel);
+        XClearWindow(dpy, XtWindow($));
+        draw_icon($);
+    }
+}
+
+@ Remove the click catcher and pop the shell down.  Safe to call from
+@ |destroy| (does not touch the widget's own window).
+@proc void teardown_popup($)
+{
+    free_catcher($);
+    if ($shell && XtIsRealized($shell)) XtPopdown($shell);
+    $is_open = False;
+    $open = False;
+}
+
+@proc void close_popup($)
+{
+    Display *dpy = XtDisplay($);
+    teardown_popup($);
+    if (XtIsRealized($) && XtWindow($)) {
+        XSetWindowBackground(dpy, XtWindow($), $bg);
+        XClearWindow(dpy, XtWindow($));
+        draw_icon($);
+    }
+}
+
+@proc catcher_event(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    if (ev->type != ButtonPress) return;
+    if ($catcher == None) return;
+    if (ev->xbutton.window == $catcher) {
+        close_popup($);
+    }
+}
+
+@proc void wmenubutton_colors_changed($)
+{
+    resolve_colors($);
+    make_gc($);
+    if (XtIsRealized($)) {
+        XSetWindowBackground(XtDisplay($), XtWindow($), $is_open ? $bg_sel : $bg);
+        XClearWindow(XtDisplay($), XtWindow($));
+        draw_icon($);
+    }
+}
+
+@IMPORTS
+@incl <X11/Shell.h>
+@incl <X11/StringDefs.h>
+@incl <X11/Core.h>
+@incl <string.h>
+@incl <stdint.h>
+@incl "theme.h"
+@incl "xutil.h"
+@incl "mls.h"

@@ -1,0 +1,1071 @@
+@class Wbravo (Wheel)
+@ A piece-table plain-text editor rendered with retex
+
+@TRANSLATIONS
+@trans <Key>Right:     forward_char()
+@trans <Key>Left:      backward_char()
+@trans <Key>Up:        move_up()
+@trans <Key>Down:      move_down()
+@trans <Key>Home:      move_home()
+@trans <Key>End:       move_end()
+@trans <Key>Prior:     page_up()
+@trans <Key>Next:      page_down()
+@trans <Key>Delete:    delete_forward()
+@trans <Key>BackSpace: delete_backward()
+@trans <Key>Return:    insert_newline()
+@trans <Ctrl>z:        undo()
+@trans <Ctrl>y:        redo()
+@trans <Ctrl>c:        copy_selection()
+@trans <Ctrl>x:        cut_selection()
+@trans <Ctrl>v:        paste()
+@trans <Ctrl>b:        bold()
+@trans <Ctrl>i:        italic()
+@trans <Ctrl>r:        roman()
+@trans <Btn1Down>:     set_cursor() SetFocus()
+@trans <Btn1Motion>:   extend_selection()
+@trans <Key>:          insert_char()
+@trans <FocusIn>:      focus_in()
+@trans <FocusOut>:     focus_out()
+
+@PUBLIC
+@ UTF-8 document text
+@var String text = <String> ""
+@var String fontFace = "Sans"
+@var int fontSize = 12
+@ 0=left, 1=center, 2=right, 3=justify
+@var int alignment = 0
+@var int topGap = 4
+@var int bottomGap = 4
+@var int leftGap = 4
+@var int rightGap = 4
+
+@PRIVATE
+@def COL_BG = 0
+@def COL_FG = 1
+@def COL_SELBG = 2
+@def COL_SELFG = 3
+
+@var void *ptable
+@var void *backend_ptr
+@var void *para_ptr
+@var Pixmap pixmap
+@var GC blit_gc
+@var XftColor xcol[4]
+@var String text_mem
+@var int caret_cp
+@var int anchor_cp
+@var int scroll_line
+@var Bool dirty
+@var int *undo_cp
+@var int *undo_anchor
+@var int undo_n
+@var int undo_cap
+@var int *redo_cp
+@var int *redo_anchor
+@var int redo_n
+@var int redo_cap
+@var char *sel_buf
+@var int sel_len
+@var char *out_buf
+@var int out_cap
+@var Atom utf8_atom
+@var int last_width
+@var int last_height
+@ pending look applied to newly typed characters
+@var RLook look
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@proc initialize
+{
+    Display *dpy = XtDisplay($);
+
+    $ptable = rtable_create();
+    $backend_ptr = NULL;
+    $para_ptr = NULL;
+    $pixmap = 0;
+    $blit_gc = 0;
+    $caret_cp = 0;
+    $anchor_cp = 0;
+    $scroll_line = 0;
+    $dirty = 1;
+    $last_width = 0;
+    $last_height = 0;
+
+    $undo_cp = NULL; $undo_anchor = NULL; $undo_n = 0; $undo_cap = 0;
+    $redo_cp = NULL; $redo_anchor = NULL; $redo_n = 0; $redo_cap = 0;
+    $sel_buf = NULL; $sel_len = 0;
+    $out_buf = NULL; $out_cap = 0;
+
+    $utf8_atom = XInternAtom(dpy, "UTF8_STRING", False);
+
+    $text_mem = XtNewString($text ? $text : "");
+    $text = $text_mem;
+
+    alloc_colors($);
+    load_text($);
+
+    if ($width == 0) $width = 400;
+    if ($height == 0) $height = 200;
+}
+
+@proc destroy
+{
+    if ($para_ptr) { retex_paragraph_free((RetexParagraph*)$para_ptr); $para_ptr = NULL; }
+    if ($backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->destroy(be);
+        $backend_ptr = NULL;
+    }
+    if ($ptable) { rtable_free((RTable*)$ptable); $ptable = NULL; }
+
+    free($undo_cp); free($undo_anchor);
+    free($redo_cp); free($redo_anchor);
+    free($sel_buf); free($out_buf);
+
+    free_colors($);
+    XtFree($text_mem);
+}
+
+@proc set_values
+{
+    int redraw_flag = 0;
+
+    if ($text != $old$text) {
+        XtFree($old$text_mem);
+        $text = $text_mem = XtNewString($text ? $text : "");
+        load_text($);
+        redraw_flag = 1;
+    }
+    if ($fontFace != $old$fontFace || $fontSize != $old$fontSize ||
+        $alignment != $old$alignment) {
+        $dirty = 1;
+        redraw_flag = 1;
+    }
+    if ($topGap != $old$topGap || $bottomGap != $old$bottomGap ||
+        $leftGap != $old$leftGap || $rightGap != $old$rightGap) {
+        $dirty = 1;
+        redraw_flag = 1;
+    }
+    if (redraw_flag && XtIsRealized($))
+        relayout($);
+    return redraw_flag;
+}
+
+@proc get_values_hook
+{
+    int i;
+    for (i = 0; i < *num_args; i++) {
+        if (strcmp(args[i].name, "text") == 0) {
+            *((char**)args[i].value) = get_text_buffer($);
+            return;
+        }
+    }
+}
+
+@proc realize
+{
+    XtCreateWindow($, (unsigned int) InputOutput, (Visual *) CopyFromParent,
+                   *mask, attributes);
+    $dirty = 1;
+    redraw($);
+}
+
+@proc resize
+{
+    $dirty = 1;
+    redraw($);
+}
+
+@proc expose
+{
+    redraw($);
+}
+
+@proc accept_focus
+{
+    return True;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+    $dirty = 1;
+}
+
+@ override the Wheel theme hook: our $xcol[]/blit GC cache the colours
+@proc void colors_changed
+{
+    #colors_changed($);
+    free_colors($);
+    alloc_colors($);
+    $dirty = 1;
+    if (XtIsRealized($)) redraw($);
+}
+
+@UTILITIES
+
+@proc void alloc_colors($)
+{
+    XGCValues v;
+
+    xft_color_alloc($, $bg_norm, $xcol + COL_BG);
+    xft_color_alloc($, $fg_norm, $xcol + COL_FG);
+    xft_color_alloc($, $bg_sel,  $xcol + COL_SELBG);
+    xft_color_alloc($, $fg_sel,  $xcol + COL_SELFG);
+
+    v.foreground = $bg_norm;
+    v.graphics_exposures = False;
+    $blit_gc = XtGetGC($, GCForeground | GCGraphicsExposures, &v);
+}
+
+@proc void free_colors($)
+{
+    Display *dpy = XtDisplay($);
+    int i;
+    for (i = 0; i < 4; i++)
+        XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)), None, $xcol + i);
+    if ($blit_gc) { XtReleaseGC($, $blit_gc); $blit_gc = 0; }
+}
+
+@proc uint32_t xftcolor_to_argb($, int index)
+{
+    XftColor *xc = &$xcol[index];
+    uint32_t r = xc->color.red >> 8;
+    uint32_t g = xc->color.green >> 8;
+    uint32_t b = xc->color.blue >> 8;
+    uint32_t a = xc->color.alpha >> 8;
+    if (a == 0) a = 0xFF;
+    return (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+@proc double get_dpi($)
+{
+    Display *dpy = XtDisplay($);
+    char *s = XGetDefault(dpy, "Xft", "dpi");
+    if (s) {
+        double dpi = atof(s);
+        if (dpi < 1.0 || dpi > 1000.0) return 96.0;
+        return dpi;
+    }
+    return 96.0;
+}
+
+@proc double pt2px($, double pt) { return pt * get_dpi($) / 72.0; }
+@proc double px2pt($, double px) { return px * 72.0 / get_dpi($); }
+
+@proc int make_utf8($)
+{
+    if (!$ptable) return 0;
+    return rtable_to_utf8((RTable*)$ptable);
+}
+
+@proc char* get_text_buffer($)
+{
+    int h = make_utf8($);
+    int len = h ? m_len(h) : 1;
+    if (len > $out_cap) {
+        char *nb = (char*)realloc($out_buf, len);
+        if (!nb) return "";
+        $out_buf = nb;
+        $out_cap = len;
+    }
+    if (h) {
+        memcpy($out_buf, m_buf(h), len);
+        m_free(h);
+    } else {
+        $out_buf[0] = 0;
+    }
+    return $out_buf;
+}
+
+@proc int cp_to_byte($, int cp)
+{
+    int h = make_utf8($);
+    int b;
+    if (!h) return 0;
+    b = utf8_cp_index_to_byte((char*)m_buf(h), cp);
+    m_free(h);
+    return b;
+}
+
+@proc int byte_to_cp($, int byte)
+{
+    int h = make_utf8($);
+    int cp;
+    if (!h) return 0;
+    cp = utf8_byte_to_cp_index((char*)m_buf(h), byte);
+    m_free(h);
+    return cp;
+}
+
+@proc int doc_len($)
+{
+    if (!$ptable) return 0;
+    return rtable_len((RTable*)$ptable);
+}
+
+@ the default look (the widget's base font) used when loading text.
+@proc void get_look($, RLook *out)
+{
+    out->face = $fontFace ? conststr_lookup_c($fontFace) : 0;
+    out->style = 0;
+    out->size = (float)$fontSize;
+}
+
+@ Adopt the look of the character next to the caret so typing continues the run.
+@proc void sync_look($)
+{
+    RAtom a;
+    int len = $ptable ? rtable_len((RTable*)$ptable) : 0;
+    int pos = $caret_cp;
+    if (len <= 0) return;
+    if (pos > 0) pos = pos - 1;
+    if (pos >= len) pos = len - 1;
+    if (rtable_get((RTable*)$ptable, pos, &a) && a.kind == RATOM_CHAR)
+        $look = a.look;
+}
+
+@ Apply a style-bit change to the selection, or to the pending look (typing).
+@proc void apply_style_bits($, int setb, int clrb)
+{
+    int lo, hi;
+    if ($caret_cp != $anchor_cp) {
+        lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+        hi = $caret_cp < $anchor_cp ? $anchor_cp : $caret_cp;
+        edit_begin($);
+        rtable_apply_style((RTable*)$ptable, lo, hi - lo, setb, clrb);
+        $dirty = 1;
+        ensure_visible($);
+        redraw($);
+        sync_look($);
+    } else {
+        $look.style = ($look.style & ~clrb) | setb;
+    }
+}
+
+@ Toggle a style bit on the selection, or on the pending look.
+@proc void toggle_style($, int bit)
+{
+    RAtom a;
+    int on = 0, lo;
+    if ($caret_cp != $anchor_cp) {
+        lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+        if (rtable_get((RTable*)$ptable, lo, &a) && a.kind == RATOM_CHAR)
+            on = a.look.style & bit;
+        apply_style_bits($, on ? 0 : bit, on ? bit : 0);
+    } else {
+        $look.style ^= bit;
+    }
+}
+
+@ Change the font face of the selection, or of the pending look.
+@proc void apply_face($, int face)
+{
+    int lo, hi;
+    if ($caret_cp != $anchor_cp) {
+        lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+        hi = $caret_cp < $anchor_cp ? $anchor_cp : $caret_cp;
+        edit_begin($);
+        rtable_set_face((RTable*)$ptable, lo, hi - lo, face);
+        $dirty = 1;
+        ensure_visible($);
+        redraw($);
+        sync_look($);
+    } else {
+        $look.face = face;
+    }
+}
+
+@ Change the font size of the selection, or of the pending look.
+@proc void apply_size($, float size)
+{
+    int lo, hi;
+    if ($caret_cp != $anchor_cp) {
+        lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+        hi = $caret_cp < $anchor_cp ? $anchor_cp : $caret_cp;
+        edit_begin($);
+        rtable_set_size((RTable*)$ptable, lo, hi - lo, size);
+        $dirty = 1;
+        ensure_visible($);
+        redraw($);
+        sync_look($);
+    } else {
+        $look.size = size;
+    }
+}
+
+@proc void load_text($)
+{
+    RLook lk;
+    get_look($, &lk);
+    $look = lk;
+    if ($ptable) {
+        rtable_load_plain((RTable*)$ptable, $text ? $text : "", lk);
+    }
+    $caret_cp = 0;
+    $anchor_cp = 0;
+    $scroll_line = 0;
+    $undo_n = 0;
+    $redo_n = 0;
+    $dirty = 1;
+}
+
+@proc double scroll_offset_pt($)
+{
+    RetexLine l;
+    if ($para_ptr && $scroll_line > 0 &&
+        retex_paragraph_get_line((RetexParagraph*)$para_ptr, $scroll_line, &l))
+        return l.y;
+    return 0.0;
+}
+
+@proc int caret_line($)
+{
+    sync_layout($);
+    int byte, nl, i;
+    RetexLine l;
+    if (!$para_ptr) return 0;
+    byte = cp_to_byte($, $caret_cp);
+    nl = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
+    for (i = 0; i < nl; i++) {
+        if (retex_paragraph_get_line((RetexParagraph*)$para_ptr, i, &l) &&
+            byte <= l.end_byte)
+            return i;
+    }
+    return nl > 0 ? nl - 1 : 0;
+}
+
+@proc void sync_layout($)
+{
+    if ($dirty && XtIsRealized($) && XtWindow($))
+        update_cache($);
+}
+
+@proc void relayout($)
+{
+    int wpx, natoms;
+    RAtom *atoms;
+
+    if (!$backend_ptr) return;
+    if ($para_ptr) {
+        retex_paragraph_free((RetexParagraph*)$para_ptr);
+        $para_ptr = NULL;
+    }
+    wpx = (int)$width - ($leftGap + $rightGap);
+    if (wpx < 10) wpx = 10;
+    atoms = rtable_to_array((RTable*)$ptable, &natoms);
+    $para_ptr = retex_layout_styled((Backend*)$backend_ptr, atoms, natoms,
+                                    px2pt($, wpx), $fontFace, $fontSize,
+                                    (RetexAlign)$alignment);
+    free(atoms);
+}
+
+@proc void apply_selection($)
+{
+    int lo, hi, h, sb, eb;
+    if (!$para_ptr) return;
+    if ($caret_cp == $anchor_cp) {
+        retex_paragraph_set_selection((RetexParagraph*)$para_ptr, -1, -1);
+        return;
+    }
+    lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+    hi = $caret_cp < $anchor_cp ? $anchor_cp : $caret_cp;
+    h = make_utf8($);
+    if (!h) return;
+    sb = utf8_cp_index_to_byte((char*)m_buf(h), lo);
+    eb = utf8_cp_index_to_byte((char*)m_buf(h), hi);
+    m_free(h);
+    retex_paragraph_set_selection((RetexParagraph*)$para_ptr, sb, eb > sb ? eb - 1 : sb);
+}
+
+@proc void draw_caret_in_cache($, Backend *be)
+{
+    int byte, first, nl;
+    double cx, cy, ch, y0 = 0.0;
+    RetexLine l0;
+
+    if (!$para_ptr) return;
+    byte = cp_to_byte($, $caret_cp);
+    if (!retex_paragraph_get_caret_pos((RetexParagraph*)$para_ptr, byte, &cx, &cy, &ch))
+        return;
+
+    nl = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
+    first = $scroll_line;
+    if (first < 0) first = 0;
+    if (first >= nl) first = nl > 0 ? nl - 1 : 0;
+    if (retex_paragraph_get_line((RetexParagraph*)$para_ptr, first, &l0))
+        y0 = l0.y;
+
+    be->draw_rect(be,
+                  px2pt($, (double)$leftGap) + cx,
+                  px2pt($, (double)$topGap) + (cy - y0),
+                  px2pt($, 2.0), ch,
+                  xftcolor_to_argb($, COL_FG));
+}
+
+@proc void update_cache($)
+{
+    int w, h, first, nl;
+    RendererColors colors;
+    Backend *be;
+
+    if (!XtIsRealized($) || XtWindow($) == 0) return;
+
+    w = $width > 4000 ? 4000 : ($width < 1 ? 1 : $width);
+    h = $height > 4000 ? 4000 : ($height < 1 ? 1 : $height);
+
+    if ($backend_ptr && (w != $last_width || h != $last_height)) {
+        Backend *old = (Backend*)$backend_ptr;
+        old->destroy(old);
+        $backend_ptr = NULL;
+        $pixmap = 0;
+    }
+    if (!$backend_ptr) {
+        $backend_ptr = backend_xpixmap_create(XtDisplay($), XtWindow($), w, h);
+        if (!$backend_ptr) return;
+        $pixmap = backend_xpixmap_get_pixmap((Backend*)$backend_ptr);
+        $last_width = w;
+        $last_height = h;
+    }
+
+    relayout($);
+    be = (Backend*)$backend_ptr;
+
+    be->draw_rect(be, 0, 0, px2pt($, (double)w), px2pt($, (double)h),
+                  xftcolor_to_argb($, COL_BG));
+
+    colors.text = xftcolor_to_argb($, COL_FG);
+    colors.bg = xftcolor_to_argb($, COL_BG);
+    colors.reverse_text = xftcolor_to_argb($, COL_SELBG);
+    colors.reverse_bg = xftcolor_to_argb($, COL_FG);
+    colors.sel_text = xftcolor_to_argb($, COL_SELFG);
+    colors.sel_bg = xftcolor_to_argb($, COL_SELBG);
+
+    apply_selection($);
+
+    nl = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
+    first = $scroll_line;
+    if (first < 0) first = 0;
+    if (first >= nl) first = nl > 0 ? nl - 1 : 0;
+
+    if (nl > 0)
+        retex_paragraph_render_range((RetexParagraph*)$para_ptr, be,
+                                     first, nl - 1,
+                                     px2pt($, (double)$leftGap),
+                                     px2pt($, (double)$topGap),
+                                     &colors, 0);
+
+    draw_caret_in_cache($, be);
+    be->flush(be);
+    $dirty = 0;
+}
+
+@proc void redraw($)
+{
+    if (!XtIsRealized($)) return;
+    if ($dirty || !$backend_ptr) update_cache($);
+    if ($pixmap) {
+        int w = $width > 4000 ? 4000 : $width;
+        int h = $height > 4000 ? 4000 : $height;
+        XCopyArea(XtDisplay($), $pixmap, XtWindow($), $blit_gc, 0, 0, w, h, 0, 0);
+    }
+}
+
+@proc void ensure_visible($)
+{
+    int cl = caret_line($);
+    int visible;
+    RetexLine l;
+    double line_px;
+
+    if (retex_paragraph_get_line((RetexParagraph*)$para_ptr, 0, &l))
+        line_px = pt2px($, l.height);
+    else
+        line_px = 1.0;
+    visible = (int)(((double)$height - $topGap - $bottomGap) / (line_px > 1.0 ? line_px : 1.0));
+    if (visible < 1) visible = 1;
+
+    if (cl < $scroll_line) $scroll_line = cl;
+    else if (cl >= $scroll_line + visible) $scroll_line = cl - visible + 1;
+    if ($scroll_line < 0) $scroll_line = 0;
+    $dirty = 1;
+}
+
+@proc void set_caret_cp($, int cp, Bool extend)
+{
+    int len = doc_len($);
+    if (cp < 0) cp = 0;
+    if (cp > len) cp = len;
+    $caret_cp = cp;
+    if (!extend) $anchor_cp = cp;
+    sync_look($);
+    ensure_visible($);
+}
+
+@proc void set_caret_from_byte($, int byte, Bool extend)
+{
+    set_caret_cp($, byte_to_cp($, byte), extend);
+}
+
+@ editing
+
+@proc void push_undo($, int cp, int anchor)
+{
+    if ($undo_n >= $undo_cap) {
+        int nc = $undo_cap ? $undo_cap * 2 : 8;
+        int *a = (int*)realloc($undo_cp, nc * sizeof(int));
+        int *b = (int*)realloc($undo_anchor, nc * sizeof(int));
+        if (!a || !b) return;
+        $undo_cp = a; $undo_anchor = b; $undo_cap = nc;
+    }
+    $undo_cp[$undo_n] = cp;
+    $undo_anchor[$undo_n] = anchor;
+    $undo_n++;
+}
+
+@proc void push_redo($, int cp, int anchor)
+{
+    if ($redo_n >= $redo_cap) {
+        int nc = $redo_cap ? $redo_cap * 2 : 8;
+        int *a = (int*)realloc($redo_cp, nc * sizeof(int));
+        int *b = (int*)realloc($redo_anchor, nc * sizeof(int));
+        if (!a || !b) return;
+        $redo_cp = a; $redo_anchor = b; $redo_cap = nc;
+    }
+    $redo_cp[$redo_n] = cp;
+    $redo_anchor[$redo_n] = anchor;
+    $redo_n++;
+}
+
+@proc void edit_begin($)
+{
+    if (!$ptable) return;
+    rtable_snapshot((RTable*)$ptable);
+    push_undo($, $caret_cp, $anchor_cp);
+    $redo_n = 0;
+}
+
+@proc void delete_selection_only($)
+{
+    int lo, hi;
+    if ($caret_cp == $anchor_cp) return;
+    lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+    hi = $caret_cp < $anchor_cp ? $anchor_cp : $caret_cp;
+    rtable_delete((RTable*)$ptable, lo, hi - lo);
+    $caret_cp = lo;
+    $anchor_cp = lo;
+}
+
+@proc void insert_cps($, uint32_t *cps, int n)
+{
+    if (n <= 0 || !$ptable) return;
+    edit_begin($);
+    delete_selection_only($);
+    rtable_insert_cps((RTable*)$ptable, $caret_cp, cps, n, $look);
+    $caret_cp += n;
+    $anchor_cp = $caret_cp;
+    $dirty = 1;
+    ensure_visible($);
+}
+
+@proc void decode_key($, char *buf, int len, uint32_t *cps, int *np)
+{
+    int n = 0, i;
+    if (utf8_validate(buf))
+        n = utf32_from_utf8(buf, cps, 64);
+    if (n < 0) n = 0;
+    if (n == 0) {
+        for (i = 0; i < len && n < 64; i++)
+            cps[n++] = (unsigned char)buf[i];
+    }
+    *np = n;
+}
+
+@proc void move_vertical($, int delta)
+{
+    int byte, line, nl, nbyte;
+    double cx, cy, ch;
+    RetexLine target;
+
+    if (!$para_ptr) return;
+    line = caret_line($);
+    nl = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
+    line += delta;
+    if (line < 0) line = 0;
+    if (line >= nl) line = nl - 1;
+    if (!retex_paragraph_get_line((RetexParagraph*)$para_ptr, line, &target)) return;
+
+    byte = cp_to_byte($, $caret_cp);
+    if (!retex_paragraph_get_caret_pos((RetexParagraph*)$para_ptr, byte, &cx, &cy, &ch))
+        return;
+    nbyte = retex_paragraph_get_offset_at((RetexParagraph*)$para_ptr,
+                                          cx, target.y + target.height / 2.0);
+    set_caret_from_byte($, nbyte, False);
+}
+
+@ selection ownership and clipboard
+
+@proc void fill_selection_text($)
+{
+    int lo, hi, h, sb, eb, len;
+    char *nb;
+
+    $sel_len = 0;
+    if ($caret_cp == $anchor_cp) return;
+    lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+    hi = $caret_cp < $anchor_cp ? $anchor_cp : $caret_cp;
+    h = make_utf8($);
+    if (!h) return;
+    sb = utf8_cp_index_to_byte((char*)m_buf(h), lo);
+    eb = utf8_cp_index_to_byte((char*)m_buf(h), hi);
+    len = eb - sb;
+    if (len < 0) len = 0;
+    nb = (char*)realloc($sel_buf, len + 1);
+    if (!nb) { m_free(h); return; }
+    $sel_buf = nb;
+    if (len > 0) memcpy($sel_buf, (char*)m_buf(h) + sb, len);
+    $sel_buf[len] = 0;
+    $sel_len = len;
+    m_free(h);
+}
+
+@proc Boolean ConvertSelection($, Atom *selection, Atom *target,
+                               Atom *type, XtPointer *value,
+                               unsigned long *length, int *format)
+{
+    if (*target == $utf8_atom) {
+        int l = $sel_len;
+        *type = $utf8_atom;
+        *format = 8;
+        *length = (unsigned long)l;
+        *value = XtMalloc(l > 0 ? l : 1);
+        if (l > 0 && $sel_buf) memcpy(*value, $sel_buf, l);
+        return True;
+    }
+    *type = None;
+    *value = NULL;
+    *length = 0;
+    *format = 0;
+    return False;
+}
+
+@proc void LoseSelection($, Atom *selection)
+{
+}
+
+@proc void RequestSelection($, XtPointer client, Atom *selection,
+                            Atom *type, XtPointer value,
+                            unsigned long *length, int *format)
+{
+    char *s = (char*)value;
+    uint32_t cps[256];
+    int n = 0;
+
+    if (!s || !*length) return;
+    if (utf8_validate(s))
+        n = utf32_from_utf8(s, cps, 256);
+    if (n < 0) n = 0;
+    if (n == 0) {
+        unsigned long i;
+        for (i = 0; i < *length && n < 256; i++)
+            cps[n++] = (unsigned char)s[i];
+    }
+    insert_cps($, cps, n);
+    redraw($);
+}
+
+@ACTIONS
+
+@proc SetFocus
+{
+    Widget shell, parent;
+    shell = parent = $;
+    while (parent) {
+        if (XtIsShell(shell = parent)) break;
+        parent = XtParent(parent);
+    }
+    XtSetKeyboardFocus(shell, $);
+}
+
+@proc bold
+{
+    toggle_style($, 1);
+}
+
+@proc italic
+{
+    toggle_style($, 2);
+}
+
+@proc roman
+{
+    apply_style_bits($, 0, 3);   /* clear bold + italic */
+}
+
+@proc set_font
+{
+    if (num_params && *num_params >= 1 && params[0])
+        apply_face($, conststr_lookup_c(params[0]));
+}
+
+@proc set_size
+{
+    if (num_params && *num_params >= 1 && params[0])
+        apply_size($, (float)atof(params[0]));
+}
+
+@proc insert_text
+{
+    uint32_t cps[256];
+    int n = 0;
+    if (!num_params || *num_params < 1 || !params[0]) return;
+    decode_key($, params[0], (int)strlen(params[0]), cps, &n);
+    insert_cps($, cps, n);
+    redraw($);
+}
+
+@proc insert_char
+{
+    unsigned char buf[64];
+    KeySym ks;
+    uint32_t cps[64];
+    int len, n;
+    len = _XawLookupString($, (XKeyEvent*)event, (char*)buf, sizeof buf, &ks);
+    if (len <= 0) return;
+    decode_key($, (char*)buf, len, cps, &n);
+    insert_cps($, cps, n);
+    redraw($);
+}
+
+@proc insert_newline
+{
+    uint32_t cp = '\n';
+    insert_cps($, &cp, 1);
+    redraw($);
+}
+
+@proc delete_backward
+{
+    if ($caret_cp != $anchor_cp) {
+        edit_begin($);
+        delete_selection_only($);
+    } else if ($caret_cp > 0) {
+        edit_begin($);
+        rtable_delete((RTable*)$ptable, $caret_cp - 1, 1);
+        $caret_cp--;
+        $anchor_cp = $caret_cp;
+    }
+    $dirty = 1;
+    ensure_visible($);
+    redraw($);
+}
+
+@proc delete_forward
+{
+    if ($caret_cp != $anchor_cp) {
+        edit_begin($);
+        delete_selection_only($);
+    } else if ($caret_cp < doc_len($)) {
+        edit_begin($);
+        rtable_delete((RTable*)$ptable, $caret_cp, 1);
+    }
+    $dirty = 1;
+    ensure_visible($);
+    redraw($);
+}
+
+@proc forward_char
+{
+    set_caret_cp($, $caret_cp + 1, False);
+    redraw($);
+}
+
+@proc backward_char
+{
+    set_caret_cp($, $caret_cp - 1, False);
+    redraw($);
+}
+
+@proc move_up
+{
+    move_vertical($, -1);
+    redraw($);
+}
+
+@proc move_down
+{
+    move_vertical($, 1);
+    redraw($);
+}
+
+@proc move_home
+{
+    int line = caret_line($);
+    RetexLine l;
+    if (retex_paragraph_get_line((RetexParagraph*)$para_ptr, line, &l))
+        set_caret_from_byte($, l.start_byte, False);
+    redraw($);
+}
+
+@proc move_end
+{
+    int line = caret_line($);
+    RetexLine l;
+    if (retex_paragraph_get_line((RetexParagraph*)$para_ptr, line, &l))
+        set_caret_from_byte($, l.end_byte, False);
+    redraw($);
+}
+
+@proc page_up
+{
+    sync_layout($);
+    $scroll_line -= 10;
+    if ($scroll_line < 0) $scroll_line = 0;
+    $dirty = 1;
+    redraw($);
+}
+
+@proc page_down
+{
+    sync_layout($);
+    int nl = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
+    $scroll_line += 10;
+    if ($scroll_line > nl - 1) $scroll_line = nl > 0 ? nl - 1 : 0;
+    $dirty = 1;
+    redraw($);
+}
+
+@proc set_cursor
+{
+    sync_layout($);
+    int mx = event->xbutton.x - $leftGap;
+    int my = event->xbutton.y - $topGap;
+    double xpt = px2pt($, (double)mx);
+    double ypt = px2pt($, (double)my) + scroll_offset_pt($);
+    int byte;
+
+    if (!$para_ptr) return;
+    byte = retex_paragraph_get_offset_at((RetexParagraph*)$para_ptr, xpt, ypt);
+    set_caret_from_byte($, byte, False);
+    $dirty = 1;
+    redraw($);
+}
+
+@proc extend_selection
+{
+    sync_layout($);
+    int mx = event->xbutton.x - $leftGap;
+    int my = event->xbutton.y - $topGap;
+    double xpt = px2pt($, (double)mx);
+    double ypt = px2pt($, (double)my) + scroll_offset_pt($);
+    int byte;
+
+    if (!$para_ptr) return;
+    byte = retex_paragraph_get_offset_at((RetexParagraph*)$para_ptr, xpt, ypt);
+    set_caret_from_byte($, byte, True);
+    $dirty = 1;
+    redraw($);
+}
+
+@proc focus_in
+{
+    $dirty = 1;
+    redraw($);
+}
+
+@proc focus_out
+{
+    $dirty = 1;
+    redraw($);
+}
+
+@proc undo
+{
+    if (rtable_undo((RTable*)$ptable)) {
+        push_redo($, $caret_cp, $anchor_cp);
+        if ($undo_n > 0) {
+            $undo_n--;
+            $caret_cp = $undo_cp[$undo_n];
+            $anchor_cp = $undo_anchor[$undo_n];
+        }
+        sync_look($);
+        $dirty = 1;
+        ensure_visible($);
+        redraw($);
+    }
+}
+
+@proc redo
+{
+    if (rtable_redo((RTable*)$ptable)) {
+        push_undo($, $caret_cp, $anchor_cp);
+        if ($redo_n > 0) {
+            $redo_n--;
+            $caret_cp = $redo_cp[$redo_n];
+            $anchor_cp = $redo_anchor[$redo_n];
+        }
+        sync_look($);
+        $dirty = 1;
+        ensure_visible($);
+        redraw($);
+    }
+}
+
+@proc copy_selection
+{
+    if ($caret_cp == $anchor_cp) return;
+    fill_selection_text($);
+    XtOwnSelection($, XA_PRIMARY, CurrentTime, ConvertSelection, LoseSelection, NULL);
+}
+
+@proc cut_selection
+{
+    if ($caret_cp == $anchor_cp) return;
+    fill_selection_text($);
+    XtOwnSelection($, XA_PRIMARY, CurrentTime, ConvertSelection, LoseSelection, NULL);
+    edit_begin($);
+    delete_selection_only($);
+    $dirty = 1;
+    ensure_visible($);
+    redraw($);
+}
+
+@proc paste
+{
+    XtGetSelectionValue($, XA_PRIMARY, $utf8_atom,
+                        RequestSelection, NULL, CurrentTime);
+}
+
+@IMPORTS
+@incl <assert.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xmu/Converters.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xaw/XawImP.h>
+@incl <math.h>
+@incl <stdlib.h>
+@incl <string.h>
+@incl <stdio.h>
+@incl <stdint.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "conststr.h"
+@incl "font.h"
+@incl "backend.h"
+@incl "backend_xpixmap.h"
+@incl "retex.h"
+@incl "rtable.h"
+@incl "utf8.h"
+@incl "utf32.h"
