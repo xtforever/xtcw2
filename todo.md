@@ -4,6 +4,28 @@ The rich-text foundations are in place (atom document model, styled layout,
 WYSIWYG text styles). These are the remaining features, starting with inline
 objects.
 
+## Paragraph formatting (branch `feature/wbravo-rich-editor`)
+
+- [x] Paragraph model: a blank line separates paragraphs; a single `\n` is a
+      soft line break inside the same paragraph.
+- [x] retex: `RetexParaFormat`, `retex_layout_styled_paras()` and
+      `retex_paragraphs()` (shared paragraph indexing).
+- [x] Per-paragraph alignment (left/center/right/justify), left/right/first-line
+      indentation, and space before/after (vertical kerns).
+- [x] Wbravo `ParaFmt` array, edit-time remapping (split/merge by position) and
+      undo/redo snapshots paired with the existing caret stacks.
+- [x] Actions: `align_{left,center,right,justify}`, `indent`/`outdent`,
+      `indent_right`/`outdent_right`, `indent_first`/`outdent_first`,
+      `set_space_before`/`set_space_after`.
+- [x] WmenuButton Format menu (Style / Paragraph tabs) in
+      `demos/demo_rich_bravo.lua`.
+- [x] Tests: `tests/test_retex_styled.c` (paragraph model/alignment/indent/
+      spacing) and `tests/test_rich_wbravo.c` (actions, undo, remap).
+- [ ] Hanging (negative first-line) indent: `first_line` is currently clamped at
+      0; add a negative leading-kern path if needed.
+- [ ] Paragraph-format "painting" on select-all / paste of multiple paragraphs
+      (splitting an existing paragraph currently inherits the containing format).
+
 ## Inline SVG objects
 
 - [ ] Implement `RATOM_OBJECT` handling in `retex_layout_styled()` (it currently

@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 #include "mls.h"
 #include "conststr.h"
 #include "backend_cairo.h"
@@ -188,6 +189,129 @@ static void test_trailing_space_caret(void)
     printf("test_trailing_space_caret passed\n");
 }
 
+static void test_paragraphs(void)
+{
+    /* "aaa\nbbb\n\nccc": two paragraphs, starts at atoms 0 and 9. */
+    const char *s = "aaa\nbbb\n\nccc";
+    RAtom atoms[16];
+    int starts[4];
+    int n, i;
+
+    for (i = 0; s[i]; i++)
+        atoms[i] = mkchar((uint32_t)(unsigned char)s[i], g_sans, 0, 16.0f);
+
+    n = retex_paragraphs(atoms, i, starts, 4);
+    assert(n == 2);
+    assert(starts[0] == 0);
+    assert(starts[1] == 9);
+
+    /* blank-line-only document still counts as one paragraph */
+    atoms[0] = mkchar('\n', g_sans, 0, 16.0f);
+    atoms[1] = mkchar('\n', g_sans, 0, 16.0f);
+    n = retex_paragraphs(atoms, 2, starts, 4);
+    assert(n == 1);
+    assert(starts[0] == 0);
+
+    printf("test_paragraphs passed\n");
+}
+
+static void test_paragraph_alignment_and_indent(void)
+{
+    /* Two paragraphs: "aaa\nbbb" (right) and "ccc" (left, 30pt indent). */
+    const char *s = "aaa\nbbb\n\nccc";
+    RAtom atoms[16];
+    RetexParaFormat f[2];
+    RetexParagraph *p;
+    RetexLine lines[8];
+    double x0, y0, h0, x3, y3, h3;
+    int i;
+
+    for (i = 0; s[i]; i++)
+        atoms[i] = mkchar((uint32_t)(unsigned char)s[i], g_sans, 0, 16.0f);
+
+    memset(f, 0, sizeof(f));
+    f[0].align = RETEX_ALIGN_RIGHT;
+    f[1].align = RETEX_ALIGN_LEFT;
+    f[1].indent_left = 30.0;
+
+    p = retex_layout_styled_paras(g_be, atoms, i, 300.0, "Sans", 16.0,
+                                  f, 2, RETEX_ALIGN_LEFT);
+    assert(p != NULL);
+    assert(retex_paragraph_get_line_count(p) == 4);
+    assert(retex_paragraph_get_lines(p, lines, 8) == 4);
+
+    /* right-aligned first paragraph starts near the right edge ... */
+    assert(retex_paragraph_get_caret_pos(p, 0, &x0, &y0, &h0) == 1);
+    assert(x0 > 150.0);
+
+    /* ... the left-indented second paragraph starts around 30pt. */
+    assert(retex_paragraph_get_caret_pos(p, 9, &x3, &y3, &h3) == 1);
+    assert(x3 > 20.0 && x3 < 60.0);
+    assert(y3 > y0);
+
+    retex_paragraph_free(p);
+    printf("test_paragraph_alignment_and_indent passed\n");
+}
+
+static void test_first_line_indent(void)
+{
+    /* "aaa\nbbb" is one paragraph: only the first line gets the extra indent. */
+    const char *s = "aaa\nbbb";
+    RAtom atoms[16];
+    RetexParaFormat f[1];
+    RetexParagraph *p;
+    double x0, y0, h0, x4, y4, h4;
+    int i;
+
+    for (i = 0; s[i]; i++)
+        atoms[i] = mkchar((uint32_t)(unsigned char)s[i], g_sans, 0, 16.0f);
+
+    memset(f, 0, sizeof(f));
+    f[0].align = RETEX_ALIGN_LEFT;
+    f[0].indent_left = 20.0;
+    f[0].first_line = 40.0;
+
+    p = retex_layout_styled_paras(g_be, atoms, i, 300.0, "Sans", 16.0,
+                                  f, 1, RETEX_ALIGN_LEFT);
+    assert(p != NULL);
+    assert(retex_paragraph_get_caret_pos(p, 0, &x0, &y0, &h0) == 1);
+    assert(retex_paragraph_get_caret_pos(p, 4, &x4, &y4, &h4) == 1);
+    assert(x0 > 55.0);          /* 20 + 40 */
+    assert(x4 > 15.0 && x4 < 30.0);   /* only 20 */
+
+    retex_paragraph_free(p);
+    printf("test_first_line_indent passed\n");
+}
+
+static void test_paragraph_spacing(void)
+{
+    /* "a\n\nb": blank line, with 24pt space after paragraph 0. */
+    const char *s = "a\n\nb";
+    RAtom atoms[8];
+    RetexParaFormat f[2];
+    RetexParagraph *p;
+    RetexLine lines[4];
+    double gap;
+    int i;
+
+    for (i = 0; s[i]; i++)
+        atoms[i] = mkchar((uint32_t)(unsigned char)s[i], g_sans, 0, 16.0f);
+
+    memset(f, 0, sizeof(f));
+    f[0].space_after = 24.0;
+    f[1].space_before = 8.0;
+
+    p = retex_layout_styled_paras(g_be, atoms, i, 300.0, "Sans", 16.0,
+                                  f, 2, RETEX_ALIGN_LEFT);
+    assert(p != NULL);
+    assert(retex_paragraph_get_lines(p, lines, 4) == 3);
+    /* extra vertical space appears before the blank line */
+    gap = lines[1].y - (lines[0].y + lines[0].height);
+    assert(gap > 10.0);
+    retex_paragraph_free(p);
+    printf("test_paragraph_spacing passed\n");
+}
+
 int main(void)
 {
     m_init();
@@ -202,6 +326,10 @@ int main(void)
     test_newline_and_caret();
     test_wrap();
     test_trailing_space_caret();
+    test_paragraphs();
+    test_paragraph_alignment_and_indent();
+    test_first_line_indent();
+    test_paragraph_spacing();
 
     g_be->destroy(g_be);
     conststr_free();

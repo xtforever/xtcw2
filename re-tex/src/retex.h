@@ -50,6 +50,27 @@ RetexParagraph* retex_layout(Backend *be, const char *text, double width_pt, con
 RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_pt, const char *font_face, double font_size_pt, RetexAlign align);
 
 /**
+ * @brief Per-paragraph formatting for the styled layout.
+ *
+ * Paragraphs are separated by blank lines: a line containing only spaces,
+ * tabs or CR is blank and ends the preceding paragraph.  A single '\n' is a
+ * soft line break inside the same paragraph.  All lengths are in points.
+ *
+ * indent_left / indent_right add a margin on both sides of every line of the
+ * paragraph; first_line adds an extra left indent to the paragraph's first
+ * visual line.  space_before / space_after add vertical space around the
+ * paragraph.  align is a RetexAlign value.
+ */
+typedef struct {
+    int align;
+    double indent_left;
+    double indent_right;
+    double first_line;
+    double space_before;
+    double space_after;
+} RetexParaFormat;
+
+/**
  * @brief Styled layout: build a paragraph directly from rich atoms.
  *
  * Each RAtom_CHAR is rendered with its own RLook (font face / style / size);
@@ -62,6 +83,31 @@ RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_p
 RetexParagraph* retex_layout_styled(Backend *be, const RAtom *atoms, int natoms,
                                     double width_pt, const char *font_face,
                                     double font_size_pt, RetexAlign align);
+
+/**
+ * @brief Styled layout with per-paragraph formatting.
+ *
+ * fmts[i] applies to the i-th non-empty paragraph (blank-line separated).
+ * Paragraphs beyond nfmts use default_align with no indents or spacing.
+ * Pass fmts == NULL for a single default paragraph.  The paragraph index
+ * matches retex_paragraphs().
+ */
+RetexParagraph* retex_layout_styled_paras(Backend *be, const RAtom *atoms,
+                                          int natoms, double width_pt,
+                                          const char *font_face,
+                                          double font_size_pt,
+                                          const RetexParaFormat *fmts, int nfmts,
+                                          RetexAlign default_align);
+
+/**
+ * @brief Paragraph model used by the styled layout.
+ *
+ * Returns the number of paragraphs (maximal runs of non-blank lines), at
+ * least 1 for an empty document.  If out != NULL, writes up to max atom
+ * offsets of each paragraph's first atom (an empty document writes 0).
+ * Matches the paragraph indexing of retex_layout_styled_paras().
+ */
+int retex_paragraphs(const RAtom *atoms, int natoms, int *out, int max);
 
 /**
  * @brief Font of the character at a source byte offset (styled layout).

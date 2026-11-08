@@ -1004,3 +1004,43 @@ This gives reliable "click outside / click the button closes" without any pointe
 grab that could leak.
 
 **File:** `wbuild_widgets/WmenuButton.widget`
+
+## wbuild: an `@var` with an external struct pointer breaks consumers of `<Widget>P.h`
+
+**Symptom:** Adding e.g. `@var RetexParaFormat *para_fmt` to a `.widget` compiles
+the generated `<Widget>.c` (the `@IMPORTS` includes are emitted before the private
+header), but any other translation unit that includes `<Widget>P.h` fails with
+`error: unknown type name 'RetexParaFormat'`.  `<Widget>P.h` does not include the
+widget's `@IMPORTS` headers.
+
+**Cause:** `wbuild` emits `@IMPORTS` only into the generated `.c`, never into the
+generated public/private headers, so external types used in `@PRIVATE` fields are
+not visible to header consumers.
+
+**Fix:** Store the field as `void *` (the convention already used for `ptable`,
+`para_ptr`, `backend_ptr`) and cast to the real type where it is used, or keep the
+private field opaque.  Do not expose an external struct type directly unless its
+header is included by the public widget header.
+
+**File:** `wbuild_widgets/Wbravo.widget`
+
+## Stale test binary after rebuilding only one library ("mls Not initialized")
+
+**Symptom:** Running a test that was built before a library change aborts with
+`ERROR: mls.c ... Not initialized` before any test output, even though the test
+calls `m_init()`.
+
+**Cause:** The test links the static `libretex.a`/`libutils.a` at link time.  If
+one archive was rebuilt with different flags (e.g. a manual
+`make -C re-tex/src` picked up the makefile's fallback `CFLAGS` instead of the
+root makefile's exported `-DMLS_DEBUG`/include paths) while an already-built test
+binary kept the old objects, the mixed `MLS_DEBUG` translation units disagree
+about the mls bookkeeping and the handle check fails.  The `tests/Makefile` has
+no header-dependency tracking, so the binary is not relinked.
+
+**Fix:** Rebuild through the root makefile, which exports one consistent
+`CFLAGS`, and force relinking after a library change:
+`rm -f tests/<test> && make tests`.  Avoid invoking `make -C re-tex/src`
+directly with hand-written flags during a debug build.
+
+**Files:** `tests/Makefile`, `re-tex/src/makefile`, root `makefile`

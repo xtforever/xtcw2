@@ -73,6 +73,19 @@
 @var int last_height
 @ pending look applied to newly typed characters
 @var RLook look
+@ Per-paragraph formatting: one entry per blank-line separated paragraph.
+@var void *para_fmt
+@var int para_n
+@var int para_cap
+@ Paragraph starts captured before an edit, for remapping formats afterwards.
+@var int *old_para_start
+@var int old_para_n
+@var int edit_old_len
+@ Paragraph-format snapshots paired with the caret undo/redo stacks.
+@var void *undo_para
+@var int *undo_para_n
+@var void *redo_para
+@var int *redo_para_n
 
 @METHODS
 
@@ -104,6 +117,11 @@
     $sel_buf = NULL; $sel_len = 0;
     $out_buf = NULL; $out_cap = 0;
 
+    $para_fmt = NULL; $para_n = 0; $para_cap = 0;
+    $old_para_start = NULL; $old_para_n = 0; $edit_old_len = 0;
+    $undo_para = NULL; $undo_para_n = NULL;
+    $redo_para = NULL; $redo_para_n = NULL;
+
     $utf8_atom = XInternAtom(dpy, "UTF8_STRING", False);
 
     $text_mem = XtNewString($text ? $text : "");
@@ -130,6 +148,12 @@
     free($redo_cp); free($redo_anchor);
     free($sel_buf); free($out_buf);
 
+    para_clear_history($);
+    free($undo_para); free($undo_para_n);
+    free($redo_para); free($redo_para_n);
+    free($para_fmt);
+    free($old_para_start);
+
     free_colors($);
     XtFree($text_mem);
 }
@@ -146,6 +170,11 @@
     }
     if ($fontFace != $old$fontFace || $fontSize != $old$fontSize ||
         $alignment != $old$alignment) {
+        if ($alignment != $old$alignment) {
+            int i;
+            for (i = 0; i < $para_n; i++)
+                ((RetexParaFormat*)$para_fmt)[i].align = $alignment;
+        }
         $dirty = 1;
         redraw_flag = 1;
     }
@@ -322,6 +351,220 @@
     out->size = (float)$fontSize;
 }
 
+@ paragraph formatting helpers
+
+@proc RetexParaFormat* para_alloc_default($, int n)
+{
+    RetexParaFormat *f;
+    int i;
+    if (n < 1) n = 1;
+    f = (RetexParaFormat*)calloc((size_t)n, sizeof(RetexParaFormat));
+    if (!f) return NULL;
+    for (i = 0; i < n; i++) f[i].align = $alignment;
+    return f;
+}
+
+@ Free the undo/redo per-paragraph snapshots and reset the history depth.
+@proc void para_clear_history($)
+{
+    int i;
+    RetexParaFormat **up = (RetexParaFormat**)$undo_para;
+    RetexParaFormat **rp = (RetexParaFormat**)$redo_para;
+    if (up) {
+        for (i = 0; i < $undo_n; i++) free(up[i]);
+    }
+    if (rp) {
+        for (i = 0; i < $redo_n; i++) free(rp[i]);
+    }
+    $undo_n = 0;
+    $redo_n = 0;
+}
+
+@ Allocate a copy of the current paragraph formats.  *n_out gets the count.
+@proc RetexParaFormat* para_copy($, int *n_out)
+{
+    RetexParaFormat *c = NULL;
+    int n = $para_n > 0 ? $para_n : 0;
+    if (n > 0 && $para_fmt) {
+        c = (RetexParaFormat*)malloc((size_t)n * sizeof(RetexParaFormat));
+        if (c) memcpy(c, $para_fmt, (size_t)n * sizeof(RetexParaFormat));
+    }
+    if (n_out) *n_out = n;
+    return c;
+}
+
+@ Rebuild the paragraph-format array from the current document.
+@proc void para_init($)
+{
+    int *starts = NULL, n = 0;
+    RetexParaFormat *f;
+    para_compute($, &starts, &n);
+    free(starts);
+    if (n < 1) n = 1;
+    free($para_fmt);
+    f = para_alloc_default($, n);
+    $para_fmt = f;
+    $para_n = f ? n : 0;
+    $para_cap = $para_n;
+    free($old_para_start);
+    $old_para_start = NULL;
+    $old_para_n = 0;
+}
+
+@ Compute paragraph start atom offsets from the current document.
+@proc void para_compute($, int **starts_out, int *n_out)
+{
+    RAtom *atoms;
+    int natoms = 0, n;
+    int *s = NULL;
+
+    atoms = rtable_to_array((RTable*)$ptable, &natoms);
+    n = retex_paragraphs(atoms, natoms, NULL, 0);
+    if (n < 1) n = 1;
+    s = (int*)malloc((size_t)n * sizeof(int));
+    if (s) retex_paragraphs(atoms, natoms, s, n);
+    free(atoms);
+    *starts_out = s;
+    *n_out = n;
+}
+
+@ Greatest paragraph index whose start is <= pos.
+@proc int para_index_for_pos($, const int *starts, int n, int pos)
+{
+    int i, k = 0;
+    if (!starts || n <= 0) return 0;
+    for (i = 0; i < n; i++) {
+        if (starts[i] <= pos) k = i;
+        else break;
+    }
+    return k;
+}
+
+@ Capture the paragraph starts before an edit (edit_begin).
+@proc void para_snapshot($)
+{
+    int *s = NULL, n = 0;
+    para_compute($, &s, &n);
+    free($old_para_start);
+    $old_para_start = s;
+    $old_para_n = n;
+}
+
+@ Remap paragraph formats after a text edit of `delta` atoms at edit_pos.
+@proc void para_resync($, int edit_pos, int delta)
+{
+    int *ns = NULL, nn = 0;
+    int i, k;
+    RetexParaFormat *nf;
+
+    para_compute($, &ns, &nn);
+    nf = (RetexParaFormat*)malloc((size_t)nn * sizeof(RetexParaFormat));
+    if (nf) {
+        for (i = 0; i < nn; i++) {
+            int os = (ns[i] <= edit_pos) ? ns[i] : ns[i] - delta;
+            RetexParaFormat base;
+            memset(&base, 0, sizeof(base));
+            base.align = $alignment;
+            k = para_index_for_pos($, $old_para_start, $old_para_n, os);
+            if (k >= $para_n) k = $para_n > 0 ? $para_n - 1 : 0;
+            nf[i] = ($para_fmt && $para_n > 0) ? ((RetexParaFormat*)$para_fmt)[k] : base;
+        }
+    }
+    free($para_fmt);
+    $para_fmt = nf;
+    $para_n = nf ? nn : 0;
+    $para_cap = $para_n;
+    free(ns);
+    free($old_para_start);
+    $old_para_start = NULL;
+    $old_para_n = 0;
+}
+
+@ Paragraph range touched by the caret/selection.
+@proc void para_selection($, int *p0, int *p1)
+{
+    int *starts = NULL, n = 0, lo, hi;
+
+    para_compute($, &starts, &n);
+    if ($caret_cp != $anchor_cp) {
+        lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+        hi = $caret_cp < $anchor_cp ? $anchor_cp : $caret_cp;
+        *p0 = para_index_for_pos($, starts, n, lo);
+        *p1 = para_index_for_pos($, starts, n, hi > lo ? hi - 1 : lo);
+    } else {
+        *p0 = *p1 = para_index_for_pos($, starts, n, $caret_cp);
+    }
+    free(starts);
+    if (*p0 < 0) *p0 = 0;
+    if (*p1 < *p0) *p1 = *p0;
+    if ($para_n > 0 && *p1 >= $para_n) *p1 = $para_n - 1;
+}
+
+@ Commit a paragraph-format change.
+@proc void para_commit($)
+{
+    $dirty = 1;
+    ensure_visible($);
+    redraw($);
+}
+
+@ Assign one alignment to the paragraphs touched by the caret/selection.
+@proc void para_set_align($, int align)
+{
+    int p0, p1, i;
+    if ($para_n <= 0 || !$para_fmt) return;
+    para_selection($, &p0, &p1);
+    edit_begin($);
+    for (i = p0; i <= p1 && i < $para_n; i++)
+        ((RetexParaFormat*)$para_fmt)[i].align = align;
+    para_commit($);
+}
+
+@ field: 1 = left indent, 2 = right indent, 3 = first-line indent.
+@proc void para_add_indent($, int field, double delta)
+{
+    int p0, p1, i;
+    double *v;
+    if ($para_n <= 0 || !$para_fmt) return;
+    para_selection($, &p0, &p1);
+    edit_begin($);
+    for (i = p0; i <= p1 && i < $para_n; i++) {
+        switch (field) {
+            case 2: v = &((RetexParaFormat*)$para_fmt)[i].indent_right; break;
+            case 3: v = &((RetexParaFormat*)$para_fmt)[i].first_line; break;
+            default: v = &((RetexParaFormat*)$para_fmt)[i].indent_left; break;
+        }
+        *v += delta;
+        if (*v < 0.0) *v = 0.0;
+    }
+    para_commit($);
+}
+
+@ Install a paragraph-format snapshot (takes ownership of p).
+@proc void para_restore($, RetexParaFormat *p, int n)
+{
+    free($para_fmt);
+    $para_fmt = p;
+    $para_n = n;
+    $para_cap = n;
+    if (!$para_fmt || $para_n < 1) para_init($);
+}
+
+@ Set space before (where=0) or after (where=1) a paragraph, in points.
+@proc void para_set_space($, int where, double value)
+{
+    int p0, p1, i;
+    if ($para_n <= 0 || !$para_fmt) return;
+    if (value < 0.0) value = 0.0;
+    para_selection($, &p0, &p1);
+    edit_begin($);
+    for (i = p0; i <= p1 && i < $para_n; i++) {
+        if (where) ((RetexParaFormat*)$para_fmt)[i].space_after = value;
+        else ((RetexParaFormat*)$para_fmt)[i].space_before = value;
+    }
+    para_commit($);
+}
+
 @ Adopt the look of the character next to the caret so typing continues the run.
 @proc void sync_look($)
 {
@@ -415,8 +658,10 @@
     $caret_cp = 0;
     $anchor_cp = 0;
     $scroll_line = 0;
+    para_clear_history($);
     $undo_n = 0;
     $redo_n = 0;
+    para_init($);
     $dirty = 1;
 }
 
@@ -463,10 +708,12 @@
     }
     wpx = (int)$width - ($leftGap + $rightGap);
     if (wpx < 10) wpx = 10;
+    if (!$para_fmt || $para_n < 1) para_init($);
     atoms = rtable_to_array((RTable*)$ptable, &natoms);
-    $para_ptr = retex_layout_styled((Backend*)$backend_ptr, atoms, natoms,
-                                    px2pt($, wpx), $fontFace, $fontSize,
-                                    (RetexAlign)$alignment);
+    $para_ptr = retex_layout_styled_paras((Backend*)$backend_ptr, atoms, natoms,
+                                          px2pt($, wpx), $fontFace, $fontSize,
+                                          $para_fmt, $para_n,
+                                          (RetexAlign)$alignment);
     free(atoms);
 }
 
@@ -621,37 +868,80 @@
 
 @proc void push_undo($, int cp, int anchor)
 {
+    int nn = 0;
+    RetexParaFormat *pc;
     if ($undo_n >= $undo_cap) {
         int nc = $undo_cap ? $undo_cap * 2 : 8;
         int *a = (int*)realloc($undo_cp, nc * sizeof(int));
-        int *b = (int*)realloc($undo_anchor, nc * sizeof(int));
-        if (!a || !b) return;
-        $undo_cp = a; $undo_anchor = b; $undo_cap = nc;
+        int *b;
+        RetexParaFormat **pp;
+        int *pn;
+        if (!a) return;
+        $undo_cp = a;
+        b = (int*)realloc($undo_anchor, nc * sizeof(int));
+        if (!b) return;
+        $undo_anchor = b;
+        pp = (RetexParaFormat**)realloc($undo_para, nc * sizeof(RetexParaFormat*));
+        if (!pp) return;
+        $undo_para = pp;
+        pn = (int*)realloc($undo_para_n, nc * sizeof(int));
+        if (!pn) return;
+        $undo_para_n = pn;
+        $undo_cap = nc;
     }
+    pc = para_copy($, &nn);
     $undo_cp[$undo_n] = cp;
     $undo_anchor[$undo_n] = anchor;
+    ((RetexParaFormat**)$undo_para)[$undo_n] = pc;
+    $undo_para_n[$undo_n] = nn;
     $undo_n++;
 }
 
 @proc void push_redo($, int cp, int anchor)
 {
+    int nn = 0;
+    RetexParaFormat *pc;
     if ($redo_n >= $redo_cap) {
         int nc = $redo_cap ? $redo_cap * 2 : 8;
         int *a = (int*)realloc($redo_cp, nc * sizeof(int));
-        int *b = (int*)realloc($redo_anchor, nc * sizeof(int));
-        if (!a || !b) return;
-        $redo_cp = a; $redo_anchor = b; $redo_cap = nc;
+        int *b;
+        RetexParaFormat **pp;
+        int *pn;
+        if (!a) return;
+        $redo_cp = a;
+        b = (int*)realloc($redo_anchor, nc * sizeof(int));
+        if (!b) return;
+        $redo_anchor = b;
+        pp = (RetexParaFormat**)realloc($redo_para, nc * sizeof(RetexParaFormat*));
+        if (!pp) return;
+        $redo_para = pp;
+        pn = (int*)realloc($redo_para_n, nc * sizeof(int));
+        if (!pn) return;
+        $redo_para_n = pn;
+        $redo_cap = nc;
     }
+    pc = para_copy($, &nn);
     $redo_cp[$redo_n] = cp;
     $redo_anchor[$redo_n] = anchor;
+    ((RetexParaFormat**)$redo_para)[$redo_n] = pc;
+    $redo_para_n[$redo_n] = nn;
     $redo_n++;
 }
 
 @proc void edit_begin($)
 {
+    int i;
+    RetexParaFormat **rp;
     if (!$ptable) return;
     rtable_snapshot((RTable*)$ptable);
+    para_snapshot($);
+    $edit_old_len = rtable_len((RTable*)$ptable);
     push_undo($, $caret_cp, $anchor_cp);
+    /* A new edit invalidates the redo history (and its format snapshots). */
+    rp = (RetexParaFormat**)$redo_para;
+    if (rp) {
+        for (i = 0; i < $redo_n; i++) { free(rp[i]); rp[i] = NULL; }
+    }
     $redo_n = 0;
 }
 
@@ -668,12 +958,15 @@
 
 @proc void insert_cps($, uint32_t *cps, int n)
 {
+    int pos;
     if (n <= 0 || !$ptable) return;
     edit_begin($);
     delete_selection_only($);
-    rtable_insert_cps((RTable*)$ptable, $caret_cp, cps, n, $look);
+    pos = $caret_cp;
+    rtable_insert_cps((RTable*)$ptable, pos, cps, n, $look);
     $caret_cp += n;
     $anchor_cp = $caret_cp;
+    para_resync($, pos, rtable_len((RTable*)$ptable) - $edit_old_len);
     $dirty = 1;
     ensure_visible($);
 }
@@ -824,6 +1117,32 @@
         apply_size($, (float)atof(params[0]));
 }
 
+@ paragraph actions
+
+@proc align_left    { para_set_align($, RETEX_ALIGN_LEFT); }
+@proc align_center  { para_set_align($, RETEX_ALIGN_CENTER); }
+@proc align_right   { para_set_align($, RETEX_ALIGN_RIGHT); }
+@proc align_justify { para_set_align($, RETEX_ALIGN_JUSTIFY); }
+
+@proc indent        { para_add_indent($, 1, 24.0); }
+@proc outdent       { para_add_indent($, 1, -24.0); }
+@proc indent_right  { para_add_indent($, 2, 24.0); }
+@proc outdent_right { para_add_indent($, 2, -24.0); }
+@proc indent_first  { para_add_indent($, 3, 24.0); }
+@proc outdent_first { para_add_indent($, 3, -24.0); }
+
+@proc set_space_before
+{
+    if (num_params && *num_params >= 1 && params[0])
+        para_set_space($, 0, atof(params[0]));
+}
+
+@proc set_space_after
+{
+    if (num_params && *num_params >= 1 && params[0])
+        para_set_space($, 1, atof(params[0]));
+}
+
 @proc insert_text
 {
     uint32_t cps[256];
@@ -856,14 +1175,19 @@
 
 @proc delete_backward
 {
+    int pos;
     if ($caret_cp != $anchor_cp) {
+        pos = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
         edit_begin($);
         delete_selection_only($);
+        para_resync($, pos, rtable_len((RTable*)$ptable) - $edit_old_len);
     } else if ($caret_cp > 0) {
         edit_begin($);
-        rtable_delete((RTable*)$ptable, $caret_cp - 1, 1);
+        pos = $caret_cp - 1;
+        rtable_delete((RTable*)$ptable, pos, 1);
         $caret_cp--;
         $anchor_cp = $caret_cp;
+        para_resync($, pos, -1);
     }
     $dirty = 1;
     ensure_visible($);
@@ -872,12 +1196,17 @@
 
 @proc delete_forward
 {
+    int pos;
     if ($caret_cp != $anchor_cp) {
+        pos = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
         edit_begin($);
         delete_selection_only($);
+        para_resync($, pos, rtable_len((RTable*)$ptable) - $edit_old_len);
     } else if ($caret_cp < doc_len($)) {
         edit_begin($);
-        rtable_delete((RTable*)$ptable, $caret_cp, 1);
+        pos = $caret_cp;
+        rtable_delete((RTable*)$ptable, pos, 1);
+        para_resync($, pos, -1);
     }
     $dirty = 1;
     ensure_visible($);
@@ -997,6 +1326,12 @@
             $undo_n--;
             $caret_cp = $undo_cp[$undo_n];
             $anchor_cp = $undo_anchor[$undo_n];
+            if ($undo_para) {
+                RetexParaFormat *p = ((RetexParaFormat**)$undo_para)[$undo_n];
+                int n = $undo_para_n[$undo_n];
+                ((RetexParaFormat**)$undo_para)[$undo_n] = NULL;
+                para_restore($, p, n);
+            }
         }
         sync_look($);
         $dirty = 1;
@@ -1013,6 +1348,12 @@
             $redo_n--;
             $caret_cp = $redo_cp[$redo_n];
             $anchor_cp = $redo_anchor[$redo_n];
+            if ($redo_para) {
+                RetexParaFormat *p = ((RetexParaFormat**)$redo_para)[$redo_n];
+                int n = $redo_para_n[$redo_n];
+                ((RetexParaFormat**)$redo_para)[$redo_n] = NULL;
+                para_restore($, p, n);
+            }
         }
         sync_look($);
         $dirty = 1;
@@ -1030,11 +1371,14 @@
 
 @proc cut_selection
 {
+    int pos;
     if ($caret_cp == $anchor_cp) return;
     fill_selection_text($);
     XtOwnSelection($, XA_PRIMARY, CurrentTime, ConvertSelection, LoseSelection, NULL);
+    pos = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
     edit_begin($);
     delete_selection_only($);
+    para_resync($, pos, rtable_len((RTable*)$ptable) - $edit_old_len);
     $dirty = 1;
     ensure_visible($);
     redraw($);

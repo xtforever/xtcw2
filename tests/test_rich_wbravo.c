@@ -12,6 +12,7 @@
 #include <X11/Xft/Xft.h>
 #include "rtable.h"
 #include "conststr.h"
+#include "retex.h"
 #include "Wbravo.h"
 #include "WbravoP.h"
 
@@ -106,6 +107,56 @@ int main(int argc, char **argv)
     act("set_size", p, 1);
     assert(atom_at(0).look.size == 24.0f);
     assert(atom_at(4).look.size == 24.0f);
+
+    /* ---- paragraph formatting ---------------------------------------- */
+    XtVaSetValues(ed, XtNtext, (XtArgVal)"aaa\n\nbbb\n\nccc", NULL);
+    pump();
+    assert(((WbravoWidget)ed)->wbravo.para_n == 3);
+
+    /* caret in the second paragraph (atom 5) -> centre it only */
+    set_sel(5, 5);
+    act("align_center", NULL, 0);
+    {
+        RetexParaFormat *pf = (RetexParaFormat *)((WbravoWidget)ed)->wbravo.para_fmt;
+        assert(pf[0].align == RETEX_ALIGN_LEFT);
+        assert(pf[1].align == RETEX_ALIGN_CENTER);
+        assert(pf[2].align == RETEX_ALIGN_LEFT);
+    }
+
+    /* undo/redo carries the per-paragraph format along */
+    act("undo", NULL, 0);
+    {
+        RetexParaFormat *pf = (RetexParaFormat *)((WbravoWidget)ed)->wbravo.para_fmt;
+        assert(pf[1].align == RETEX_ALIGN_LEFT);
+    }
+    act("redo", NULL, 0);
+    {
+        RetexParaFormat *pf = (RetexParaFormat *)((WbravoWidget)ed)->wbravo.para_fmt;
+        assert(pf[1].align == RETEX_ALIGN_CENTER);
+    }
+
+    /* indentation and spacing apply to the caret paragraph */
+    set_sel(5, 5);
+    act("indent", NULL, 0);
+    p[0] = (String)"12";
+    act("set_space_after", p, 1);
+    {
+        RetexParaFormat *pf = (RetexParaFormat *)((WbravoWidget)ed)->wbravo.para_fmt;
+        assert(pf[1].indent_left >= 20.0);
+        assert(pf[1].space_after == 12.0);
+        assert(pf[0].indent_left == 0.0);
+    }
+
+    /* inserting a blank line keeps the format attached to 'bbb' */
+    set_sel(3, 3);
+    ins[0] = (String)"\n";
+    act("insert_text", ins, 1);
+    assert(((WbravoWidget)ed)->wbravo.para_n == 3);
+    {
+        RetexParaFormat *pf = (RetexParaFormat *)((WbravoWidget)ed)->wbravo.para_fmt;
+        assert(pf[1].align == RETEX_ALIGN_CENTER);
+        assert(pf[1].indent_left >= 20.0);
+    }
 
     XtDestroyWidget(toplevel);
     printf("test_rich_wbravo passed\n");
