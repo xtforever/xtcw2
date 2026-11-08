@@ -1,3 +1,0 @@
-[submodule "LuaRunner/nanosvg"]
-	path = LuaRunner/nanosvg
-	url = https://github.com/memononen/nanosvg.git
