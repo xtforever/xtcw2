@@ -1,0 +1,6 @@
+# keep the image build context small; the container clones from a mounted mirror
+build/
+.git/
+**/*.o
+**/*.a
+**/*.so
