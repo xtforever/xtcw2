@@ -94,6 +94,9 @@
 @var void *font
 @var void *draw
 @var Pixmap pixmap
+@ sizes of the current backing pixmap
+@var int cache_w
+@var int cache_h
 @var GC gc
 @var GC icon_gc
 @var GC copy_gc
@@ -247,6 +250,8 @@
   $font = NULL;
   $draw = NULL;
   $pixmap = 0;
+  $cache_w = 0;
+  $cache_h = 0;
   $gc = 0;
   $icon_gc = 0;
   $copy_gc = 0;
@@ -301,6 +306,7 @@
   free($col_kind);
   if ($draw) { XftDrawDestroy((XftDraw*)$draw); $draw = NULL; }
   if ($pixmap) { XFreePixmap($dpy, $pixmap); $pixmap = 0; }
+  $cache_w = 0; $cache_h = 0;
   if ($font) { XftFontClose($dpy, (XftFont*)$font); $font = NULL; }
   free_xcol($);
   if ($gc) { XtReleaseGC($, $gc); $gc = 0; }
@@ -677,16 +683,21 @@
   if (w > 4000) w = 4000;
   if (h > 4000) h = 4000;
 
-  if ($pixmap && (int)$width <= w && (int)$height <= h) {
-    /* keep existing cache if it already covers the window */
+  if ($pixmap && $cache_w == w && $cache_h == h) {
+    /* cache already matches the window */
   } else {
     if ($draw) { XftDrawDestroy((XftDraw*)$draw); $draw = NULL; }
     if ($pixmap) { XFreePixmap(dpy, $pixmap); $pixmap = 0; }
+    $cache_w = 0;
+    $cache_h = 0;
   }
 
-  if (!$pixmap)
+  if (!$pixmap) {
     $pixmap = XCreatePixmap(dpy, XtWindow($), (unsigned int)w, (unsigned int)h,
                             DefaultDepth(dpy, DefaultScreen(dpy)));
+    $cache_w = w;
+    $cache_h = h;
+  }
   if (!$draw && $pixmap)
     $draw = XftDrawCreate(dpy, $pixmap, vis, None);
   $dirty = 1;
@@ -789,24 +800,34 @@
   return m_len($icons) - 1;
 }
 
-@proc void draw_icon($, int x, int y, int w, int h, const char *name, int ci)
+@proc void draw_icon($, int x, int y, int w, int h, const char *name, int ci,
+                    int clip_top, int clip_bot)
 {
   int ii = icon_index($, name);
   list_icon_t *ic;
-  int iy, ix;
+  int iy, ix, ih;
 
   if (ii < 0 || ii >= m_len($icons)) return;
   ic = (list_icon_t*)mls($icons, ii);
   if (!ic || ic->kind < 0) return;
 
+  ih = (ic->h > 0) ? ic->h : $iconSize;
   ix = x + $cellPaddingX;
-  iy = y + (h - (ic->h > 0 ? ic->h : $iconSize)) / 2;
+  iy = y + (h - ih) / 2;
   if (iy < y + $cellPaddingY) iy = y + $cellPaddingY;
+
+  /* XCopyArea/xim2_put_image are not bounded by the XftDraw clip, so a row
+   * that is partly scrolled under the header must not draw its icon. */
+  if (iy < clip_top || iy + ih > clip_bot) return;
 
   if (ic->kind == ICON_SVG && ic->svg) {
     XImage2 *im = (XImage2*)ic->svg;
-    if (im->image)
+    if (im->image) {
+      /* The backing pixmap is recreated on resize; xim2_put_image uses the
+       * drawable stored in the XImage2, so point it at the current pixmap. */
+      im->d = $pixmap;
       xim2_put_image(im, ix, iy, 0, 0, ix, iy, (int)im->width, (int)im->height);
+    }
   } else if (ic->kind == ICON_XPM && ic->map) {
     if (ic->mask) {
       XSetClipMask($dpy, $icon_gc, ic->mask);
@@ -820,7 +841,8 @@
   }
 }
 
-@proc void draw_cell($, int x, int y, int w, int h, const char *cell, int kind, int align, int ci)
+@proc void draw_cell($, int x, int y, int w, int h, const char *cell, int kind,
+                    int align, int ci, int clip_top, int clip_bot)
 {
   if (kind == COLT_TEXT || !cell || cell[0] != '@') {
     draw_cell_text($, x, y, w, h, cell, align, ci);
@@ -841,7 +863,7 @@
       strncpy(label, bar + 1, sizeof(label) - 1);
       label[sizeof(label) - 1] = 0;
     }
-    draw_icon($, x, y, w, h, icon, ci);
+    draw_icon($, x, y, w, h, icon, ci, clip_top, clip_bot);
     if (kind == COLT_ICON_TEXT && label[0]) {
       int tx = x + $cellPaddingX + $iconSize + $cellPaddingX;
       draw_cell_text($, tx, y, w - (tx - x), h, label, align, ci);
@@ -856,6 +878,12 @@
   int i;
 
   if (!$showHeader || $header_h <= 0 || !$pixmap) return;
+  {
+    XGCValues gv;
+    gv.foreground = $col_px[C_HDR_BG];
+    gv.graphics_exposures = False;
+    XChangeGC($dpy, $gc, GCForeground | GCGraphicsExposures, &gv);
+  }
   XFillRectangle($dpy, $pixmap, $gc, 0, 0, (unsigned int)$width, (unsigned int)$header_h);
   for (i = 0; i < $ncols; i++) {
     int x = $col_x[i] - $top_x;
@@ -883,8 +911,11 @@
 {
   int n = row_count($);
   int first, last, i;
+  int body_top, body_bottom;
 
   if (!$pixmap || $row_h <= 0) return;
+  body_top = $list_y;
+  body_bottom = $list_y + $list_h;
   first = $top_y / $row_h;
   if (first < 0) first = 0;
   last = ($top_y + $list_h) / $row_h;
@@ -893,12 +924,16 @@
   for (i = first; i <= last && i < n; i++) {
     char rowbuf[2048];
     char *row = row_string($, i);
-    int y = $list_y + i * $row_h - $top_y;
+    int y0 = $list_y + i * $row_h - $top_y;
+    int top = y0 < body_top ? body_top : y0;
+    int bot = y0 + $row_h > body_bottom ? body_bottom : y0 + $row_h;
     int c = 0;
     const char *p;
     Pixel bg;
 
     if (i < 0) continue;
+    /* Rows scroll under the fixed header; never paint above the body. */
+    if (top >= bot) continue;
     if ($selected == i) bg = $col_px[C_SEL_BG];
     else if ($alternateRows && (i & 1)) bg = $col_px[C_ALT_BG];
     else bg = $col_px[C_BG];
@@ -914,7 +949,8 @@
       gv.graphics_exposures = False;
       XChangeGC($dpy, $gc, GCForeground | GCGraphicsExposures, &gv);
     }
-    XFillRectangle($dpy, $pixmap, $gc, 0, y, (unsigned int)$width, (unsigned int)$row_h);
+    XFillRectangle($dpy, $pixmap, $gc, 0, top, (unsigned int)$width,
+                   (unsigned int)(bot - top));
 
     if (!row) row = "";
     strncpy(rowbuf, row, sizeof(rowbuf) - 1);
@@ -935,12 +971,13 @@
       if (cw > 0 && cx + cw > 0 && cx < (int)$width) {
         XRectangle clip;
         clip.x = (short)(cx < 0 ? 0 : cx);
-        clip.y = (short)y;
+        clip.y = (short)top;
         clip.width = (unsigned short)((cx < 0 ? cw + cx : cw));
-        clip.height = (unsigned short)$row_h;
+        clip.height = (unsigned short)(bot - top);
         if (clip.width > (unsigned short)($width + 1)) clip.width = (unsigned short)($width + 1);
         if ($draw) XftDrawSetClipRectangles((XftDraw*)$draw, 0, 0, &clip, 1);
-        draw_cell($, cx, y, cw, $row_h, cell, $col_kind[c], $col_align[c], ci);
+        draw_cell($, cx, y0, cw, $row_h, cell, $col_kind[c], $col_align[c], ci,
+                  top, bot);
         if ($draw) XftDrawSetClip((XftDraw*)$draw, None);
       }
 
@@ -948,8 +985,9 @@
     }
 
     if ($gridLines) {
-      XDrawLine($dpy, $pixmap, $icon_gc, 0, y + $row_h - 2,
-                (int)$width, y + $row_h - 2);
+      int gy = y0 + $row_h - 2;
+      if (gy >= top && gy < bot)
+        XDrawLine($dpy, $pixmap, $icon_gc, 0, gy, (int)$width, gy);
     }
   }
 }

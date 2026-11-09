@@ -2,6 +2,16 @@
 
 > The single source of truth for writing `.widget` files. Follow these rules and your widget will compile, render, and interact correctly with Xt geometry management.
 
+Modern reference widgets worth reading alongside this document:
+
+| Widget | Shows |
+|--------|-------|
+| `Wbravo.widget` | rich text view, Xt action interface, theme colours, external-type-free header, undo/state snapshots |
+| `WListView.widget` | Composite with managed slider children, backing pixmap cache, fixed header + scrolling body, icons, `theme_register` without `Wheel` |
+| `WfileChooser.widget` | `Gridbox` composition, list model/icon cells, navigation and output resources |
+| `Wviewport.widget` | native scroll container (clip + reparented content + sliders) |
+| `Wheel.widget` | theme registry/`colors_changed` base pattern |
+
 ## 1. Class Declaration
 
 ```wbuild
@@ -391,8 +401,20 @@ When a widget has BOTH a wbuild stub (generated `.c`) AND a hand-written impleme
 - [ ] Lifecycle methods trace entry with `XTFUNC()` (§21)
 - [ ] Public resources and helper functions documented with `@` comments (§21)
 - [ ] Adding a method to a base class → `make clean && make` (§18)
+- [ ] Generated header is self-contained; external types stored as `void *` or their header is pulled in via `@EXPORTS` (§22)
+- [ ] Composite children created in `initialize` and given non-zero geometry before realize (§23)
+- [ ] Backing pixmap cache tracks its size and is recreated on resize (§24)
+- [ ] Scrolled content is clipped to the body; fixed header/footer never overdrawn (§25)
+- [ ] List/row data ownership documented (borrowed vs widget-owned) (§26)
+- [ ] Mutable/output String resources owned via `*_mem` (§27)
+- [ ] Application-facing commands exposed as `@ACTIONS` (§28)
+- [ ] Undo/redo side tables snapshotted with the model (§29)
+- [ ] Non-`Wheel` widgets register/ unregister with the theme registry (§30)
+- [ ] Fixed chrome uses `weight* 0`, scrolling body `weight* 1` (§31)
 - [ ] Registered in `register-widgets.sh`
-- [ ] Added to LUI registry in `lui/registry.lua`
+- [ ] Added to LUI registry in `lui/registry.lua`, with resource/callback aliases (§32)
+- [ ] Resize and fractional-scroll covered by a test (§33)
+- [ ] No inherited resource is redeclared; `@def` uses ` = ` (§34)
 
 ## 17. Known Bug Patterns (see `know_bugs.md`)
 
@@ -409,6 +431,14 @@ When a widget has BOTH a wbuild stub (generated `.c`) AND a hand-written impleme
 | `XtFree` crash on constraints | Freeing static class data | Never free `XtGetConstraintResourceList` result |
 | Method override build failure | An override repeats the inherited parameter list, e.g. `@proc void colors_changed($)` | Omit the parameter list on overrides: `@proc void colors_changed` (§19) |
 | Widget colours/caches don't follow the theme | Widget caches a GC/pixmap or has its own colour resources; the base hook doesn't cover them | Override `colors_changed`, call `#colors_changed($)`, re-resolve and redraw (§19) |
+| `unknown type name '<T>'` including `<Widget>P.h` | External type in `@PRIVATE`/`@PUBLIC`; `@IMPORTS` are not emitted into the header | Store as `void *` or add `@EXPORTS` + `@incl` of the defining header (§22) |
+| `Error: Widget X has zero width and/or height` | Managed child realized before geometry was assigned | Configure children in `relayout()` before realize; never map 0×0 (§23) |
+| Scrollbar grows but list/content stays old size | Backing pixmap cache condition is always true | Track `cache_w`/`cache_h`, recreate pixmap + drawable (§24) |
+| `BadDrawable` on `XPutImage` after resize | Cached `XImage2` icon holds the destroyed drawable | Set `im->d = $pixmap` before `xim2_put_image()` (§24) |
+| Rows paint over a fixed header when dragged | Fractional slider `top_y`; row `y` above the body band | Clip background/text/grid/icons to the body band (§25) |
+| Fixed footer/header clipped on first layout | Gridbox shrank every row proportionally when smaller than preferred | Weighted-first shrink in `Gridbox.layout()` (§31) |
+| `@def FOO 1` parse error | `@def` requires an `=` | `@def FOO = 1` (§34) |
+| Callback list double free at destroy | Subclass redeclared an inherited `callback` resource | Remove the duplicate `@var`; use the inherited field (§34) |
 
 ## 18. Theme / Color Registry — Registration & Calling Pattern
 
@@ -583,3 +613,350 @@ that directly follows a `@` doc comment is swallowed by that comment (see
 - Keep the `@class` doc comment to a single line — two or more consecutive
   `@`-prefixed lines start a second doc block and are a parse error (see
   `know_bugs.md`).
+
+## 22. Header Self-Containment & External Types
+
+`@IMPORTS` is emitted only into `<Widget>.c`, never into `<Widget>.h` or
+`<Widget>P.h`. Every type used by `@PUBLIC`, `@PRIVATE` or `@type` must therefore
+be visible to a consumer that includes the generated header.
+
+- **Prefer opaque `void *`** for external structs and cast at the point of use:
+  `XftFont`, `XftDraw`, `XftColor`, `RetexParaFormat *`, icon/state caches.
+  `Wbravo` stores `para_fmt`, `font`, `draw` and the colour table this way;
+  `WListView` stores `font`, `draw`, `xcol` and its icon list the same way.
+- **If a public resource genuinely needs a typedef**, pull its header into the
+  public widget header with `@EXPORTS` + `@incl`:
+
+  ```wbuild
+  @EXPORTS
+  @ ArrayInt is used by public resources, so the generated header must see it.
+  @incl "converters.h"
+  ```
+
+  `WListView` needs this for `ArrayInt`; without it, any consumer of
+  `<xtcw/WListViewP.h>` fails with `unknown type name 'ArrayInt'`.
+- **`@type` structs are emitted into the private header.** Keep their fields to
+  primitive/X11 types or `void *`; never embed an external struct by value. Use
+  `void *svg` for an `XImage2` cache and cast internally.
+- Safe in the private header without extra includes: `Pixmap`, `Pixel`,
+  `Position`, `Dimension`, `Window`, `Widget`. Not safe unless included:
+  `XftColor`, `XftFont`, `XftDraw`, `RetexParagraph`, `RAtom`, `ArrayInt`,
+  `RetexParaFormat`.
+
+Symptom to recognise: the generated `.c` compiles (its `@IMPORTS` come first),
+but a test or another widget that includes `<Widget>P.h` fails with
+`unknown type name`.
+
+## 23. Composite Widgets With Managed Children
+
+Use `@class W (Composite)` (or a layout manager such as `Gridbox`) when the
+widget creates its own managed children. `Core`/`Wheel` cannot manage children.
+
+### Creation and realize order
+
+- Create children in `initialize`.
+- In `realize`, call the superclass realize, then `relayout()`, and let Xt
+  realize the managed children afterwards. Do **not** explicitly
+  `XtRealizeWidget(child)` before its geometry is set.
+- Xt aborts if a managed child is realized with 0×0 geometry:
+  `Error: Widget hsb has zero width and/or height`. Even a hidden scrollbar must
+  be configured with at least 1×1 and then unmapped with
+  `XtSetMappedWhenManaged(child, False)`.
+
+```wbuild
+@proc realize
+{
+    #realize($, mask, attributes);
+    rebuild_cache($);
+    relayout($);          /* configures the managed children */
+}
+```
+
+For a **Core** subclass whose superclass has no realize proc, create the window
+with the mask/attributes that Xt computed — never mask 0 (this was the Wbravo
+blank-window bug):
+
+```wbuild
+XtCreateWindow($, (unsigned int) InputOutput, (Visual *) CopyFromParent,
+               *mask, attributes);
+```
+
+### Geometry
+
+- Implement `geometry_manager`, `query_geometry` and `set_values_almost` (§6).
+- Position internal children in a single `relayout()` called from `realize`,
+  `resize`, `set_values` and scroll/slider callbacks. Use `XtConfigureWidget`.
+- Set internal children's theme colours from the parent's theme apply function;
+  they do not need their own `theme_register`.
+
+### Sizing
+
+`query_geometry` is a *preference*, not a guarantee. A widget that reports a
+large preferred height can still be shrunk by its parent — all drawing must
+work at any size (§24/§25). Give fixed chrome (`weighty 0`) and the scrolling
+body (`weighty 1`) so a layout manager shrinks the right part (§31).
+
+## 24. Backing Pixmap Caches Must Track Their Size
+
+A common pattern (`Wbravo`, `WListView`, `Wlabel`) is: render into a pixmap,
+then `XCopyArea` it to the window. The cache must be recreated whenever the
+widget size changes.
+
+**Wrong** — the condition is always true (`w`/`h` are just the clamped size):
+
+```c
+if (pixmap && width <= w && height <= h) { /* keep */ }
+```
+
+**Correct** — remember the cache dimensions:
+
+```wbuild
+@PRIVATE
+@var Pixmap pixmap
+@var int cache_w
+@var int cache_h
+
+@proc void rebuild_cache($)
+{
+    int w = (int)$width, h = (int)$height;
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
+    if (w > 4000) w = 4000;        /* X11 server limit used in this tree */
+    if (h > 4000) h = 4000;
+
+    if ($pixmap && $cache_w == w && $cache_h == h) return;
+    if ($draw) { XftDrawDestroy((XftDraw*)$draw); $draw = NULL; }
+    if ($pixmap) { XFreePixmap($dpy, $pixmap); $pixmap = 0; }
+    $pixmap = XCreatePixmap($dpy, XtWindow($), w, h, depth);
+    $cache_w = w; $cache_h = h;
+    $draw = XftDrawCreate($dpy, $pixmap, vis, None);
+}
+```
+
+Reset `cache_w`/`cache_h` in `destroy`. If the cache is stale, a slider (a real
+child window) grows while the content stays at the old size.
+
+### Cached drawables inside the cache
+
+If a helper caches an `XImage2`/`XImage`/pixmap bound to the backing drawable,
+re-point it before use. `WListView`'s SVG icon cache stores `XImage2.d`; after
+the backing pixmap is recreated the next repaint must set `im->d = $pixmap`
+before `xim2_put_image()`, otherwise X fails with
+`BadDrawable ... X_PutImage`.
+
+## 25. Fixed Header/Footer + Scrolling Body: Clip the Body
+
+When a widget has fixed chrome and a scrolling content area, every content draw
+must be clipped to `[body_top, body_bottom)`.
+
+- Slider scrolling is **fractional**: `top_y` is not row-aligned, so the first
+  row starts above the body top.
+- Compute the visible band per row:
+
+```c
+int y0  = list_y + i * row_h - top_y;
+int top = y0 < body_top ? body_top : y0;
+int bot = y0 + row_h > body_bottom ? body_bottom : y0 + row_h;
+if (top >= bot) continue;
+XFillRectangle(dpy, pixmap, gc, 0, top, width, bot - top);
+```
+
+- Set the `XftDraw` clip to the same band for text; draw a row separator only if
+  it falls inside the band.
+- `XCopyArea` and `xim2_put_image` are **not** bounded by the `XftDraw` clip.
+  Skip an icon whose rect is not fully inside the band (or clip it on its own
+  GC; XPM's `XSetClipMask` and a clip region do not compose, so skipping is the
+  simple correct choice).
+- Use the theme header colour for the header fill, not the body background GC;
+  otherwise the `*_header_bg` role is resolved but never used.
+
+## 26. List-Style Data Models, Icons & Ownership
+
+Existing list widgets use MLS string lists (`WlistMulti.tableStrs`,
+`WListView.rows`) with one tab-separated string per row, plus an optional
+`getEntry` callback (`wlist_entry_t` in `Wlist-common.h`) for large or virtual
+lists:
+
+```c
+wlist_entry_t ent = { .pos = row, .max = 0, .state = 0, .data = "" };
+XtCallCallbackList(self, self->getEntry, &ent);   /* app sets ent.max / ent.data */
+```
+
+- Document ownership: the widget **borrows** the caller's string list. Install
+  the new list, then free the previous one; free the current list in `destroy`
+  only if the widget allocated it.
+- Column metadata can be parallel resources (`columnWidths`, `columnAligns`,
+  `columnKinds` as `ArrayInt`; `columnTitles` as a tab-separated `String`) —
+  see `WListView`.
+- Icon cells: define a compact in-cell convention, e.g. `"@icons/file.svg|label"`
+  (icon + text) or `"@icons/file.svg"` (icon only); plain text is drawn as-is.
+  Cache loaded icons by filename. SVG uses `xim2_load_svg`/`xim2_render`; XPM
+  uses `load_pixmap_from_file`.
+- Recompute derived sizes (row height, weighted column widths, header height)
+  from the font and resources whenever they change.
+
+## 27. String Resources the Widget Mutates
+
+§5 covers ordinary string resources. Two extra cases from `Wbravo`/`WfileChooser`:
+
+- **The widget assigns a generated value to a String resource** (a loaded font
+  face, the current directory, a selected path). Keep an owned copy and point
+  the resource at it:
+
+  ```wbuild
+  @PRIVATE
+  @var char *fontFace_mem
+
+  @proc void set_face($, const char *face)
+  {
+      free($fontFace_mem);
+      $fontFace_mem = strdup(face);
+      $fontFace = $fontFace_mem;
+  }
+  ```
+
+  Free `*_mem` in `destroy`. In `set_values`, when the resource may point at
+  either the owned copy or an external string, compare/duplicate before freeing
+  (see `WfileChooser.directory` / `selectedPath`).
+- **Output resources** that must be valid after a callback (e.g.
+  `selectedPath`, `WfileSelector.selectedPath`) should be documented as "valid
+  until the next selection" if they borrow memory from a child.
+
+## 28. Expose a Command Interface as Xt Actions
+
+Put application-facing commands in `@ACTIONS`. They are ordinary Xt action procs
+and can be driven from other applications or the Lua bridge:
+
+```c
+XtCallActionProc(w, "set_text", NULL, params, nparams);
+```
+
+- Actions are `void`. Return data through resources (`text`, `selectedPath`,
+  `selected`) or callbacks (`notify`, `activate`, `accept`).
+- Parse `num_params`/`params[]` defensively; clamp numeric values; accept names
+  or numbers where useful (see `Wbravo` and `WfileChooser`).
+- Document the interface in one comment block above `@ACTIONS` (groups, argument
+  meaning, clamping) so callers do not have to read the implementation.
+- Good examples: `Wbravo` (document, selection, style, paragraph and snapshot
+  commands) and `WListView` (`refresh`, `SetFocus`, navigation actions).
+
+## 29. Undo/Redo and Full-State Snapshots
+
+If the widget keeps side tables parallel to a document model (selection, caret,
+per-paragraph formats, search highlights), snapshot them **together** with the
+model snapshot and restore them in the same undo/redo step. `Wbravo` pairs
+`rtable_snapshot()` with `caret_cp`/`anchor_cp` and the paragraph-format array.
+
+For serialized snapshots (`save_state` / `load_state`):
+
+- Include the complete widget state (document + formatting + side tables +
+  resources + undo/redo), not just the text.
+- Store interned handles (font faces, object payloads) as **strings** so the
+  snapshot is portable across processes; intern them on load.
+- Piece tables: the add buffer is append-only and undo does **not** truncate it.
+  Redo snapshots can reference atoms past the current `add_len`; save the
+  physical maximum range and restore `add_len` separately (`rtable_serialize`
+  in `utils/rtable.c`).
+- Reconcile side-table counts with the model's undo depth after load so a
+  corrupt snapshot cannot leave the two out of sync.
+
+## 30. Theme Integration for Non-`Wheel` Widgets
+
+§18–§19 cover `Wheel` subclasses. A `Composite`/`Constraint` can join too:
+
+```wbuild
+@proc initialize { ... theme_register($, my_apply_theme); }
+@proc destroy    { ... theme_unregister($); }
+
+@proc void my_apply_theme($)
+{
+    $bg = theme_color_defined("list_bg") ? get_color("list_bg")
+                                         : get_color("bg_norm");
+    /* ... resolve every role you draw with ... */
+
+    if ($colors_ready) free_my_xftcolors($);
+    for (i = 0; i < NCOL; i++) xft_color_alloc($, $px[i], &$xcol[i]);
+    $colors_ready = 1;
+    if (XtIsRealized($)) redraw($);
+}
+```
+
+- Keep a `colors_ready` flag so a zeroed `XftColor` is not freed on the first
+  call.
+- Use `theme_color_defined`/`get_color` with sensible fallbacks; document the
+  fallback chain and add new role names to `themes.hdf`.
+- Use every resolved role when drawing (header background, alternating rows,
+  selection, grid line). A role that is resolved but never used is a bug.
+- Internal children (sliders) get their `foreground`/`background` from the same
+  apply function.
+
+## 31. Gridbox: Fixed vs Weighted Cells
+
+- Give fixed chrome (`header`, `footer`, toolbar) `weighty`/`weightx` **0** and
+  the expandable body **1**. Growth is distributed to weighted cells.
+- When the box is smaller than its preferred size, `Gridbox.layout()` now
+  shrinks weighted cells first (`shrinkCells()` in `plainc_widgets/Gridbox.c`);
+  fixed cells keep their preferred size. Only if weighted cells cannot absorb
+  the shortfall does it shrink everything.
+- A widget with a large `query_geometry` preferred size is still shrinkable by
+  its parent. Do not rely on the preferred size being honoured; render correctly
+  at any size (§24/§25).
+- `defaultDistance` is both the outer margin and the inter-cell gap; the
+  minimum cell size is `defaultDistance * 2 + 1`.
+
+## 32. LUI Integration for a New Widget
+
+- `make widgets` auto-registers the class; add a friendly alias in
+  `lui/registry.lua`:
+
+  ```lua
+  M.register('listview', { class = 'WListView' })
+  M.register('file-chooser', { class = 'WfileChooser' })
+  ```
+
+- Resource aliases and Lua-friendly names go in `lui/backend_xt.lua`
+  (`model` → `rows` for `WListView` and `tableStrs` for older lists,
+  `columns` → `columnWidths`, `on-row-activated` → `notify`,
+  `on-activate` → `activate`, `on-header` → `headerClicked`).
+- LUI tables cannot be passed directly to an `int`/MLS resource. Use the
+  `model` mapping (it builds the MLS string list) or
+  `gui.set_string_list(id, "rows", {...})` from `lui/gui_xt.lua`.
+- `LUA(fn)` callbacks do **not** receive the widget's `call_data`; read results
+  from resources inside the callback (e.g. `gui.get(id, "selectedPath")`).
+- LUI table literals use `key = value` pairs: `{ 1 = "row1" 2 = "row2" }`.
+  For arrays, `gui.set_string_list` after `lui.run` is usually clearer.
+
+## 33. Testing & Debugging Widget Rendering
+
+- **Resize**: assert the backing cache dimensions and layout metrics after
+  `XtConfigureWidget`/`XtResizeWidget`, not merely that the widget exists.
+- **Fractional scroll**: set `top_y` to a non-multiple of the row height (or
+  drive the slider), then read a pixel from the backing pixmap with
+  `XGetImage`/`XGetPixel` and assert the fixed header colour is intact. This
+  catches "rows paint over the header" deterministically.
+- **Valgrind**: run the widget test under
+  `valgrind --error-exitcode=9 --num-callers=20`. Real double frees (e.g.
+  duplicate callback resources) show up; the debug-only MLS post-mortem messages
+  at exit are usually false positives (see `know_bugs.md`).
+- **Headless**: use `xvfb-run -a` as `tests/run_all_tests.sh` does. Mapping and
+  geometry negotiation can differ on a live display (e.g. `Wviewport`).
+- **Screenshots**: capture the initial frame (before any resize) and after a
+  scrollbar drag to catch first-layout and clipping regressions.
+- Keep widget tests self-checking (exit non-zero on failure) and add them to
+  `tests/Makefile` and `tests/run_all_tests.sh`.
+
+## 34. Resource Declaration Pitfalls
+
+- **Never redeclare an inherited resource.** `Wcheckbox` redeclared
+  `@var <Callback> XtCallbackList callback = NULL` although `Wheel` already
+  provides `callback`; wbuild emitted a second resource at the same offset and
+  Xt freed the callback list twice at destroy. Check the superclass chain
+  (`Wlabel` → `Wheel` → `Core`) before declaring a resource.
+- `@def` requires ` = `: `@def COLT_TEXT = 0`; `@def COLT_TEXT 0` is a parse
+  error.
+- `@type`/`@def` are emitted into the private header; keep them self-contained
+  (§22).
+- `@var` arrays (`@var Pixel col_px[8]`) are fine if the element type is visible
+  in the header; otherwise use `void *` and allocate at runtime.
+- Overrides omit the parameter list (§19); only the first/owning definition keeps
+  `($)`.

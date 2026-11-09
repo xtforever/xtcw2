@@ -162,6 +162,50 @@ int main(int argc, char **argv)
     XtVaGetValues(lww->wListView.vsb, "pos", &pos, NULL);
     assert(pos > 0);
 
+    /* resizing the widget must resize the backing cache and the list area,
+     * not only the slider children. */
+    {
+        int old_w = lww->wListView.list_w;
+        int old_h = lww->wListView.list_h;
+        int old_core_w = (int)lww->core.width;
+        int old_core_h = (int)lww->core.height;
+        /* Simulate the parent geometry manager resizing the child. */
+        XtConfigureWidget(lv, lww->core.x, lww->core.y,
+                          (Dimension)(old_core_w + 100),
+                          (Dimension)(old_core_h + 80), 0);
+        pump();
+        assert((int)lww->core.width > old_core_w);
+        assert(lww->wListView.cache_w == (int)lww->core.width);
+        assert(lww->wListView.cache_h == (int)lww->core.height);
+        assert(lww->wListView.list_w > old_w);
+        assert(lww->wListView.list_h > old_h);
+    }
+
+    /* Regression: a partially scrolled row must not paint over the header. */
+    {
+        int rh = lww->wListView.row_h;
+        int hh = lww->wListView.header_h;
+        XImage *img;
+        unsigned long px;
+        Pixel hdr_bg, sel_bg;
+
+        assert(rh > 12 && hh > 8);
+        XtVaSetValues(lv, "selected", 0, NULL);
+        lww->wListView.top_y = rh / 2;      /* fractional scroll */
+        XtCallActionProc(lv, "refresh", NULL, NULL, 0);
+        pump();
+
+        hdr_bg = lww->wListView.col_px[4];  /* C_HDR_BG */
+        sel_bg = lww->wListView.col_px[2];  /* C_SEL_BG */
+        img = XGetImage(XtDisplay(lv), lww->wListView.pixmap,
+                        5, hh - 5, 1, 1, AllPlanes, ZPixmap);
+        assert(img != NULL);
+        px = XGetPixel(img, 0, 0);
+        XDestroyImage(img);
+        assert(px == hdr_bg);
+        assert(px != sel_bg);
+    }
+
     /* selection survives a repaint / new rows */
     act("move_down");
     XtVaSetValues(lv, "selected", 5, NULL);

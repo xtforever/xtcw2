@@ -1051,6 +1051,93 @@ computeWidHgtUtil(idx, ncell, wid, weight, wids, weights)
 }
 
 
+	/* Shrink n cells so their sum fits |target|.
+	 *
+	 * Weighted cells give way first, proportionally to their weight and
+	 * down to |mincell|.  This keeps fixed rows/columns (weight 0, e.g. a
+	 * header or footer label) at their preferred size while the expandable
+	 * body absorbs the shortfall.  Only when the weighted cells cannot
+	 * absorb it do the remaining cells shrink proportionally (the previous
+	 * behaviour, needed when a parent refuses the preferred geometry).
+	 */
+
+static	void
+shrinkCells(n, cells, weights, target, mincell)
+    int		n ;
+    Dimension	*cells ;
+    int		*weights ;
+    int		target, mincell ;
+{
+    int		i ;
+    long	total = 0, wsum = 0, deficit, absorbed = 0, rem ;
+
+    if( n <= 0 || target <= 0 )
+      return ;
+
+    for(i=0; i < n; ++i)
+      total += (long)cells[i] ;
+
+    deficit = total - (long)target ;
+    if( deficit <= 0 )
+      return ;
+
+    /* Pass 1: weighted cells absorb the shrink, proportional to weight. */
+    for(i=0; i < n; ++i)
+      if( weights[i] > 0 )
+	wsum += weights[i] ;
+
+    if( wsum > 0 ) {
+      for(i=0; i < n; ++i) {
+	long cut, s ;
+	if( weights[i] <= 0 )
+	  continue ;
+	cut = deficit * weights[i] / wsum ;
+	if( cut > (long)cells[i] - mincell )
+	  cut = (long)cells[i] - mincell ;
+	if( cut < 0 )
+	  cut = 0 ;
+	s = (long)cells[i] - cut ;
+	cells[i] = (Dimension)s ;
+	absorbed += cut ;
+      }
+
+      /* Integer rounding may leave a few pixels; take them from weighted
+       * cells that still have room before touching fixed cells. */
+      rem = deficit - absorbed ;
+      for(i=0; i < n && rem > 0; ++i) {
+	long room, take ;
+	if( weights[i] <= 0 )
+	  continue ;
+	room = (long)cells[i] - mincell ;
+	if( room <= 0 )
+	  continue ;
+	take = (rem < room) ? rem : room ;
+	cells[i] = (Dimension)((long)cells[i] - take) ;
+	rem -= take ;
+	absorbed += take ;
+      }
+    }
+
+    /* Pass 2: the weighted cells alone could not absorb the deficit (or
+     * there are none); shrink all cells proportionally to the target. */
+    if( absorbed < deficit ) {
+      long total2 = 0, allocated = 0 ;
+      for(i=0; i < n; ++i)
+	total2 += (long)cells[i] ;
+      if( total2 > 0 ) {
+	for(i=0; i < n; ++i) {
+	  long s = (i == n - 1)
+	    ? ((long)target - allocated)
+	    : ((long)cells[i] * (long)target / total2) ;
+	  if( s < mincell )
+	    s = mincell ;
+	  cells[i] = (Dimension)s ;
+	  allocated += (long)cells[i] ;
+	}
+      }
+    }
+}
+
 
 	/* Layout function.  Given a width & height, determine
 	 * sizes of all the rows & columns
@@ -1088,26 +1175,10 @@ layout(gb, width, height)
 	  }
       }
     } else {
-      /* Gridbox is smaller than its preferred width.  Shrink all columns
-       * proportionally so the children fit the space the parent granted.
-       * The original algorithm only grew/shrunk weighted columns, which
-       * made unweighted children overflow when a parent (e.g. a shell
-       * with a fixed size) refused the preferred geometry request. */
-      long total = 0 ;
-      long target = (long)width ;
-      long allocated = 0 ;
-      for(i=0; i < gb->gridbox.nx; ++i)
-	total += (long)wids[i] ;
-      if( total > 0 && target > 0 ) {
-	for(i=0; i < gb->gridbox.nx; ++i) {
-	  long s = (i == gb->gridbox.nx-1)
-	    ? (target - allocated)
-	    : (long)wids[i] * target / total ;
-	  if( s < mincellsize ) s = mincellsize ;
-	  wids[i] = (Dimension)s ;
-	  allocated += (long)wids[i] ;
-	}
-      }
+      /* Smaller than preferred: weighted columns absorb the shortfall first,
+       * so fixed columns keep their size. */
+      shrinkCells(gb->gridbox.nx, wids, gb->gridbox.max_weightx,
+		  width, mincellsize) ;
     }
 
     /* Same again, for heights */
@@ -1126,21 +1197,10 @@ layout(gb, width, height)
 	    hgts[i] = max(j,mincellsize) ;
 	  }
     } else {
-      long total = 0 ;
-      long target = (long)height ;
-      long allocated = 0 ;
-      for(i=0; i < gb->gridbox.ny; ++i)
-	total += (long)hgts[i] ;
-      if( total > 0 && target > 0 ) {
-	for(i=0; i < gb->gridbox.ny; ++i) {
-	  long s = (i == gb->gridbox.ny-1)
-	    ? (target - allocated)
-	    : (long)hgts[i] * target / total ;
-	  if( s < mincellsize ) s = mincellsize ;
-	  hgts[i] = (Dimension)s ;
-	  allocated += (long)hgts[i] ;
-	}
-      }
+      /* Smaller than preferred: weighted rows absorb the shortfall first,
+       * so fixed rows (e.g. a header/footer label) keep their size. */
+      shrinkCells(gb->gridbox.ny, hgts, gb->gridbox.max_weighty,
+		  height, mincellsize) ;
     }
 }
 

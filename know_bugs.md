@@ -1113,3 +1113,80 @@ with 0 width/height (use at least 1x1 while it is unmapped).
 self-contained (done for `WListView`).
 
 **File:** `wbuild_widgets/WListView.widget`
+
+## WListView: resizing grew the scrollbar but not the list body
+
+**Symptom:** resizing the `WListView` demo enlarged the vertical scrollbar (and
+the widget), but the rows/header stayed at the old size; the extra area was
+blank.
+
+**Cause:** `rebuild_cache()` decided whether to recreate the backing pixmap
+with `if ($pixmap && (int)$width <= w && (int)$height <= h)`, where `w`/`h`
+were just the clamped `width`/`height`. That condition is true for every
+normal resize, so the pixmap was only ever created once at the initial size;
+`render()` then drew into the stale small pixmap and `blit()` copied
+`width x height` out of it. The slider children are separate X windows sized
+by `relayout()` via `XtConfigureWidget`, so they grew correctly.
+
+**Fix:** track the actual cache size in private `cache_w`/`cache_h` fields and
+recreate the pixmap + `XftDraw` whenever they differ from the clamped window
+size. `relayout()` already re-derives the list area each resize.
+
+**File:** `wbuild_widgets/WListView.widget` (`rebuild_cache`)
+
+## WListView: cached SVG icons used a stale drawable after resize
+
+**Symptom:** after fixing the cache resize, resizing the demo aborted with
+`X Error of failed request: BadDrawable ... X_PutImage`.
+
+**Cause:** the per-filename SVG icon cache stores an `XImage2` whose `d`
+(drawable) field was set when the icon was first rasterised. Recreating the
+backing pixmap on resize destroyed that drawable, but `xim2_put_image()` uses
+`im->d`, so the next repaint put the image into the destroyed pixmap.
+
+**Fix:** set `im->d = $pixmap` immediately before `xim2_put_image()` in
+`draw_icon()` (XPM icons already copy into `$pixmap` directly).
+
+**File:** `wbuild_widgets/WListView.widget` (`draw_icon`)
+
+## WListView: rows painted over the header while scrolling with the slider
+
+**Symptom:** dragging the vertical scrollbar made list rows overwrite the
+column header ("Name / Size / Type"); wheel/keyboard scrolling looked fine.
+
+**Cause:** the slider produces a fractional `top_y`, so the first visible row
+starts at `y = list_y - (top_y mod row_h)`, i.e. *above* the header boundary.
+`draw_rows()` painted the row background over the full row height at `y`, and
+the row's icon/grid line used the same unclamped coordinates, so they drew
+over the header (which is rendered first). Wheel/keyboard scrolling moves by
+whole rows, which is why only the scrollbar reproduced it.
+
+**Fix:** clip every row to the list body `[list_y, list_y + list_h)`:
+background fill, text clip rectangle and grid line are clamped to the visible
+band; icons are skipped when their rect is not fully inside the band (they use
+`XCopyArea`/`xim2_put_image`, which are not bounded by the `XftDraw` clip).
+Also use `list_header_bg` for the header fill instead of the body background
+GC, so the header colour from the theme is actually applied.
+
+**File:** `wbuild_widgets/WListView.widget` (`draw_rows`, `draw_icon`,
+`draw_header`)
+
+## Gridbox shrank fixed rows/columns when the box was smaller than preferred
+
+**Symptom:** in the `WListView` demo, the first frame showed only about half of
+the bottom status label. Resizing the window made the label fully visible.
+
+**Cause:** `layout()` treated growth and shrink asymmetrically. When the
+gridbox was larger than its preferred size, extra space went only to weighted
+cells; when it was *smaller*, the `excess < 0` branch shrank **all** rows/
+columns proportionally, ignoring `weighty`/`weightx`. A tall preferred height
+from the weighted list therefore squeezed the fixed (`weighty 0`) label too.
+
+**Fix:** added `shrinkCells()` in `plainc_widgets/Gridbox.c`. On a shortfall it
+first shrinks weighted cells, proportional to weight and down to
+`defaultDistance*2+1`; the old proportional-all behaviour remains as a second
+pass when weighted cells cannot absorb the deficit (e.g. no weighted children,
+or an unweighted-only grid that a parent refuses to grow). Applied to both the
+column and row paths.
+
+**File:** `plainc_widgets/Gridbox.c`
