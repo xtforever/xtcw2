@@ -10,15 +10,30 @@
 #             (meant to be bind-mounted read-only).
 #   REPO_REF  branch/tag/commit to build. Default: master
 #   KEEP      if "1", reuse /work/repo and `git pull` instead of a fresh clone.
+#   BUILD_MODE  debug (default) or production.  Production passes
+#               debug_enable=0 to make (optimized, no MLS_DEBUG/ASan).
+#   MAKE_ARGS extra arguments appended to the make command (overrides
+#             BUILD_MODE when set).
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-/src/xtcw2.git}"
 REPO_REF="${REPO_REF:-master}"
 KEEP="${KEEP:-0}"
+BUILD_MODE="${BUILD_MODE:-debug}"
 WORK=/work/repo
 LOG=/tmp/build.log
 
-echo "### clean-build: repo=${REPO_URL} ref=${REPO_REF} keep=${KEEP}"
+if [ -n "${MAKE_ARGS:-}" ]; then
+    MAKE_EXTRA="$MAKE_ARGS"
+else
+    case "$BUILD_MODE" in
+        debug)      MAKE_EXTRA="" ;;
+        production) MAKE_EXTRA="debug_enable=0" ;;
+        *) echo "### unknown BUILD_MODE: $BUILD_MODE (use debug|production)" >&2; exit 2 ;;
+    esac
+fi
+
+echo "### clean-build: repo=${REPO_URL} ref=${REPO_REF} keep=${KEEP} mode=${BUILD_MODE} make_args='${MAKE_EXTRA}'"
 
 # A bind-mounted repository is owned by a different uid than the container
 # user; allow git to read it (ephemeral build container).
@@ -45,9 +60,9 @@ echo "### gcc: $(gcc --version | head -1)"
 echo "### swig: $(swig -version 2>/dev/null | sed -n '2p')"
 echo "### submodules: $(git submodule status 2>/dev/null | grep -c . || true) (expect 0; nanosvg is vendored)"
 
-echo "### build: make all"
+echo "### build: make all ${MAKE_EXTRA}"
 set +e
-make all 2>&1 | tee "$LOG"
+make all ${MAKE_EXTRA} 2>&1 | tee "$LOG"
 rc=${PIPESTATUS[0]}
 set -e
 

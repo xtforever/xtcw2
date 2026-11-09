@@ -1,19 +1,31 @@
 @class WfileSelector (Wbutton)
-@ a Button that popups a file selection dialog
+@ a Button that popups a WfileChooser file selection dialog
 
 @PUBLIC
+@ start directory for the dialog
 @var String directory = <String> "."
+@ filter pattern, e.g. "*" or "*.txt"
 @var String pattern = <String> "*"
+@ show dot files
+@var Boolean showHidden = False
+@ popup size
+@var Dimension popupWidth = 760
+@var Dimension popupHeight = 540
+@ optional icons (SVG or XPM) used by the chooser's Name column
+@var String folderIcon = <String> ""
+@var String fileIcon = <String> ""
+@ full path of the last accepted file (valid until the next selection)
+@var String selectedPath = <String> ""
 
 @PRIVATE
 @var Widget popup_shell
-@var Widget selector
+@var Widget chooser
 
 @METHODS
 @proc initialize
 {
     $popup_shell = NULL;
-    $selector = NULL;
+    $chooser = NULL;
 }
 
 @TRANSLATIONS
@@ -23,38 +35,19 @@
 @proc popup_files
 {
     if( ! $popup_shell ) create_popup($);
-    
-    /* update file list */
-    int lines = list_files($directory, $pattern);
-    XtVaSetValues($selector, "lines", lines, NULL);
-    
-    /* popup */
+
+    XtVaSetValues($chooser,
+                  "directory", $directory ? $directory : ".",
+                  "pattern", $pattern ? $pattern : "*",
+                  "showHidden", $showHidden,
+                  "folderIcon", $folderIcon ? $folderIcon : "",
+                  "fileIcon", $fileIcon ? $fileIcon : "",
+                  NULL);
+
     XtPopup($popup_shell, XtGrabNone);
 }
 
 @UTILITIES
-
-@proc int list_files(char *path, char *pat)
-{
-    m_init(); /* ensure mls is initialized */
-    int list = m_create(10, sizeof(char*));
-    DIR *d = opendir(path);
-    if( !d ) {
-        char *err;
-        asprintf(&err, "Error: cannot open %s", path);
-        m_put(list, &err);
-        return list;
-    }
-    
-    struct dirent *de;
-    while( (de = readdir(d)) ) {
-        if( de->d_name[0] == '.' ) continue;
-        char *s = strdup(de->d_name);
-        m_put(list, &s);
-    }
-    closedir(d);
-    return list;
-}
 
 @proc create_popup($)
 {
@@ -63,30 +56,45 @@
 
     $popup_shell = XtVaCreatePopupShell("fileSelectorPopup",
                                         topLevelShellWidgetClass, root,
+                                        "title", XtName($),
+                                        "width", (int)$popupWidth,
+                                        "height", (int)$popupHeight,
                                         NULL);
-    $selector = XtVaCreateManagedWidget("selector",
-                                        selectReqWidgetClass, $popup_shell,
-                                        NULL);
-    XtAddCallback($selector, "callback", (XtCallbackProc)selection_done_cb, $);
+    $chooser = XtVaCreateManagedWidget("chooser",
+                                       wfileChooserWidgetClass, $popup_shell,
+                                       "width", (int)$popupWidth,
+                                       "height", (int)$popupHeight,
+                                       NULL);
+    XtAddCallback($chooser, "accept", (XtCallbackProc)accept_cb, $);
+    XtAddCallback($chooser, "cancel", (XtCallbackProc)cancel_cb, $);
 }
 
-@proc selection_done_cb(Widget w, $, void *d)
+@proc void accept_cb(Widget w, $, void *d)
 {
-    int selection = (intptr_t)d;
+    char *path = (char*)d;
+    const char *base = path ? path : "";
+    const char *slash = path ? strrchr(path, '/') : NULL;
+    (void)w;
+
+    if (slash) base = slash + 1;
     XtPopdown($popup_shell);
-    if( selection >= 0 ) {
-        int lines;
-        XtVaGetValues(w, "lines", &lines, NULL);
-        char *filename = STR(lines, selection);
-        XtVaSetValues($, "label", filename, NULL);
-        /* trigger our own callback with the filename */
-        XtCallCallbackList($, $callback, filename);
-    }
+    $selectedPath = path;
+    XtVaSetValues($, "label", base, NULL);
+    /* The pointer is owned by the chooser and stays valid until the next
+     * selection, mirroring the old SelectReq behaviour. */
+    XtCallCallbackList($, $callback, path);
+}
+
+@proc void cancel_cb(Widget w, $, void *d)
+{
+    (void)w; (void)d;
+    XtPopdown($popup_shell);
 }
 
 @IMPORTS
+@incl <X11/Intrinsic.h>
+@incl <X11/StringDefs.h>
 @incl <X11/Xft/Xft.h>
-@incl <dirent.h>
 @incl <X11/Shell.h>
-@incl "xtcw/SelectReq.h"
 @incl "mls.h"
+@incl "xtcw/WfileChooser.h"

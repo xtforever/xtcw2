@@ -1,0 +1,1135 @@
+@class WListView (Composite)
+@ A themed multi-column list view with scrollbars, text/icon cells and keyboard navigation.
+
+@EXPORTS
+@ ArrayInt is used by public resources, so the generated header must see it.
+@incl "converters.h"
+
+@PUBLIC
+@ number of columns (extended automatically if any column array is longer)
+@var int columnCount = 1
+@ per-column width in pixels; 0 or negative = weighted fill
+@var ArrayInt columnWidths = 0
+@ tab-separated header labels ("" = no header row)
+@var String columnTitles = <String> ""
+@ per-column alignment: 0=left, 1=center, 2=right
+@var ArrayInt columnAligns = 0
+@ per-column kind: 0=text, 1=icon, 2=icon+text
+@var ArrayInt columnKinds = 0
+@ MLS list of tab-separated row strings (caller owns the strings)
+@var int rows = 0
+@ virtual list: callback receives a wlist_entry_t* (pos/max/data)
+@var <Callback> XtCallbackList getEntry = NULL
+@ selection changed (selected index)
+@var <Callback> XtCallbackList notify = NULL
+@ double-click / Return on a row (selected index)
+@var <Callback> XtCallbackList activate = NULL
+@ viewport changed
+@var <Callback> XtCallbackList updatecb = NULL
+@ header clicked (column index)
+@var <Callback> XtCallbackList headerClicked = NULL
+@ selected row, -1 = none
+@var int selected = -1
+@ preferred number of visible rows for query_geometry
+@var int visibleRows = 8
+@ 0 = derive row height from the font
+@var int rowHeight = 0
+@ 0 = derive header height from the font
+@var int headerHeight = 0
+@var int cellPaddingX = 6
+@var int cellPaddingY = 2
+@var int iconSize = 16
+@var Boolean gridLines = True
+@var Boolean alternateRows = False
+@var Boolean showHeader = True
+@var String fontFace = <String> "Sans"
+@var int fontSize = 13
+@var Boolean allowHoriz = True
+@var Boolean allowVert = True
+@var Dimension barSize = 14
+
+@TRANSLATIONS
+@trans <Btn1Down>: click()
+@trans <Btn4Down>: scroll_up()
+@trans <Btn5Down>: scroll_down()
+@trans <Key>Up: move_up()
+@trans <Key>Down: move_down()
+@trans <Key>Home: move_home()
+@trans <Key>End: move_end()
+@trans <Key>Prior: page_up()
+@trans <Key>Next: page_down()
+@trans <Key>Return: activate()
+
+@PRIVATE
+@def COLT_TEXT = 0
+@def COLT_ICON = 1
+@def COLT_ICON_TEXT = 2
+@def ALIGN_LEFT = 0
+@def ALIGN_CENTER = 1
+@def ALIGN_RIGHT = 2
+@def C_BG = 0
+@def C_FG = 1
+@def C_SEL_BG = 2
+@def C_SEL_FG = 3
+@def C_HDR_BG = 4
+@def C_HDR_FG = 5
+@def C_ALT_BG = 6
+@def C_LINE = 7
+@def C_COUNT = 8
+@def ICON_SVG = 0
+@def ICON_XPM = 1
+@def SCROLL_RES = 1000000
+
+@type list_icon_t = struct {
+  char *name;
+  int kind;
+  void *svg;
+  Pixmap map, mask;
+  int w, h;
+}
+
+@var Widget vsb
+@var Widget hsb
+@var Display *dpy
+@var void *font
+@var void *draw
+@var Pixmap pixmap
+@var GC gc
+@var GC icon_gc
+@var GC copy_gc
+@var int icons
+@var int titles
+@var int *col_w
+@var int *col_x
+@var int *col_align
+@var int *col_kind
+@var int ncols
+@var int row_h
+@var int header_h
+@var int list_x
+@var int list_y
+@var int list_w
+@var int list_h
+@var int total_w
+@var int top_x
+@var int top_y
+@var int dirty
+@var int colors_ready
+@var ulong last_click_time
+@var int last_click_row
+@var Pixel col_px[C_COUNT]
+@var void *xcol
+
+@ACTIONS
+
+@proc click
+{
+  int mx = event->xbutton.x;
+  int my = event->xbutton.y;
+  ulong t = (ulong)event->xbutton.time;
+  int n, row;
+
+  if (!XtIsRealized($)) return;
+  focus_self($);
+
+  if (my < $list_y) {
+    int c = column_at($, mx + $top_x);
+    if (c >= 0)
+      XtCallCallbackList($, $headerClicked, (XtPointer)(intptr_t)c);
+    return;
+  }
+
+  row = (my - $list_y + $top_y) / ($row_h > 0 ? $row_h : 1);
+  n = row_count($);
+  if (row < 0) row = 0;
+  if (row >= n) return;
+
+  set_selected($, row);
+
+  if (row == $last_click_row && t - $last_click_time < 400)
+    do_activate($);
+  $last_click_time = t;
+  $last_click_row = row;
+}
+
+@proc scroll_up
+{
+  scroll_by($, 0, -($row_h > 0 ? $row_h : 16) * 3);
+}
+
+@proc scroll_down
+{
+  scroll_by($, 0, ($row_h > 0 ? $row_h : 16) * 3);
+}
+
+@proc move_up
+{
+  int n = row_count($);
+  if (n <= 0) return;
+  if ($selected < 0) set_selected($, 0);
+  else if ($selected > 0) set_selected($, $selected - 1);
+}
+
+@proc move_down
+{
+  int n = row_count($);
+  if (n <= 0) return;
+  if ($selected < 0) set_selected($, 0);
+  else if ($selected < n - 1) set_selected($, $selected + 1);
+}
+
+@proc move_home
+{
+  int n = row_count($);
+  if (n > 0) set_selected($, 0);
+}
+
+@proc move_end
+{
+  int n = row_count($);
+  if (n > 0) set_selected($, n - 1);
+}
+
+@proc page_up
+{
+  int step = visible_row_count($);
+  int n = row_count($);
+  if (n <= 0) return;
+  if ($selected < 0) set_selected($, 0);
+  else {
+    int r = $selected - step;
+    if (r < 0) r = 0;
+    set_selected($, r);
+  }
+}
+
+@proc page_down
+{
+  int step = visible_row_count($);
+  int n = row_count($);
+  if (n <= 0) return;
+  if ($selected < 0) set_selected($, 0);
+  else {
+    int r = $selected + step;
+    if (r > n - 1) r = n - 1;
+    set_selected($, r);
+  }
+}
+
+@proc activate
+{
+  do_activate($);
+}
+
+@proc refresh
+{
+  rebuild_columns($);
+  rebuild_cache($);
+  relayout($);
+}
+
+@proc SetFocus
+{
+  focus_self($);
+}
+
+@METHODS
+
+@proc class_initialize
+{
+  m_init();
+  converters_init();
+}
+
+@proc initialize
+{
+  $dpy = XtDisplay($);
+  $font = NULL;
+  $draw = NULL;
+  $pixmap = 0;
+  $gc = 0;
+  $icon_gc = 0;
+  $copy_gc = 0;
+  $icons = m_create(8, sizeof(list_icon_t));
+  $titles = 0;
+  $col_w = NULL;
+  $col_x = NULL;
+  $col_align = NULL;
+  $col_kind = NULL;
+  $ncols = 0;
+  $row_h = 0;
+  $header_h = 0;
+  $list_x = 0;
+  $list_y = 0;
+  $list_w = 0;
+  $list_h = 0;
+  $total_w = 0;
+  $top_x = 0;
+  $top_y = 0;
+  $dirty = 1;
+  $colors_ready = 0;
+  $last_click_time = 0;
+  $last_click_row = -1;
+  $xcol = calloc(C_COUNT, sizeof(XftColor));
+
+  if ($width == 0) $width = 280;
+  if ($height == 0) $height = 200;
+
+  $copy_gc = XtGetGC($, 0, 0);
+  $vsb = XtVaCreateManagedWidget("vsb", vSliderWidgetClass, $,
+                                 XtNborderWidth, 0, NULL);
+  XtAddCallback($vsb, "callback", (XtCallbackProc)vscroll_cb, $);
+  $hsb = XtVaCreateManagedWidget("hsb", hSliderWidgetClass, $,
+                                 XtNborderWidth, 0, NULL);
+  XtAddCallback($hsb, "callback", (XtCallbackProc)hscroll_cb, $);
+
+  theme_register($, list_apply_theme);
+  list_apply_theme($);
+  open_font($);
+  rebuild_columns($);
+}
+
+@proc destroy
+{
+  theme_unregister($);
+  free_icons($);
+  if ($titles) { m_free_strings($titles, 0); $titles = 0; }
+  m_free($icons);
+  free($col_w);
+  free($col_x);
+  free($col_align);
+  free($col_kind);
+  if ($draw) { XftDrawDestroy((XftDraw*)$draw); $draw = NULL; }
+  if ($pixmap) { XFreePixmap($dpy, $pixmap); $pixmap = 0; }
+  if ($font) { XftFontClose($dpy, (XftFont*)$font); $font = NULL; }
+  free_xcol($);
+  if ($gc) { XtReleaseGC($, $gc); $gc = 0; }
+  if ($icon_gc) { XtReleaseGC($, $icon_gc); $icon_gc = 0; }
+  if ($copy_gc) { XtReleaseGC($, $copy_gc); $copy_gc = 0; }
+  free($xcol); $xcol = NULL;
+}
+
+@proc realize
+{
+  #realize($, mask, attributes);
+  $dirty = 1;
+  rebuild_cache($);
+  /* Configure the slider children before Xt realizes them: a managed child
+   * with 0x0 geometry makes Xt abort with "zero width and/or height". */
+  relayout($);
+}
+
+@proc resize
+{
+  rebuild_cache($);
+  relayout($);
+}
+
+@proc expose
+{
+  if (!XtIsRealized($)) return;
+  if ($dirty || !$pixmap) render($);
+  blit($);
+}
+
+@proc accept_focus
+{
+  return True;
+}
+
+@proc query_geometry
+{
+  int w, h;
+  open_font($);
+  w = 280;
+  h = $visibleRows * ($row_h > 0 ? $row_h : 16) + ($showHeader ? $header_h : 0) + (int)$barSize;
+  if (w < 50) w = 50;
+  if (h < 30) h = 30;
+  reply->request_mode = CWWidth | CWHeight;
+  reply->width = (Dimension)w;
+  reply->height = (Dimension)h;
+  return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+  request->width = reply->width;
+  request->height = reply->height;
+  request->request_mode = CWWidth | CWHeight;
+}
+
+@proc geometry_manager
+{
+  (void)self;
+  {
+    Dimension w = (request->request_mode & CWWidth) ? request->width : child->core.width;
+    Dimension h = (request->request_mode & CWHeight) ? request->height : child->core.height;
+    XtConfigureWidget(child, child->core.x, child->core.y, w, h, child->core.border_width);
+  }
+  return XtGeometryDone;
+}
+
+@proc set_values
+{
+  int redraw = 0;
+
+  if ($fontFace != $old$fontFace || $fontSize != $old$fontSize ||
+      $rowHeight != $old$rowHeight || $headerHeight != $old$headerHeight) {
+    open_font($);
+    $dirty = 1;
+    redraw = 1;
+  }
+  if ($rows != $old$rows || $columnCount != $old$columnCount ||
+      $columnWidths != $old$columnWidths || $columnTitles != $old$columnTitles ||
+      $columnAligns != $old$columnAligns || $columnKinds != $old$columnKinds) {
+    rebuild_columns($);
+    $dirty = 1;
+    redraw = 1;
+  }
+  if ($showHeader != $old$showHeader || $cellPaddingX != $old$cellPaddingX ||
+      $cellPaddingY != $old$cellPaddingY || $iconSize != $old$iconSize ||
+      $gridLines != $old$gridLines || $alternateRows != $old$alternateRows) {
+    open_font($);
+    $dirty = 1;
+    redraw = 1;
+  }
+  if ($selected != $old$selected) {
+    ensure_selected_visible($);
+    $dirty = 1;
+    redraw = 1;
+  }
+  if ($allowHoriz != $old$allowHoriz || $allowVert != $old$allowVert ||
+      $barSize != $old$barSize || $visibleRows != $old$visibleRows) {
+    $dirty = 1;
+    redraw = 1;
+  }
+
+  if (redraw) {
+    rebuild_cache($);
+    relayout($);
+  }
+  return redraw;
+}
+
+@UTILITIES
+
+@proc void focus_self($)
+{
+  Widget shell = $, parent = $;
+  while (parent) {
+    if (XtIsShell(shell = parent)) break;
+    parent = XtParent(parent);
+  }
+  XtSetKeyboardFocus(shell, $);
+}
+
+@proc Pixel list_color(const char *key, const char *fallback, Pixel def)
+{
+  if (theme_color_defined(key)) return get_color(key);
+  if (fallback && theme_color_defined(fallback)) return get_color(fallback);
+  return def;
+}
+
+@proc void free_xcol($)
+{
+  int i;
+  XftColor *xc = (XftColor*)$xcol;
+  if (!xc || !$colors_ready) return;
+  for (i = 0; i < C_COUNT; i++) {
+    Display *dpy = XtDisplay($);
+    XftColorFree(dpy, DefaultVisual(dpy, DefaultScreen(dpy)), None, &xc[i]);
+  }
+  $colors_ready = 0;
+}
+
+@proc void list_apply_theme($)
+{
+  Display *dpy = XtDisplay($);
+  XftColor *xc = (XftColor*)$xcol;
+  int i;
+  XGCValues v;
+
+  $col_px[C_BG]     = list_color("list_bg", "bg_norm", 0xffffff);
+  $col_px[C_FG]     = list_color("list_fg", "fg_norm", 0x000000);
+  $col_px[C_SEL_BG] = list_color("list_sel_bg", "bg_sel", 0x204080);
+  $col_px[C_SEL_FG] = list_color("list_sel_fg", "fg_hi", 0xffffff);
+  $col_px[C_HDR_BG] = list_color("list_header_bg", "bg_hi", 0xdddddd);
+  $col_px[C_HDR_FG] = list_color("list_header_fg", "fg_norm", 0x000000);
+  $col_px[C_ALT_BG] = list_color("list_alt_bg", "list_bg", $col_px[C_BG]);
+  $col_px[C_LINE]   = list_color("list_line", "gridbox_border", 0x888888);
+
+  if (!xc) return;
+  if ($colors_ready) free_xcol($);
+  for (i = 0; i < C_COUNT; i++)
+    xft_color_alloc($, $col_px[i], &xc[i]);
+  $colors_ready = 1;
+
+  if ($gc) XtReleaseGC($, $gc);
+  v.foreground = $col_px[C_BG];
+  v.graphics_exposures = False;
+  $gc = XtGetGC($, GCForeground | GCGraphicsExposures, &v);
+
+  if ($icon_gc) XtReleaseGC($, $icon_gc);
+  v.foreground = $col_px[C_FG];
+  v.graphics_exposures = False;
+  $icon_gc = XtGetGC($, GCForeground | GCGraphicsExposures, &v);
+
+  $background_pixel = $col_px[C_BG];
+  if (XtIsRealized($)) {
+    XSetWindowBackground(dpy, XtWindow($), $col_px[C_BG]);
+    XClearWindow(dpy, XtWindow($));
+  }
+  if ($vsb) {
+    XtVaSetValues($vsb, "foreground", $col_px[C_HDR_BG],
+                  "background", $col_px[C_BG], NULL);
+  }
+  if ($hsb) {
+    XtVaSetValues($hsb, "foreground", $col_px[C_HDR_BG],
+                  "background", $col_px[C_BG], NULL);
+  }
+  $dirty = 1;
+  if (XtIsRealized($)) redraw_list($);
+}
+
+@proc void open_font($)
+{
+  Display *dpy = XtDisplay($);
+  char name[160];
+  XftFont *f;
+
+  snprintf(name, sizeof(name), "%s-%d", $fontFace ? $fontFace : "Sans", $fontSize);
+  f = XftFontOpenName(dpy, DefaultScreen(dpy), name);
+  if (!f) f = XftFontOpenName(dpy, DefaultScreen(dpy), "Sans-12");
+  if ($font) XftFontClose(dpy, (XftFont*)$font);
+  $font = f;
+  $row_h = ($rowHeight > 0) ? $rowHeight
+                            : (f ? f->height : 16) + 2 * $cellPaddingY;
+  if ($row_h < 4) $row_h = 4;
+  $header_h = $showHeader
+      ? (($headerHeight > 0) ? $headerHeight
+                             : (f ? f->height : 16) + 2 * $cellPaddingY)
+      : 0;
+  if ($header_h < 0) $header_h = 0;
+}
+
+@proc void rebuild_columns($)
+{
+  int i, n, fixed = 0, weights = 0, avail, used;
+  int body;
+
+  n = $columnCount;
+  if (n < 1) n = 1;
+  if ($columnWidths && m_len($columnWidths) > n) n = m_len($columnWidths);
+  if ($columnAligns && m_len($columnAligns) > n) n = m_len($columnAligns);
+  if ($columnKinds && m_len($columnKinds) > n) n = m_len($columnKinds);
+  if ($columnTitles && *$columnTitles) {
+    int tc = 1;
+    const char *p;
+    for (p = $columnTitles; *p; p++) if (*p == '\t') tc++;
+    if (tc > n) n = tc;
+  }
+
+  free($col_w);
+  free($col_x);
+  free($col_align);
+  free($col_kind);
+  $col_w = (int*)calloc((size_t)n, sizeof(int));
+  $col_x = (int*)calloc((size_t)n, sizeof(int));
+  $col_align = (int*)calloc((size_t)n, sizeof(int));
+  $col_kind = (int*)calloc((size_t)n, sizeof(int));
+  $ncols = n;
+
+  for (i = 0; i < n; i++) {
+    int w = ($columnWidths && i < m_len($columnWidths)) ? INT($columnWidths, i) : 0;
+    int a = ($columnAligns && i < m_len($columnAligns)) ? INT($columnAligns, i) : ALIGN_LEFT;
+    int k = ($columnKinds && i < m_len($columnKinds)) ? INT($columnKinds, i) : COLT_TEXT;
+    if (a < ALIGN_LEFT || a > ALIGN_RIGHT) a = ALIGN_LEFT;
+    if (k < COLT_TEXT || k > COLT_ICON_TEXT) k = COLT_TEXT;
+    $col_w[i] = w;
+    $col_align[i] = a;
+    $col_kind[i] = k;
+    if (w > 0) fixed += w; else weights++;
+  }
+
+  if ($titles) { m_free_strings($titles, 0); $titles = 0; }
+  if ($columnTitles && *$columnTitles)
+    $titles = s_split(0, $columnTitles, '\t', 0);
+
+  body = ($list_w > 0) ? $list_w : ((int)$width > 0 ? (int)$width : 280);
+  avail = body - fixed;
+  if (avail < 0) avail = 0;
+  used = 0;
+  if (weights > 0) {
+    for (i = 0; i < n; i++) {
+      if ($col_w[i] <= 0) {
+        $col_w[i] = avail / weights;
+        used += $col_w[i];
+      }
+    }
+    /* give any rounding remainder to the first weighted column */
+    for (i = 0; i < n && used < avail; i++) {
+      if ($columnWidths == 0 || i >= m_len($columnWidths) || INT($columnWidths, i) <= 0) {
+        $col_w[i] += avail - used;
+        break;
+      }
+    }
+  }
+
+  {
+    int x = 0;
+    for (i = 0; i < n; i++) {
+      $col_x[i] = x;
+      x += $col_w[i];
+    }
+    $total_w = x;
+  }
+}
+
+@proc int column_at($, int px)
+{
+  int i;
+  for (i = 0; i < $ncols; i++)
+    if (px >= $col_x[i] && px < $col_x[i] + $col_w[i]) return i;
+  return -1;
+}
+
+@proc int row_count($)
+{
+  if ($rows) return m_len($rows);
+  if ($getEntry) {
+    wlist_entry_t ent;
+    ent.pos = 0;
+    ent.max = 0;
+    ent.state = 0;
+    ent.data = "";
+    XtCallCallbackList($, $getEntry, &ent);
+    return ent.max;
+  }
+  return 0;
+}
+
+@proc char *row_string($, int i)
+{
+  if ($rows) {
+    if (i >= 0 && i < m_len($rows)) return STR($rows, i);
+    return "";
+  }
+  if ($getEntry) {
+    wlist_entry_t ent;
+    ent.pos = i;
+    ent.max = 0;
+    ent.state = 0;
+    ent.data = "";
+    XtCallCallbackList($, $getEntry, &ent);
+    return ent.data ? ent.data : "";
+  }
+  return "";
+}
+
+@proc int visible_row_count($)
+{
+  int n = ($row_h > 0) ? ($list_h / $row_h) : 0;
+  if (n < 1) n = 1;
+  return n;
+}
+
+@proc void set_selected($, int row)
+{
+  int n = row_count($);
+  if (n <= 0) row = -1;
+  if (row >= n) row = n - 1;
+  if (row < -1) row = -1;
+  if (row == $selected) return;
+  $selected = row;
+  ensure_selected_visible($);
+  $dirty = 1;
+  redraw_list($);
+  XtCallCallbackList($, $notify, (XtPointer)(intptr_t)$selected);
+}
+
+@proc void do_activate($)
+{
+  if ($selected >= 0)
+    XtCallCallbackList($, $activate, (XtPointer)(intptr_t)$selected);
+}
+
+@proc void ensure_selected_visible($)
+{
+  int y;
+  if ($selected < 0 || $row_h <= 0) return;
+  y = $selected * $row_h;
+  if (y < $top_y) $top_y = y;
+  else if (y + $row_h > $top_y + $list_h)
+    $top_y = y + $row_h - $list_h;
+  if ($top_y < 0) $top_y = 0;
+}
+
+@proc void rebuild_cache($)
+{
+  int w = (int)$width;
+  int h = (int)$height;
+  Display *dpy = XtDisplay($);
+  Visual *vis = DefaultVisual(dpy, DefaultScreen(dpy));
+
+  if (!XtIsRealized($)) return;
+  if (w < 1) w = 1;
+  if (h < 1) h = 1;
+  if (w > 4000) w = 4000;
+  if (h > 4000) h = 4000;
+
+  if ($pixmap && (int)$width <= w && (int)$height <= h) {
+    /* keep existing cache if it already covers the window */
+  } else {
+    if ($draw) { XftDrawDestroy((XftDraw*)$draw); $draw = NULL; }
+    if ($pixmap) { XFreePixmap(dpy, $pixmap); $pixmap = 0; }
+  }
+
+  if (!$pixmap)
+    $pixmap = XCreatePixmap(dpy, XtWindow($), (unsigned int)w, (unsigned int)h,
+                            DefaultDepth(dpy, DefaultScreen(dpy)));
+  if (!$draw && $pixmap)
+    $draw = XftDrawCreate(dpy, $pixmap, vis, None);
+  $dirty = 1;
+}
+
+@proc void draw_cell_text($, int x, int y, int w, int h, const char *s, int align, int ci)
+{
+  char buf[512];
+  char tmp[512];
+  int len, tw, tx, baseline;
+  XftFont *f = (XftFont*)$font;
+  XftDraw *d = (XftDraw*)$draw;
+  XftColor *xc = (XftColor*)$xcol;
+
+  if (!d || !f || !xc) return;
+  if (!s) s = "";
+  len = (int)strlen(s);
+  if (len > (int)sizeof(buf) - 1) len = (int)sizeof(buf) - 1;
+  memcpy(buf, s, (size_t)len);
+  buf[len] = 0;
+
+  tw = xft_textwidth($dpy, f, buf);
+  if (tw > w - 2 * $cellPaddingX && w > 2 * $cellPaddingX + 12) {
+    int maxw = w - 2 * $cellPaddingX - 12; /* room for "..." */
+    int i = len;
+    while (i > 0) {
+      i--;
+      while (i > 0 && (((unsigned char)buf[i]) & 0xC0) == 0x80) i--;
+      memcpy(tmp, buf, (size_t)i);
+      tmp[i] = 0;
+      strcat(tmp, "...");
+      if (xft_textwidth($dpy, f, tmp) <= maxw) break;
+    }
+    strcpy(buf, tmp);
+    tw = xft_textwidth($dpy, f, buf);
+  }
+
+  tx = x + $cellPaddingX;
+  if (align == ALIGN_CENTER) tx = x + (w - tw) / 2;
+  else if (align == ALIGN_RIGHT) tx = x + w - $cellPaddingX - tw;
+  if (tx < x + $cellPaddingX) tx = x + $cellPaddingX;
+
+  baseline = y + ($row_h + f->ascent - f->descent) / 2;
+  if (baseline > y + $row_h - 1) baseline = y + $row_h - 1;
+  XftDrawStringUtf8(d, &xc[ci], f, tx, baseline, (FcChar8*)buf, (int)strlen(buf));
+}
+
+@proc int icon_index($, const char *name)
+{
+  list_icon_t *ic;
+  int p, i = 0;
+  size_t n;
+
+  if (!name || !*name) return -1;
+  m_foreach($icons, p, ic) {
+    if (ic->name && strcmp(ic->name, name) == 0) return i;
+    i++;
+  }
+
+  {
+    list_icon_t ni;
+    memset(&ni, 0, sizeof(ni));
+    ni.name = strdup(name);
+    n = strlen(name);
+    if (n > 4 && strcmp(name + n - 4, ".svg") == 0) {
+      XImage2 *im = (XImage2*)calloc(1, sizeof(XImage2));
+      if (im && xim2_load_svg(im, name) == 0) {
+        Display *dpy = XtDisplay($);
+        Visual *vis = DefaultVisual(dpy, DefaultScreen(dpy));
+        float scale = ($iconSize > 0) ? (float)$iconSize / (float)im->orig_w : 1.0f;
+        im->dpy = dpy;
+        im->vis = vis;
+        if (scale <= 0.0f) scale = 1.0f;
+        im->d = $pixmap;
+        xim2_render(im, dpy, vis, $pixmap, scale, $iconSize);
+        ni.kind = ICON_SVG;
+        ni.svg = im;
+        ni.w = (int)im->width;
+        ni.h = (int)im->height;
+      } else {
+        if (im) { xim2_delete(im); free(im); }
+        ni.kind = -1;
+      }
+    } else {
+      if (load_pixmap_from_file($, (char*)name, &ni.map, &ni.mask) == 0) {
+        unsigned int ww, hh, bw, depth;
+        Window root;
+        int xx, yy;
+        ni.kind = ICON_XPM;
+        if (XGetGeometry($dpy, ni.map, &root, &xx, &yy, &ww, &hh, &bw, &depth)) {
+          ni.w = (int)ww;
+          ni.h = (int)hh;
+        }
+      } else {
+        ni.kind = -1;
+      }
+    }
+    m_put($icons, &ni);
+  }
+  return m_len($icons) - 1;
+}
+
+@proc void draw_icon($, int x, int y, int w, int h, const char *name, int ci)
+{
+  int ii = icon_index($, name);
+  list_icon_t *ic;
+  int iy, ix;
+
+  if (ii < 0 || ii >= m_len($icons)) return;
+  ic = (list_icon_t*)mls($icons, ii);
+  if (!ic || ic->kind < 0) return;
+
+  ix = x + $cellPaddingX;
+  iy = y + (h - (ic->h > 0 ? ic->h : $iconSize)) / 2;
+  if (iy < y + $cellPaddingY) iy = y + $cellPaddingY;
+
+  if (ic->kind == ICON_SVG && ic->svg) {
+    XImage2 *im = (XImage2*)ic->svg;
+    if (im->image)
+      xim2_put_image(im, ix, iy, 0, 0, ix, iy, (int)im->width, (int)im->height);
+  } else if (ic->kind == ICON_XPM && ic->map) {
+    if (ic->mask) {
+      XSetClipMask($dpy, $icon_gc, ic->mask);
+      XSetClipOrigin($dpy, $icon_gc, ix, iy);
+    }
+    XCopyArea($dpy, ic->map, $pixmap, $icon_gc, 0, 0,
+              (unsigned int)(ic->w > 0 ? ic->w : $iconSize),
+              (unsigned int)(ic->h > 0 ? ic->h : $iconSize),
+              ix, iy);
+    XSetClipMask($dpy, $icon_gc, None);
+  }
+}
+
+@proc void draw_cell($, int x, int y, int w, int h, const char *cell, int kind, int align, int ci)
+{
+  if (kind == COLT_TEXT || !cell || cell[0] != '@') {
+    draw_cell_text($, x, y, w, h, cell, align, ci);
+  } else {
+    const char *p = cell;
+    char icon[512];
+    char label[512];
+    const char *bar;
+    int ilen;
+    if (*p == '@') p++;
+    bar = strchr(p, '|');
+    ilen = bar ? (int)(bar - p) : (int)strlen(p);
+    if (ilen > (int)sizeof(icon) - 1) ilen = (int)sizeof(icon) - 1;
+    memcpy(icon, p, (size_t)ilen);
+    icon[ilen] = 0;
+    label[0] = 0;
+    if (bar) {
+      strncpy(label, bar + 1, sizeof(label) - 1);
+      label[sizeof(label) - 1] = 0;
+    }
+    draw_icon($, x, y, w, h, icon, ci);
+    if (kind == COLT_ICON_TEXT && label[0]) {
+      int tx = x + $cellPaddingX + $iconSize + $cellPaddingX;
+      draw_cell_text($, tx, y, w - (tx - x), h, label, align, ci);
+    }
+  }
+}
+
+@proc void draw_header($)
+{
+  XftFont *f = (XftFont*)$font;
+  XftColor *xc = (XftColor*)$xcol;
+  int i;
+
+  if (!$showHeader || $header_h <= 0 || !$pixmap) return;
+  XFillRectangle($dpy, $pixmap, $gc, 0, 0, (unsigned int)$width, (unsigned int)$header_h);
+  for (i = 0; i < $ncols; i++) {
+    int x = $col_x[i] - $top_x;
+    int w = $col_w[i];
+    const char *t = "";
+    int ci = C_HDR_FG;
+    int ax = x;
+    if ($titles && i < m_len($titles)) t = STR($titles, i);
+    if (w <= 0) continue;
+    if (ax + w < 0) continue;
+    if (x > (int)$width) break;
+    draw_cell_text($, ax, 0, w, $header_h, t, $col_align[i], ci);
+    if ($gridLines && i + 1 < $ncols) {
+      int lx = x + w;
+      XDrawLine($dpy, $pixmap, $icon_gc, lx, 2, lx, $header_h - 3);
+    }
+  }
+  if ($gridLines)
+    XDrawLine($dpy, $pixmap, $icon_gc, 0, $header_h - 2,
+              (int)$width, $header_h - 2);
+  (void)f; (void)xc;
+}
+
+@proc void draw_rows($)
+{
+  int n = row_count($);
+  int first, last, i;
+
+  if (!$pixmap || $row_h <= 0) return;
+  first = $top_y / $row_h;
+  if (first < 0) first = 0;
+  last = ($top_y + $list_h) / $row_h;
+  if (last >= n) last = n - 1;
+
+  for (i = first; i <= last && i < n; i++) {
+    char rowbuf[2048];
+    char *row = row_string($, i);
+    int y = $list_y + i * $row_h - $top_y;
+    int c = 0;
+    const char *p;
+    Pixel bg;
+
+    if (i < 0) continue;
+    if ($selected == i) bg = $col_px[C_SEL_BG];
+    else if ($alternateRows && (i & 1)) bg = $col_px[C_ALT_BG];
+    else bg = $col_px[C_BG];
+
+    if ($selected == i && $gc) {
+      XGCValues gv;
+      gv.foreground = bg;
+      gv.graphics_exposures = False;
+      XChangeGC($dpy, $gc, GCForeground | GCGraphicsExposures, &gv);
+    } else if ($gc) {
+      XGCValues gv;
+      gv.foreground = bg;
+      gv.graphics_exposures = False;
+      XChangeGC($dpy, $gc, GCForeground | GCGraphicsExposures, &gv);
+    }
+    XFillRectangle($dpy, $pixmap, $gc, 0, y, (unsigned int)$width, (unsigned int)$row_h);
+
+    if (!row) row = "";
+    strncpy(rowbuf, row, sizeof(rowbuf) - 1);
+    rowbuf[sizeof(rowbuf) - 1] = 0;
+    p = rowbuf;
+    for (c = 0; c < $ncols && p; c++) {
+      const char *tab = strchr(p, '\t');
+      char cell[1024];
+      int clen = tab ? (int)(tab - p) : (int)strlen(p);
+      int cx = $col_x[c] - $top_x;
+      int cw = $col_w[c];
+      int ci = ($selected == i) ? C_SEL_FG : C_FG;
+
+      if (clen > (int)sizeof(cell) - 1) clen = (int)sizeof(cell) - 1;
+      memcpy(cell, p, (size_t)clen);
+      cell[clen] = 0;
+
+      if (cw > 0 && cx + cw > 0 && cx < (int)$width) {
+        XRectangle clip;
+        clip.x = (short)(cx < 0 ? 0 : cx);
+        clip.y = (short)y;
+        clip.width = (unsigned short)((cx < 0 ? cw + cx : cw));
+        clip.height = (unsigned short)$row_h;
+        if (clip.width > (unsigned short)($width + 1)) clip.width = (unsigned short)($width + 1);
+        if ($draw) XftDrawSetClipRectangles((XftDraw*)$draw, 0, 0, &clip, 1);
+        draw_cell($, cx, y, cw, $row_h, cell, $col_kind[c], $col_align[c], ci);
+        if ($draw) XftDrawSetClip((XftDraw*)$draw, None);
+      }
+
+      p = tab ? tab + 1 : NULL;
+    }
+
+    if ($gridLines) {
+      XDrawLine($dpy, $pixmap, $icon_gc, 0, y + $row_h - 2,
+                (int)$width, y + $row_h - 2);
+    }
+  }
+}
+
+@proc void render($)
+{
+  if (!XtIsRealized($)) { $dirty = 1; return; }
+  if (!$pixmap) rebuild_cache($);
+  if (!$pixmap || !$gc) return;
+
+  XFillRectangle($dpy, $pixmap, $gc, 0, 0, (unsigned int)$width, (unsigned int)$height);
+  draw_header($);
+  draw_rows($);
+  $dirty = 0;
+}
+
+@proc void blit($)
+{
+  if (!$pixmap) return;
+  XCopyArea($dpy, $pixmap, XtWindow($), $copy_gc, 0, 0,
+            (unsigned int)$width, (unsigned int)$height, 0, 0);
+}
+
+@proc void redraw_list($)
+{
+  if (!XtIsRealized($)) { $dirty = 1; return; }
+  render($);
+  blit($);
+}
+
+@proc void relayout($)
+{
+  int bs = (int)$barSize;
+  int vw, hh, show_v, show_h;
+  int total_h, maxy, total_w, maxx;
+
+  if (bs < 1) bs = 1;
+
+  /* Pass 1: assume both bars are visible, so weighted columns fill the body. */
+  vw = $allowVert ? bs : 0;
+  hh = $allowHoriz ? bs : 0;
+  $list_x = 0;
+  $list_y = $showHeader ? $header_h : 0;
+  $list_w = (int)$width - vw;
+  $list_h = (int)$height - $list_y - hh;
+  if ($list_w < 1) $list_w = 1;
+  if ($list_h < 1) $list_h = 1;
+  rebuild_columns($);
+  total_w = $total_w;
+  total_h = row_count($) * $row_h;
+
+  show_v = $allowVert && (total_h > $list_h);
+  show_h = $allowHoriz && (total_w > $list_w);
+
+  /* Pass 2: reserve only the bars that are actually needed. */
+  vw = show_v ? bs : 0;
+  hh = show_h ? bs : 0;
+  $list_w = (int)$width - vw;
+  $list_h = (int)$height - $list_y - hh;
+  if ($list_w < 1) $list_w = 1;
+  if ($list_h < 1) $list_h = 1;
+  rebuild_columns($);
+  total_w = $total_w;
+  total_h = row_count($) * $row_h;
+
+  maxy = total_h - $list_h;
+  if (maxy < 0) maxy = 0;
+  if ($top_y > maxy) $top_y = maxy;
+  if ($top_y < 0) $top_y = 0;
+  maxx = $total_w - $list_w;
+  if (maxx < 0) maxx = 0;
+  if ($top_x > maxx) $top_x = maxx;
+  if ($top_x < 0) $top_x = 0;
+
+  if ($vsb) {
+    int frac = (total_h > 0) ? (int)((long)$list_h * SCROLL_RES / total_h) : SCROLL_RES;
+    int pos = (total_h > 0) ? (int)((long)$top_y * SCROLL_RES / total_h) : 0;
+    if (frac > SCROLL_RES) frac = SCROLL_RES;
+    {
+      Dimension cw = (Dimension)(vw > 0 ? vw : 1);
+      Dimension ch = (Dimension)($list_h > 0 ? $list_h : 1);
+      XtConfigureWidget($vsb, (Position)($width - cw), (Position)$list_y,
+                        cw, ch, 0);
+    }
+    XtSetMappedWhenManaged($vsb, show_v);
+    XtVaSetValues($vsb, "frac", frac, "pos", pos, NULL);
+  }
+  if ($hsb) {
+    int frac = (total_w > 0) ? (int)((long)$list_w * SCROLL_RES / total_w) : SCROLL_RES;
+    int pos = (total_w > 0) ? (int)((long)$top_x * SCROLL_RES / total_w) : 0;
+    if (frac > SCROLL_RES) frac = SCROLL_RES;
+    {
+      Dimension cw = (Dimension)($list_w > 0 ? $list_w : 1);
+      Dimension ch = (Dimension)(hh > 0 ? hh : 1);
+      XtConfigureWidget($hsb, 0, (Position)($height - ch), cw, ch, 0);
+    }
+    XtSetMappedWhenManaged($hsb, show_h);
+    XtVaSetValues($hsb, "frac", frac, "pos", pos, NULL);
+  }
+
+  $dirty = 1;
+  redraw_list($);
+  XtCallCallbackList($, $updatecb, NULL);
+}
+
+@proc void scroll_by($, int dx, int dy)
+{
+  int total_h = row_count($) * $row_h;
+  int maxy = total_h - $list_h;
+  int maxx = $total_w - $list_w;
+  if (maxy < 0) maxy = 0;
+  if (maxx < 0) maxx = 0;
+
+  $top_x += dx;
+  $top_y += dy;
+  if ($top_x < 0) $top_x = 0;
+  if ($top_x > maxx) $top_x = maxx;
+  if ($top_y < 0) $top_y = 0;
+  if ($top_y > maxy) $top_y = maxy;
+  relayout($);
+}
+
+@proc vscroll_cb(Widget w, $, void *d)
+{
+  int pos = (int)(intptr_t)d;
+  int total_h = row_count($) * $row_h;
+  int maxy = total_h - $list_h;
+  if (maxy < 0) maxy = 0;
+  $top_y = (int)((long)pos * maxy / SCROLL_RES);
+  if ($top_y < 0) $top_y = 0;
+  if ($top_y > maxy) $top_y = maxy;
+  relayout($);
+}
+
+@proc hscroll_cb(Widget w, $, void *d)
+{
+  int pos = (int)(intptr_t)d;
+  int maxx = $total_w - $list_w;
+  if (maxx < 0) maxx = 0;
+  $top_x = (int)((long)pos * maxx / SCROLL_RES);
+  if ($top_x < 0) $top_x = 0;
+  if ($top_x > maxx) $top_x = maxx;
+  relayout($);
+}
+
+@proc void free_icons($)
+{
+  list_icon_t *ic;
+  int p;
+  m_foreach($icons, p, ic) {
+    if (ic->name) free(ic->name);
+    if (ic->svg) {
+      xim2_delete((XImage2*)ic->svg);
+      free(ic->svg);
+    }
+    if (ic->map) XFreePixmap($dpy, ic->map);
+    if (ic->mask) XFreePixmap($dpy, ic->mask);
+  }
+  m_clear($icons);
+}
+
+@IMPORTS
+@incl <X11/Intrinsic.h>
+@incl <X11/IntrinsicP.h>
+@incl <X11/StringDefs.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xmu/Converters.h>
+@incl <stdlib.h>
+@incl <string.h>
+@incl <stdio.h>
+@incl <stdint.h>
+@incl <math.h>
+@incl "converters.h"
+@incl "converters-xft.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "m_tool.h"
+@incl "theme.h"
+@incl "Wlist-common.h"
+@incl "xtcw/VSlider.h"
+@incl "xtcw/HSlider.h"
+@incl "ximage2.h"

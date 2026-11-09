@@ -26,7 +26,8 @@ function M.process_property(clean_k, v, widget_class)
     elseif clean_k == 'align' then
         clean_k = 'alignment'
     elseif clean_k == 'model' then
-        clean_k = 'tableStrs'
+        -- WListView takes a row model; the older lists take tableStrs.
+        clean_k = (widget_class == 'WListView') and 'rows' or 'tableStrs'
         if type(v) == 'table' then
             if v.handle then
                 v = v.handle
@@ -45,6 +46,10 @@ function M.process_property(clean_k, v, widget_class)
         end
     elseif clean_k == 'on-row-activated' then
         clean_k = 'notify'
+    elseif clean_k == 'on-activate' then
+        clean_k = 'activate'
+    elseif clean_k == 'on-header' then
+        clean_k = 'headerClicked'
     elseif clean_k == 'on-toggle' then
         clean_k = 'callback'
     elseif clean_k == 'on-change' then

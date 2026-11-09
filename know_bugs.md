@@ -1064,3 +1064,52 @@ undo/redo spans, writes both `add_len` (current logical) and `max_add`
 invariant that stale add-buffer atoms remain available to redo.
 
 **Files:** `utils/rtable.c` (`rtable_serialize`, `rtable_deserialize`)
+
+## Wcheckbox: duplicate `callback` resource caused a double free in Xt destroy
+
+**Symptom:** a `WfileChooser` containing a `Wcheckbox` crashed at
+`XtDestroyWidget` with `double free or corruption (fasttop)`. Valgrind showed
+the callback list allocated by `XtAddCallback(wcheckbox, "callback", ...)`
+being freed twice inside libXt.
+
+**Cause:** `Wcheckbox` redeclared `@var <Callback> XtCallbackList callback = NULL`
+even though its superclass chain (`Wlabel` -> `Wheel`) already provides the
+`callback` resource. wbuild emitted a second subclass resource with the same
+name/offset (`wheel.callback`), so Xt managed the same callback-list pointer
+twice and freed it twice during `ObjectDestroy`.
+
+**Fix:** remove the duplicate `callback` declaration from `Wcheckbox.widget`;
+`toggle` already calls `XtCallCallbackList($, $callback, ...)` on Wheel's
+inherited field. valgrind is clean afterwards.
+
+**File:** `wbuild_widgets/Wcheckbox.widget`
+
+## Composite with managed slider children: zero geometry aborts realize
+
+**Symptom:** creating a `WListView` aborted during realize with
+`Error: Widget vsb has zero width and/or height` (or `hsb`), and the process
+exited 1.
+
+**Cause:** the widget created `VSlider`/`HSlider` children in `initialize`,
+then `realize` called `#realize` and explicitly realized the children before
+`relayout()` had assigned their geometry. Xt refuses to realize a managed
+child with 0x0 size.
+
+**Fix:** in `realize`, call `relayout()` after the superclass realize and let
+Xt realize the managed children afterwards; never configure a hidden slider
+with 0 width/height (use at least 1x1 while it is unmapped).
+
+**File:** `wbuild_widgets/WListView.widget`
+
+## wbuild: `@var ArrayInt` needs `converters.h` in the generated header
+
+**Symptom:** consumers that include `<Widget>P.h` fail with
+`unknown type name 'ArrayInt'`.
+
+**Cause:** `ArrayInt` is a typedef from `converters.h`, but `wbuild` emits
+`@IMPORTS` only into the generated `.c`, not into the public/private headers.
+
+**Fix:** add `@EXPORTS` with `@incl "converters.h"` so the public header is
+self-contained (done for `WListView`).
+
+**File:** `wbuild_widgets/WListView.widget`

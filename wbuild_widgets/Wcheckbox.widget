@@ -2,7 +2,6 @@
 @ Checkbox widget with toggle state
 
 @PUBLIC
-@var <Callback> XtCallbackList callback = NULL
 @var Boolean checked = False
 @var String label = ""
 

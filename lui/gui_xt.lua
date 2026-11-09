@@ -42,6 +42,18 @@ function M.get(id, prop)
     end
 end
 
+-- Set an MLS string-list resource (e.g. WListView rows, tableStrs) from a
+-- Lua array of strings.
+function M.set_string_list(id, prop, rows)
+    local w = backend.get_widget(id)
+    if not w or type(rows) ~= 'table' then return end
+    local handle = mls_create(10, 8)
+    for _, item in ipairs(rows) do
+        mls_put_string(handle, tostring(item))
+    end
+    xtsetvalue(w, prop, handle)
+end
+
 function M.get_widget(id)
     return backend.get_widget(id)
 end

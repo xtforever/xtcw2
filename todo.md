@@ -59,6 +59,29 @@ objects.
       undo/redo replication).
 - [ ] Optional: file chooser instead of the fixed demo path.
 
+## Demo plain-text I/O
+
+- [x] `demo_rich_bravo.lua` Text tab: import/export plain UTF-8 files using an
+      editable path field. Blank lines separate paragraphs; single newlines are
+      soft breaks. Import resets rich formatting and normalises CRLF/CR to LF;
+      export writes the text only, so all formatting is lost.
+
+## ListView / file chooser
+
+- [x] `WListView` (Composite): themed multi-column list with header, weighted or
+      fixed columns, text/icon/icon+text cells (SVG and XPM), alternate rows,
+      grid lines, vertical + horizontal `VSlider`/`HSlider`, wheel scrolling and
+      keyboard navigation. Single selection with `notify`/`activate` callbacks.
+- [x] `WfileChooser`: directory listing with Name/Size/Date/Type columns,
+      filter, hidden-file toggle, Up/Home navigation, OK/Cancel and
+      `accept`/`cancel` callbacks.
+- [x] `WfileSelector` now pops a `WfileChooser` instead of `SelectReq`; exposes
+      the accepted full path as `selectedPath`.
+- [x] LUI: `listview`/`file-chooser` aliases, `model` maps to `WListView` rows,
+      `on-activate`/`on-header` callback aliases; `gui.set_string_list`.
+- [x] Demos `demo_listview.lua`, `demo_filechooser.lua`; tests
+      `test_wlistview`, `test_wfilechooser`.
+
 ## Inline SVG objects
 
 - [ ] Implement `RATOM_OBJECT` handling in `retex_layout_styled()` (it currently

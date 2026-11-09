@@ -1,12 +1,18 @@
 -- Wbravo rich-text demo: the piece-table editor with per-run fonts/styles and
 -- per-paragraph formatting.
 --
--- The burger menu (top-left) has two tabs:
+-- The burger menu (top-left) has four tabs:
+--   Text      – import/export a plain UTF-8 text file
+--   State     – save/load a full editor-state snapshot (debugging)
 --   Style     – bold/italic/roman, font face and size
 --   Paragraph – alignment, indentation and paragraph spacing
 -- Paragraphs are separated by blank lines; a single newline is a soft break
 -- inside the same paragraph.  The caret/selection determines the target
 -- paragraph(s).  Ctrl+B / Ctrl+I / Ctrl+R also toggle bold/italic/roman.
+--
+-- Plain-text import/export intentionally carries no rich formatting: importing
+-- produces unstyled text and only blank lines remain as paragraph separators;
+-- exporting loses all per-run and per-paragraph formatting.
 
 local gui = require('gui_xt')
 local lui = require('lui')
@@ -57,6 +63,57 @@ local SNAP = "/tmp/wbravo_state.snap"
 function on_save_state() menu_fmt("save_state", SNAP) end
 function on_load_state() menu_fmt("load_state", SNAP) end
 
+-- Plain UTF-8 text import/export.  The path is editable in the main window.
+local TEXT = "/tmp/wbravo.txt"
+
+local function set_status(msg)
+    gui.set("hdr", "label", msg)
+end
+
+local function text_path()
+    local p = gui.get("path_ed", "label")
+    if not p or p == "" then p = TEXT end
+    return p
+end
+
+function on_import_text()
+    local path = text_path()
+    local f, err = io.open(path, "rb")
+    if not f then
+        set_status("Import failed: " .. tostring(err))
+        gui.set("fmt", "open", 0)
+        return
+    end
+    local data = f:read("*a") or ""
+    f:close()
+    -- Normalise line endings; blank lines separate paragraphs.
+    data = data:gsub("\r\n", "\n"):gsub("\r", "\n")
+    local ed = gui.get_widget("ed")
+    if ed then
+        xtaction(ed, "set_text", data)
+        xtaction(ed, "SetFocus")
+    end
+    set_status("Imported plain UTF-8 text (formatting reset): " .. path)
+    gui.set("fmt", "open", 0)
+end
+
+function on_export_text()
+    local path = text_path()
+    local ed = gui.get_widget("ed")
+    if not ed then return end
+    local data = gui.get("ed", "text") or ""
+    local f, err = io.open(path, "wb")
+    if not f then
+        set_status("Export failed: " .. tostring(err))
+        gui.set("fmt", "open", 0)
+        return
+    end
+    f:write(data)
+    f:close()
+    set_status("Exported plain UTF-8 text (formatting lost): " .. path)
+    gui.set("fmt", "open", 0)
+end
+
 local ui = [[
 (window :id "win" :title "Wbravo — rich text" :width 900 :height 640
   (grid :id "main" :weightx 1 :weighty 1
@@ -64,6 +121,11 @@ local ui = [[
                  :gridx 0 :gridy 0 :buttonSize 40 :fill 0
                  :popupWidth 360 :popupHeight 340
       (tabs :id "fmt_tabs" :weightx 1 :weighty 1 :fill 3
+        (grid :id "text" :tab-title "Text"
+          (button :label "Import text" :gridx 0 :gridy 0 :weightx 1 :fill 3 :callback "LUA(on_import_text)")
+          (button :label "Export text" :gridx 1 :gridy 0 :weightx 1 :fill 3 :callback "LUA(on_export_text)")
+          (label :label "Plain UTF-8. Blank line = paragraph. Export drops formatting."
+                 :gridx 0 :gridy 1 :gridWidth 2 :weightx 1 :fill 3))
         (grid :id "file" :tab-title "State"
           (button :label "Save state" :gridx 0 :gridy 0 :weightx 1 :fill 3 :callback "LUA(on_save_state)")
           (button :label "Load state" :gridx 0 :gridy 1 :weightx 1 :fill 3 :callback "LUA(on_load_state)"))
@@ -89,10 +151,12 @@ local ui = [[
           (button :label "Before 6pt" :gridx 0 :gridy 5 :weightx 1 :fill 3 :callback "LUA(on_space_before)")
           (button :label "After 6pt"  :gridx 1 :gridy 5 :weightx 1 :fill 3 :callback "LUA(on_space_after)"))))
     (label :id "hdr"
-           :label "Use the burger menu (Style / Paragraph). Paragraphs are separated by blank lines."
+           :label "Use the burger menu. Paragraphs are separated by blank lines."
            :gridx 1 :gridy 0 :weightx 1 :weighty 0 :fill 3)
+    (label :id "path_lbl" :label "Text file:" :gridx 0 :gridy 1 :weightx 0 :weighty 0 :fill 3)
+    (edit :id "path_ed" :label "/tmp/wbravo.txt" :gridx 1 :gridy 1 :weightx 1 :weighty 0 :fill 3)
     (Wbravo :id "ed"
-            :gridx 0 :gridy 1 :gridWidth 2 :weightx 1 :weighty 1 :fill 3
+            :gridx 0 :gridy 2 :gridWidth 2 :weightx 1 :weighty 1 :fill 3
             :text "First paragraph: put the caret here and pick Center in the Paragraph menu.\nThis second line is a soft break in the same paragraph.\n\nSecond paragraph: select it and try Indent + or Justify.\n\nThird paragraph: space before/after adds vertical gaps around a paragraph."
             :fontFace "Sans" :fontSize 16)
   ))

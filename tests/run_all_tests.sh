@@ -105,6 +105,10 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_rich_wbravo"
 
 echo "26c. test_wbravo_state (full-state snapshot save/load)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wbravo_state"
+echo "26d. test_wlistview (multi-column list view)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wlistview"
+echo "26e. test_wfilechooser (file chooser over WListView)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wfilechooser"
 
 echo "27. test_mls_trace (trace level + post-mortem source lookup)"
 "$ROOT/tests/test_mls_trace"
