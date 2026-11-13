@@ -35,6 +35,21 @@ echo "8. test_retex_linebreak (LAYOUT verification)"
 echo "9. test_retex_math (LAYOUT verification)"
 "$DIR/verify_layout.sh" "$ROOT/tests/test_retex_math" "$DIR/baselines/test_retex_math.layout"
 
+echo "9b. test_retex_file (Lua .retex loader/writer)"
+if command -v lua5.3 >/dev/null 2>&1; then
+    lua5.3 "$ROOT/tests/test_retex_file.lua"
+elif command -v lua >/dev/null 2>&1; then
+    lua "$ROOT/tests/test_retex_file.lua"
+else
+    echo "test_retex_file SKIPPED (no lua interpreter)"
+fi
+
+echo "9c. test_t1_menu (xtcw launcher menu)"
+"$ROOT/tests/test_t1_menu.sh"
+
+echo "9d. test_wretex (realize/expose regression)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wretex"
+
 echo "10. test_wlabel (LAYOUT verification)"
 xvfb-run --auto-servernum --server-num=99 "$DIR/verify_layout.sh" "$ROOT/tests/test_wlabel" "$DIR/baselines/test_wlabel.layout"
 

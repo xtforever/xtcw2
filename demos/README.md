@@ -5,16 +5,19 @@ Working LUI demo scripts showcasing XTCW widgets and layouts. Run them with the
 
 ## Running Demos
 
-The simplest way is the `t1.sh` TUI launcher:
+The simplest way is the `t1.sh` launcher:
 
 ```bash
-./t1.sh                 # interactive whiptail menu (all demos)
+./t1.sh                 # interactive xtcw menu (all demos)
 ./t1.sh form            # run a demo directly
 ./t1.sh --trace 50 form # run with TRACE(50) output
 ```
 
-`t1.sh` auto-builds missing artifacts via `start.sh`, uses `xvfb-run` when no
-`DISPLAY` is set, and returns to the menu after each demo exits.
+`t1.sh` auto-builds missing artifacts via `start.sh`. With a `DISPLAY` it shows
+the xtcw menu with optional rich descriptions from `demos/desc/<key>.retex`
+(re-tex markup and inline SVG); without one it falls back to a plain text menu.
+Demos run under `xvfb-run` when no `DISPLAY` is set, and the menu returns after
+each demo exits.
 
 To run a single LUI script from any directory, use the `run_lui.sh` wrapper at
 the repository root. It resolves the script path and starts `commander_runner`

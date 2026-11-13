@@ -178,8 +178,11 @@
 
 @proc realize
 {
+    /* Forward the mask/attributes computed by libXt: mask 0 selects no
+     * Expose events, so the widget is never repainted after mapping and
+     * stays black. */
     XtCreateWindow($, (unsigned int) InputOutput, (Visual *) CopyFromParent,
-                   (XtValueMask) 0, (XSetWindowAttributes *) NULL);
+                   *mask, attributes);
     if ($dirty) {
         redraw_wretex($);
     }

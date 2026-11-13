@@ -741,6 +741,113 @@ Add a regression assertion in `tests/test_wbravo.c` that the realized window's
 
 **Files:** `wbuild_widgets/Wbravo.widget`, `tests/test_wbravo.c`
 
+## Wretex: `realize` created the window with an empty event mask (black body)
+
+**Symptom:** every `Wretex` widget rendered as a black rectangle; the text and
+inline SVGs were laid out but never painted. `demo_wretex` showed five black
+panes under a normal `Wlabel` header. The layout/colour state was correct
+(`text`, `fg_norm`, `bg_norm` and `xft_col[]` all had the right values).
+
+**Cause:** `Wretex.realize` called
+
+```c
+XtCreateWindow($, InputOutput, CopyFromParent,
+               (XtValueMask) 0, (XSetWindowAttributes *) NULL);
+```
+
+so the window selected no `Expose` events (and no background pixel). The
+initial `redraw_wretex()` ran before mapping, and no expose followed to copy
+the pixmap again. This is the same realize bug that was fixed in `Wbravo`.
+
+**Fix:** forward the libXt mask/attributes:
+
+```wbuild
+XtCreateWindow($, (unsigned int) InputOutput, (Visual *) CopyFromParent,
+               *mask, attributes);
+```
+
+`demo_wretex` now paints its text and inline SVG icons; `t1_menu` uses the
+fixed widget for rich demo descriptions.
+
+**Files:** `wbuild_widgets/Wretex.widget`
+
+## WListView: empty area below a short list took the last row's colour
+
+**Symptom:** in a short `WListView` (e.g. the four-row trace selector) the
+empty area below the rows sometimes turned light grey after clicking rows, and
+another click made it disappear.
+
+**Cause:** `render()` clears the whole backing pixmap with the shared `$gc`, but
+`draw_header()` and `draw_rows()` change that GC's foreground and leave it at
+the **last drawn row's** background. The next `render()` therefore filled the
+entire pixmap with `C_SEL_BG`/`C_ALT_BG` instead of `C_BG`; the rows were
+repainted over it, but the empty area below them kept the stale colour. Which
+row was last depended on the selection, hence the flicker between clicks.
+
+**Fix:** reset `$gc` to `$col_px[C_BG]` immediately before the full-pixmap
+`XFillRectangle()` in `render()`.
+
+Regression coverage in `tests/test_wlistview.c`: switch to a three-row list,
+select the last row, force a refresh and assert the pixel below the rows is
+`C_BG`.
+
+**Files:** `wbuild_widgets/WListView.widget`, `tests/test_wlistview.c`
+
+## WListView: dragging the scrollbar thumb stopped about halfway
+
+**Symptom:** dragging the vertical scrollbar thumb to the bottom stopped at
+roughly 50 % of the list; the mouse wheel and keyboard scrolled all the way to
+the end. The same applied to the horizontal bar.
+
+**Cause:** `sync_scrollbars()` maps the content offset to the slider with the
+*total* extent:
+
+```c
+pos = top_y * SCROLL_RES / total_h;   /* total_h, not maxy */
+```
+
+but `vscroll_cb()` inverted it with `maxy`:
+
+```c
+top_y = pos * maxy / SCROLL_RES;
+```
+
+At `pos = RES - frac` this yields `maxy * maxy / total_h`, i.e. about half when
+half the list is visible. The wheel path (`scroll_by`) clamps directly to
+`maxy`, so it was unaffected.
+
+**Fix:** invert with the same extent used by `sync_scrollbars()`:
+
+```c
+top_y = pos * total_h / SCROLL_RES;   /* hscroll: total_w */
+```
+
+Regression coverage in `tests/test_wlistview.c` calls the slider's `sl_motion`
+action at the bottom and asserts `top_y` reaches `maxy`.
+
+**Files:** `wbuild_widgets/WListView.widget`, `tests/test_wlistview.c`
+
+## VSlider/HSlider: theme colours ignored, scrollbar colour changed between runs
+
+**Symptom:** the list scrollbar kept its initialize-time colour (yellow, green
+or red depending on the run) instead of the theme's colour. `WListView`
+called `XtVaSetValues(vsb, "foreground", ..., "background", ...)`, but the
+drawn bar did not change.
+
+**Cause:** `VSlider.set_values()`/`HSlider.set_values()` only reacted to
+`pos`/`frac`; the `foreground`, `background` and `lineWidth` resources were
+ignored, so the `gc_fg`/`gc_background` GCs created in `initialize()` were
+never rebuilt. The colour seen at runtime depended on the resource values at
+widget creation, which is why it changed between runs.
+
+**Fix:** `set_values()` now detects colour/line-width changes, releases and
+recreates both GCs, invalidates the cached slider rectangle (`$sly = -1`) and
+repaints. `tests/test_wlistview.c` verifies that changing the slider colours
+replaces the GCs and that the new GC foreground matches.
+
+**Files:** `wbuild_widgets/VSlider.widget`, `wbuild_widgets/HSlider.widget`,
+`tests/test_wlistview.c`
+
 ## Wbravo: own `$xcol[]` cache must follow theme changes
 
 **Symptom:** after the realize fix above, a `Wbravo` rendered with its

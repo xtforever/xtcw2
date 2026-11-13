@@ -80,11 +80,35 @@ var compress_motion = True
 
 @proc set_values
 {
-  	
+  int redraw = 0;
+
+  /* Rebuild the GCs when the theme changes the colours (see VSlider). */
+  if( $old$foreground != $foreground ||
+      $old$background_pixel != $background_pixel ||
+      $old$lineWidth != $lineWidth ) {
+      XGCValues values = {
+          foreground: $background_pixel,
+          graphics_exposures: False,
+          line_width: $lineWidth };
+      uint mask = GCForeground | GCGraphicsExposures | GCLineWidth;
+      if( $gc_background ) XtReleaseGC($, $gc_background);
+      if( $gc_fg ) XtReleaseGC($, $gc_fg);
+      $gc_background = XtGetGC($, mask, &values);
+      values.foreground = $foreground;
+      $gc_fg = XtGetGC($, mask, &values);
+      $sly = -1;
+      redraw = 1;
+  }
 
   if( $old$pos != $pos ||
-     $old$frac != $frac ) return True;
-  return False;
+     $old$frac != $frac ) redraw = 1;
+
+  if( redraw && XtIsRealized($) ) {
+      XSetWindowBackground(XtDisplay($), XtWindow($), $background_pixel);
+      XClearWindow(XtDisplay($), XtWindow($));
+      draw_slider($);
+  }
+  return redraw;
 }
 
 @proc destroy

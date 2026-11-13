@@ -14,6 +14,7 @@
 #include "mls.h"
 #include "WListView.h"
 #include "WListViewP.h"
+#include "VSliderP.h"
 
 static Widget lv;
 static XtAppContext app;
@@ -162,6 +163,48 @@ int main(int argc, char **argv)
     XtVaGetValues(lww->wListView.vsb, "pos", &pos, NULL);
     assert(pos > 0);
 
+    /* Regression: a full thumb drag must reach the bottom.  The VSlider
+     * callback maps pos -> top_y; using maxy instead of total_h made a drag
+     * stop at maxy^2/total_h (~half when half the list is visible). */
+    {
+        int total_h = n * lww->wListView.row_h;
+        int maxy = total_h - lww->wListView.list_h;
+        XButtonEvent ev;
+
+        assert(maxy > 0);
+        memset(&ev, 0, sizeof ev);
+        ev.type = ButtonPress;
+        ev.y = (int)lww->wListView.vsb->core.height;
+        XtCallActionProc(lww->wListView.vsb, "sl_motion", (XEvent *)&ev, NULL, 0);
+        pump();
+        assert(lww->wListView.top_y >= maxy - lww->wListView.row_h);
+        assert(lww->wListView.top_y <= maxy);
+    }
+
+    /* Theme colour changes must rebuild the slider GCs, otherwise the
+     * scrollbar keeps its initialize-time colour (and changes between runs). */
+    {
+        VSliderWidget vs = (VSliderWidget)lww->wListView.vsb;
+        GC old_fg = vs->vSlider.gc_fg;
+        GC old_bg = vs->vSlider.gc_background;
+        Pixel new_fg = 0x123456;
+        Pixel new_bg = 0x654321;
+        XGCValues gcv;
+
+        XtVaSetValues((Widget)vs, "foreground", new_fg,
+                      "background", new_bg, NULL);
+        pump();
+        assert(vs->vSlider.gc_fg != old_fg);
+        assert(vs->vSlider.gc_background != old_bg);
+
+        memset(&gcv, 0, sizeof gcv);
+        XGetGCValues(XtDisplay(vs), vs->vSlider.gc_fg, GCForeground, &gcv);
+        assert(gcv.foreground == new_fg);
+        memset(&gcv, 0, sizeof gcv);
+        XGetGCValues(XtDisplay(vs), vs->vSlider.gc_background, GCForeground, &gcv);
+        assert(gcv.foreground == new_bg);
+    }
+
     /* resizing the widget must resize the backing cache and the list area,
      * not only the slider children. */
     {
@@ -224,6 +267,36 @@ int main(int argc, char **argv)
         XtVaGetValues(lv, "fontFace", &got, NULL);
         assert(got && strcmp(got, "Serif") == 0);
         act("refresh");        /* open_font() / relayout must use the copy */
+    }
+
+    /* Regression: the full-pixmap clear must use C_BG, not the last row's
+     * background.  A short list leaves an empty area below the rows; select
+     * the last row so draw_rows() leaves the shared GC at C_SEL_BG, then
+     * re-render and check that the empty area is still C_BG. */
+    {
+        char *short_rows[3] = { "one\t1\tx", "two\t2\tx", "three\t3\tx" };
+        int rh, list_y, list_h, y;
+        XImage *img;
+        unsigned long px;
+
+        set_rows(short_rows, 3);
+        pump();
+        XtVaSetValues(lv, "selected", 2, NULL);
+        pump();
+        act("refresh");
+
+        rh = lww->wListView.row_h;
+        list_y = lww->wListView.list_y;
+        list_h = lww->wListView.list_h;
+        y = list_y + 3 * rh + 10;
+        assert(y < list_y + list_h);
+
+        img = XGetImage(XtDisplay(lv), lww->wListView.pixmap,
+                        5, y, 1, 1, AllPlanes, ZPixmap);
+        assert(img != NULL);
+        px = XGetPixel(img, 0, 0);
+        XDestroyImage(img);
+        assert(px == lww->wListView.col_px[0]);  /* C_BG */
     }
 
     for (i = 0; i < n; i++) if (i != 0 && rows[i]) free(rows[i]);

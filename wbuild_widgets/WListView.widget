@@ -1028,6 +1028,16 @@
   if (!$pixmap) rebuild_cache($);
   if (!$pixmap || !$gc) return;
 
+  /* draw_header()/draw_rows() change the shared GC's foreground and leave it
+   * at the last row's colour.  Reset it before clearing the whole pixmap,
+   * otherwise the empty area below a short list is painted with that stale
+   * colour (light grey when the last row was selected/alternate). */
+  {
+    XGCValues gv;
+    gv.foreground = $col_px[C_BG];
+    gv.graphics_exposures = False;
+    XChangeGC($dpy, $gc, GCForeground | GCGraphicsExposures, &gv);
+  }
   XFillRectangle($dpy, $pixmap, $gc, 0, 0, (unsigned int)$width, (unsigned int)$height);
   draw_header($);
   draw_rows($);
@@ -1146,7 +1156,12 @@
   int total_h = row_count($) * $row_h;
   int maxy = total_h - $list_h;
   if (maxy < 0) maxy = 0;
-  $top_y = (int)((long)pos * maxy / SCROLL_RES);
+  /* sync_scrollbars() maps top_y -> pos with the *total* height:
+   *   pos = top_y * SCROLL_RES / total_h
+   * so the inverse must use total_h, not maxy.  Using maxy made a full
+   * thumb drag stop at maxy^2/total_h (~half way when half the list is
+   * visible). */
+  $top_y = (int)((long)pos * total_h / SCROLL_RES);
   if ($top_y < 0) $top_y = 0;
   if ($top_y > maxy) $top_y = maxy;
   relayout($);
@@ -1157,7 +1172,8 @@
   int pos = (int)(intptr_t)d;
   int maxx = $total_w - $list_w;
   if (maxx < 0) maxx = 0;
-  $top_x = (int)((long)pos * maxx / SCROLL_RES);
+  /* Inverse of pos = top_x * SCROLL_RES / total_w (see vscroll_cb). */
+  $top_x = (int)((long)pos * $total_w / SCROLL_RES);
   if ($top_x < 0) $top_x = 0;
   if ($top_x > maxx) $top_x = maxx;
   relayout($);

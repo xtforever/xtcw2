@@ -1,13 +1,15 @@
 #!/bin/bash
-# XTCW Demo Launcher — a whiptail TUI for running the LUI demos.
+# XTCW Demo Launcher — an xtcw GUI menu for running the LUI demos.
 #
-#   ./t1.sh                      interactive menu (whiptail)
+#   ./t1.sh                      interactive menu (xtcw GUI; text fallback)
 #   ./t1.sh form                 run a demo directly
 #   ./t1.sh --trace 50 form      run with TRACE(50) output
 #   ./t1.sh cookbook             LUI reference app (multi-screen recipe manager)
 #   ./t1.sh native               native Gridbox C test (window kept open)
 #
-# When no DISPLAY is set, xvfb-run is used automatically.
+# The menu is built with tools/t1_menu.lua and displays optional rich
+# descriptions from demos/desc/<key>.retex.  Without a DISPLAY it falls back
+# to a plain text menu.
 # Set T1_SKIP_BUILD=1 to skip the start.sh build check (used by tests).
 # Set RUN=echo to print the command instead of running it (used by tests).
 
@@ -58,11 +60,20 @@ demo_lines() {
     done
 }
 
+print_menu_input() {
+    local d key title desc
+    for d in "${DEMOS[@]}"; do
+        IFS='|' read -r key title desc <<< "$d"
+        printf '%s\t%s\t%s\n' "$key" "$title" "$desc"
+    done
+}
+
 usage() {
     cat <<EOF
 Usage: $(basename "$0") [<demo>] [--trace <N>] [-keep]
 
-With no arguments an interactive menu is shown.
+With no arguments an interactive menu is shown (xtcw GUI when a DISPLAY is
+available, otherwise a plain text menu).
 
 Demos:
 $(demo_lines)
@@ -102,6 +113,8 @@ while [ $# -gt 0 ]; do
             TRACE="$2"; shift 2 ;;
         -keep)
             KEEP=1; shift ;;
+        --print-menu-input)
+            print_menu_input; exit 0 ;;
         -h|--help)
             usage; exit 0 ;;
         -*)
@@ -144,58 +157,56 @@ run_cookbook() {
     ( cd "$DIR/commander" && $RUN ./commander_runner "${dargs[@]}" )
 }
 
-# --- interactive whiptail menu ---------------------------------------------
-pick_demo() {
-    local d key title desc items=()
+# --- interactive xtcw GUI menu ---------------------------------------------
+# Runs tools/t1_menu.lua with the demo registry as TSV.  The menu writes the
+# selection to a temp file (key<TAB>trace); its own stdout/stderr are hidden so
+# they cannot pollute the captured selection.  Returns 1 on cancel/quit.
+run_gui_menu() {
+    local input result sel trace d key title desc
+    input=$(mktemp "${TMPDIR:-/tmp}/t1_menu_in.XXXXXX") || return 1
+    result=$(mktemp "${TMPDIR:-/tmp}/t1_menu_out.XXXXXX") || { rm -f "$input"; return 1; }
+
     for d in "${DEMOS[@]}"; do
         IFS='|' read -r key title desc <<< "$d"
-        items+=("$key" "$title - $desc")
+        printf '%s\t%s\t%s\n' "$key" "$title" "$desc" >> "$input"
     done
-    items+=("quit" "Exit the launcher")
-    whiptail --title "XTCW Demo Launcher" \
-        --menu "Select a demo to run:" 25 78 18 \
-        "${items[@]}" 3>&1 1>&2 2>&3
+
+    ( cd "$DIR/commander" && \
+      T1_MENU_INPUT="$input" T1_MENU_RESULT="$result" T1_ROOT="$DIR" \
+      $RUN ./commander_runner -Luafile ../tools/t1_menu.lua ) >/dev/null 2>&1
+
+    sel=""; trace=""
+    if [ -s "$result" ]; then
+        IFS=$'\t' read -r sel trace < "$result" || true
+    fi
+    rm -f "$input" "$result"
+
+    # A valid result wins even if the process exited non-zero afterwards
+    # (e.g. an ASan/fontconfig leak report on shutdown).
+    [ -n "$sel" ] || return 1
+    printf '%s\t%s\n' "$sel" "${trace:-0}"
 }
 
-pick_trace() {
-    whiptail --title "Trace level" \
-        --menu "TRACE output level for the demo:" 15 64 5 \
-        "none" "0  - no trace output" \
-        "2"    "2  - high-level flow" \
-        "5"    "5  - detailed" \
-        "50"   "50 - widget-level TRACE" \
-        "back" "return to the demo menu" \
-        3>&1 1>&2 2>&3
+run_selected_demo() {
+    local key="$1" trace="${2:-0}"
+    case "$key" in
+        native)   run_native || true ;;
+        cookbook) run_cookbook "$trace" || true ;;
+        *)        run_lua_demo "$key" "$trace" || true ;;
+    esac
 }
 
-interactive_main() {
+interactive_gui() {
     while true; do
-        local sel tsel trace=""
-        sel=$(pick_demo) || exit 0          # Cancel/Esc on the main menu quits
-        case "$sel" in
-            ""|quit) exit 0 ;;
-        esac
-
-        if [ "$sel" = native ]; then
-            run_native || true
-            continue
-        fi
-
-        tsel=$(pick_trace) || continue      # Cancel on trace menu -> back to demos
-        case "$tsel" in
-            ""|back) continue ;;
-            none) trace="0" ;;
-            *) trace="$tsel" ;;
-        esac
-
-        case "$sel" in
-            cookbook) run_cookbook "$trace" || true ;;
-            *)        run_lua_demo "$sel" "$trace" || true ;;
-        esac
+        local result sel trace
+        result=$(run_gui_menu) || exit 0
+        IFS=$'\t' read -r sel trace <<< "$result"
+        [ -n "$sel" ] || exit 0
+        run_selected_demo "$sel" "$trace"
     done
 }
 
-# --- fallback menu when whiptail is unavailable ----------------------------
+# --- fallback text menu when no DISPLAY is available -----------------------
 select_main() {
     local labels=() keys=() d key title desc k
     for d in "${DEMOS[@]}"; do
@@ -215,13 +226,7 @@ select_main() {
                 exit 0
             fi
             k="${keys[$((REPLY - 1))]}"
-            if [ "$k" = native ]; then
-                run_native || true
-            elif [ "$k" = cookbook ]; then
-                run_cookbook || true
-            else
-                run_lua_demo "$k" || true
-            fi
+            run_selected_demo "$k" 0
             break
         done || exit 0
     done
@@ -236,12 +241,31 @@ if [ -n "$DEMO_KEY" ]; then
     else
         run_lua_demo "$DEMO_KEY" "$TRACE"
     fi
-elif command -v whiptail >/dev/null 2>&1 && [ -t 0 ] && [ -t 1 ]; then
-    interactive_main
+elif [ -n "${T1_MENU_SELECT:-}" ]; then
+    # One-shot selection for tests/scripting: key<TAB>trace.  Split manually
+    # so an empty key (leading tab) is preserved and means "cancel".
+    sel="${T1_MENU_SELECT%%$'\t'*}"
+    if [ "$sel" = "$T1_MENU_SELECT" ]; then
+        trace=""
+    else
+        trace="${T1_MENU_SELECT#*$'\t'}"
+    fi
+    [ -n "$sel" ] || exit 0
+    run_selected_demo "$sel" "${trace:-0}"
+elif [ "${T1_MENU_MODE:-}" = cli ]; then
+    select_main
+elif [ "${T1_MENU_MODE:-}" = gui ]; then
+    if [ -z "${DISPLAY:-}" ]; then
+        echo "Error: T1_MENU_MODE=gui requires a DISPLAY." >&2
+        exit 2
+    fi
+    interactive_gui
+elif [ -n "${DISPLAY:-}" ]; then
+    interactive_gui
 elif [ -t 0 ] && [ -t 1 ]; then
     select_main
 else
-    echo "Error: no TTY for the interactive menu; specify a demo." >&2
+    echo "Error: no DISPLAY for the GUI menu and no TTY for the text menu; specify a demo." >&2
     usage >&2
     exit 2
 fi

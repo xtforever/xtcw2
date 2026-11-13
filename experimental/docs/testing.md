@@ -379,13 +379,14 @@ Returns the number of X11 protocol errors since the last reset. Call `xterror_co
 
 ## Interactive Demos
 
-`t1.sh` at the project root is a whiptail TUI launcher for the demo scripts in `demos/`.
+`t1.sh` at the project root is an xtcw GUI launcher for the demo scripts in
+`demos/` (with a plain text fallback when no `DISPLAY` is available).
 With no arguments it shows an interactive menu; a demo name can be passed directly.
 `xvfb-run` is used automatically when no `DISPLAY` is set, and the launcher runs
 `start.sh` first to auto-build any missing libraries or `commander_runner`.
 
 ```
-./t1.sh                    # interactive whiptail menu (all demos)
+./t1.sh                    # interactive xtcw menu (all demos)
 ./t1.sh form               # run a demo directly
 ./t1.sh --trace 50 form    # run with TRACE(50) output
 ./t1.sh native             # native C Gridbox test (window kept open)

@@ -1,0 +1,4 @@
+The \bf WListView\rm  demo shows a themed multi-column list with header,
+alternating rows, scrollbars and keyboard navigation.
+\includesvg{../../LuaRunner/folder.svg}{12pt}{12pt} Folder icons come from the
+same SVG loader as the file chooser.
