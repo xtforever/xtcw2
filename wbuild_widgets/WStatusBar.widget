@@ -1,0 +1,283 @@
+@class WStatusBar (Composite)
+@ Themed status bar with a message label and optional permanent right widgets.
+
+@PUBLIC
+@ status message text
+@var String message = <String> "Ready"
+@ bar height; -1 uses theme status_height/control_height
+@var int barHeight = -1
+@ gap between permanent widgets
+@var int itemGap = -1
+@ inner padding
+@var int barPadding = -1
+
+@PRIVATE
+@var Widget message_label
+@var Pixel line
+@var Boolean auto_height
+@var int creating_internal
+@var int layout_guard
+
+@METHODS
+
+@proc initialize
+{
+    $layout_guard = 0;
+    $creating_internal = 1;
+    $auto_height = ($barHeight <= 0);
+
+    if ($itemGap < 0)
+        $itemGap = theme_metric("control_gap", 8);
+    if ($itemGap < 0) $itemGap = 0;
+    if ($barPadding < 0) $barPadding = 4;
+    if ($barPadding < 0) $barPadding = 0;
+
+    int auto_widget_height = ($height == 0);
+    if ($barHeight <= 0) $barHeight = 32;  /* provisional until the label exists */
+    if ($height == 0) $height = (Dimension)$barHeight;
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+
+    $message_label = XtVaCreateManagedWidget("message", wlabelWidgetClass, $,
+        "label", $message ? $message : "",
+        "useSmallFont", True,
+        "alignment", 0,
+        "leftGap", 0, "rightGap", 0,
+        "topGap", 0, "bottomGap", 0,
+        "borderWidth", 0,
+        NULL);
+
+    $creating_internal = 0;
+
+    if ($auto_height) {
+        $barHeight = statusbar_label_height($) + 2 * $barPadding + 4;
+        if ($barHeight < 32) $barHeight = 32;
+        if (auto_widget_height) $height = (Dimension)$barHeight;
+    }
+
+    theme_register($, statusbar_colors_changed);
+    statusbar_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+}
+
+@proc realize
+{
+    #realize($, mask, attributes);
+    statusbar_layout($);
+}
+
+@proc resize
+{
+    statusbar_layout($);
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    if (!win) return;
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    XSetForeground(dpy, gc, $background_pixel);
+    XFillRectangle(dpy, win, gc, 0, 0, $width, $height);
+    XSetForeground(dpy, gc, $line);
+    XDrawLine(dpy, win, gc, 0, 0, (int)$width - 1, 0);
+}
+
+@proc set_values
+{
+    int redraw = 0;
+    if ($barHeight != $old$barHeight) {
+        if ($barHeight > 0) $auto_height = False;
+        else $auto_height = True;
+    }
+    if ($message != $old$message) {
+        if ($message_label)
+            XtVaSetValues($message_label, XtNlabel, $message ? $message : "", NULL);
+        redraw = 1;
+    }
+    if ($barHeight != $old$barHeight ||
+        $itemGap != $old$itemGap ||
+        $barPadding != $old$barPadding) {
+        statusbar_layout($);
+        redraw = 1;
+    }
+    if ($background_pixel != $old$background_pixel) redraw = 1;
+    return redraw;
+}
+
+@proc change_managed
+{
+    if ($creating_internal) return;
+    if ($layout_guard) return;
+    statusbar_layout($);
+}
+
+@proc insert_child
+{
+    (void)$;
+    #insert_child(child);
+}
+
+@proc delete_child
+{
+    (void)$;
+    #delete_child(child);
+}
+
+@proc query_geometry
+{
+    int w = 2 * $barPadding;
+    int h = $barHeight;
+    int items = 0;
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+        XtWidgetGeometry req, pref;
+        memset(&req, 0, sizeof req);
+        pref.request_mode = 0;
+        int cw = (XtQueryGeometry(child, &req, &pref) == XtGeometryAlmost &&
+                  (pref.request_mode & CWWidth)) ? (int)pref.width : (int)child->core.width;
+        if (cw < 1) cw = 1;
+        if (items > 0) w += $itemGap;
+        w += cw;
+        items++;
+    }
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc geometry_manager
+{
+    Dimension w = (request->request_mode & CWWidth) ? request->width : $child$width;
+    Dimension h = (request->request_mode & CWHeight) ? request->height : $child$height;
+    XtConfigureWidget(child, $child$x, $child$y, w, h, $child$border_width);
+    statusbar_layout($);
+    return XtGeometryDone;
+}
+
+@UTILITIES
+
+@proc int statusbar_label_height($)
+{
+    if (! $message_label) return 24;
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    if (XtQueryGeometry($message_label, &req, &pref) == XtGeometryAlmost &&
+        (pref.request_mode & CWHeight) && pref.height > 0)
+        return (int)pref.height;
+    return (int)$message_label->core.height > 0 ? (int)$message_label->core.height : 24;
+}
+
+@proc void statusbar_colors_changed($)
+{
+    Pixel bg = theme_color_defined("status_bg") ? get_color("status_bg")
+             : (theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+             : (theme_color_defined("bg_hi") ? get_color("bg_hi")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0)));
+    $line = theme_color_defined("list_line") ? get_color("list_line")
+          : (theme_color_defined("control_border") ? get_color("control_border")
+          : ($background_pixel ? $background_pixel : 0));
+    if (bg) {
+        XtVaSetValues($, XtNbackground, bg, NULL);
+        if ($message_label) XtVaSetValues($message_label, XtNbackground, bg, NULL);
+        WidgetList children = NULL;
+        Cardinal num_children = 0;
+        XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+        for (Cardinal i = 0; i < num_children; i++) {
+            Widget child = children ? children[i] : NULL;
+            if (child && XtClass(child) == wlabelWidgetClass) {
+                XtVaSetValues(child, XtNbackground, bg, NULL);
+                redraw_label(child);
+            }
+        }
+    }
+    if (XtIsRealized($)) {
+        XClearWindow(XtDisplay($), XtWindow($));
+        statusbar_layout($);
+    }
+}
+
+@proc void statusbar_layout($)
+{
+    if ($layout_guard) return;
+    $layout_guard = 1;
+
+    int pad = $barPadding;
+    int gap = $itemGap;
+    int h = $barHeight;
+    if (h < 1) h = (int)$height;
+    int inner_h = h - 2 * pad;
+    if (inner_h < 1) inner_h = 1;
+
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+
+    int right_total = 0;
+    int right_count = 0;
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child) || child == $message_label) continue;
+        XtWidgetGeometry req, pref;
+        memset(&req, 0, sizeof req);
+        pref.request_mode = 0;
+        int cw = (XtQueryGeometry(child, &req, &pref) == XtGeometryAlmost &&
+                  (pref.request_mode & CWWidth)) ? (int)pref.width : (int)child->core.width;
+        if (cw < 1) cw = 1;
+        if (right_count > 0) right_total += gap;
+        right_total += cw;
+        right_count++;
+    }
+
+    int right_x = (int)$width - pad - right_total;
+    int msg_w = right_x - pad - (right_count > 0 ? gap : 0);
+    if (msg_w < 1) msg_w = 1;
+
+    if ($message_label) {
+        XtConfigureWidget($message_label, (Position)pad, (Position)pad,
+                          (Dimension)msg_w, (Dimension)inner_h, 0);
+    }
+
+    int x = right_x;
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child) || child == $message_label) continue;
+        XtWidgetGeometry req, pref;
+        memset(&req, 0, sizeof req);
+        pref.request_mode = 0;
+        int cw = (XtQueryGeometry(child, &req, &pref) == XtGeometryAlmost &&
+                  (pref.request_mode & CWWidth)) ? (int)pref.width : (int)child->core.width;
+        if (cw < 1) cw = 1;
+        XtConfigureWidget(child, (Position)x, (Position)pad,
+                          (Dimension)cw, (Dimension)inner_h,
+                          child->core.border_width);
+        x += cw + gap;
+    }
+
+    $layout_guard = 0;
+}
+
+@IMPORTS
+@incl <string.h>
+@incl "theme.h"
+@incl "xtcw/Wlabel.h"

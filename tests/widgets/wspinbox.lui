@@ -1,2 +1,2 @@
-(WspinBox :value 42 :min 0 :max 100 :step 1
+(WSpinBox :id "spin" :value 42 :min 0 :max 100 :step 1
           :gridx 0 :gridy 0 :weightx 1 :weighty 1 :fill none)

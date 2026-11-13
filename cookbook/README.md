@@ -16,9 +16,9 @@ regressions across the toolkit.
   host), with a multi-screen structure and a small data model.
 - A style-guide layout built with the improved widget set: `WAppWindow`
   (menu/toolbar/content/status slots), `WMenuBar` + `WmenuButton` +
-  `WPopupMenu` + `WAction` menus, a `WToolBar` action row, tabbed content, status bar, themed `WListView` lists,
+  `WPopupMenu` + `WAction` menus, a `WToolBar` action row, a Gallery tab for new widgets, a `WStatusBar`, themed `WListView` lists,
   flat `Wbutton`s, `Wedit`/`WspinBox` controls, `WToggleSwitch` dietary
-  switches and `KaroEd` editors.
+  switches, a `WComboBox` category selector, `WCheckBox`, `WProgressBar`, `WFormLayout`, `WRadioGroup` and `KaroEd` editors.
 - The cookbook is the **testing ground** for `../Improved-Widget-Set.md`:
   new widgets are integrated here first, then get a `tests/widgets/*.lui`
   probe and a C regression test where appropriate.

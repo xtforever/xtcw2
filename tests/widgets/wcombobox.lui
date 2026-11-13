@@ -1,0 +1,2 @@
+(WComboBox :id "combo" :placeholder "Choose..." :width 160 :linesHeight 4
+           :gridx 0 :gridy 0 :weightx 0 :weighty 0 :fill none)

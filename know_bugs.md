@@ -1936,3 +1936,71 @@ process group with `SIGTERM`, wait briefly, then `SIGKILL` if needed. This
 also covers the optional `setarch` wrapper.
 
 **File:** `cookbook/scripts/smoke-test.sh`
+
+## Wlabel subclasses: overriding `set_values` can double-free the label
+
+**Symptom:** `WComboBox` initially crashed with an ASan double-free in
+`Wlabel.set_values()` when `items`/`selected` were changed from Lua.
+
+**Cause:** `Wlabel.set_values()` frees `$old$label_mem` and replaces
+`$label_mem`. A subclass that calls `update_label()` (which itself calls
+`XtVaSetValues(label)`) and then calls the inherited `set_values` with the
+original `old` state can free the same label storage twice. wbuild's
+`#set_values(...)` helper also emits an undeclared `new` parameter instead of
+`request`, so it is not usable here.
+
+**Fix:** `WComboBox` does not override `set_values`. It exposes explicit
+`refresh` and `select_index` actions; `update_label()` changes the label via
+`XtVaSetValues`, and `Wlabel.set_values` handles the copy exactly once.
+`items`/`selected` remain data resources; Lua can call `refresh` after changing
+them programmatically.
+
+**Files:** `wbuild_widgets/WComboBox.widget`
+
+## WComboBox popup overlapped its trigger
+
+**Symptom:** the combo popup opened at the combo's parent origin and covered the
+trigger instead of appearing below it.
+
+**Cause:** `XtTranslateCoords()` returned the parent/container origin for the
+`Wlabel`-based `WComboBox` (not the widget's actual root position), so the popup
+shell received the wrong `x/y`.
+
+**Fix:** use `XTranslateCoordinates()` from `XtWindow(self)` to the root window
+with `y = height + 2`, then position the override shell. Also added a full-app
+InputOnly click catcher so clicking outside closes the popup, and the catcher
+is freed on close/destroy.
+
+**Files:** `wbuild_widgets/WComboBox.widget`, `tests/test_wcombobox.c`
+
+## WStatusBar looked clipped / too tight
+
+**Symptom:** the cookbook status line looked cramped and not fully visible; the
+32px bar was exactly the label height plus padding, and its background blended
+into the window.
+
+**Fix:** `WStatusBar` now derives its automatic height from the message
+label's preferred font height: `label_height + 2*barPadding + 4`, with a 32px
+minimum. The cookbook leaves `barHeight` unset and uses `barPadding 6`, so the
+bar grows with the active theme font instead of clipping descenders. The bar
+prefers `status_bg`/`list_header_bg`/`bg_hi` for a visible surface and draws a
+top separator line. The cookbook's extra `UTF-8` label was removed because a
+`Wlabel` child paints its own background box inside the bar.
+
+**Files:** `wbuild_widgets/WStatusBar.widget`, `cookbook/app/main.lua`
+
+## Cookbook status bar clipped when launched via `t1.sh`
+
+**Symptom:** `./t1.sh cookbook` showed only half of the status bar, while
+`cookbook/scripts/run.sh` looked fine.
+
+**Cause:** the cookbook window was 1000x760. On a 1024x768 screen with window
+manager decorations, the bottom of the window (the status bar) is clipped.
+`t1.sh` also omitted `-theme default`, so the cookbook theme file relied on the
+host fallback warning path.
+
+**Fix:** reduce the cookbook window to 1000x680 and pass `-theme default` from
+`t1.sh` like `cookbook/scripts/run.sh` does. The status bar itself remains
+40px high with 6px padding.
+
+**Files:** `cookbook/app/main.lua`, `t1.sh`

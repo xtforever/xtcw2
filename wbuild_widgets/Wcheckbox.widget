@@ -14,7 +14,14 @@
     TRACE(2,"Wcheckbox:%s initialized, checked=%d", $name, $checked);
     /* Controls use the button_* colour roles and the shared UI font. */
     $useControlColors = True;
+    if ($leftGap == 0) $leftGap = 22;
     wheel_colors_changed($);
+}
+
+@proc expose
+{
+    #expose($, event, region);
+    draw_check($);
 }
 
 @proc destroy
@@ -41,6 +48,7 @@
     if( $state == STATE_SELECTED ) return;
     $state = STATE_SELECTED;
     redraw_label($);
+    draw_check($);
 }
 
 @proc reset
@@ -48,6 +56,7 @@
     if( $state == STATE_NORMAL ) return;
     $state = STATE_NORMAL;
     redraw_label($);
+    draw_check($);
 }
 
 @proc toggle
@@ -55,13 +64,54 @@
     $check_state = $check_state ? 0 : 1;
     $checked = ($check_state == 1);
     redraw_label($);
+    draw_check($);
     XtCallCallbackList( $, $callback, event );
+}
+
+@proc refresh
+{
+    $check_state = $checked ? 1 : 0;
+    redraw_label($);
+    draw_check($);
 }
 
 @EXPORTS
 @proc Boolean wcheckbox_is_checked($)
 {
     return ($check_state == 1);
+}
+
+@UTILITIES
+
+@proc void draw_check($)
+{
+    if (!XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    int size = 14;
+    int x = 4;
+    int y = ((int)$height - size) / 2;
+    if (y < 1) y = 1;
+
+    Pixel bg = theme_color_defined("input_bg") ? get_color("input_bg")
+             : (theme_color_defined("button_bg") ? get_color("button_bg")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : $background_pixel));
+    Pixel border = theme_color_defined("control_border") ? get_color("control_border")
+                 : (theme_color_defined("list_line") ? get_color("list_line")
+                 : (theme_color_defined("button_fg") ? get_color("button_fg") : $fg_norm));
+    Pixel mark = theme_color_defined("accent") ? get_color("accent")
+               : (theme_color_defined("button_fg") ? get_color("button_fg") : $fg_norm);
+
+    XSetForeground(dpy, gc, bg);
+    XFillRectangle(dpy, win, gc, x, y, size, size);
+    XSetForeground(dpy, gc, border);
+    XDrawRectangle(dpy, win, gc, x, y, size - 1, size - 1);
+    if ($check_state) {
+        XSetForeground(dpy, gc, mark);
+        XDrawLine(dpy, win, gc, x + 3, y + 7, x + 6, y + 10);
+        XDrawLine(dpy, win, gc, x + 6, y + 10, x + 11, y + 4);
+    }
 }
 
 @IMPORTS

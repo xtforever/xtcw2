@@ -1,0 +1,258 @@
+@class WComboBox (Wlabel)
+@ Read-only themed combo box with a WPopupMenu popup.
+
+@PUBLIC
+@ MLS list of string items
+@var int items = 0
+@ selected item index, -1 = none
+@var int selected = -1
+@ text shown when nothing is selected
+@var String placeholder = <String> "Select..."
+@ maximum popup height in rows
+@var int linesHeight = 8
+
+@PRIVATE
+@var Widget shell
+@var Widget menu
+@var Window catcher
+@var int entry_mode
+@var Boolean updating_label
+
+@METHODS
+
+@proc destroy
+{
+    free_catcher($);
+    if ($shell) {
+        XtDestroyWidget($shell);
+        $shell = NULL;
+        $menu = NULL;
+    }
+    $entry_mode = 0;
+
+    if ($para_ptr) { retex_paragraph_free((RetexParagraph*)$para_ptr); $para_ptr = NULL; }
+    if ($backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->destroy(be);
+        $backend_ptr = NULL;
+    }
+    XtFree($label_mem); $label_mem = NULL;
+    theme_unregister($);
+}
+
+@proc initialize
+{
+    $shell = NULL;
+    $menu = NULL;
+    $catcher = None;
+    $entry_mode = 0;
+    $updating_label = False;
+    $useControlColors = True;
+    if ($rightGap == 0) $rightGap = 18;
+    wheel_colors_changed($);
+    update_label($);
+}
+
+@proc expose
+{
+    #expose($, event, region);
+    draw_arrow($);
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>: notify()
+
+@ACTIONS
+@proc notify
+{
+    open_popup($);
+}
+
+@ refresh the displayed label after items/selected were changed from Lua
+@proc refresh
+{
+    update_label($);
+}
+
+@proc dismiss
+{
+    close_popup($);
+}
+
+@ select an item by zero-based index; params[0] is the index
+@proc select_index
+{
+    if (! num_params || ! params || ! params[0]) return;
+    int idx = atoi(params[0]);
+    if (idx < 0 || idx >= m_len($items)) return;
+    $selected = idx;
+    update_label($);
+    close_popup($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@UTILITIES
+
+@proc void draw_arrow($)
+{
+    if (!XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    XSetForeground(dpy, gc, $fg_norm);
+
+    int cx = (int)$width - 10;
+    int cy = (int)$height / 2;
+    XPoint pts[3];
+    pts[0].x = (short)(cx - 4); pts[0].y = (short)(cy - 2);
+    pts[1].x = (short)(cx + 4); pts[1].y = (short)(cy - 2);
+    pts[2].x = (short)cx;       pts[2].y = (short)(cy + 3);
+    XFillPolygon(dpy, win, gc, pts, 3, Convex, CoordModeOrigin);
+}
+
+@proc void update_label($)
+{
+    if ($updating_label) return;
+    $updating_label = True;
+    const char *text = $placeholder ? $placeholder : "";
+    if ($items && $selected >= 0 && $selected < m_len($items))
+        text = STR($items, $selected);
+    XtVaSetValues($, XtNlabel, text, NULL);
+    $updating_label = False;
+}
+
+@proc void free_catcher($)
+{
+    if ($catcher != None) {
+        Display *dpy = XtDisplay($);
+        XtUnregisterDrawable(dpy, $catcher);
+        XDestroyWindow(dpy, $catcher);
+        $catcher = None;
+    }
+}
+
+@proc void make_catcher($)
+{
+    Display *dpy = XtDisplay($);
+    free_catcher($);
+
+    Widget top = $;
+    while (top && !XtIsShell(top)) top = XtParent(top);
+
+    Position tx = 0, ty = 0;
+    int cw = WidthOfScreen(XtScreen($));
+    int ch = HeightOfScreen(XtScreen($));
+    if (top) {
+        XtTranslateCoords(top, 0, 0, &tx, &ty);
+        if ((int)top->core.width > 0) cw = (int)top->core.width;
+        if ((int)top->core.height > 0) ch = (int)top->core.height;
+    }
+
+    XSetWindowAttributes a;
+    memset(&a, 0, sizeof a);
+    a.override_redirect = True;
+    a.event_mask = ButtonPressMask | ButtonReleaseMask;
+    $catcher = XCreateWindow(dpy, DefaultRootWindow(dpy),
+                             (int)tx, (int)ty, (unsigned)cw, (unsigned)ch, 0,
+                             0, InputOnly, CopyFromParent,
+                             CWOverrideRedirect | CWEventMask, &a);
+    XMapRaised(dpy, $catcher);
+    XtRegisterDrawable(dpy, $catcher, $shell);
+}
+
+@proc catcher_event(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    if (ev->type != ButtonPress) return;
+    if ($catcher == None) return;
+    if (ev->xbutton.window == $catcher) close_popup($);
+}
+
+@proc void open_popup($)
+{
+    if ($entry_mode) return;
+    if (! $items || m_len($items) < 1) return;
+
+    if ($shell) {
+        XtDestroyWidget($shell);
+        $shell = NULL;
+        $menu = NULL;
+    }
+
+    $shell = XtCreatePopupShell("combo_shell", overrideShellWidgetClass,
+                                $, NULL, 0);
+    XtAddEventHandler($shell, ButtonPressMask, False,
+                      (XtEventHandler) catcher_event, (XtPointer)$);
+    $menu = XtVaCreateManagedWidget("combo_menu", wPopupMenuWidgetClass,
+                                    $shell, NULL);
+
+    int n = m_len($items);
+    for (int i = 0; i < n; i++) {
+        Widget item = XtVaCreateManagedWidget("item", wbuttonWidgetClass, $menu,
+                                              XtNlabel, STR($items, i),
+                                              NULL);
+        XtAddCallback(item, "callback", (XtCallbackProc) item_selected_cb,
+                      (XtPointer)(intptr_t)i);
+    }
+
+    Dimension ch = 0;
+    XtVaGetValues($, XtNheight, &ch, NULL);
+    int rx = 0, ry = 0;
+    Window child_win = None;
+    XTranslateCoordinates(XtDisplay($), XtWindow($),
+                          DefaultRootWindow(XtDisplay($)),
+                          0, (int)ch + 2, &rx, &ry, &child_win);
+    XtRealizeWidget($shell);
+
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    XtQueryGeometry($menu, &req, &pref);
+    int h = (pref.request_mode & CWHeight) ? (int)pref.height : (int)$menu->core.height;
+    if (h < 1) h = 1;
+    int max_h = $linesHeight * 30;
+    if (max_h > 0 && h > max_h) h = max_h;
+
+    XtResizeWidget($shell, $width, (Dimension)h, 0);
+    XtVaSetValues($shell, XtNx, (int)rx, XtNy, (int)ry, NULL);
+    make_catcher($);
+    XtPopup($shell, XtGrabNone);
+    $entry_mode = 1;
+}
+
+@proc void close_popup($)
+{
+    if (! $entry_mode) return;
+    free_catcher($);
+    if ($shell) {
+        XtPopdown($shell);
+        XtDestroyWidget($shell);
+        $shell = NULL;
+        $menu = NULL;
+    }
+    $entry_mode = 0;
+}
+
+@proc item_selected_cb(Widget w, $, void *class_data)
+{
+    int idx = (int)(intptr_t)class_data;
+    if (idx >= 0 && idx < m_len($items)) {
+        $selected = idx;
+        update_label($);
+    }
+    close_popup($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@IMPORTS
+@incl <X11/Shell.h>
+@incl <X11/StringDefs.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/Xft/Xft.h>
+@incl <string.h>
+@incl <stdlib.h>
+@incl "mls.h"
+@incl "retex.h"
+@incl "backend.h"
+@incl "theme.h"
+@incl "xtcw/WPopupMenu.h"
+@incl "xtcw/Wbutton.h"

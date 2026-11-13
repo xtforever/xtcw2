@@ -152,7 +152,8 @@ run_native() {
 run_cookbook() {
     local trace="${1:-}" dargs=()
     dargs=(-Luafile "../cookbook/app/main.lua"
-           -themeFile "../cookbook/themes/cookbook.hdf")
+           -themeFile "../cookbook/themes/cookbook.hdf"
+           -theme default)
     [ -n "$trace" ] && dargs+=(-Tracelevel "$trace")
     ( cd "$DIR/commander" && $RUN ./commander_runner "${dargs[@]}" )
 }

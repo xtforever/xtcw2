@@ -1,0 +1,296 @@
+@class WRadioGroup (Core)
+@ Themed vertical radio group with click and keyboard selection.
+
+@PUBLIC
+@ comma-separated items (converted to an MLS string array)
+@var StringMArray items = <String> "Small,Medium,Large"
+@ selected item index
+@var int selected = 0
+@ row height; -1 uses theme control_height
+@var int itemHeight = -1
+@ gap between rows
+@var int itemGap = 0
+@ inner padding
+@var int padding = 4
+@var <Callback> XtCallbackList callback = NULL
+
+@PRIVATE
+@var Pixel bg
+@var Pixel fg
+@var Pixel accent
+@var Pixel border
+@var XftFont *font
+@var XftDraw *draw
+@var XftColor text_color
+@var Boolean text_color_ok
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+}
+
+@proc initialize
+{
+    $font = NULL;
+    $draw = NULL;
+    $text_color_ok = False;
+    if ($itemHeight < 0)
+        $itemHeight = theme_metric("control_height", 28);
+    if ($itemHeight < 20) $itemHeight = 20;
+    if ($padding < 0) $padding = 4;
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+    theme_register($, radio_colors_changed);
+    radio_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+    if ($draw) { XftDrawDestroy($draw); $draw = NULL; }
+    if ($font) { XftFontClose(XtDisplay($), $font); $font = NULL; }
+    if ($text_color_ok) {
+        XftColorFree(XtDisplay($), DefaultVisualOfScreen(XtScreen($)),
+                     DefaultColormapOfScreen(XtScreen($)), &$text_color);
+        $text_color_ok = False;
+    }
+}
+
+@proc realize
+{
+    #realize($, mask, attributes);
+    make_xft($);
+    draw_items($);
+}
+
+@proc resize
+{
+    draw_items($);
+}
+
+@proc expose
+{
+    draw_items($);
+}
+
+@proc set_values
+{
+    if ($items != $old$items || $selected != $old$selected ||
+        $itemHeight != $old$itemHeight || $itemGap != $old$itemGap ||
+        $padding != $old$padding) {
+        draw_items($);
+        return True;
+    }
+    return ($background_pixel != $old$background_pixel);
+}
+
+@proc query_geometry
+{
+    int n = $items ? m_len($items) : 0;
+    int text_w = 0;
+    if ($font) {
+        for (int i = 0; i < n; i++) {
+            XGlyphInfo ext;
+            const char *s = STR($items, i);
+            XftTextExtentsUtf8(XtDisplay($), $font, (FcChar8 *)s,
+                               (int)strlen(s), &ext);
+            if ((int)ext.xOff > text_w) text_w = (int)ext.xOff;
+        }
+    }
+    int w = 2 * $padding + 22 + (text_w > 0 ? text_w : 100);
+    int h = 2 * $padding + n * $itemHeight + (n > 1 ? (n - 1) * $itemGap : 0);
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>: click()
+@trans <Key>Up: move_up()
+@trans <Key>Down: move_down()
+@trans <Key>Home: first()
+@trans <Key>End: last()
+
+@ACTIONS
+
+@proc click
+{
+    int n = $items ? m_len($items) : 0;
+    if (n < 1) return;
+    int y = event->xbutton.y - $padding;
+    int row = y / ($itemHeight + $itemGap);
+    if (row < 0) row = 0;
+    if (row >= n) row = n - 1;
+    $selected = row;
+    draw_items($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc move_up
+{
+    int n = $items ? m_len($items) : 0;
+    if (n < 1) return;
+    if ($selected > 0) $selected--;
+    draw_items($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc move_down
+{
+    int n = $items ? m_len($items) : 0;
+    if (n < 1) return;
+    if ($selected < n - 1) $selected++;
+    draw_items($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc first
+{
+    $selected = 0;
+    draw_items($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc last
+{
+    int n = $items ? m_len($items) : 0;
+    if (n > 0) $selected = n - 1;
+    draw_items($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc refresh
+{
+    int n = $items ? m_len($items) : 0;
+    if ($selected < 0) $selected = 0;
+    if (n > 0 && $selected >= n) $selected = n - 1;
+    draw_items($);
+}
+
+@ select an item by zero-based index; params[0] is the index
+@proc select_index
+{
+    if (! num_params || ! params || ! params[0]) return;
+    int n = $items ? m_len($items) : 0;
+    int idx = atoi(params[0]);
+    if (n < 1 || idx < 0 || idx >= n) return;
+    $selected = idx;
+    draw_items($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@UTILITIES
+
+@proc void radio_colors_changed($)
+{
+    $bg = theme_color_defined("bg_norm") ? get_color("bg_norm")
+        : (theme_color_defined("gridbox_bg") ? get_color("gridbox_bg") : $background_pixel);
+    $fg = theme_color_defined("fg_norm") ? get_color("fg_norm") : $background_pixel;
+    $accent = theme_color_defined("accent") ? get_color("accent")
+            : (theme_color_defined("bg_sel") ? get_color("bg_sel") : $fg);
+    $border = theme_color_defined("control_border") ? get_color("control_border")
+            : (theme_color_defined("list_line") ? get_color("list_line") : $fg);
+    XtVaSetValues($, XtNbackground, $bg, NULL);
+    make_xft($);
+    if (XtIsRealized($)) draw_items($);
+}
+
+@proc void make_xft($)
+{
+    Display *dpy = XtDisplay($);
+    Screen *scr = XtScreen($);
+    if ($font) { XftFontClose(dpy, $font); $font = NULL; }
+    $font = XftFontOpenName(dpy, DefaultScreen(dpy), theme_font_spec());
+
+    if ($text_color_ok) {
+        XftColorFree(dpy, DefaultVisualOfScreen(scr),
+                     DefaultColormapOfScreen(scr), &$text_color);
+        $text_color_ok = False;
+    }
+    uint32_t rgb = theme_color_defined("fg_norm") ? theme_get_rgb("fg_norm")
+                 : (theme_color_defined("button_fg") ? theme_get_rgb("button_fg") : 0);
+    if (rgb) {
+        XRenderColor xr;
+        xr.red   = (unsigned short)(((rgb >> 16) & 0xff) * 257);
+        xr.green = (unsigned short)(((rgb >> 8)  & 0xff) * 257);
+        xr.blue  = (unsigned short)(( rgb        & 0xff) * 257);
+        xr.alpha = 0xffff;
+        if (XftColorAllocValue(dpy, DefaultVisualOfScreen(scr),
+                               DefaultColormapOfScreen(scr), &xr, &$text_color))
+            $text_color_ok = True;
+    }
+}
+
+@proc void draw_items($)
+{
+    if (!XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    int W = (int)$width, H = (int)$height;
+    if (W < 1 || H < 1) return;
+
+    XSetForeground(dpy, gc, $bg);
+    XFillRectangle(dpy, win, gc, 0, 0, W, H);
+
+    int n = $items ? m_len($items) : 0;
+    for (int i = 0; i < n; i++) {
+        int y = $padding + i * ($itemHeight + $itemGap);
+        int cx = $padding + 7;
+        int cy = y + $itemHeight / 2;
+
+        XSetForeground(dpy, gc, $border);
+        XDrawArc(dpy, win, gc, cx - 7, cy - 7, 14, 14, 0, 360 * 64);
+        if (i == $selected) {
+            XSetForeground(dpy, gc, $accent);
+            XFillArc(dpy, win, gc, cx - 6, cy - 6, 12, 12, 0, 360 * 64);
+            XSetForeground(dpy, gc, $bg);
+            XFillArc(dpy, win, gc, cx - 3, cy - 3, 6, 6, 0, 360 * 64);
+        }
+
+        if ($font && $text_color_ok) {
+            if (! $draw) {
+                $draw = XftDrawCreate(dpy, win,
+                                      DefaultVisualOfScreen(XtScreen($)),
+                                      DefaultColormapOfScreen(XtScreen($)));
+            }
+            if ($draw) {
+                const char *s = STR($items, i);
+                int baseline = y + ($itemHeight - ($font->ascent + $font->descent)) / 2
+                             + $font->ascent;
+                XftDrawStringUtf8($draw, &$text_color, $font,
+                                  $padding + 22, baseline,
+                                  (FcChar8 *)s, (int)strlen(s));
+            }
+        }
+    }
+}
+
+@EXPORTS
+@proc int wradiogroup_get_selected($)
+{
+    return $selected;
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <X11/extensions/Xrender.h>
+@incl <stdint.h>
+@incl <stdio.h>
+@incl <stdlib.h>
+@incl <string.h>
+@incl "mls.h"
+@incl "converters.h"
+@incl "theme.h"

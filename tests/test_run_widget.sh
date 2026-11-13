@@ -169,6 +169,54 @@ check_log toolbar
 check_value toolbar "$TMP/toolbar.result" probe_class WToolBar
 check_value toolbar "$TMP/toolbar.result" probe_id tb
 
+# 2g. WStatusBar probe.
+probe statusbar "$TMP/statusbar.result" "$ROOT/tests/widgets/wstatusbar.lui"
+check_rc statusbar
+check_log statusbar
+check_value statusbar "$TMP/statusbar.result" probe_class WStatusBar
+check_value statusbar "$TMP/statusbar.result" probe_id sb
+
+# 2h. WComboBox probe.
+probe combobox "$TMP/combobox.result" "$ROOT/tests/widgets/wcombobox.lui"
+check_rc combobox
+check_log combobox
+check_value combobox "$TMP/combobox.result" probe_class WComboBox
+check_value combobox "$TMP/combobox.result" probe_id combo
+
+# 2i. WProgressBar probe.
+probe progress "$TMP/progress.result" "$ROOT/tests/widgets/wprogressbar.lui"
+check_rc progress
+check_log progress
+check_value progress "$TMP/progress.result" probe_class WProgressBar
+check_value progress "$TMP/progress.result" probe_id progress
+
+# 2j. WCheckBox probe.
+probe checkbox "$TMP/checkbox.result" "$ROOT/tests/widgets/wcheckbox.lui"
+check_rc checkbox
+check_log checkbox
+check_value checkbox "$TMP/checkbox.result" probe_class Wcheckbox
+
+# 2k. WFormLayout probe.
+probe form "$TMP/form.result" "$ROOT/tests/widgets/wformlayout.lui"
+check_rc form
+check_log form
+check_value form "$TMP/form.result" probe_class WFormLayout
+check_value form "$TMP/form.result" probe_id form
+
+# 2l. WSpinBox probe.
+probe spinbox "$TMP/spinbox.result" "$ROOT/tests/widgets/wspinbox.lui"
+check_rc spinbox
+check_log spinbox
+check_value spinbox "$TMP/spinbox.result" probe_class WSpinBox
+check_value spinbox "$TMP/spinbox.result" probe_id spin
+
+# 2m. WRadioGroup probe.
+probe radiogroup "$TMP/radiogroup.result" "$ROOT/tests/widgets/wradiogroup.lui"
+check_rc radiogroup
+check_log radiogroup
+check_value radiogroup "$TMP/radiogroup.result" probe_class WRadioGroup
+check_value radiogroup "$TMP/radiogroup.result" probe_id rg
+
 # 3. Model data through --after.
 probe list "$TMP/list.result" \
     --after "$ROOT/tests/widgets/populate_list.lua" \

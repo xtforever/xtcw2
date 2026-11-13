@@ -1,0 +1,290 @@
+@class WFormLayout (Constraint)
+@ Two-column form layout: label/field pairs, optional full-width help rows.
+
+@PUBLIC
+@ label column width; -1 = auto-size from labels
+@var int labelWidth = -1
+@ gap between label and field columns
+@var int columnGap = -1
+@ gap between form rows
+@var int rowGap = -1
+@ outer margin
+@var int margin = -1
+
+@private-constraints
+@ child role: "label", "field" (default) or "help"
+@var String role
+
+@PRIVATE
+@var int layout_guard
+
+@METHODS
+
+@proc class_initialize
+{
+    static XtResource resources[] = {
+        { "role", "Role", XtRString, sizeof(String),
+          XtOffsetOf(WFormLayoutConstraintRec, wFormLayout.role),
+          XtRString, (XtPointer)"field" },
+    };
+    ConstraintWidgetClass cwc = (ConstraintWidgetClass)wFormLayoutWidgetClass;
+    cwc->constraint_class.resources = resources;
+    cwc->constraint_class.num_resources = XtNumber(resources);
+}
+
+@proc initialize
+{
+    $layout_guard = 0;
+    if ($columnGap < 0) $columnGap = theme_metric("control_gap", 8);
+    if ($rowGap < 0)    $rowGap = theme_metric("group_gap", 12);
+    if ($margin < 0)    $margin = theme_metric("window_margin", 16);
+    if ($width == 0)  $width  = 360;
+    if ($height == 0) $height = 200;
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+    theme_register($, form_colors_changed);
+    form_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+}
+
+@proc realize
+{
+    #realize($, mask, attributes);
+    form_layout($);
+}
+
+@proc resize
+{
+    form_layout($);
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    if (!win) return;
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    XSetForeground(dpy, gc, $background_pixel);
+    XFillRectangle(dpy, win, gc, 0, 0, $width, $height);
+}
+
+@proc set_values
+{
+    if ($labelWidth != $old$labelWidth ||
+        $columnGap != $old$columnGap ||
+        $rowGap != $old$rowGap ||
+        $margin != $old$margin) {
+        form_layout($);
+        return True;
+    }
+    return ($background_pixel != $old$background_pixel);
+}
+
+@proc change_managed
+{
+    if ($layout_guard) return;
+    form_layout($);
+}
+
+@proc insert_child
+{
+    (void)$;
+    #insert_child(child);
+}
+
+@proc delete_child
+{
+    (void)$;
+    #delete_child(child);
+}
+
+@proc query_geometry
+{
+    int lw = form_label_width($);
+    int fw = 0;
+    int total_h = 2 * $margin;
+    int rows = 0;
+    int row_h = 0;
+
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+        const char *role = form_role(child);
+        int pw = form_pref_w(child);
+        int ph = form_pref_h(child);
+        if (strcmp(role, "label") == 0) {
+            if (rows > 0) total_h += $rowGap;
+            total_h += ph;
+            rows++;
+            row_h = ph;
+        } else if (strcmp(role, "help") == 0) {
+            if (rows > 0) total_h += $rowGap;
+            total_h += ph;
+            rows++;
+            row_h = ph;
+        } else {
+            if (pw > fw) fw = pw;
+            if (rows == 0) {
+                total_h += ph;
+                rows++;
+                row_h = ph;
+            } else if (ph > row_h) {
+                total_h += ph - row_h;
+                row_h = ph;
+            }
+        }
+    }
+
+    int w = 2 * $margin + lw + $columnGap + (fw > 0 ? fw : 120);
+    int h = total_h;
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc geometry_manager
+{
+    Dimension w = (request->request_mode & CWWidth) ? request->width : $child$width;
+    Dimension h = (request->request_mode & CWHeight) ? request->height : $child$height;
+    XtConfigureWidget(child, $child$x, $child$y, w, h, child->core.border_width);
+    form_layout($);
+    return XtGeometryDone;
+}
+
+@UTILITIES
+
+@proc const char *form_role(Widget child)
+{
+    String role = NULL;
+    XtVaGetValues(child, "role", &role, NULL);
+    return role ? role : "field";
+}
+
+@proc int form_pref_w(Widget child)
+{
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    if (XtQueryGeometry(child, &req, &pref) == XtGeometryAlmost &&
+        (pref.request_mode & CWWidth))
+        return (int)pref.width;
+    return (int)child->core.width;
+}
+
+@proc int form_pref_h(Widget child)
+{
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    if (XtQueryGeometry(child, &req, &pref) == XtGeometryAlmost &&
+        (pref.request_mode & CWHeight))
+        return (int)pref.height;
+    return (int)child->core.height;
+}
+
+@proc int form_label_width($)
+{
+    if ($labelWidth > 0) return $labelWidth;
+
+    int lw = 0;
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+        if (strcmp(form_role(child), "label") != 0) continue;
+        int pw = form_pref_w(child);
+        if (pw > lw) lw = pw;
+    }
+    if (lw < 40) lw = 40;
+    return lw;
+}
+
+@proc void form_colors_changed($)
+{
+    Pixel bg = theme_color_defined("bg_norm") ? get_color("bg_norm")
+             : (theme_color_defined("gridbox_bg") ? get_color("gridbox_bg") : 0);
+    if (bg) XtVaSetValues($, XtNbackground, bg, NULL);
+    if (XtIsRealized($)) {
+        XClearWindow(XtDisplay($), XtWindow($));
+        form_layout($);
+    }
+}
+
+@proc void form_layout($)
+{
+    if ($layout_guard) return;
+    $layout_guard = 1;
+
+    int margin = $margin;
+    int gap = $columnGap;
+    int rgap = $rowGap;
+    int lw = form_label_width($);
+    int field_x = margin + lw + gap;
+    int field_w = (int)$width - field_x - margin;
+    if (field_w < 1) field_w = 1;
+
+    int y = margin;
+    int row_h = 0;
+    int have_row = 0;
+
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+        const char *role = form_role(child);
+        int ph = form_pref_h(child);
+
+        if (strcmp(role, "label") == 0) {
+            if (have_row) y += row_h + rgap;
+            row_h = ph;
+            have_row = 1;
+            XtConfigureWidget(child, (Position)margin, (Position)y,
+                              (Dimension)lw, (Dimension)ph, 0);
+        } else if (strcmp(role, "help") == 0) {
+            if (have_row) y += row_h + rgap;
+            row_h = ph;
+            have_row = 1;
+            XtConfigureWidget(child, (Position)margin, (Position)y,
+                              (Dimension)((int)$width - 2 * margin),
+                              (Dimension)ph, 0);
+        } else {
+            if (!have_row) {
+                row_h = ph;
+                have_row = 1;
+            } else if (ph > row_h) {
+                row_h = ph;
+            }
+            XtConfigureWidget(child, (Position)field_x, (Position)y,
+                              (Dimension)field_w, (Dimension)ph, 0);
+        }
+    }
+
+    $layout_guard = 0;
+}
+
+@IMPORTS
+@incl <string.h>
+@incl "theme.h"

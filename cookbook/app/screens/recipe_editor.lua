@@ -1,10 +1,9 @@
 -- cookbook/app/screens/recipe_editor.lua
 -- Screen 3: create / edit a recipe (form).
 --
--- Modern themed controls: Wedit, WspinBox, WToggleSwitch, KaroEd and Wbutton.
--- The action bar is a top toolbar row (Cancel + primary Save) so it stays
--- visible while the form scrolls.  The old Xaw Toggle and the legacy Wcombo
--- are gone; the category is a flat Wbutton that cycles through the choices.
+-- Modern themed controls: Wedit, WspinBox, WToggleSwitch, WComboBox, KaroEd
+-- and Wbutton.  The action bar is a top toolbar row (Cancel + primary Save)
+-- so it stays visible while the form scrolls.
 
 local M = {}
 
@@ -27,7 +26,7 @@ function M.fragment()
         '    (label :id "ed_time_lbl" :label "Minutes:" :gridx 2 :gridy 2 :weightx 0 :weighty 0 :fill 3)',
         '    (WspinBox :id "ed_time" :gridx 3 :gridy 2 :weightx 1 :weighty 0 :fill 3 :value 30 :min 1 :max 600)',
         '    (label :id "ed_cat_lbl" :label "Category:" :gridx 0 :gridy 3 :weightx 0 :weighty 0 :fill 3)',
-        '    (Wbutton :id "ed_cat" :label "Main" :gridx 1 :gridy 3 :weightx 1 :weighty 0 :fill 3 :callback "LUA(cb_cycle_category)")',
+        '    (WComboBox :id "ed_cat" :gridx 1 :gridy 3 :weightx 1 :weighty 0 :fill 3 :placeholder "Main" :linesHeight 4 :callback "LUA(cb_category_changed)")',
         '  )',
         '  (label :id "ed_diet_lbl" :label "Dietary" :gridx 0 :gridy 2 :gridWidth 4 :weightx 1 :weighty 0 :fill 3 :fontSize 14)',
         '  (grid :id "ed_veg_box" :gridx 0 :gridy 3 :weightx 1 :weighty 0 :fill 3 :borderWidth 0',

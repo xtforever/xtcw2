@@ -57,6 +57,34 @@ int main(int argc, char **argv)
         ok = 0;
     }
 
+    String params[1] = { "120" };
+    XtCallActionProc(sp, "set_value", NULL, params, 1);
+    label = NULL;
+    XtVaGetValues(sp, XtNlabel, &label, XtNvalue, &value, NULL);
+    if (value != 120 || !label || strcmp(label, "120") != 0) {
+        fprintf(stderr, "FAIL after set_value (%d, %s)\n",
+                value, label ? label : "(null)");
+        ok = 0;
+    }
+
+    XtCallActionProc(sp, "spin_up", NULL, NULL, 0);
+    label = NULL;
+    XtVaGetValues(sp, XtNlabel, &label, XtNvalue, &value, NULL);
+    if (value != 120 || !label || strcmp(label, "120") != 0) {
+        fprintf(stderr, "FAIL max clamp (%d, %s)\n",
+                value, label ? label : "(null)");
+        ok = 0;
+    }
+
+    XtCallActionProc(sp, "spin_down", NULL, NULL, 0);
+    label = NULL;
+    XtVaGetValues(sp, XtNlabel, &label, XtNvalue, &value, NULL);
+    if (value != 119 || !label || strcmp(label, "119") != 0) {
+        fprintf(stderr, "FAIL after spin_down from max (%d, %s)\n",
+                value, label ? label : "(null)");
+        ok = 0;
+    }
+
     printf("%s: WspinBox value label\n", ok ? "PASS" : "FAIL");
 
     XtDestroyWidget(top);

@@ -1,0 +1,3 @@
+(WStatusBar :id "sb" :message "Ready" :barHeight 32 :itemGap 8 :barPadding 4
+            :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 1
+  (Wbutton :id "sb_ok" :label "OK"))

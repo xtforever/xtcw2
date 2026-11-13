@@ -109,6 +109,21 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_waction"
 echo "19e. test_wtoolbar (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtoolbar"
 
+echo "19f. test_wstatusbar (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wstatusbar"
+
+echo "19g. test_wcombobox (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wcombobox"
+
+echo "19h. test_wprogressbar (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wprogressbar"
+
+echo "19i. test_wcheckbox (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wcheckbox"
+
+echo "19j. test_wformlayout (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wformlayout"
+
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"
 

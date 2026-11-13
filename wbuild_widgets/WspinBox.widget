@@ -1,5 +1,5 @@
 @class WspinBox (Wlabel)
-@ Numeric input; drive it with the spin_up()/spin_down() actions
+@ Numeric input with keyboard and optional visible +/- buttons.
 
 @PUBLIC
 @var <Callback> XtCallbackList callback = NULL
@@ -7,43 +7,65 @@
 @var int min = 0
 @var int max = 100
 @var int step = 1
+@ draw the -/+ button areas on the right
+@var Boolean showButtons = True
+@ width of each +/- button
+@var int buttonWidth = 22
+@ wrap around at min/max instead of clamping
+@var Boolean wrap = False
+@ printf-style value format (must contain one integer conversion)
+@var String format = <String> "%d"
 
 @PRIVATE
 @var int edit_pos
 
-@METHODS 
+@METHODS
+
 @proc initialize
 {
     $edit_pos = 0;
     if ($value < $min) $value = $min;
     if ($value > $max) $value = $max;
+    if ($showButtons && $rightGap == 0)
+        $rightGap = 2 * $buttonWidth + 4;
     sync_label($);
     TRACE(2,"WspinBox:%s initialized, value=%d", $name, $value);
+}
+
+@proc expose
+{
+    #expose($, event, region);
+    draw_buttons($);
 }
 
 @TRANSLATIONS
 @trans   <Key>Up:     spin_up()
 @trans   <Key>Down:   spin_down()
 @trans   <Key>Return: notify()
+@trans   <Btn1Down>:  click()
 
 @ACTIONS
 
 @proc spin_up
 {
     int new_val = $value + $step;
-    if (new_val <= $max) {
-        $value = new_val;
-        sync_label($);
+    if (new_val > $max) {
+        if ($wrap) new_val = $min;
+        else new_val = $max;
     }
+    $value = new_val;
+    sync_label($);
 }
 
 @proc spin_down
 {
     int new_val = $value - $step;
-    if (new_val >= $min) {
-        $value = new_val;
-        sync_label($);
+    if (new_val < $min) {
+        if ($wrap) new_val = $max;
+        else new_val = $min;
     }
+    $value = new_val;
+    sync_label($);
 }
 
 @proc notify
@@ -51,13 +73,80 @@
     XtCallCallbackList( $, $callback, event );
 }
 
+@proc refresh
+{
+    if ($value < $min) $value = $min;
+    if ($value > $max) $value = $max;
+    sync_label($);
+}
+
+@ set the value from params[0]
+@proc set_value
+{
+    if (! num_params || ! params || ! params[0]) return;
+    int v = atoi(params[0]);
+    if (v < $min) v = $min;
+    if (v > $max) v = $max;
+    $value = v;
+    sync_label($);
+}
+
+@proc click
+{
+    if (! $showButtons) return;
+    int x = event->xbutton.x;
+    int bw = $buttonWidth;
+    int W = (int)$width;
+    if (x >= W - 2 * bw) {
+        if (x >= W - bw) spin_up($, event, NULL, NULL);
+        else spin_down($, event, NULL, NULL);
+        XtCallCallbackList($, $callback, event);
+    }
+}
+
 @UTILITIES
 
 @proc void sync_label($)
 {
-    char buf[32];
-    snprintf(buf, sizeof buf, "%d", $value);
+    char buf[64];
+    const char *fmt = ($format && *$format) ? $format : "%d";
+    snprintf(buf, sizeof buf, fmt, $value);
     XtVaSetValues($, XtNlabel, buf, NULL);
+}
+
+@proc void draw_buttons($)
+{
+    if (! $showButtons || ! XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    int W = (int)$width, H = (int)$height;
+    int bw = $buttonWidth;
+    if (bw < 8 || W < 2 * bw + 4) return;
+
+    Pixel bg = theme_color_defined("input_bg") ? get_color("input_bg")
+             : (theme_color_defined("button_bg") ? get_color("button_bg")
+             : (theme_color_defined("bg_hi") ? get_color("bg_hi") : $background_pixel));
+    Pixel border = theme_color_defined("control_border") ? get_color("control_border")
+                 : (theme_color_defined("list_line") ? get_color("list_line")
+                 : (theme_color_defined("fg_norm") ? get_color("fg_norm") : $fg_norm));
+    Pixel fg = theme_color_defined("button_fg") ? get_color("button_fg")
+             : (theme_color_defined("fg_norm") ? get_color("fg_norm") : $fg_norm);
+
+    int x0 = W - 2 * bw;
+    XSetForeground(dpy, gc, bg);
+    XFillRectangle(dpy, win, gc, x0, 0, 2 * bw, H);
+    XSetForeground(dpy, gc, border);
+    XDrawLine(dpy, win, gc, x0, 0, x0, H - 1);
+    XDrawLine(dpy, win, gc, x0 + bw, 0, x0 + bw, H - 1);
+
+    int cy = H / 2;
+    XSetForeground(dpy, gc, fg);
+    int mx = x0 + bw / 2;
+    XDrawLine(dpy, win, gc, mx - 5, cy, mx + 5, cy);
+    int px = x0 + bw + bw / 2;
+    XDrawLine(dpy, win, gc, px - 5, cy, px + 5, cy);
+    XDrawLine(dpy, win, gc, px, cy - 5, px, cy + 5);
 }
 
 @EXPORTS
@@ -68,6 +157,8 @@
 
 @IMPORTS
 @incl <stdio.h>
+@incl <stdlib.h>
 @incl "mls.h"
 @incl <X11/Xft/Xft.h>
 @incl "converters-xft.h"
+@incl "theme.h"

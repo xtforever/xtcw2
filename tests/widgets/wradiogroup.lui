@@ -1,0 +1,2 @@
+(WRadioGroup :id "rg" :items "Small,Medium,Large" :selected 1
+             :gridx 0 :gridy 0 :weightx 0 :weighty 0 :fill none)

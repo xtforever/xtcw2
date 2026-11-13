@@ -1,0 +1,209 @@
+@class WProgressBar (Core)
+@ Themed determinate progress bar with optional percentage text.
+
+@PUBLIC
+@ current value
+@var int value = 0
+@var int min = 0
+@var int max = 100
+@ draw an indeterminate-looking segment instead of a value
+@var Boolean indeterminate = False
+@ show the percentage in the bar
+@var Boolean showText = True
+@ bar height; -1 uses theme progress_height/control_height
+@var int barHeight = -1
+
+@PRIVATE
+@var Pixel bg
+@var Pixel fill
+@var Pixel border
+@var Pixel fg
+@var XftFont *font
+@var XftDraw *draw
+@var XftColor text_color
+@var Boolean text_color_ok
+
+@METHODS
+
+@proc initialize
+{
+    $font = NULL;
+    $draw = NULL;
+    $text_color_ok = False;
+    if ($barHeight < 0) {
+        $barHeight = theme_metric("progress_height", -1);
+        if ($barHeight < 0)
+            $barHeight = theme_metric("control_height", 16);
+    }
+    if ($barHeight < 8) $barHeight = 8;
+    if ($width == 0) $width = 200;
+    if ($height == 0) $height = (Dimension)$barHeight;
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+    theme_register($, progress_colors_changed);
+    progress_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+    if ($draw) { XftDrawDestroy($draw); $draw = NULL; }
+    if ($font) { XftFontClose(XtDisplay($), $font); $font = NULL; }
+    if ($text_color_ok) {
+        XftColorFree(XtDisplay($), DefaultVisualOfScreen(XtScreen($)),
+                     DefaultColormapOfScreen(XtScreen($)), &$text_color);
+        $text_color_ok = False;
+    }
+}
+
+@proc realize
+{
+    #realize($, mask, attributes);
+    make_xft($);
+    draw_bar($);
+}
+
+@proc resize
+{
+    draw_bar($);
+}
+
+@proc expose
+{
+    draw_bar($);
+}
+
+@proc set_values
+{
+    int redraw = 0;
+    if ($value != $old$value || $min != $old$min || $max != $old$max ||
+        $indeterminate != $old$indeterminate || $showText != $old$showText ||
+        $barHeight != $old$barHeight) redraw = 1;
+    if ($background_pixel != $old$background_pixel) redraw = 1;
+    if (redraw) draw_bar($);
+    return redraw;
+}
+
+@proc query_geometry
+{
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = $width ? $width : 200;
+    reply->height = (Dimension)$barHeight;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@UTILITIES
+
+@proc void progress_colors_changed($)
+{
+    $bg = theme_color_defined("input_bg") ? get_color("input_bg")
+        : (theme_color_defined("list_bg") ? get_color("list_bg")
+        : (theme_color_defined("bg_hi") ? get_color("bg_hi") : $background_pixel));
+    $fill = theme_color_defined("accent") ? get_color("accent")
+          : (theme_color_defined("bg_sel") ? get_color("bg_sel") : $bg);
+    $border = theme_color_defined("control_border") ? get_color("control_border")
+            : (theme_color_defined("list_line") ? get_color("list_line") : $fill);
+    $fg = theme_color_defined("fg_norm") ? get_color("fg_norm") : $background_pixel;
+
+    XtVaSetValues($, XtNbackground, $bg, NULL);
+    make_xft($);
+    if (XtIsRealized($)) draw_bar($);
+}
+
+@proc void make_xft($)
+{
+    Display *dpy = XtDisplay($);
+    Screen *scr = XtScreen($);
+
+    if ($font) { XftFontClose(dpy, $font); $font = NULL; }
+    $font = XftFontOpenName(dpy, DefaultScreen(dpy), theme_font_spec());
+
+    if ($text_color_ok) {
+        XftColorFree(dpy, DefaultVisualOfScreen(scr),
+                     DefaultColormapOfScreen(scr), &$text_color);
+        $text_color_ok = False;
+    }
+    uint32_t rgb = theme_color_defined("fg_norm") ? theme_get_rgb("fg_norm")
+                 : (theme_color_defined("button_fg") ? theme_get_rgb("button_fg") : 0);
+    if (rgb) {
+        XRenderColor xr;
+        xr.red   = (unsigned short)(((rgb >> 16) & 0xff) * 257);
+        xr.green = (unsigned short)(((rgb >> 8)  & 0xff) * 257);
+        xr.blue  = (unsigned short)(( rgb        & 0xff) * 257);
+        xr.alpha = 0xffff;
+        if (XftColorAllocValue(dpy, DefaultVisualOfScreen(scr),
+                               DefaultColormapOfScreen(scr), &xr, &$text_color))
+            $text_color_ok = True;
+    }
+}
+
+@proc void draw_bar($)
+{
+    if (!XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    int W = (int)$width, H = (int)$height;
+    if (W < 1 || H < 1) return;
+
+    XSetForeground(dpy, gc, $bg);
+    XFillRectangle(dpy, win, gc, 0, 0, W, H);
+
+    int fill_w = 0;
+    if ($indeterminate) {
+        fill_w = W / 3;
+    } else {
+        int lo = $min, hi = $max;
+        if (hi <= lo) hi = lo + 1;
+        int v = $value;
+        if (v < lo) v = lo;
+        if (v > hi) v = hi;
+        fill_w = (int)((long)(v - lo) * W / (hi - lo));
+    }
+    if (fill_w > 0) {
+        XSetForeground(dpy, gc, $fill);
+        XFillRectangle(dpy, win, gc, 0, 0, fill_w, H);
+    }
+
+    XSetForeground(dpy, gc, $border);
+    XDrawRectangle(dpy, win, gc, 0, 0, W - 1, H - 1);
+
+    if ($showText && $font && $text_color_ok) {
+        char buf[32];
+        if ($indeterminate) snprintf(buf, sizeof buf, "...");
+        else {
+            int lo = $min, hi = $max;
+            if (hi <= lo) hi = lo + 1;
+            int v = $value;
+            if (v < lo) v = lo;
+            if (v > hi) v = hi;
+            snprintf(buf, sizeof buf, "%d%%", (int)((long)(v - lo) * 100 / (hi - lo)));
+        }
+        XGlyphInfo ext;
+        int len = (int)strlen(buf);
+        XftTextExtentsUtf8(dpy, $font, (FcChar8 *)buf, len, &ext);
+        int tx = (W - (int)ext.xOff) / 2;
+        int baseline = (H - ($font->ascent + $font->descent)) / 2 + $font->ascent;
+        if (! $draw) {
+            $draw = XftDrawCreate(dpy, win, DefaultVisualOfScreen(XtScreen($)),
+                                  DefaultColormapOfScreen(XtScreen($)));
+        }
+        if ($draw)
+            XftDrawStringUtf8($draw, &$text_color, $font, tx, baseline,
+                              (FcChar8 *)buf, len);
+    }
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <X11/extensions/Xrender.h>
+@incl <stdint.h>
+@incl <stdio.h>
+@incl <string.h>
+@incl "theme.h"

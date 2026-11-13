@@ -1,0 +1,2 @@
+(WProgressBar :id "progress" :value 62 :min 0 :max 100
+              :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 1)

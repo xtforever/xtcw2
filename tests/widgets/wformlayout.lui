@@ -1,0 +1,6 @@
+(WFormLayout :id "form" :labelWidth 100 :columnGap 8 :rowGap 8 :margin 12
+              :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 1
+  (Wlabel :id "l1" :role "label" :label "Title:")
+  (Wlabel :id "f1" :role "field" :label "Recipe title")
+  (Wlabel :id "l2" :role "label" :label "Author:")
+  (Wlabel :id "f2" :role "field" :label "Author name"))

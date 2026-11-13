@@ -22,6 +22,7 @@ local screens = {
     require('screens.recipe_detail'),
     require('screens.recipe_editor'),
     require('screens.shopping_list'),
+    require('screens.widget_gallery'),
 }
 
 -- Screen id -> WtabWidget page index (0-based).
@@ -30,8 +31,9 @@ local screen_index = {
     screen_detail = 1,
     screen_editor = 2,
     screen_shopping = 3,
+    screen_gallery = 4,
 }
-local tab_names = { "Recipes", "Detail", "Editor", "Shopping" }
+local tab_names = { "Recipes", "Detail", "Editor", "Shopping", "Gallery" }
 
 -- Shopping rows are mutable (the Done column toggles); the WListView is
 -- refreshed from this table.
@@ -66,14 +68,14 @@ end
 local function show(id)
     local index = screen_index[id] or 0
     gui.set("tabs", "selected", index)
-    gui.set("status", "label", "Screen: " .. (tab_names[index + 1] or id)
+    gui.set("status", "message", "Screen: " .. (tab_names[index + 1] or id)
         .. "  (" .. tostring(model.count()) .. " recipes)")
 end
 
 -- Callbacks are looked up as Lua globals by the host's LUA(...) dispatch.
 function cb_tab()
     local index = tonumber(gui.get("tabs", "selected")) or 0
-    gui.set("status", "label", "Tab: " .. (tab_names[index + 1] or "?"))
+    gui.set("status", "message", "Tab: " .. (tab_names[index + 1] or "?"))
 end
 
 function cb_nav_list() show("screen_list") end
@@ -85,7 +87,7 @@ function cb_noop() end
 
 function cb_search()
     local q = gui.get("search_ed", "label") or ""
-    gui.set("status", "label", "Search: '" .. q .. "' (filtering not implemented)")
+    gui.set("status", "message", "Search: '" .. q .. "' (filtering not implemented)")
 end
 
 function cb_open_recipe()
@@ -98,31 +100,32 @@ local confirm_delete = false
 
 function cb_toggle_confirm()
     confirm_delete = not confirm_delete
-    gui.set("status", "label", "Delete confirmation: "
+    gui.set("status", "message", "Delete confirmation: "
         .. (confirm_delete and "on" or "off"))
 end
 
 function cb_delete_recipe()
     if confirm_delete then
-        gui.set("status", "label", "Delete recipe (confirmation on; not implemented)")
+        gui.set("status", "message", "Delete recipe (confirmation on; not implemented)")
     else
-        gui.set("status", "label", "Delete recipe (confirmation off; not implemented)")
+        gui.set("status", "message", "Delete recipe (confirmation off; not implemented)")
     end
 end
 
 local categories = { "Starter", "Main", "Dessert", "Breakfast" }
 local category_index = 2
 
-function cb_cycle_category()
-    category_index = (category_index % #categories) + 1
-    gui.set("ed_cat", "label", categories[category_index])
-    gui.set("status", "label", "Category: " .. categories[category_index])
+function cb_category_changed()
+    local idx = tonumber(gui.get("ed_cat", "selected")) or -1
+    category_index = idx + 1
+    local cat = categories[category_index] or "?"
+    gui.set("status", "message", "Category: " .. cat)
 end
 
 function cb_save()
     local title = gui.get("ed_title", "label") or ""
     local category = gui.get("ed_cat", "label") or ""
-    gui.set("status", "label", "Saved: " .. title .. "  (" .. category .. ")")
+    gui.set("status", "message", "Saved: " .. title .. "  (" .. category .. ")")
 end
 
 function cb_cancel() show("screen_list") end
@@ -133,7 +136,7 @@ function cb_check_shopping()
     local row = shopping_rows[index + 1]
     row[4] = (row[4] == "yes") and "no" or "yes"
     gui.set_string_list("shop_list", "rows", shopping_strings())
-    gui.set("status", "label", "Shopping item " .. (index + 1) .. ": " .. row[4])
+    gui.set("status", "message", "Shopping item " .. (index + 1) .. ": " .. row[4])
 end
 
 function cb_clear_shopping()
@@ -141,11 +144,11 @@ function cb_clear_shopping()
         row[4] = "no"
     end
     gui.set_string_list("shop_list", "rows", shopping_strings())
-    gui.set("status", "label", "Shopping list cleared")
+    gui.set("status", "message", "Shopping list cleared")
 end
 
 function cb_about()
-    gui.set("status", "label", "xtcw2 Cookbook — improved widget set testing ground")
+    gui.set("status", "message", "xtcw2 Cookbook — improved widget set testing ground")
 end
 
 function cb_quit() xtappexitflag() end
@@ -154,7 +157,7 @@ function cb_quit() xtappexitflag() end
 -- Assemble the single UI source parsed by lui.run().
 -- ---------------------------------------------------------------------------
 local ui = macros.PRELUDE .. [[
-(window :id "win" :title "xtcw2 Cookbook" :width 1000 :height 760
+(window :id "win" :title "xtcw2 Cookbook" :width 1000 :height 680
   (app-window :id "main" :windowMargin 12 :rowGap 8
                   :gridx 0 :gridy 0 :weightx 1 :weighty 1 :fill 3
     (WMenuBar :id "menubar" :slot "menu" :barHeight 28
@@ -194,9 +197,11 @@ local ui = macros.PRELUDE .. [[
     .. screens[2].fragment() .. "\n"
     .. screens[3].fragment() .. "\n"
     .. screens[4].fragment() .. "\n"
+    .. screens[5].fragment() .. "\n"
     .. [[
     )
-    (label :id "status" :slot "status" :label "Ready" :weightx 1 :weighty 0 :fill 3)
+    (WStatusBar :id "status" :slot "status" :message "Ready"
+                :itemGap 8 :barPadding 6)
   ))
 ]]
 
@@ -212,5 +217,14 @@ for _, row in ipairs(model.list_rows()) do
 end
 gui.set_string_list("recipe_list", "rows", recipe_rows)
 gui.set_string_list("shop_list", "rows", shopping_strings())
+gui.set_string_list("ed_cat", "items", categories)
+gui.set("ed_cat", "selected", category_index - 1)
+local cat_widget = gui.get_widget("ed_cat")
+if cat_widget then xtaction(cat_widget, "refresh") end
+
+gui.set_string_list("gal_combo", "items", { "Small", "Medium", "Large" })
+gui.set("gal_combo", "selected", 1)
+local gal_combo = gui.get_widget("gal_combo")
+if gal_combo then xtaction(gal_combo, "refresh") end
 load_detail(1)
 show("screen_list")

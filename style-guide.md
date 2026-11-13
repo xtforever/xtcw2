@@ -415,8 +415,13 @@ content changes.
 ### Toolkit mapping
 | Need | Widget / mechanism |
 |------|--------------------|
-| Window/sheet frame | `topLevelShellWidgetClass` popup shell, `WfileChooser`/`WfileSelector` |
+| Window/sheet frame | `WAppWindow`, `topLevelShellWidgetClass` popup shell, `WfileChooser`/`WfileSelector` |
 | Toolbar / action bar | `WToolBar` with `Wbutton`/`WAction` (legacy: `Gridbox` row) |
+| Status bar | `WStatusBar` |
+| Form | `WFormLayout` |
+| Selection | `WComboBox` |
+| Choice | `WRadioGroup` |
+| Feedback | `WProgressBar` |
 | Menu bar / burger menu | `WMenuBar` + `WmenuButton` + `WPopupMenu` (modern); `WmenuButton` + `WmenuPopup` legacy |
 | Multi-pane main window | `Gridbox`, `Wsplitter`/`WPaned`, `Wviewport` |
 | Tabs | `WtabWidget` |

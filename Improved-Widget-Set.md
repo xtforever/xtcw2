@@ -43,7 +43,12 @@ This is a living document. It is derived from:
 | App shell | `WAppWindow` (new) | Themed 4-slot container: menu, toolbar, content, status |
 | Menus | `WMenuBar`, `WPopupMenu`, `WAction` (new), `WmenuButton` | First modern menu slice with checkable actions; keyboard mnemonics pending |
 | Toolbar | `WToolBar` (new) | Themed natural-width action row; cookbook integration done |
-| Buttons | `Wbutton`, `Wcheckbox`, `WToggleSwitch`, `WpixBtn` | `Wbutton`/`WToggleSwitch` good; checkbox indicator incomplete; icon button legacy |
+| Status bar | `WStatusBar` (new) | Message + permanent right widgets; cookbook integration done |
+| Selection | `WComboBox` (new) | Read-only items, selected index and themed popup; editable/completion later |
+| Choice | `WRadioGroup` (new) | Vertical radio group with click/keyboard selection |
+| Feedback | `WProgressBar` (new) | Determinate progress + percentage text |
+| Layout | `WFormLayout` (new) | Two-column label/field form layout |
+| Buttons | `Wbutton`, `Wcheckbox`, `WToggleSwitch`, `WpixBtn` | `Wbutton`/`WToggleSwitch` good; checkbox indicator implemented; icon button legacy |
 | Text input | `Wedit`, `WeditMV`, `Wpassword`, `KaroEd`, `Wbravo`, `Wretex` | `KaroEd`/`Wbravo` strong; `Wedit` is legacy; no validation/completion |
 | Lists | `WListView` (modern), `Wlist`, `Wlist4`, `WlistMulti`, `Wls`, `WlsMulti` | `WListView` is the future; legacy lists must be frozen |
 | Tabs/scroll | `WtabWidget`, `Wviewport`, `WSplitter`, `WPaned` | Modern after recent fixes; splitter/paned need consolidation |
@@ -165,24 +170,42 @@ style-guide roles, keyboard handling and tests.
 4. **WStatusBar** — `NEW`
    - Message area + permanent widgets (progress, theme, selection info).
    - LUI: `(status-bar :message "…")`; `gui.set(id,"message",…)`.
+   - Status: first slice implemented — themed message label plus natural-width
+     right-side permanent widgets. `barHeight` auto-derives from the message
+     font height + padding (32px minimum); `itemGap`/`barPadding` are
+     configurable. The cookbook uses it without a fixed height.
    - Acceptance: cookbook/t1_menu status line; progress integration.
 
 5. **WComboBox** — `NEW` (replaces `Wcombo`)
    - Read-only and editable modes; item model; keyboard type-ahead; completion.
-   - Popup list uses `WListView`; no Xaw popup shell.
+   - Popup list uses `WPopupMenu`; no Xaw popup shell.
+   - Status: first read-only slice implemented — MLS `items`, `selected`,
+     `placeholder`, themed popup below the trigger, outside-click catcher,
+     dropdown arrow, `refresh`/`select_index` actions. The cookbook editor
+     category uses it. Editable mode, completion and keyboard type-ahead
+     remain.
    - Acceptance: category selection in cookbook; no widget-name fallback; theme switch.
 
 6. **WSpinBox** — `IMPROVE`
    - Visible `-`/`+` buttons, repeat, wrap, step, min/max, `%d`/`%g` format.
-   - Keep `value`/label sync (already fixed); add `set_value` action and validation.
+   - Status: visible -/+ buttons, `wrap`, `format`, `set_value`/`refresh`
+     actions and max/min clamping implemented. The cookbook servings/minutes
+     fields use the buttons. Hold-to-repeat and Home/End remain.
    - Acceptance: cookbook servings/minutes; keyboard Up/Down/Home/End; buttons usable at `control_height`.
 
 7. **WCheckBox** — `IMPROVE`
    - Draw the check indicator (accent), support tri-state, keyboard Space, mnemonic.
+   - Status: check indicator implemented with theme `input_bg`/`control_border`/
+     `accent`; `refresh` action updates programmatic changes. Tri-state and
+     keyboard Space remain.
    - Acceptance: form/cookbook toggles; visual state matches `checked`.
 
 8. **WRadioGroup / WRadioButton** — `NEW` (replaces `Wradio`/`Woption`)
    - Mutually exclusive group, arrow-key navigation, labels, optional descriptions.
+   - Status: vertical `WRadioGroup` implemented with MLS items, `selected`,
+     click/Up/Down/Home/End, `select_index`/`refresh`, themed circles and
+     labels. The cookbook Gallery tab uses it. Optional descriptions and
+     focus-ring polish remain.
    - Acceptance: form choice groups; themed focus/hover.
 
 9. **WLineEdit** — `NEW`/`IMPROVE` (replaces `Wedit` internals)
@@ -214,10 +237,14 @@ style-guide roles, keyboard handling and tests.
 
 14. **WProgressBar** — `NEW`
     - Determinate/indeterminate, text overlay, themed `progress_*` roles.
+    - Status: determinate fill, percentage text, themed track/fill/border;
+      indeterminate currently draws a static segment. Animation remains.
     - Acceptance: file loading/saving and long model operations.
 
 15. **WFormLayout** — `NEW`
     - Label/field alignment, required marker, help text, section headings, `S`/`M` gaps.
+    - Status: two-column label/field layout with `role="label"|"field"|"help"`,
+      auto/manual label width, column/row gaps. The cookbook Gallery tab uses it.
     - Acceptance: cookbook editor form built with one form layout, aligned labels/fields.
 
 16. **WToolTip** — `NEW`
@@ -353,7 +380,7 @@ P0 foundation widgets:
 
 `Wlabel`, `Wbutton`, `WspinBox`, `Wcheckbox`, `WListView`, `WtabWidget`,
 `Wviewport`, `KaroEd`, `Wretex`, `WToggleSwitch`, plus the new `WAppWindow`,
-`WMenuBar`, `WPopupMenu`, `WAction` and `WToolBar` widgets.
+`WMenuBar`, `WPopupMenu`, `WAction`, `WToolBar`, `WStatusBar`, `WComboBox`, `WProgressBar`, `WRadioGroup`, improved `WCheckBox` and `WFormLayout` widgets.
 
 As each new P0 widget lands, add a matching `tests/widgets/<widget>.lui` probe.
 The harness is intentionally an interim shell; it can later switch to
