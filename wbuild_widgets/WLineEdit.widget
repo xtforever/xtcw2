@@ -1,0 +1,88 @@
+@class WLineEdit (Wedit)
+@ Single-line input with placeholder and optional clear button.
+
+@PUBLIC
+@ text shown when the field is empty
+@var String placeholder = <String> ""
+@ draw a small x button when the field has text
+@var Boolean showClear = True
+@ clear-button width
+@var int clearWidth = 24
+
+@METHODS
+
+@proc expose
+{
+    #expose($, event, region);
+    draw_extras($);
+}
+
+@TRANSLATIONS
+@trans <Key>Right:     forward_char()
+@trans <Key>Left:      backward_char()
+@trans <Key>Delete:    remove_char()
+@trans <Key>BackSpace: backward_char() remove_char()
+@trans <Ctrl>x:        info()
+@trans <Ctrl>v:        insert_selection()
+@trans <Btn1Down>:     lineedit_click()
+@trans <Key>Return:    notify()
+@trans <Key>:          insert_char()
+
+@ACTIONS
+
+@proc clear
+{
+    XtVaSetValues($, XtNlabel, "", NULL);
+    XtCallCallbackList($, $callback, event);
+}
+
+@proc lineedit_click
+{
+    int x = event->xbutton.x;
+    if ($showClear && m_len($str_m) > 1 && x >= (int)$width - $clearWidth) {
+        clear($, event, NULL, NULL);
+        return;
+    }
+    XtCallActionProc($, "set_cursor", event, params, num_params ? *num_params : 0);
+}
+
+@UTILITIES
+
+@proc void draw_extras($)
+{
+    if (!XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    int W = (int)$width, H = (int)$height;
+    if (W < 1 || H < 1) return;
+
+    if (m_len($str_m) <= 1 && $placeholder && *$placeholder) {
+        XftDraw *d = XftDrawCreate(dpy, win,
+                                   DefaultVisualOfScreen(XtScreen($)),
+                                   DefaultColormapOfScreen(XtScreen($)));
+        if (d && $xftFont) {
+            int baseline = (H - ($xftFont->ascent + $xftFont->descent)) / 2
+                         + $xftFont->ascent;
+            XftDrawStringUtf8(d, &$xcol[FG], $xftFont, 4, baseline,
+                              (FcChar8 *)$placeholder,
+                              (int)strlen($placeholder));
+            XftDrawDestroy(d);
+        }
+    }
+
+    if ($showClear && m_len($str_m) > 1) {
+        GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+        int cx = W - $clearWidth / 2 - 2;
+        int cy = H / 2;
+        XSetForeground(dpy, gc, $foreground);
+        XDrawLine(dpy, win, gc, cx - 4, cy - 4, cx + 4, cy + 4);
+        XDrawLine(dpy, win, gc, cx - 4, cy + 4, cx + 4, cy - 4);
+    }
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <string.h>
+@incl "mls.h"
+@incl "theme.h"
+@incl "converters-xft.h"

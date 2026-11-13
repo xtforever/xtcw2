@@ -217,6 +217,13 @@ check_log radiogroup
 check_value radiogroup "$TMP/radiogroup.result" probe_class WRadioGroup
 check_value radiogroup "$TMP/radiogroup.result" probe_id rg
 
+# 2n. WLineEdit probe.
+probe lineedit "$TMP/lineedit.result" "$ROOT/tests/widgets/wlineedit.lui"
+check_rc lineedit
+check_log lineedit
+check_value lineedit "$TMP/lineedit.result" probe_class WLineEdit
+check_value lineedit "$TMP/lineedit.result" probe_id le
+
 # 3. Model data through --after.
 probe list "$TMP/list.result" \
     --after "$ROOT/tests/widgets/populate_list.lua" \

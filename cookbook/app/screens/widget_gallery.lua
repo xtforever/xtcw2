@@ -13,6 +13,8 @@ function M.fragment()
         '  (label :id "gal_intro" :label "New widgets integrated into the cookbook as a testing ground." :gridx 0 :gridy 1 :gridWidth 4 :weightx 1 :weighty 0 :fill 3)',
         '  (WFormLayout :id "gal_form" :gridx 0 :gridy 2 :gridWidth 4 :weightx 1 :weighty 0 :fill 3',
         '                :labelWidth 120 :columnGap 12 :rowGap 10 :margin 12',
+        '    (label :role "label" :label "Name:")',
+        '    (WLineEdit :id "gal_name" :role "field" :label "" :placeholder "Type your name" :showClear TRUE)',
         '    (label :role "label" :label "Checkbox:")',
         '    (Wcheckbox :id "gal_check" :role "field" :label "Publish recipe" :checked TRUE)',
         '    (label :role "label" :label "Progress:")',

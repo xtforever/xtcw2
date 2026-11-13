@@ -35,6 +35,7 @@ return {
     "WFormLayout",
     "Wheel",
     "Wlabel",
+    "WLineEdit",
     "Wlist4",
     "WlistMulti",
     "WListView",

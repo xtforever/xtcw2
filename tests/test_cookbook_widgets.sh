@@ -27,7 +27,7 @@ end)
 xtapptimeout(900, function()
     local f = io.open(os.getenv('COOKBOOK_PROBE_OUT'), 'w')
     for _, id in ipairs({'main','menubar','toolbar','toolbar_actions','tabs','status','ed_cat',
-                         'gal_check','gal_progress','gal_combo','gal_radio',
+                         'gal_check','gal_progress','gal_combo','gal_radio','gal_name',
                          'menu_file','menu_view','menu_help'}) do
         local g = gui.geometry(id) or {}
         f:write(string.format('%s.x=%d\n%s.y=%d\n%s.width=%d\n%s.height=%d\n',
@@ -57,6 +57,8 @@ xtapptimeout(900, function()
     local radio = gui.get_widget('gal_radio')
     if radio then xtaction(radio, 'select_index', 2) end
     f:write('gallery_radio=' .. tostring(gui.get('gal_radio', 'selected')) .. '\n')
+    f:write('gallery_name_label=' .. tostring(gui.get('gal_name', 'label')) .. '\n')
+    f:write('gallery_name_placeholder=' .. tostring(gui.get('gal_name', 'placeholder')) .. '\n')
     f:write('tab_after_menu=' .. tostring(tab) .. '\n')
     f:close()
     gui.set('menu_file', 'open', false)
@@ -136,6 +138,8 @@ check_eq_simple gallery_check true
 check_eq_simple gallery_progress 62
 check_eq_simple gallery_combo Medium
 check_eq_simple gallery_radio 2
+check_eq_simple gallery_name_label ""
+check_eq_simple gallery_name_placeholder "Type your name"
 check_eq_simple tab_after_menu 1
 if ! grep -q '^status_message=Screen:' "$TMP/out.txt"; then
     echo "FAIL: status message did not update" >&2

@@ -49,7 +49,7 @@ This is a living document. It is derived from:
 | Feedback | `WProgressBar` (new) | Determinate progress + percentage text |
 | Layout | `WFormLayout` (new) | Two-column label/field form layout |
 | Buttons | `Wbutton`, `Wcheckbox`, `WToggleSwitch`, `WpixBtn` | `Wbutton`/`WToggleSwitch` good; checkbox indicator implemented; icon button legacy |
-| Text input | `Wedit`, `WeditMV`, `Wpassword`, `KaroEd`, `Wbravo`, `Wretex` | `KaroEd`/`Wbravo` strong; `Wedit` is legacy; no validation/completion |
+| Text input | `WLineEdit` (new), `Wedit`, `WeditMV`, `Wpassword`, `KaroEd`, `Wbravo`, `Wretex` | `WLineEdit` adds placeholder/clear; `KaroEd`/`Wbravo` strong; validation/completion pending |
 | Lists | `WListView` (modern), `Wlist`, `Wlist4`, `WlistMulti`, `Wls`, `WlsMulti` | `WListView` is the future; legacy lists must be frozen |
 | Tabs/scroll | `WtabWidget`, `Wviewport`, `WSplitter`, `WPaned` | Modern after recent fixes; splitter/paned need consolidation |
 | Menus | `Wmenu`, `WmenuButton`, `WmenuPopup` | Legacy menu internals; no menu bar/action model |
@@ -210,7 +210,9 @@ style-guide roles, keyboard handling and tests.
 
 9. **WLineEdit** — `NEW`/`IMPROVE` (replaces `Wedit` internals)
    - Style-guide input surface/border, placeholder, clear button, password mode.
-   - Validation hooks (`WValidator`), completion (`WCompleter`), IME/UTF-8.
+   - Status: `WLineEdit` subclasses `Wedit`, preserves theme input colors/font,
+     and adds placeholder + clear button. Cookbook search/title/author use it.
+     Validation, completion, password mode and IME polish remain.
    - Keep `Wedit` as a compatibility alias during migration.
    - Acceptance: cookbook search/title/author; invalid input feedback.
 
@@ -380,7 +382,7 @@ P0 foundation widgets:
 
 `Wlabel`, `Wbutton`, `WspinBox`, `Wcheckbox`, `WListView`, `WtabWidget`,
 `Wviewport`, `KaroEd`, `Wretex`, `WToggleSwitch`, plus the new `WAppWindow`,
-`WMenuBar`, `WPopupMenu`, `WAction`, `WToolBar`, `WStatusBar`, `WComboBox`, `WProgressBar`, `WRadioGroup`, improved `WCheckBox` and `WFormLayout` widgets.
+`WMenuBar`, `WPopupMenu`, `WAction`, `WToolBar`, `WStatusBar`, `WComboBox`, `WProgressBar`, `WRadioGroup`, `WLineEdit`, improved `WCheckBox` and `WFormLayout` widgets.
 
 As each new P0 widget lands, add a matching `tests/widgets/<widget>.lui` probe.
 The harness is intentionally an interim shell; it can later switch to

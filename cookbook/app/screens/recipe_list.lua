@@ -15,7 +15,7 @@ function M.fragment()
         '(grid :id "screen_list" :tab-title "Recipes" :defaultDistance 8',
         '  (label :id "list_title" :label "Recipes" :gridx 0 :gridy 0 :gridWidth 3 :weightx 1 :weighty 0 :fill 3 :fontSize 16)',
         '  (label :id "search_lbl" :label "Search:" :gridx 0 :gridy 1 :weightx 0 :weighty 0 :fill 3)',
-        '  (edit :id "search_ed" :label "Search recipes" :gridx 1 :gridy 1 :weightx 1 :weighty 0 :fill 3)',
+        '  (WLineEdit :id "search_ed" :label "" :placeholder "Search recipes" :gridx 1 :gridy 1 :weightx 1 :weighty 0 :fill 3)',
         '  (Wbutton :id "search_btn" :label "Search" :gridx 2 :gridy 1 :weightx 0 :weighty 0 :fill 3 :callback "LUA(cb_search)")',
         '  (WListView :id "recipe_list" :gridx 0 :gridy 2 :gridWidth 3 :weightx 1 :weighty 1 :fill 3',
         '     :columnCount 4',

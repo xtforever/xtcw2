@@ -420,6 +420,7 @@ content changes.
 | Status bar | `WStatusBar` |
 | Form | `WFormLayout` |
 | Selection | `WComboBox` |
+| Single-line input | `WLineEdit` (legacy: `Wedit`) |
 | Choice | `WRadioGroup` |
 | Feedback | `WProgressBar` |
 | Menu bar / burger menu | `WMenuBar` + `WmenuButton` + `WPopupMenu` (modern); `WmenuButton` + `WmenuPopup` legacy |

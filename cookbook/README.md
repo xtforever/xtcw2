@@ -18,7 +18,7 @@ regressions across the toolkit.
   (menu/toolbar/content/status slots), `WMenuBar` + `WmenuButton` +
   `WPopupMenu` + `WAction` menus, a `WToolBar` action row, a Gallery tab for new widgets, a `WStatusBar`, themed `WListView` lists,
   flat `Wbutton`s, `Wedit`/`WspinBox` controls, `WToggleSwitch` dietary
-  switches, a `WComboBox` category selector, `WCheckBox`, `WProgressBar`, `WFormLayout`, `WRadioGroup` and `KaroEd` editors.
+  switches, a `WComboBox` category selector, `WCheckBox`, `WProgressBar`, `WFormLayout`, `WRadioGroup`, `WLineEdit` and `KaroEd` editors.
 - The cookbook is the **testing ground** for `../Improved-Widget-Set.md`:
   new widgets are integrated here first, then get a `tests/widgets/*.lui`
   probe and a C regression test where appropriate.

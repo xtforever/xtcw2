@@ -1,0 +1,3 @@
+(WLineEdit :id "le" :label "" :placeholder "Type here..."
+           :showClear TRUE :width 240
+           :gridx 0 :gridy 0 :weightx 0 :weighty 0 :fill none)

@@ -35,5 +35,5 @@ and `WPopupMenu` content. `waction.lui` covers checkable `WAction` items with
 shortcut hints. `wtoolbar.lui` covers the themed `WToolBar` action row. `wstatusbar.lui`
 covers the message + permanent-widget `WStatusBar`. `wcombobox.lui` covers the
 read-only `WComboBox` and its popup menu. `wradiogroup.lui` covers the themed
-radio group. `wprogressbar.lui`, `wcheckbox.lui`
+radio group. `wlineedit.lui` covers placeholder + clear-button input. `wprogressbar.lui`, `wcheckbox.lui`
 and `wformlayout.lui` cover the newer form/feedback widgets.

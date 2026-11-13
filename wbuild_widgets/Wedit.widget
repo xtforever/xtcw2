@@ -73,12 +73,12 @@
   $theme_ready = 0;
   wedit_apply_theme($);
   int w,h;
-  if(! $label ) $label = $name;
+  if($label == NULL) $label = $name;
   $glyph_m = m_create( 50, sizeof(XftGlyphFontSpec) );
   $glyph_xoff_m = m_create( 50, sizeof(int) );
   $str_m  = m_create( 50, 1 );
   $label_m = m_create( 50, 1 );
-  char *s = $label; if( is_empty(s) ) s=$name;
+  char *s = $label; if( s == NULL ) s=$name;
   copy_str( $, s );
 
   calculate_prefered_size($,&w,&h);
