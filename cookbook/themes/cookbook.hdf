@@ -27,6 +27,38 @@
     font_heading2 "Sans-18"
     font_heading1 "Sans-24"
     borderwidth 0
+    bordercolor 0x3d405b
+    ; --- style-guide roles ---
+    button_bg      0xf4ead2
+    button_fg      0x3d405b
+    button_border  0xd8c3a5
+    input_bg       0xffffff
+    input_fg       0x3d405b
+    input_border   0xd8c3a5
+    accent         0xe07a5f
+    accent_fg      0xffffff
+    list_bg        0xfdf6e3
+    list_fg        0x3d405b
+    list_sel_bg    0xffe8a3
+    list_sel_fg    0x3d405b
+    list_header_bg 0xf4ead2
+    list_header_fg 0x3d405b
+    list_line      0xd8c3a5
+    list_alt_bg    0xf7efe0
+    font_ui        "Sans-13"
+    window_margin  16
+    control_height 24
+    control_padding 6
+    control_border 1
+    control_gap    8
+    group_gap      12
+    action_gap     8
+    list_row_height 22
+    list_header_height 24
+    list_cell_pad_x 8
+    list_cell_pad_y 2
+    icon_size      16
+    bar_size       14
 ))
 
 (theme cookbook_warm (
@@ -50,4 +82,35 @@
     font_heading1 "Sans-24"
     borderwidth 0
     bordercolor 0xf2cc8f
+    ; --- style-guide roles ---
+    button_bg      0x4a4d6b
+    button_fg      0xf4f1de
+    button_border  0xf2cc8f
+    input_bg       0x33354d
+    input_fg       0xf4f1de
+    input_border   0xf2cc8f
+    accent         0xe07a5f
+    accent_fg      0xffffff
+    list_bg        0x3d405b
+    list_fg        0xf4f1de
+    list_sel_bg    0xe07a5f
+    list_sel_fg    0xffffff
+    list_header_bg 0x33354d
+    list_header_fg 0xf2cc8f
+    list_line      0x5c5f7a
+    list_alt_bg    0x454867
+    font_ui        "Sans-13"
+    window_margin  16
+    control_height 24
+    control_padding 6
+    control_border 1
+    control_gap    8
+    group_gap      12
+    action_gap     8
+    list_row_height 22
+    list_header_height 24
+    list_cell_pad_x 8
+    list_cell_pad_y 2
+    icon_size      16
+    bar_size       14
 ))

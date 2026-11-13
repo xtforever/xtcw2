@@ -92,6 +92,8 @@
 @var Widget hsb
 @var Display *dpy
 @var void *font
+@ The font face is a String resource borrowed from Xt; keep an owned copy.
+@var char *fontFace_mem
 @var void *draw
 @var Pixmap pixmap
 @ sizes of the current backing pixmap
@@ -273,6 +275,8 @@
   $top_y = 0;
   $dirty = 1;
   $colors_ready = 0;
+  $fontFace_mem = strdup($fontFace ? $fontFace : "Sans");
+  $fontFace = $fontFace_mem;
   $last_click_time = 0;
   $last_click_row = -1;
   $xcol = calloc(C_COUNT, sizeof(XftColor));
@@ -289,8 +293,7 @@
   XtAddCallback($hsb, "callback", (XtCallbackProc)hscroll_cb, $);
 
   theme_register($, list_apply_theme);
-  list_apply_theme($);
-  open_font($);
+  list_apply_theme($);        /* also applies font_ui + metrics + open_font */
   rebuild_columns($);
 }
 
@@ -308,6 +311,7 @@
   if ($pixmap) { XFreePixmap($dpy, $pixmap); $pixmap = 0; }
   $cache_w = 0; $cache_h = 0;
   if ($font) { XftFontClose($dpy, (XftFont*)$font); $font = NULL; }
+  free($fontFace_mem); $fontFace_mem = NULL;
   free_xcol($);
   if ($gc) { XtReleaseGC($, $gc); $gc = 0; }
   if ($icon_gc) { XtReleaseGC($, $icon_gc); $icon_gc = 0; }
@@ -381,6 +385,11 @@
 
   if ($fontFace != $old$fontFace || $fontSize != $old$fontSize ||
       $rowHeight != $old$rowHeight || $headerHeight != $old$headerHeight) {
+    if ($fontFace != $old$fontFace) {
+      free($fontFace_mem);
+      $fontFace_mem = strdup($fontFace ? $fontFace : "Sans");
+      $fontFace = $fontFace_mem;
+    }
     open_font($);
     $dirty = 1;
     redraw = 1;
@@ -493,8 +502,29 @@
     XtVaSetValues($hsb, "foreground", $col_px[C_HDR_BG],
                   "background", $col_px[C_BG], NULL);
   }
+  /* Style guide: UI font + list metrics from the theme.  Use constant
+   * defaults (matching the resource defaults) so a partial theme resets to
+   * the documented metric instead of keeping the previous theme's value. */
+  $barSize = (Dimension)theme_metric("bar_size", 14);
+  $cellPaddingX = theme_metric("list_cell_pad_x", 6);
+  $cellPaddingY = theme_metric("list_cell_pad_y", 2);
+  $iconSize = theme_metric("icon_size", 16);
+  {
+    char face[128];
+    int px = 0;
+    if (theme_font_parts(theme_font_spec(), face, sizeof(face), &px)) {
+      if (face[0]) {
+        free($fontFace_mem);
+        $fontFace_mem = strdup(face);
+        $fontFace = $fontFace_mem;
+      }
+      if (px > 0) $fontSize = px;
+    }
+  }
+  open_font($);
+
   $dirty = 1;
-  if (XtIsRealized($)) redraw_list($);
+  if (XtIsRealized($)) relayout($);
 }
 
 @proc void open_font($)
@@ -505,7 +535,7 @@
 
   snprintf(name, sizeof(name), "%s-%d", $fontFace ? $fontFace : "Sans", $fontSize);
   f = XftFontOpenName(dpy, DefaultScreen(dpy), name);
-  if (!f) f = XftFontOpenName(dpy, DefaultScreen(dpy), "Sans-12");
+  if (!f) f = XftFontOpenName(dpy, DefaultScreen(dpy), "Sans-13");
   if ($font) XftFontClose(dpy, (XftFont*)$font);
   $font = f;
   $row_h = ($rowHeight > 0) ? $rowHeight

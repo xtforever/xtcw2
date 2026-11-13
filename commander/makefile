@@ -29,8 +29,13 @@ endif
 
 LOADLIBES=$(libdir)/libxtcw.a $(libdir)/libwcl.a $(libdir)/libutils.a $(libdir)/libretex.a $(libdir)/libplainc.a $(libdir)/libutf32.a $(libdir)/libutf8.a -lm
 
-LUA_CFLAGS=$(shell pkg-config --cflags lua5.3)
-LUA_LIBS=$(shell pkg-config --libs lua5.3)
+# Prefer a system-wide lua5.3 development package. If pkg-config cannot find
+# one, fall back to the local prefix created by extracting liblua5.3-dev into
+# build/lua5.3 (see build/lua5.3/usr/lib/x86_64-linux-gnu/pkgconfig/lua5.3.pc).
+LUA_MULTIARCH ?= $(shell gcc -dumpmachine)
+LUA_PC_DIR ?= $(CURDIR)/../build/lua5.3/usr/lib/$(LUA_MULTIARCH)/pkgconfig
+LUA_CFLAGS=$(shell pkg-config --cflags lua5.3 2>/dev/null || PKG_CONFIG_PATH=$(LUA_PC_DIR) pkg-config --cflags lua5.3 2>/dev/null)
+LUA_LIBS=$(shell pkg-config --libs lua5.3 2>/dev/null || PKG_CONFIG_PATH=$(LUA_PC_DIR) pkg-config --libs lua5.3 2>/dev/null)
 XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil -ldl -lcairo
 CFLAGS += $(LUA_CFLAGS) -I../LuaRunner
 

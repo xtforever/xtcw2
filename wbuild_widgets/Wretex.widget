@@ -31,7 +31,7 @@
 @ freetype font name
 @var String fontFace = "Sans"
 @ font size in points
-@var int fontSize = 12
+@var int fontSize = 13
 @var int topGap = 4
 @var int bottomGap = 4
 @var int leftGap = 4

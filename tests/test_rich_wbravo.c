@@ -212,6 +212,21 @@ int main(int argc, char **argv)
         }
     }
 
+    /* Borrowed fontFace strings must be copied by the widget. */
+    {
+        char *face = strdup("Serif");
+        char *got = NULL;
+        String t[1];
+        assert(face != NULL);
+        XtVaSetValues(ed, XtNfontFace, face, NULL);
+        free(face);
+        pump();
+        XtVaGetValues(ed, XtNfontFace, &got, NULL);
+        assert(got && strcmp(got, "Serif") == 0);
+        t[0] = (String)"one\n\ntwo";
+        act("set_text", t, 1);     /* relayout uses the owned copy */
+    }
+
     XtDestroyWidget(toplevel);
     printf("test_rich_wbravo passed\n");
     return 0;

@@ -3,7 +3,6 @@
 
 @PUBLIC
 @var Boolean checked = False
-@var String label = ""
 
 @PRIVATE
 @var int check_state
@@ -13,6 +12,21 @@
 {
     $check_state = $checked ? 1 : 0;
     TRACE(2,"Wcheckbox:%s initialized, checked=%d", $name, $checked);
+    /* Controls use the button_* colour roles and the shared UI font. */
+    $useControlColors = True;
+    wheel_colors_changed($);
+}
+
+@proc destroy
+{
+    if ($para_ptr) { retex_paragraph_free((RetexParagraph*)$para_ptr); $para_ptr = NULL; }
+    if ($backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->destroy(be);
+        $backend_ptr = NULL;
+    }
+    XtFree($label_mem); $label_mem = NULL;
+    theme_unregister($);
 }
 
 @TRANSLATIONS
@@ -54,3 +68,6 @@
 @incl "mls.h"
 @incl <X11/Xft/Xft.h>
 @incl "converters-xft.h"
+@incl "theme.h"
+@incl "retex.h"
+@incl "backend.h"

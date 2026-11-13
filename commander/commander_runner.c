@@ -76,10 +76,31 @@ XtAppContext LUAXT_APP;
 Widget TopLevel;
 
 static void run_lua_chunk(const char *code);
+static int top_destroyed = 0;
 
 void quit_cb(Widget w, void *u, void *c)
 {
     XtAppSetExitFlag(XtWidgetToApplicationContext(w));
+}
+
+/* Remember whether the shell was already torn down by the window manager, so
+ * the shutdown path below does not dereference a dead widget pointer. */
+static void top_destroy_cb(Widget w, XtPointer cd, XtPointer cb)
+{
+    (void)w; (void)cd; (void)cb;
+    top_destroyed = 1;
+}
+
+/* LUI scripts commonly call os.exit() from their quit callback, which skips
+ * the normal shutdown path below. Run the same widget teardown from atexit so
+ * widget-owned caches (WListView SVG icons, Xft/font caches) are released. */
+static void top_cleanup_atexit(void)
+{
+    if (TopLevel && !top_destroyed) {
+        XtDestroyWidget(TopLevel);
+        TopLevel = NULL;
+        top_destroyed = 1;
+    }
 }
 
 /* LUA callback function - called when callback "LUA(funcname)" or "LUA(funcname, data)" is triggered */
@@ -220,6 +241,8 @@ int main(int argc, char **argv) {
                                   sessionShellWidgetClass,
                                   NULL, 0);
     LUAXT_APP = app;
+    XtAddCallback(TopLevel, XtNdestroyCallback, top_destroy_cb, NULL);
+    atexit(top_cleanup_atexit);
 
     XtcwRegister(app);
     XpRegisterAll(app);
@@ -294,6 +317,11 @@ int main(int argc, char **argv) {
         XtVaSetValues(TopLevel, XtNmappedWhenManaged, False, NULL);
         if (lui_bootstrap(L_GLOBAL, COMMANDER.luafile, XtName(TopLevel)) != 0) {
             fprintf(stderr, "Failed to bootstrap LUI\n");
+            if (TopLevel && !top_destroyed) {
+                XtDestroyWidget(TopLevel);
+                TopLevel = NULL;
+                top_destroyed = 1;
+            }
             luaxt_destroy();
             lua_close(L_GLOBAL);
             task_manager_cleanup();
@@ -348,6 +376,15 @@ int main(int argc, char **argv) {
     /* Run the Xt event loop. Lua callbacks execute immediately when their
      * widget action/callback fires (see LUA_callback / LUA_action). */
     XtAppMainLoop(app);
+
+    /* Tear down the widget tree before Lua/theme shutdown. Widget destroy
+     * methods unregister from the theme and release caches (for example
+     * WListView's SVG icon cache); without this ASan reports those caches as
+     * leaks when the process exits. */
+    if (TopLevel && !top_destroyed) {
+        XtDestroyWidget(TopLevel);
+        TopLevel = NULL;
+    }
 
     luaxt_destroy();
     lua_close(L_GLOBAL);

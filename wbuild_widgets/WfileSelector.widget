@@ -8,24 +8,65 @@
 @var String pattern = <String> "*"
 @ show dot files
 @var Boolean showHidden = False
-@ popup size
-@var Dimension popupWidth = 760
-@var Dimension popupHeight = 540
+@ popup size (clamped to 80% of the parent and the screen work area)
+@var Dimension popupWidth = 520
+@var Dimension popupHeight = 460
 @ optional icons (SVG or XPM) used by the chooser's Name column
 @var String folderIcon = <String> ""
 @var String fileIcon = <String> ""
-@ full path of the last accepted file (valid until the next selection)
+@ full path of the last accepted file (owned copy, valid until the next selection)
 @var String selectedPath = <String> ""
+@ dialog title shown in the popup window
+@var String title = <String> "Open File"
+@ called when the dialog is dismissed without a selection
+@ (the inherited callback resource fires when a file is accepted)
+@var <Callback> XtCallbackList cancel = NULL
 
 @PRIVATE
 @var Widget popup_shell
 @var Widget chooser
+@var Widget prev_focus
+@var Atom wm_protocols
+@var Atom wm_delete_window
+@ Owned copies of borrowed String resources used after creation.
+@var char *directory_mem
+@var char *pattern_mem
+@var char *folder_mem
+@var char *file_mem
+@var char *title_mem
+@var char *selected_mem
 
 @METHODS
 @proc initialize
 {
     $popup_shell = NULL;
     $chooser = NULL;
+    $prev_focus = NULL;
+    $selected_mem = NULL;
+    $title_mem = strdup($title ? $title : "Open File");
+    $title = $title_mem;
+    $directory_mem = strdup($directory ? $directory : ".");
+    $directory = $directory_mem;
+    $pattern_mem = strdup($pattern ? $pattern : "*");
+    $pattern = $pattern_mem;
+    $folder_mem = strdup($folderIcon ? $folderIcon : "");
+    $folderIcon = $folder_mem;
+    $file_mem = strdup($fileIcon ? $fileIcon : "");
+    $fileIcon = $file_mem;
+    XtAddCallback($, XtNdestroyCallback, (XtCallbackProc)free_strings_cb, $);
+}
+
+@ Frees the owned resource copies.  Uses the Xt destroy callback instead of
+@ overriding destroy, because Wbutton's class record has no destroy method.
+@proc void free_strings_cb(Widget w, $, void *d)
+{
+    (void)w; (void)d;
+    free($directory_mem); $directory_mem = NULL;
+    free($pattern_mem); $pattern_mem = NULL;
+    free($folder_mem); $folder_mem = NULL;
+    free($file_mem); $file_mem = NULL;
+    free($title_mem); $title_mem = NULL;
+    free($selected_mem); $selected_mem = NULL;
 }
 
 @TRANSLATIONS
@@ -36,6 +77,23 @@
 {
     if( ! $popup_shell ) create_popup($);
 
+    if( $title != $title_mem ) {
+        free($title_mem);
+        $title_mem = strdup($title ? $title : XtName($));
+        $title = $title_mem;
+    }
+
+    {
+        Widget root = root_shell($);
+        int pw, ph, px, py;
+        popup_geometry($, root, &pw, &ph, &px, &py);
+        XtVaSetValues($popup_shell,
+                      "title", $title_mem ? $title_mem : XtName($),
+                      "width", pw, "height", ph, "x", px, "y", py,
+                      NULL);
+        $prev_focus = XtGetKeyboardFocusWidget(root);
+    }
+
     XtVaSetValues($chooser,
                   "directory", $directory ? $directory : ".",
                   "pattern", $pattern ? $pattern : "*",
@@ -44,51 +102,131 @@
                   "fileIcon", $fileIcon ? $fileIcon : "",
                   NULL);
 
-    XtPopup($popup_shell, XtGrabNone);
+    XtPopup($popup_shell, XtGrabExclusive);
+    XtCallActionProc($chooser, "focus_default", NULL, NULL, 0);
 }
 
 @UTILITIES
 
-@proc create_popup($)
+@proc Widget root_shell($)
 {
     Widget root = $;
     while( ! XtIsShell(root) && XtParent(root) ) root = XtParent(root);
+    return root;
+}
+
+@proc void popup_geometry($, Widget root, int *pw, int *ph, int *px, int *py)
+{
+    Dimension rw = 0, rh = 0;
+    Position rx = 0, ry = 0;
+    Display *dpy = XtDisplay(root);
+    int sw = DisplayWidth(dpy, DefaultScreen(dpy));
+    int sh = DisplayHeight(dpy, DefaultScreen(dpy));
+    int w = (int)$popupWidth;
+    int h = (int)$popupHeight;
+
+    XtVaGetValues(root, XtNwidth, &rw, XtNheight, &rh, NULL);
+
+    /* Never wider than 80% of the parent (dialog-guide §4.2/§10). */
+    if (rw > 0) {
+        int maxw = (int)((rw * 4) / 5);
+        if (w > maxw) w = maxw;
+    }
+    if (w > sw - 40) w = sw - 40;
+    if (w < 360) w = 360;
+    if (h > sh - 80) h = sh - 80;
+    if (h < 320) h = 320;
+
+    if (rw > 0 && rh > 0) {
+        XtTranslateCoords(root, 0, 0, &rx, &ry);
+        *px = (int)rx + ((int)rw - w) / 2;
+        *py = (int)ry + ((int)rh - h) / 2;
+    } else {
+        *px = (sw - w) / 2;
+        *py = (sh - h) / 2;
+    }
+    if (*px < 0) *px = 0;
+    if (*py < 0) *py = 0;
+    *pw = w;
+    *ph = h;
+}
+
+@proc void restore_focus($)
+{
+    Widget root = root_shell($);
+    if ($prev_focus)
+        XtSetKeyboardFocus(root, $prev_focus);
+    else
+        XtSetKeyboardFocus(root, $);
+    $prev_focus = NULL;
+}
+
+@proc create_popup($)
+{
+    Widget root = root_shell($);
 
     $popup_shell = XtVaCreatePopupShell("fileSelectorPopup",
-                                        topLevelShellWidgetClass, root,
-                                        "title", XtName($),
+                                        transientShellWidgetClass, root,
+                                        "title", $title_mem ? $title_mem : XtName($),
+                                        "transientFor", root,
                                         "width", (int)$popupWidth,
                                         "height", (int)$popupHeight,
                                         NULL);
     $chooser = XtVaCreateManagedWidget("chooser",
                                        wfileChooserWidgetClass, $popup_shell,
-                                       "width", (int)$popupWidth,
-                                       "height", (int)$popupHeight,
                                        NULL);
     XtAddCallback($chooser, "accept", (XtCallbackProc)accept_cb, $);
     XtAddCallback($chooser, "cancel", (XtCallbackProc)cancel_cb, $);
+
+    XtRealizeWidget($popup_shell);
+    $wm_protocols = XInternAtom(XtDisplay($popup_shell), "WM_PROTOCOLS", False);
+    $wm_delete_window = XInternAtom(XtDisplay($popup_shell),
+                                    "WM_DELETE_WINDOW", False);
+    XSetWMProtocols(XtDisplay($popup_shell), XtWindow($popup_shell),
+                    &$wm_delete_window, 1);
+    XtAddEventHandler($popup_shell, NoEventMask, True,
+                      (XtEventHandler)wm_delete_handler, $);
+}
+
+@ WM_DELETE_WINDOW arrives as a ClientMessage on the popup shell.
+@proc void wm_delete_handler(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    (void)w;
+    if (ev->type == ClientMessage &&
+        ev->xclient.message_type == $wm_protocols &&
+        (Atom)ev->xclient.data.l[0] == $wm_delete_window) {
+        cancel_cb(w, $, NULL);
+        if (cont) *cont = False;
+    }
 }
 
 @proc void accept_cb(Widget w, $, void *d)
 {
     char *path = (char*)d;
-    const char *base = path ? path : "";
-    const char *slash = path ? strrchr(path, '/') : NULL;
+    const char *base;
+    const char *slash;
     (void)w;
 
+    free($selected_mem);
+    $selected_mem = strdup(path ? path : "");
+    $selectedPath = $selected_mem ? $selected_mem : "";
+
+    base = $selected_mem ? $selected_mem : "";
+    slash = strrchr(base, '/');
     if (slash) base = slash + 1;
+
     XtPopdown($popup_shell);
-    $selectedPath = path;
+    restore_focus($);
     XtVaSetValues($, "label", base, NULL);
-    /* The pointer is owned by the chooser and stays valid until the next
-     * selection, mirroring the old SelectReq behaviour. */
-    XtCallCallbackList($, $callback, path);
+    XtCallCallbackList($, $callback, $selected_mem);
 }
 
 @proc void cancel_cb(Widget w, $, void *d)
 {
     (void)w; (void)d;
     XtPopdown($popup_shell);
+    restore_focus($);
+    XtCallCallbackList($, $cancel, NULL);
 }
 
 @IMPORTS
@@ -96,5 +234,6 @@
 @incl <X11/StringDefs.h>
 @incl <X11/Xft/Xft.h>
 @incl <X11/Shell.h>
+@incl <string.h>
 @incl "mls.h"
 @incl "xtcw/WfileChooser.h"

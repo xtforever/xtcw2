@@ -82,6 +82,29 @@ objects.
 - [x] Demos `demo_listview.lua`, `demo_filechooser.lua`; tests
       `test_wlistview`, `test_wfilechooser`.
 
+## Style guide / whole-toolkit theming
+
+- [x] `style-guide.md`: principles, spacing scale, control
+      metrics, typography, colour-role map, dialog anatomy and widget recipes
+      (based on Apple HIG Layout/Toolbars/Buttons).
+- [x] Theme keys in every `themes.hdf` theme: `font_ui`, `button_*`, `input_*`,
+      `list_*`, `accent`, `window_margin`, `control_*`, list metrics.
+- [x] Helpers `theme_font_spec`/`theme_font_parts`/`theme_metric`.
+- [x] `Wheel` control/primary roles; `Wlabel`/`Wbutton`/`Wcheckbox` resolve
+      `font_ui` + button roles; `Wedit`/`WeditMV` resolve input roles + font;
+      `WListView` resolves font/metrics; flat 1px input border.
+- [x] `WfileChooser` toolbar/content/action-bar layout, flat controls, primary
+      OK, monochrome folder/file icons.
+- [x] Regenerate label layout baselines; demo suite 73/73.
+- [ ] Migrate the legacy Xft list widgets (`Wlist`, `Wlist4`, `WlistMulti`,
+      `Wradio`, `EqFader`, `Gauge`, `WmenuPopup`, `Wcombo`) to `font_ui` and the
+      style-guide roles. Lowering `Wheel.xftFont` currently destabilises
+      `WlistMulti` (see `know_bugs.md`).
+- [ ] `test_wlistmulti`'s self-checking binary is intermittent under
+      `MLS_DEBUG`: `render_retex_row()` occasionally corrupts the MLS free list
+      (`s_split` → `_m_put`). Pre-existing/legacy WlistMulti issue; keep its
+      font at 22 until the renderer is reworked.
+
 ## Inline SVG objects
 
 - [ ] Implement `RATOM_OBJECT` handling in `retex_layout_styled()` (it currently

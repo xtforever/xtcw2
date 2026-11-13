@@ -32,6 +32,38 @@
     font_heading2 "Sans-18"
     font_heading1 "Sans-24"
     borderwidth 0
+    bordercolor 0x000000
+    ; --- style-guide roles ---
+    button_bg      0xcfe8f5
+    button_fg      0x102030
+    button_border  0x7fa8c0
+    input_bg       0xffffff
+    input_fg       0x102030
+    input_border   0x7fa8c0
+    accent         0x2f6fd0
+    accent_fg      0xffffff
+    list_bg        0xf7fbfe
+    list_fg        0x102030
+    list_sel_bg    0x2f6fd0
+    list_sel_fg    0xffffff
+    list_header_bg 0xd7e8f4
+    list_header_fg 0x102030
+    list_line      0xc8d8e4
+    list_alt_bg    0xeef6fb
+    font_ui        "Sans-13"
+    window_margin  16
+    control_height 24
+    control_padding 6
+    control_border 1
+    control_gap    8
+    group_gap      12
+    action_gap     8
+    list_row_height 22
+    list_header_height 24
+    list_cell_pad_x 8
+    list_cell_pad_y 2
+    icon_size      16
+    bar_size       14
 ))
 
 (theme highcontrast (
@@ -54,6 +86,38 @@
     font_heading2 "Sans-18"
     font_heading1 "Sans-24"
     borderwidth 0
+    bordercolor 0x000000
+    ; --- style-guide roles ---
+    button_bg      0xffffff
+    button_fg      0x000000
+    button_border  0x000000
+    input_bg       0xffffff
+    input_fg       0x000000
+    input_border   0x000000
+    accent         0x000000
+    accent_fg      0xffffff
+    list_bg        0xffffff
+    list_fg        0x000000
+    list_sel_bg    0x000000
+    list_sel_fg    0xffffff
+    list_header_bg 0xffffff
+    list_header_fg 0x000000
+    list_line      0x000000
+    list_alt_bg    0xf0f0f0
+    font_ui        "Sans-13"
+    window_margin  16
+    control_height 24
+    control_padding 6
+    control_border 1
+    control_gap    8
+    group_gap      12
+    action_gap     8
+    list_row_height 22
+    list_header_height 24
+    list_cell_pad_x 8
+    list_cell_pad_y 2
+    icon_size      16
+    bar_size       14
 ))
 
 (theme test (
@@ -63,6 +127,10 @@
     fg_norm 0x000000
     fg_sel  0x008000
     fg_hi   0xffffff
+    switch_off 0xc9c9c9
+    switch_on 0x34c759
+    switch_knob_off 0xf2f2f2
+    switch_knob_on 0xffffff
     gridbox_bg 0xadd8e6
     gridbox_border 0xff0000
     font_tiny     "Sans-9"
@@ -73,6 +141,37 @@
     font_heading1 "Sans-24"
     borderwidth 6
     bordercolor 0xff0000
+    ; --- style-guide roles ---
+    button_bg      0xcfe8f5
+    button_fg      0x102030
+    button_border  0xff0000
+    input_bg       0xffffff
+    input_fg       0x000000
+    input_border   0xff0000
+    accent         0xff0000
+    accent_fg      0xffffff
+    list_bg        0xf7fbfe
+    list_fg        0x102030
+    list_sel_bg    0xff0000
+    list_sel_fg    0xffffff
+    list_header_bg 0xd7e8f4
+    list_header_fg 0x102030
+    list_line      0xc8d8e4
+    list_alt_bg    0xeef6fb
+    font_ui        "Sans-13"
+    window_margin  16
+    control_height 24
+    control_padding 6
+    control_border 1
+    control_gap    8
+    group_gap      12
+    action_gap     8
+    list_row_height 22
+    list_header_height 24
+    list_cell_pad_x 8
+    list_cell_pad_y 2
+    icon_size      16
+    bar_size       14
 ))
 
 ; ---- commonly used themes (official palettes) --------------------------
@@ -98,6 +197,37 @@
     font_heading1 "Sans-24"
     borderwidth 0
     bordercolor 0x6272a4
+    ; --- style-guide roles ---
+    button_bg      0x44475a
+    button_fg      0xf8f8f2
+    button_border  0x6272a4
+    input_bg       0x1e1f29
+    input_fg       0xf8f8f2
+    input_border   0x6272a4
+    accent         0xbd93f9
+    accent_fg      0x282a36
+    list_bg        0x282a36
+    list_fg        0xf8f8f2
+    list_sel_bg    0x44475a
+    list_sel_fg    0xf8f8f2
+    list_header_bg 0x1e1f29
+    list_header_fg 0xbd93f9
+    list_line      0x44475a
+    list_alt_bg    0x2f313e
+    font_ui        "Sans-13"
+    window_margin  16
+    control_height 24
+    control_padding 6
+    control_border 1
+    control_gap    8
+    group_gap      12
+    action_gap     8
+    list_row_height 22
+    list_header_height 24
+    list_cell_pad_x 8
+    list_cell_pad_y 2
+    icon_size      16
+    bar_size       14
 ))
 
 ; Solarized Dark - https://ethanschoonover.com/solarized  (Ethan Schoonover)
@@ -122,4 +252,35 @@
     font_heading1 "Sans-24"
     borderwidth 0
     bordercolor 0x586e75 ; base01
+    ; --- style-guide roles ---
+    button_bg      0x073642
+    button_fg      0x93a1a1
+    button_border  0x586e75
+    input_bg       0x002b36
+    input_fg       0x93a1a1
+    input_border   0x586e75
+    accent         0x268bd2
+    accent_fg      0xfdf6e3
+    list_bg        0x002b36
+    list_fg        0x839496
+    list_sel_bg    0x073642
+    list_sel_fg    0x93a1a1
+    list_header_bg 0x073642
+    list_header_fg 0x268bd2
+    list_line      0x586e75
+    list_alt_bg    0x073642
+    font_ui        "Sans-13"
+    window_margin  16
+    control_height 24
+    control_padding 6
+    control_border 1
+    control_gap    8
+    group_gap      12
+    action_gap     8
+    list_row_height 22
+    list_header_height 24
+    list_cell_pad_x 8
+    list_cell_pad_y 2
+    icon_size      16
+    bar_size       14
 ))

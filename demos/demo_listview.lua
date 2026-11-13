@@ -9,10 +9,10 @@ local gui = require('gui_xt')
 local lui = require('lui')
 
 local rows = {}
-rows[1] = "@../LuaRunner/alert.svg|src\t-\tdir"
-rows[2] = "@../LuaRunner/alert.svg|build\t-\tdir"
+rows[1] = "@../LuaRunner/folder.svg|src\t-\tdir"
+rows[2] = "@../LuaRunner/folder.svg|build\t-\tdir"
 for i = 1, 60 do
-    rows[#rows + 1] = string.format("file_%03d.txt\t%d KB\tfile", i, i * 3)
+    rows[#rows + 1] = string.format("@../LuaRunner/file.svg|file_%03d.txt\t%d KB\tfile", i, i * 3)
 end
 
 function on_select(i)

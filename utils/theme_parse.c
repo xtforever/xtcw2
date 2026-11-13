@@ -3,10 +3,10 @@
  *
  *   (theme NAME (name value name value ...))
  *
- * value := 0xRRGGBB | #RRGGBB  -> colour
+ *   value := 0xRRGGBB | #RRGGBB  -> colour
  *        | [-]<digits>        -> integer
  *        | "..."             -> string (double-quoted, spaces allowed,
- *                               no escape sequences)
+ *                               escapes: \" \\ \n \r \t)
  *        | bare-token        -> string
  */
 #include "theme_parse.h"
@@ -29,13 +29,15 @@ static const char *skip_ws(const char *p)
     return p;
 }
 
-/* read the next token (up to whitespace or a paren); returns length */
+/* read the next token (up to whitespace, a paren, or a comment start);
+ * returns length */
 static int read_token(const char **pp, char *out, int max)
 {
     const char *p = skip_ws(*pp);
     int n = 0;
 
-    while (*p && !isspace((unsigned char)*p) && *p != '(' && *p != ')') {
+    while (*p && !isspace((unsigned char)*p) && *p != '(' && *p != ')' &&
+           *p != ';') {
         if (n < max - 1) out[n++] = *p;
         p++;
     }
@@ -45,9 +47,11 @@ static int read_token(const char **pp, char *out, int max)
 }
 
 /* Read a double-quoted string; |*pp| must point at the opening quote.
- * There are no escape sequences: the next '"' ends the value.  Returns 0
- * on success, or -1 if the closing quote is missing (the value then runs
- * to end of input).  |*truncated| is set if the value did not fit. */
+ * Supported escapes: \" \\ \n \r \t.  An unknown escape keeps the escaped
+ * character and drops the backslash.  A backslash at end of input is kept
+ * literally.  Returns 0 on success, or -1 if the closing quote is missing
+ * (the value then runs to end of input).  |*truncated| is set if the value
+ * did not fit. */
 static int read_quoted(const char **pp, char *out, int max, int *truncated)
 {
     const char *p = *pp;
@@ -55,7 +59,20 @@ static int read_quoted(const char **pp, char *out, int max, int *truncated)
 
     if (*p == '"') p++;
     while (*p && *p != '"') {
-        if (n < max - 1) out[n++] = *p;
+        char c = *p;
+
+        if (c == '\\' && p[1]) {
+            p++;
+            switch (*p) {
+            case 'n':  c = '\n'; break;
+            case 'r':  c = '\r'; break;
+            case 't':  c = '\t'; break;
+            case '"':  c = '"';  break;
+            case '\\': c = '\\'; break;
+            default:   c = *p;   break; /* drop the backslash */
+            }
+        }
+        if (n < max - 1) out[n++] = c;
         else trunc = 1;
         p++;
     }

@@ -40,11 +40,11 @@ void xim2_init(  Widget top )
 int  xim2_load_svg( XImage2 *im, const char *filename )
 {
 
-  if(im->nsvg) {
-    nsvgDelete(im->nsvg);
-    im->nsvg=NULL;
-  }
-  
+  /* Loading a new SVG into an already rendered XImage2 must release the old
+   * image, mask, rasterizer and pixel buffer too, not only the parsed SVG. */
+  if (im->nsvg || im->image || im->mask || im->rgba_data || im->rast)
+    xim2_delete(im);
+
   // const char* filename = "nanosvg/example/23.svg";
   // const char* filename = "SVG/warning-sign-9743.svg";
   TRACE(3,"parsing %s\n", filename);

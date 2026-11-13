@@ -1190,3 +1190,386 @@ or an unweighted-only grid that a parent refuses to grow). Applied to both the
 column and row paths.
 
 **File:** `plainc_widgets/Gridbox.c`
+
+## Borrowed String resources: use-after-free after Lua GC
+
+**Symptom:** in `demo_filechooser`, double-clicking `commander_runner.c` aborted
+with an AddressSanitizer `heap-use-after-free` in `strcmp`, reached from
+`cairo_select_font_face` → `xpixmap_set_font_face` → `retex_layout_styled_paras`
+→ `Wbravo.relayout`. The freed 29-byte block had been allocated by Lua/lpeg.
+
+**Cause:** Xt String resources are **borrowed** pointers. LUI passes Lua strings
+(e.g. `:fontFace "Sans"`), and `Wbravo` kept `$fontFace` pointing at that Lua
+string. After the Lua chunk returned, GC could collect it; the next relayout
+(triggered by `set_text` after choosing a file) used the dangling pointer.
+`WfileSelector`/`WfileChooser` (`pattern`, `folderIcon`, `fileIcon`,
+`directory`) and `WListView.fontFace` had the same exposure.
+
+**Fix:** copy borrowed String resources that are used after creation into owned
+buffers and free them on destroy / when set_values sees a new value:
+`Wbravo`/`WListView` own `fontFace` (`fontFace_mem`); `WfileChooser` owns
+`pattern`/`folderIcon`/`fileIcon`; `WfileSelector` owns
+`directory`/`pattern`/`folderIcon`/`fileIcon`.
+
+`WfileSelector` cannot override `destroy`: `#destroy($)` expands to
+`wbuttonClassRec.core_class.destroy(self)`, and that slot is `NULL` for
+`Wbutton`. It registers an `XtNdestroyCallback` instead to free the copies.
+
+**Files:** `wbuild_widgets/Wbravo.widget`, `WListView.widget`,
+`WfileChooser.widget`, `WfileSelector.widget`
+
+## Lowering `Wheel.xftFont` default destabilises the legacy WlistMulti renderer
+
+**Symptom:** after changing `Wheel`'s `xftFont` default from `"Sans-22"` to
+`"Sans-13"` (whole-toolkit font unification), `test_wlistmulti` aborted with an
+MLS handle corruption in `s_split()` while `render_retex_row()` was drawing
+retex cells (`Index ... out of Bounds`).
+
+**Cause:** not fully root-caused; the legacy `WlistMulti` retex-cell path is
+sensitive to the default font / derived line height (the widget opens its own
+font in `initialize` but still shares Wheel's resource/font cache). Kept as a
+known fragility.
+
+**Fix / workaround:** keep `Wheel.xftFont = "Sans-22"` for the legacy widgets.
+The modern text widgets resolve `font_ui` (`"Sans-13"`) themselves via the
+theme helpers (`theme_font_spec`/`theme_font_parts`), so the file chooser,
+labels, buttons, inputs and `WListView` are consistent without changing the
+legacy default. Migrate `WlistMulti` before lowering the Wheel default.
+
+**Files:** `wbuild_widgets/Wheel.widget`, `WlistMulti.widget`
+
+## WlistMulti retex-cell renderer intermittently corrupts the MLS free list
+
+**Symptom:** `tests/test_wlistmulti` occasionally aborts under `MLS_DEBUG` with
+`Index(...) out of Bounds` from `lst`, while `render_retex_row()` is drawing
+cells; `_m_put` then reports handle 7 created by `render_retex_row`. The same
+binary passes other runs, so it is a heap-layout-dependent corruption.
+
+**Cause:** not root-caused. The legacy `WlistMulti` retex-cell path creates/frees
+per-row `columns` MLS lists (`m_create`/`s_split`/`m_free_strings`/`m_free`) and
+the MLS debug free list occasionally ends up with a bad handle. Unrelated to the
+modern `WListView`/`WfileChooser` path.
+
+**Status:** open / legacy. Keep `WlistMulti` at its existing font size (22) and
+do not rely on `test_wlistmulti` as a hard gate until the renderer is reworked.
+The LAYOUT baseline is also environment-dependent (see `todo.md`).
+
+**Files:** `wbuild_widgets/WlistMulti.widget`
+
+## WfileChooser: empty/filter/error states never reached the status line
+
+**Symptom:** an empty directory and a filter with no matches still showed a
+blank status label; `ok_cb` without a selection was a silent no-op.
+
+**Cause:** `update_status()` compared the MLS *handle* in `rows` with `0`
+instead of `m_len(rows) == 0`. `rows` is a non-zero handle even when the list is
+empty, so every empty state took the "content present" branch.
+
+**Fix:** count `m_len($rows)` and render "This folder is empty.", "No files
+match the filter." or the open error from that count. `ok_cb` now writes
+"Select a file to open." and keeps the dialog open.
+
+**File:** `wbuild_widgets/WfileChooser.widget`
+
+## WfileChooser: `selectDirs` navigated into the selected directory
+
+**Symptom:** with `selectDirs=True`, selecting a folder and pressing Open
+entered the folder instead of accepting it; only the "current directory"
+fallback worked when nothing was selected.
+
+**Cause:** `ok_cb` called `activate_row()`, whose directory branch always
+navigates. There was no separate accept path for the primary action.
+
+**Fix:** split `accept_path()`/`accept_current()` from `activate_row()`. Open
+accepts a selected directory when `selectDirs` is set; double-click/Return still
+navigates.
+
+**File:** `wbuild_widgets/WfileChooser.widget`
+
+## WfileChooser: uninitialised `stat` fields for unreadable entries
+
+**Symptom:** a broken symlink or an entry whose `stat()` failed produced garbage
+Size/Modified values.
+
+**Cause:** `struct stat st` was used for `st_size`/`st_mtime` even when
+`stat()` returned non-zero.
+
+**Fix:** track `have_stat` and use zero/"-" for size and date when it fails.
+
+**File:** `wbuild_widgets/WfileChooser.widget`
+
+## WfileChooser: special filenames broke activation
+
+**Symptom:** a file named `@notes.txt` opened the wrong path (the leading `@`
+was treated as WListView's icon marker); names containing `|`, tab or newline
+could corrupt the row or the name lookup.
+
+**Cause:** `row_name()` re-parsed the display cell and stripped the icon prefix,
+and the row was a tab-separated string with no escaping.
+
+**Fix:** keep an owned `names` list parallel to `rows` and use it for
+activation. The display cell sanitises tab/newline/CR and prefixes a space when
+a leading `@` is not an icon marker.
+
+**File:** `wbuild_widgets/WfileChooser.widget`
+
+## WfileChooser: filter text pointed into Wedit's internal buffer
+
+**Symptom:** a use-after-free was possible after typing a long filter and then
+refreshing the directory.
+
+**Cause:** `filter_cb()` assigned Wedit's borrowed `label` pointer to
+`$pattern`; Wedit owns and may reallocate that buffer.
+
+**Fix:** copy the filter text into the owned `pattern_mem` buffer and point
+`$pattern` at the copy.
+
+**File:** `wbuild_widgets/WfileChooser.widget`
+
+## WfileSelector: `selectedPath` borrowed chooser-owned memory
+
+**Symptom:** the selector's `selectedPath` could dangle after the chooser made
+its next selection or was destroyed.
+
+**Cause:** `accept_cb()` assigned the chooser's `selected_mem` pointer directly
+to the selector's resource.
+
+**Fix:** the selector keeps its own `selected_mem` copy (freed by the destroy
+callback) and passes that copy to its callback.
+
+**File:** `wbuild_widgets/WfileSelector.widget`
+
+## WfileSelector: redeclaring the inherited `callback` resource
+
+**Symptom:** `XtDestroyWidget()` aborted with `double free or corruption
+(fasttop)` after adding the selector cancel callback.
+
+**Cause:** `WfileSelector` redeclared `@var <Callback> XtCallbackList callback`
+although `Wheel` already provides it. Xt then managed the same callback-list
+pointer twice (the same failure mode as the earlier Wcheckbox bug).
+
+**Fix:** remove the duplicate declaration; the inherited `callback` resource is
+used as before. Only the new `cancel` callback is declared.
+
+**File:** `wbuild_widgets/WfileSelector.widget`
+
+## WfileSelector: dialog was modeless and keyboard-incomplete
+
+**Symptom:** the file chooser was a plain top-level window with no parent
+transient, no Escape/WM-close handling, no initial focus and no focus restore.
+
+**Cause:** `XtVaCreatePopupShell(topLevelShellWidgetClass)` + `XtGrabNone`, and
+no keyboard handlers.
+
+**Fix:** use `transientShellWidgetClass` + `XtNtransientFor`, `XtGrabExclusive`,
+`WM_DELETE_WINDOW` handling, `focus_default` on open, focus restore on close,
+and Escape handlers on every focusable child of the chooser (Xt does not walk
+from the focused child to the composite's translation table).
+
+**Files:** `wbuild_widgets/WfileSelector.widget`,
+`wbuild_widgets/WfileChooser.widget`
+
+## WfileChooser: column model arrays leaked
+
+**Symptom:** `_m_destruct()` reported the `columnWidths`/`columnAligns`/
+`columnKinds` arrays from `do_layout()` as still allocated.
+
+**Cause:** the temporary MLS arrays were passed to `WListView` but their handles
+were local and never freed. WListView reads them again during relayout, so they
+must live as long as the chooser.
+
+**Fix:** store the handles in private fields and free them in `destroy()`.
+
+**File:** `wbuild_widgets/WfileChooser.widget`
+
+## Wlabel `useSmallFont`: retex crash was a stale-object ABI mismatch, not a retex bug
+
+**Symptom:** after adding the `useSmallFont` resource to `Wlabel` and using it
+on the `WfileChooser` status label, `test_wfilechooser` crashed during shutdown
+inside `node_free_tree()`/`renderer_render_text()` with MLS errors such as
+`Index(...) out of Bounds` and `Handle out of range`. The crash looked like a
+re-tex bug.
+
+**Investigation:** a standalone re-tex stress test (`retex_layout_plain()` +
+`retex_paragraph_render()` + `retex_paragraph_free()` for font sizes 8–24,
+empty strings, wrapping, newlines and UTF-8, repeated 200 times) passes. A
+minimal `Wlabel` with the default theme, font size 11 and repeated label changes
+also passes. The crash only reproduced in the full widget library after an
+incremental build.
+
+**Cause:** adding a field to `WlabelPart` changes the size/layout of every
+widget that embeds it (`Wbutton`, `Wcheckbox`, `Wframe`, …). The widget build had
+no header dependency tracking: `make libxtcw` recompiled only the changed
+`Wlabel.c` (and the file-chooser widgets), while `Wbutton.o`, `Wcheckbox.o`, etc.
+kept the old struct layout. The resulting ABI mismatch corrupted the heap; the
+first visible failure happened in the re-tex renderer. The re-tex engine itself
+was not at fault.
+
+**Fix:** generate dependency files for the widget build and include them:
+
+```make
+# build/source/makefile
+DEPS = $(OBJS:.o=.d)
+-include $(DEPS)
+
+# compile with
+CFLAGS += -MMD -MP
+```
+
+`make libxtcw` now passes `-MMD -MP` and the generated makefile includes the
+`.d` files, so changing a widget header rebuilds every dependent widget object.
+A clean rebuild (`rm -f build/source/*.o && make libxtcw`) confirms the crash is
+gone with `useSmallFont` enabled.
+
+**Files:** `makefile`, `wbuild_widgets/Wlabel.widget`,
+`wbuild_widgets/WfileChooser.widget`
+
+## WListView SVG icon cache leaked when the app exited via `os.exit()`
+
+**Symptom:** ASan reported an indirect leak of 1008 bytes in 3 objects
+allocated by `nsvg__addShape()` via `nsvgParseFromFile()` →
+`xim2_load_svg()` → `WListView.icon_index()`.
+
+**Cause:** the widget cleanup itself was present and correct:
+`WListView.destroy()` calls `free_icons()`, which calls `xim2_delete()` and
+`nsvgDelete()` for every cached SVG. The leak happened because LUI scripts
+commonly call `os.exit(0)` from their `quit_cb`; that bypasses
+`XtDestroyWidget()`, so the live widget tree (and its icon cache) was still
+reachable when the process exited.
+
+**Fix:**
+- `commander_runner.c` now registers `atexit(top_cleanup_atexit)`, which
+  destroys `TopLevel` if it is still alive. The normal shutdown path and the
+  LUI bootstrap-failure path also destroy the shell explicitly.
+- `canvas-draw-cb.c`: `xim2_load_svg()` now calls `xim2_delete()` before parsing
+  a new SVG, so reloading into an already-rendered `XImage2` also releases the
+  old `XImage`, mask, rasterizer and pixel buffer (previously only `nsvg` was
+  freed).
+
+**Verification:** an ASan LUI script that loads `folder.svg`/`file.svg` and
+exits via `os.exit(0)` no longer reports any `nsvg`/`xim2` leaks. The remaining
+leaks in that run are fontconfig caches, not the icon cache.
+
+**Files:** `commander/commander_runner.c`, `wbuild_widgets/canvas-draw-cb.c`
+
+## Theme registry: `theme_save()` crashes when no themes are loaded
+
+**Symptom:** `theme_save(path)` before any theme is defined (or after
+`theme_destroy()`) aborts with `ERROR: mls.c ... _get_list / Not initialized`,
+because `theme_save()` calls `m_len(themes)` while `themes == 0`.
+
+**Fix:** `theme_save()` now returns 1 after writing an empty file when
+`themes == 0`, checks `ferror()`/`fclose()`, and returns 0 on write failure.
+
+**File:** `utils/theme.c` (`theme_save`)
+
+## Theme parser: `;` only starts a comment after whitespace
+
+**Symptom:** `(theme c (bg_norm 0xff0000;red borderwidth 2;two))` parses
+`bg_norm` and `borderwidth` as *strings* (`"0xff0000;red"`, `"2;two"`) instead
+of a colour and an integer.
+
+**Cause:** `read_token()` does not treat `;` as a delimiter; `skip_ws()` only
+recognises comments at token boundaries.
+
+**Fix:** `read_token()` now stops at `;` as well, so a comment may follow a
+value without a space (quoted values already go through `read_quoted()`).
+
+**File:** `utils/theme_parse.c`
+
+## Theme parser: duplicate keys in one theme keep the first value
+
+**Symptom:** `(theme dup (bg_norm 0x111111 bg_norm 0x222222))` resolves
+`bg_norm` to `0x111111`; the later assignment is silently ignored, and
+`theme_save()` writes both entries.
+
+**Cause:** `append_value()` always appends and `active_lookup()` returns the
+first match.
+
+**Fix:** `append_value()` now replaces an existing same-named value in the
+current build (last-wins); `active_lookup()` uses the shared `map_lookup()`.
+
+**File:** `utils/theme.c` (`append_value`, `map_lookup`)
+
+## Theme persistence: strings with `"`, `\` or newline corrupt the file
+
+**Symptom:** `theme_str("s", "a\"b")` round-trips as `"a"`; a newline splits
+the record. `theme_save()` emits the value verbatim between quotes, and the
+parser has no escape sequences.
+
+**Cause:** the documented invariant (`theme.h`) was not enforced.
+
+**Fix:** `theme_save()` escapes `"`, `\`, `\n`, `\r` and `\t`; `read_quoted()`
+decodes those escapes. `theme.h`/`theme_parse.h` now document the supported
+escapes instead of forbidding them.
+
+**Files:** `utils/theme.[ch]`, `utils/theme_parse.[ch]`
+
+## Theme metrics fall back to the previous value, not the default
+
+**Symptom:** after switching from a theme with `bar_size 20` to a partial theme
+that omits `bar_size`, `WListView` keeps 20 instead of the widget default.
+
+**Cause:** `list_apply_theme()` passes the current resource as the fallback:
+`theme_metric("bar_size", (int)$barSize)` (same for `cellPaddingX/Y`,
+`iconSize`, and `fontSize`).
+
+**Fix:** `list_apply_theme()` now passes the documented constant defaults
+(14/6/2/16) to `theme_metric()`, so a partial theme resets to the default
+instead of keeping the previous theme's value.
+
+**File:** `wbuild_widgets/WListView.widget` (`list_apply_theme`)
+
+## Theme data drift: partial themes and dead keys
+
+- `themes.hdf`: `test` omits `switch_off/on` and `switch_knob_off/on`;
+  `default`/`highcontrast` omit `bordercolor`.
+- `cookbook/themes/cookbook.hdf` lacks all style-guide roles (`button_*`,
+  `input_*`, `list_*`, `font_ui`, metrics), so widgets under the cookbook themes
+  fall back to resource defaults / sticky values.
+- Defined but never consumed in `themes.hdf`: `group_gap`, `button_border`,
+  `font_tiny`, `font_normal`, `font_large`, `font_heading1`, `font_heading2`,
+  `list_row_height`, `list_header_height`.
+
+**Fix:** added the missing `switch_*` roles to `test`, `bordercolor` to
+`default`/`highcontrast`, and the full style-guide role/metric set to both
+cookbook themes. The remaining unused keys (`group_gap`, `button_border`,
+`font_tiny/normal/large/heading*`, `list_row_height`, `list_header_height`) are
+reserved roles (most are documented in the style guide) and are not yet consumed
+by widget code; wiring them (especially the list row/header heights) is a
+follow-up that changes layout baselines.
+
+**Files:** `themes.hdf`, `cookbook/themes/cookbook.hdf`
+
+## Theme registry: observers registered before `theme_init()` were dropped
+
+**Symptom:** a widget created before `theme_init()` (or when `XCCCreate()`
+failed) never received theme updates; `theme_register()` returned early on
+`!display_ready`.
+
+**Fix:** `theme_register()`/`theme_unregister()` now always maintain the
+observer list; only `theme_apply()` and `get_color()` require a ready display.
+Widgets registered before `theme_init()` are applied on the next
+`theme_select()`/`theme_apply()`.
+
+**File:** `utils/theme.c`
+
+## Theme registry: `theme_apply()` skipped observers when callbacks mutated the list
+
+**Symptom:** an apply callback that registered or unregistered a widget shifted
+the live MLS indices, so later widgets could be skipped; a callback that called
+`theme_select()` recursed into `theme_apply()`.
+
+**Fix:** `theme_apply()` snapshots the observer list before dispatch and ignores
+re-entrant calls (`applying` guard).
+
+**File:** `utils/theme.c`
+
+## Theme registry: calling `theme_init()` twice leaked the old colour context
+
+**Symptom:** a second `theme_init()` overwrote `xcc` without freeing the first
+`XCC`.
+
+**Fix:** `theme_init()` frees an existing `xcc` before creating the new one.
+
+**File:** `utils/theme.c`

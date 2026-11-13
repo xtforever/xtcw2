@@ -12,6 +12,9 @@ Modern reference widgets worth reading alongside this document:
 | `Wviewport.widget` | native scroll container (clip + reparented content + sliders) |
 | `Wheel.widget` | theme registry/`colors_changed` base pattern |
 
+For UI layout, typography, spacing, colour roles and dialog anatomy see
+**[`style-guide.md`](../style-guide.md)**.
+
 ## 1. Class Declaration
 
 ```wbuild
@@ -439,14 +442,16 @@ When a widget has BOTH a wbuild stub (generated `.c`) AND a hand-written impleme
 | Fixed footer/header clipped on first layout | Gridbox shrank every row proportionally when smaller than preferred | Weighted-first shrink in `Gridbox.layout()` (§31) |
 | `@def FOO 1` parse error | `@def` requires an `=` | `@def FOO = 1` (§34) |
 | Callback list double free at destroy | Subclass redeclared an inherited `callback` resource | Remove the duplicate `@var`; use the inherited field (§34) |
+| `heap-use-after-free` in `strcmp`/`fnmatch` during a later relayout | String resource still points at a Lua string that was GC'd | Copy borrowed strings in `initialize`/`set_values` (§27) |
+| Crash in `#destroy($)` / `core_class.destroy` is NULL | The parent class record has no destroy method (e.g. `Wbutton`) | Use an `XtNdestroyCallback` to free owned data (§27) |
 
 ## 18. Theme / Color Registry — Registration & Calling Pattern
 
 The central registry (`utils/theme.h`) is a global, MLS-backed store of name/value
-pairs (colours and integers such as `borderwidth`). Widgets register an "apply
-theme" function; `theme_select()` copies the selected theme into the active map
-and calls `theme_apply()`, which invokes the apply function of every registered
-widget.
+pairs (colours, integers such as `borderwidth`, and strings such as
+`font_ui`). Widgets register an "apply theme" function; `theme_select()` copies
+the selected theme into the active map and calls `theme_apply()`, which invokes
+the apply function of every registered widget.
 
 ### Registration pattern
 
@@ -508,6 +513,11 @@ dispatcher rather than the virtual method directly.
 | `get_color(name)` | `Pixel` | Resolve a theme colour to a Pixel (0 if undefined / no colour context) |
 | `theme_int_defined(name)` | int | Is `name` a defined integer? |
 | `theme_get_int(name, &out)` | int | Fetch an integer (1 on success) |
+| `theme_metric(name, def)` | int | Integer theme value, or `def` when undefined |
+| `theme_str_defined(name)` | int | Is `name` a defined string? |
+| `theme_get_str(name)` | `const char *` | Borrowed string value (NULL if undefined) |
+| `theme_font_spec()` | `const char *` | Active `font_ui` spec (borrowed) |
+| `theme_font_parts(spec, face, size, &px)` | int | Split `Face-NN`; 1 when a size was parsed |
 
 `theme_select()` / `theme_apply()` are driven by the application, not by widgets;
 widgets only register and query.
@@ -821,6 +831,19 @@ XtCallCallbackList(self, self->getEntry, &ent);   /* app sets ent.max / ent.data
 - **Output resources** that must be valid after a callback (e.g.
   `selectedPath`, `WfileSelector.selectedPath`) should be documented as "valid
   until the next selection" if they borrow memory from a child.
+- **Xt borrows every String resource.** This includes strings that LUI passes
+  as Lua strings (`:fontFace "Sans"`, `:pattern "*.txt"`, ...). Lua may collect
+  them after the chunk returns. Any String used after `initialize` (relayout,
+  refresh, a later callback) must be copied in `initialize` and whenever
+  `set_values` reports a new pointer. `Wbravo`/`WListView` own `fontFace`,
+  `WfileChooser` owns `pattern`/`folderIcon`/`fileIcon`, and `WfileSelector` owns
+  `directory`/`pattern`/icons. Symptom of getting this wrong: ASan
+  `heap-use-after-free` in `strcmp`/`fnmatch` from a later relayout.
+- **Freeing copies without overriding `destroy`**: `#destroy($)` expands to
+  `<Parent>ClassRec.core_class.destroy(self)`, which can be `NULL` (for example
+  `Wbutton`). If the parent's slot is not safe, register
+  `XtAddCallback($, XtNdestroyCallback, free_cb, $)` in `initialize` instead of
+  overriding `destroy`.
 
 ## 28. Expose a Command Interface as Xt Actions
 

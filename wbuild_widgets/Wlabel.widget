@@ -29,6 +29,27 @@
     }
 }
 
+@ Apply the theme UI font (font_ui) to this label.  Used by Wlabel and by
+@ subclasses (Wbutton, Wcheckbox) that override initialize.
+@proc void wlabel_apply_theme_font($)
+{
+    char face[128];
+    int px = 0;
+    const char *spec = theme_font_spec();
+
+    if ($useSmallFont && theme_str_defined("font_small"))
+        spec = theme_get_str("font_small");
+
+    if (theme_font_parts(spec, face, sizeof(face), &px)) {
+        if (face[0]) {
+            strncpy($fontFace_buf, face, sizeof($fontFace_buf) - 1);
+            $fontFace_buf[sizeof($fontFace_buf) - 1] = 0;
+            $fontFace = $fontFace_buf;
+        }
+        if (px > 0) $fontSize = px;
+    }
+}
+
 
 
 
@@ -38,10 +59,12 @@
 @PUBLIC
 @ a simple string. but double newlines define paragraphs
 @var String label = <String> NULL
+@ resolve font_small instead of font_ui (secondary/help text)
+@var Boolean useSmallFont = FALSE
 @ freetype font name
 @var String fontFace = "Sans"
 @ default size
-@var int fontSize = 12
+@var int fontSize = 13
 @var int topGap = 0
 @var int bottomGap = 0
 @var int leftGap = 0
@@ -65,6 +88,8 @@
 @var int prefered_height
 @var Bool dirty
 @var String label_mem
+@ Owned storage for the theme UI font face (Xt borrows String resources).
+@var char fontFace_buf[128]
 @var double layout_x_offset_pt
 @var double layout_y_offset_pt
 @var int last_state
@@ -86,6 +111,12 @@
   $label_mem = XtNewString(s);
   $label = $label_mem;
 
+  wlabel_apply_theme_font($);
+  theme_register($, wheel_colors_changed);
+  /* Widgets created after theme_apply() (e.g. a lazily opened dialog) must
+   * still start with the active theme's colours. */
+  wheel_colors_changed($);
+
   $backend_ptr = NULL;
   $para_ptr = NULL;
   $pixmap = 0;
@@ -106,6 +137,7 @@
 
 @proc destroy
 {
+    theme_unregister($);
     if ($para_ptr) {
         retex_paragraph_free($para_ptr);
         $para_ptr = NULL;
@@ -132,7 +164,21 @@
         size_changed = 1;
     }
 
-    if ($fontFace != $old$fontFace || $fontSize != $old$fontSize) {
+    if ($fontFace != $old$fontFace) {
+        if ($fontFace && *$fontFace) {
+            strncpy($fontFace_buf, $fontFace, sizeof($fontFace_buf) - 1);
+            $fontFace_buf[sizeof($fontFace_buf) - 1] = 0;
+            $fontFace = $fontFace_buf;
+        }
+        redraw_flag = 1;
+        size_changed = 1;
+    }
+    if ($fontSize != $old$fontSize) {
+        redraw_flag = 1;
+        size_changed = 1;
+    }
+    if ($useSmallFont != $old$useSmallFont) {
+        wlabel_apply_theme_font($);
         redraw_flag = 1;
         size_changed = 1;
     }
@@ -242,7 +288,9 @@
 @ override the Wheel theme hook: our pixmap cache must be rebuilt
 @proc void colors_changed
 {
+    wlabel_apply_theme_font($);
     $dirty = 1;
+    $last_state = -1;
     #colors_changed($);
 }
 
@@ -509,6 +557,7 @@
 @incl "retex.h"
 @incl <math.h>
 @incl "converters-xft.h"
+@incl "theme.h"
 @incl "focus-group.h"
 @incl "apputil.h"
 @incl "xutil.h"

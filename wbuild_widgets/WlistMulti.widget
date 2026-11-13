@@ -348,7 +348,7 @@ zusätzlich wird der |notify| Handler aufgerufen.
   snprintf(font_buf, sizeof(font_buf), "%s-%d", $fontFace, $fontSize);
   $xftFont = XftFontOpenName($dpy, DefaultScreen($dpy), font_buf);
   if (!$xftFont) {
-      $xftFont = XftFontOpenName($dpy, DefaultScreen($dpy), "Sans-22");
+      $xftFont = XftFontOpenName($dpy, DefaultScreen($dpy), "Sans-13");
   }
 
   /* trennlinie ist 2 pixel hoch */

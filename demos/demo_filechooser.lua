@@ -29,12 +29,12 @@ end
 local ui = [[
 (window :id "win" :title "File chooser + Wbravo" :width 820 :height 600
   (grid :id "main" :weightx 1 :weighty 1
-    (file-selector :id "fs" :label "Open UTF-8 text..."
+    (file-selector :id "fs" :label "Open…" :title "Open UTF-8 Text File"
        :gridx 0 :gridy 0 :weightx 0 :weighty 0 :fill 3
        :directory "."
        :pattern "*"
-       :folderIcon "../LuaRunner/alert.svg"
-       :fileIcon "../LuaRunner/question.svg"
+       :folderIcon "../LuaRunner/folder.svg"
+       :fileIcon "../LuaRunner/file.svg"
        :callback "LUA(on_pick)")
     (label :id "status" :label "Pick a text file to load it into the editor"
        :gridx 1 :gridy 0 :weightx 1 :weighty 0 :fill 3)

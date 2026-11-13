@@ -73,16 +73,21 @@ static void free_map(int map)
     m_free(map);
 }
 
-static struct theme_value *active_lookup(const char *name)
+static struct theme_value *map_lookup(int map, const char *name)
 {
     struct theme_value *v;
     int i;
-    if (!active_map || !name) return NULL;
-    for (i = 0; i < m_len(active_map); i++) {
-        v = mls(active_map, i);
+    if (!map || !name) return NULL;
+    for (i = 0; i < m_len(map); i++) {
+        v = mls(map, i);
         if (v->name && strcmp(v->name, name) == 0) return v;
     }
     return NULL;
+}
+
+static struct theme_value *active_lookup(const char *name)
+{
+    return map_lookup(active_map, name);
 }
 
 static int find_theme_map(const char *name)
@@ -101,6 +106,22 @@ static struct theme_value *append_value(const char *name)
 {
     struct theme_value *v;
     if (!building) theme_begin("");
+
+    /* Last assignment wins: replace an existing value with the same name
+     * instead of appending a second entry (the old first-wins behaviour made
+     * a duplicated key silently ineffective). */
+    v = map_lookup(building, name ? name : "");
+    if (v) {
+        if (v->sval) { free(v->sval); v->sval = NULL; }
+        v->is_color = 0;
+        v->is_str = 0;
+        v->rgb = 0;
+        v->ival = 0;
+        v->pixel = 0;
+        v->pixel_valid = 0;
+        return v;
+    }
+
     v = mls(building, m_new(building, 1));
     v->name = strdup(name ? name : "");
     v->is_color = 0;
@@ -118,6 +139,9 @@ static struct theme_value *append_value(const char *name)
 void theme_init(Widget top)
 {
     Screen *scr = XtScreen(top);
+
+    if (xcc) { XCCFree(xcc); xcc = NULL; }
+    display_ready = 0;
 
     dpy = DisplayOfScreen(scr);
     screen = XScreenNumberOfScreen(scr);
@@ -347,13 +371,67 @@ Pixel get_color(const char *name)
     return v->pixel;
 }
 
+/* --- style-guide helpers ------------------------------------------------ */
+
+const char *theme_font_spec(void)
+{
+    const char *s = theme_get_str("font_ui");
+    return (s && *s) ? s : "Sans-13";
+}
+
+int theme_font_parts(const char *spec, char *face, int face_size, int *px)
+{
+    const char *dash, *p;
+    size_t n;
+
+    if (!face || face_size <= 0) {
+        if (px) *px = 0;
+        return 0;
+    }
+    if (!spec || !*spec) spec = "Sans-13";
+
+    /* find the last '-' whose suffix is all digits */
+    dash = NULL;
+    for (p = spec; *p; p++) {
+        if (*p == '-') {
+            const char *q = p + 1;
+            if (*q) {
+                while (*q >= '0' && *q <= '9') q++;
+                if (!*q) dash = p;
+            }
+        }
+    }
+    if (!dash) {
+        n = strlen(spec);
+        if (n >= (size_t)face_size) n = (size_t)face_size - 1;
+        memcpy(face, spec, n);
+        face[n] = 0;
+        if (px) *px = 0;
+        return 0;
+    }
+    n = (size_t)(dash - spec);
+    if (n >= (size_t)face_size) n = (size_t)face_size - 1;
+    memcpy(face, spec, n);
+    face[n] = 0;
+    if (px) *px = atoi(dash + 1);
+    return 1;
+}
+
+int theme_metric(const char *name, int def)
+{
+    int v;
+    if (theme_int_defined(name) && theme_get_int(name, &v))
+        return v;
+    return def;
+}
+
 /* --- widget registration ------------------------------------------------ */
 
 void theme_register(Widget w, theme_apply_fn fn)
 {
     struct theme_widget *x;
 
-    if (!display_ready) return;
+    if (!w || !fn) return;
     ensure_store();
 
     x = mls(widgets, m_new(widgets, 1));
@@ -366,7 +444,6 @@ void theme_unregister(Widget w)
     struct theme_widget *x;
     int i;
 
-    if (!display_ready) return;
     if (!widgets) return;
 
     for (i = 0; i < m_len(widgets); i++) {
@@ -377,45 +454,87 @@ void theme_unregister(Widget w)
 
 void theme_apply(void)
 {
-    struct theme_widget *x;
-    int i;
+    struct theme_widget *snap;
+    static int applying = 0;
+    int i, n;
 
-    if (!display_ready) return;
-    if (!widgets) return;
+    if (!display_ready || !widgets) return;
+    if (applying) return;                 /* re-entrant theme_select */
 
-    for (i = 0; i < m_len(widgets); i++) {
-        x = mls(widgets, i);
-        if (x->w && x->fn) x->fn(x->w);
+    n = m_len(widgets);
+    if (n <= 0) return;
+
+    /* Snapshot the observer list: an apply callback may register or
+     * unregister widgets, which would otherwise shift indices mid-loop. */
+    snap = (struct theme_widget *)malloc(sizeof(*snap) * (size_t)n);
+    if (!snap) return;
+    for (i = 0; i < n; i++)
+        snap[i] = *(struct theme_widget *)mls(widgets, i);
+
+    applying = 1;
+    for (i = 0; i < n; i++) {
+        if (snap[i].w && snap[i].fn) snap[i].fn(snap[i].w);
     }
+    applying = 0;
+
+    free(snap);
 }
 
 /* --- persistence -------------------------------------------------------- */
+
+/* Write |s| escaped for the hdf string syntax (the parser understands
+ * \" \\ \n \r \t). */
+static void save_escaped(FILE *f, const char *s)
+{
+    const unsigned char *p = (const unsigned char *)(s ? s : "");
+
+    for (; *p; p++) {
+        switch (*p) {
+        case '"':  fputs("\\\"", f); break;
+        case '\\': fputs("\\\\", f); break;
+        case '\n': fputs("\\n", f);  break;
+        case '\r': fputs("\\r", f);  break;
+        case '\t': fputs("\\t", f);  break;
+        default:   fputc(*p, f);     break;
+        }
+    }
+}
 
 int theme_save(const char *file)
 {
     struct theme_entry *e;
     struct theme_value *v;
     FILE *f;
-    int i, j;
+    int i, j, ok = 1;
 
     f = fopen(file, "w");
     if (!f) return 0;
 
+    /* No themes loaded: an empty file is a valid (if useless) store.  Avoid
+     * m_len(0), which aborts in the MLS debug build. */
+    if (!themes) {
+        ok = (fclose(f) == 0);
+        return ok;
+    }
+
     for (i = 0; i < m_len(themes); i++) {
         e = mls(themes, i);
-        fprintf(f, "(theme %s (", e->name);
+        if (fprintf(f, "(theme %s (", e->name) < 0) ok = 0;
         for (j = 0; j < m_len(e->map); j++) {
             v = mls(e->map, j);
             if (v->is_color)
                 fprintf(f, "%s 0x%06x ", v->name, (unsigned)(v->rgb & 0xffffff));
-            else if (v->is_str)
-                fprintf(f, "%s \"%s\" ", v->name, v->sval ? v->sval : "");
-            else
+            else if (v->is_str) {
+                fprintf(f, "%s \"", v->name);
+                save_escaped(f, v->sval);
+                fputs("\" ", f);
+            } else
                 fprintf(f, "%s %d ", v->name, v->ival);
         }
         fprintf(f, "))\n");
     }
 
-    fclose(f);
-    return 1;
+    if (ferror(f)) ok = 0;
+    if (fclose(f) != 0) ok = 0;
+    return ok;
 }

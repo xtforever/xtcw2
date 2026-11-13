@@ -45,6 +45,9 @@
 
 
 @var XftDraw *draw
+@ Owned theme font spec + colour-init guard.
+@var char fontName_buf[128]
+@var int theme_ready
 @var GC gc[3]
 @var XftColor xcol[3]
 @var XRectangle crsr_rect
@@ -67,9 +70,9 @@
   Display *dpy = XtDisplay($);
 
  $draw = 0;
-  $xftFont = font_load(dpy, DefaultScreen(dpy), $fontName );
+  $theme_ready = 0;
+  wedit_apply_theme($);
   int w,h;
-  alloc_colors($);
   if(! $label ) $label = $name;
   $glyph_m = m_create( 50, sizeof(XftGlyphFontSpec) );
   $glyph_xoff_m = m_create( 50, sizeof(int) );
@@ -83,10 +86,12 @@
   if( $height < h) $height = h;
   if(! $XA_UTF8_STRING )
       $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+  theme_register($, wedit_apply_theme);
 }
 
 @proc destroy
 {
+        theme_unregister($);
         free_colors($);
         XftDrawDestroy( $draw );
         m_free($glyph_m);
@@ -167,6 +172,40 @@
 }
 
 @UTILITIES
+
+@ Apply the style-guide input roles and UI font.  Flat: 1px border, no rounding.
+@proc void wedit_apply_theme($)
+{
+  Display *dpy = XtDisplay($);
+
+  if ($theme_ready) {
+    free_colors($);
+    if ($xftFont) { XftFontClose(dpy, $xftFont); $xftFont = NULL; }
+  }
+
+  snprintf($fontName_buf, sizeof($fontName_buf), "%s", theme_font_spec());
+  $fontName = $fontName_buf;
+  $xftFont = font_load(dpy, DefaultScreen(dpy), $fontName);
+
+  if (theme_color_defined("input_bg")) $background_pixel = get_color("input_bg");
+  if (theme_color_defined("input_fg")) $foreground = get_color("input_fg");
+  $border_width = (Dimension)theme_metric("control_border", 1);
+  $border_pixel = theme_color_defined("input_border")
+                    ? get_color("input_border") : $foreground;
+  $cornerRoundPercent = 0;
+
+  alloc_colors($);
+  $theme_ready = 1;
+
+  if (XtIsRealized($)) {
+    XSetWindowBackground(dpy, XtWindow($), $background_pixel);
+    XSetWindowBorder(dpy, XtWindow($), $border_pixel);
+    XSetWindowBorderWidth(dpy, XtWindow($), (unsigned)$border_width);
+    if ($pix.data) { XFreePixmap(dpy, $pix.data); $pix.data = 0; }
+    resize_widget($);
+    paint($);
+  }
+}
 
 @proc resize_widget($)
 {
@@ -265,9 +304,14 @@
 
 @proc calculate_prefered_size($,int *w, int *h)
 {
+  int pad = theme_metric("control_padding", 6);
   calculate_size($,w,h);
-  (*w) += 20;
-  (*h) += 20;
+  (*w) += 2 * pad;
+  /* Text fields sit in the control row: just enough vertical padding for the
+   * cursor/border, not a second row. */
+  (*h) += 2;
+  if (*h < theme_metric("control_height", 24) + 2)
+    *h = theme_metric("control_height", 24) + 2;
 }
 
 
@@ -647,3 +691,4 @@
 @incl "xutil.h"
 @incl "mls.h"
 @incl "font.h"
+@incl "theme.h"

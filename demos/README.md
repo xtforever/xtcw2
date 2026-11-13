@@ -16,6 +16,16 @@ The simplest way is the `t1.sh` TUI launcher:
 `t1.sh` auto-builds missing artifacts via `start.sh`, uses `xvfb-run` when no
 `DISPLAY` is set, and returns to the menu after each demo exits.
 
+To run a single LUI script from any directory, use the `run_lui.sh` wrapper at
+the repository root. It resolves the script path and starts `commander_runner`
+from the correct working directory:
+
+```bash
+./run_lui.sh demos/demo_form.lua
+./run_lui.sh demos/demo_form.lua -Tracelevel 2
+cd /tmp && /path/to/xtcw/run_lui.sh /path/to/xtcw/demos/demo_listview.lua
+```
+
 To run a script by hand, use `commander_runner` **from the `commander/`
 directory** (it hard-codes `package.path = '../lui/?.lua'`, so it must run from
 there):

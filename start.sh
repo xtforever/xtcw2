@@ -16,12 +16,12 @@ cd "$SCRIPT_DIR"
 echo "=== XTCW Development Startup ==="
 echo ""
 
-# Always bring the build up to date.  The wbuild-generated sources and the
-# static archives have no automatic dependency tracking, so editing a
-# .widget does not by itself rebuild libxtcw.a -- and a stale libxtcw.a means
-# a stale commander_runner (which can crash in ways already fixed in the
-# sources).  An incremental `make all` regenerates changed widgets, rebuilds
-# the libraries and relinks the runner.
+# Always bring the build up to date.  Editing a .widget requires regenerating
+# its header first; `make all` does that and the build/source objects now track
+# their header dependencies (-MMD/-MP), so a changed widget header rebuilds all
+# dependent widgets.  A stale libxtcw.a means a stale commander_runner (which
+# can crash in ways already fixed in the sources), so an incremental `make all`
+# regenerates changed widgets, rebuilds the libraries and relinks the runner.
 #
 # Set START_SKIP_BUILD=1 to skip this (used by tests / when already built).
 if [ "${START_SKIP_BUILD:-0}" = "1" ]; then
@@ -46,3 +46,6 @@ echo "  cd commander && ./commander_runner -Luafile /tmp/demo_label.lua"
 echo ""
 echo "Or run directly with full path:"
 echo "  ./commander/commander_runner -Luafile ./demos/demo_wlabel_svg.lua"
+echo ""
+echo "Directory-independent wrapper (script path may be relative or absolute):"
+echo "  ./run_lui.sh demos/demo_wlabel_svg.lua"

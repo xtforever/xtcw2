@@ -213,6 +213,19 @@ int main(int argc, char **argv)
     assert(lww->wListView.selected == 5);
     assert(notify_count >= 3);
 
+    /* Borrowed String resources (LUI passes Lua strings) must be copied. */
+    {
+        char *face = strdup("Serif");
+        char *got = NULL;
+        assert(face != NULL);
+        XtVaSetValues(lv, "fontFace", face, NULL);
+        free(face);
+        pump();
+        XtVaGetValues(lv, "fontFace", &got, NULL);
+        assert(got && strcmp(got, "Serif") == 0);
+        act("refresh");        /* open_font() / relayout must use the copy */
+    }
+
     for (i = 0; i < n; i++) if (i != 0 && rows[i]) free(rows[i]);
     free(rows);
     m_free_strings(g_rows, 0);

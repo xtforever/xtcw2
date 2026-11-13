@@ -11,9 +11,9 @@
  *
  * Use get_color("name") to obtain a Pixel for the active theme.
  *
- * String values must not contain a double quote, a backslash, or a
- * newline: theme_save() emits them verbatim inside double quotes and the
- * parser has no escape sequences.
+ * String values may contain any byte.  theme_save() escapes '"', '\\',
+ * newline, carriage return and tab as \" \\ \n \r \t, and the parser
+ * understands those escapes; all other bytes are emitted verbatim.
  */
 
 #include <X11/Intrinsic.h>
@@ -73,6 +73,19 @@ int theme_list(char ***out);
 /* Resolve a colour name of the active theme to a Pixel (0 if undefined or
  * no colour context is available). */
 Pixel get_color(const char *name);
+
+/* --- style-guide helpers ------------------------------------------------ */
+
+/* The active UI font spec ("font_ui"), or "Sans-13" when undefined.  The
+ * returned pointer is borrowed (valid until the next theme mutation). */
+const char *theme_font_spec(void);
+
+/* Split "Face-NN" into the face name and pixel size.  Returns 1 when a size
+ * was parsed, 0 otherwise (face still receives the whole spec). */
+int theme_font_parts(const char *spec, char *face, int face_size, int *px);
+
+/* Integer theme value, or |def| when the name is undefined. */
+int theme_metric(const char *name, int def);
 
 /* --- widget registration ------------------------------------------------ */
 

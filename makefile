@@ -83,8 +83,8 @@ libxtcw: core widgets retex
 	cp wbuild_widgets/drawcanvas-draw.c build/source/ 2>/dev/null || true
 	cp wbuild_widgets/drawcanvas-draw.h build/source/ 2>/dev/null || true
 	# Create makefile in build/source if it doesn't exist
-	printf 'CC ?= gcc\nSRCS = $$(wildcard *.c)\nOBJS = $$(SRCS:.c=.o)\nall: libxtcw.a\nlibxtcw.a: $$(OBJS)\n\tar rcs $$@ $$^\n' > build/source/makefile
-	$(MAKE) -C build/source CFLAGS="$(CFLAGS)"
+	printf 'CC ?= gcc\nSRCS = $$(wildcard *.c)\nOBJS = $$(SRCS:.c=.o)\nDEPS = $$(OBJS:.o=.d)\nall: libxtcw.a\nlibxtcw.a: $$(OBJS)\n\tar rcs $$@ $$^\n-include $$(DEPS)\n' > build/source/makefile
+	$(MAKE) -C build/source CFLAGS="$(CFLAGS) -MMD -MP"
 	cp build/source/libxtcw.a $(libdir)/
 
 commander: libxtcw retex
