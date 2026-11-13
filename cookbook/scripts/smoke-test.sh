@@ -54,15 +54,19 @@ ERR_PATTERN='Segmentation fault|Lua CB Error|LUI Bootstrap Error|LUI load error|
 
 cleanup() {
     if [ -n "${APP_PID:-}" ]; then
-        kill -9 "$APP_PID" 2>/dev/null || true
-        pkill -9 -P "$APP_PID" 2>/dev/null || true
+        # Kill the whole session, not just the timeout wrapper. SIGKILL on the
+        # wrapper would leave commander_runner (and its window) behind.
+        kill -TERM -- "-$APP_PID" 2>/dev/null || kill -TERM "$APP_PID" 2>/dev/null || true
+        sleep 0.3
+        kill -KILL -- "-$APP_PID" 2>/dev/null || kill -KILL "$APP_PID" 2>/dev/null || true
+        wait "$APP_PID" 2>/dev/null || true
     fi
 }
 trap cleanup EXIT INT TERM
 
 echo "[smoke] mode=$MODE, launching app (DISPLAY=${DISPLAY:-unset})"
 cd "$ROOT/commander"
-"${RUNNER[@]}" timeout 30 "$BIN" -Luafile "$LUA" -themeFile "$THEME" -theme default >"$LOG" 2>&1 &
+setsid "${RUNNER[@]}" timeout 30 "$BIN" -Luafile "$LUA" -themeFile "$THEME" -theme default >"$LOG" 2>&1 &
 APP_PID=$!
 
 sleep 3

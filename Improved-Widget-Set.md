@@ -31,6 +31,9 @@ This is a living document. It is derived from:
 5. **Progressive migration.** New widgets replace legacy Xaw-era widgets via
    aliases; old classes stay available until the demos/cookbook/tests are
    migrated.
+6. **Cookbook as testing ground.** Every new widget is integrated into the
+   cookbook first, then gets a `tests/widgets/*.lui` probe and, where useful,
+   a C regression test.
 
 ## Current inventory (short)
 
@@ -38,6 +41,8 @@ This is a living document. It is derived from:
 |---|---|---|
 | Base/theme | `Wheel`, `Wlabel`, `Frame`, `Gridbox`, `VBox`, `HBox` | Solid foundation; `Wheel` is the theme/input base |
 | App shell | `WAppWindow` (new) | Themed 4-slot container: menu, toolbar, content, status |
+| Menus | `WMenuBar`, `WPopupMenu`, `WAction` (new), `WmenuButton` | First modern menu slice with checkable actions; keyboard mnemonics pending |
+| Toolbar | `WToolBar` (new) | Themed natural-width action row; cookbook integration done |
 | Buttons | `Wbutton`, `Wcheckbox`, `WToggleSwitch`, `WpixBtn` | `Wbutton`/`WToggleSwitch` good; checkbox indicator incomplete; icon button legacy |
 | Text input | `Wedit`, `WeditMV`, `Wpassword`, `KaroEd`, `Wbravo`, `Wretex` | `KaroEd`/`Wbravo` strong; `Wedit` is legacy; no validation/completion |
 | Lists | `WListView` (modern), `Wlist`, `Wlist4`, `WlistMulti`, `Wls`, `WlsMulti` | `WListView` is the future; legacy lists must be frozen |
@@ -133,19 +138,28 @@ style-guide roles, keyboard handling and tests.
    - Resources: `title`, `menuBar`, `toolBar`, `statusBar`, `content`, `windowMargin`.
    - LUI: `(app-window …)` / `(main-window …)`.
    - Status: implemented as a themed slot container (`menu`, `toolbar`,
-     `content`, `status`); the dedicated menu/toolbar/status widget classes
-     follow in the next P0 slices.
+     `content`, `status`); the cookbook now uses it as its main window.
+     The dedicated menu/toolbar/status widget classes follow in the next P0
+     slices.
    - Acceptance: cookbook main window built without hand-coded outer `Gridbox`; live theme switch; Quit/close handling.
 
 2. **WMenuBar / WMenu / WAction** — `NEW` + `IMPROVE`
    - Modern menu model: text, icon, shortcut, checkable/radio, submenu, separator, enabled.
    - Keyboard: Alt mnemonics, arrows, Enter, Esc; popup placement inside the screen.
    - Replace the internals of `Wmenu`/`WmenuPopup`; keep `WmenuButton` as the popup trigger.
+   - Status: first slice implemented — `WMenuBar` (natural-width themed bar),
+     `WPopupMenu` (themed vertical popup container), `WmenuButton` trigger
+     width/height resources, and `WAction` (checkable/shortcut item). The
+     cookbook uses a File/View/Help menu bar as the integration test. Keyboard
+     mnemonics and full menu action styling remain.
    - Acceptance: cookbook/t1_menu menus; Wbravo Format menu uses `WAction`; keyboard-only navigation.
 
 3. **WToolBar** — `NEW`
    - Icon/text actions, separators, overflow “»”, tooltips, primary/secondary.
    - Style roles: `button_*`/`toolbar_*`; height `control_height`/`toolbar_height`.
+   - Status: first slice implemented — themed natural-width action row with
+     `toolbarHeight`, `itemGap`, `toolbarPadding`; cookbook uses a New/Quit
+     toolbar. Overflow, separators and tooltips remain.
    - Acceptance: cookbook header/toolbar and file chooser toolbar.
 
 4. **WStatusBar** — `NEW`
@@ -285,7 +299,7 @@ These are part of the set even when they are not separate widgets:
 | `Wlist`, `Wlist4`, `WlistMulti`, `Wls`, `WlsMulti` | `WListView` / `WTableView` / `WTreeView` | freeze; keep aliases for old demos |
 | `Wcombo` | `WComboBox` | freeze; cookbook no longer uses it |
 | `Wradio`, `Woption`, `Woptc`, `Radio2` | `WRadioGroup` | freeze; migrate demos |
-| `Wmenu`, `WmenuPopup` | `WMenu`/`WAction` | keep `WmenuButton` as popup trigger |
+| `Wmenu`, `WmenuPopup` | `WPopupMenu`/`WAction` | keep `WmenuButton` as popup trigger |
 | `Wtext` | `WPlainTextEdit` | deprecate |
 | `Wedit`, `WeditMV` | `WLineEdit`, `WPlainTextEdit` | keep `Wedit` alias during migration |
 | `WpixBtn` | `WIconButton` | deprecate |
@@ -338,12 +352,12 @@ The first probe corpus lives in `tests/widgets/` and starts with the existing
 P0 foundation widgets:
 
 `Wlabel`, `Wbutton`, `WspinBox`, `Wcheckbox`, `WListView`, `WtabWidget`,
-`Wviewport`, `KaroEd`, `Wretex`, `WToggleSwitch`, and the new `WAppWindow`
-slot container.
+`Wviewport`, `KaroEd`, `Wretex`, `WToggleSwitch`, plus the new `WAppWindow`,
+`WMenuBar`, `WPopupMenu`, `WAction` and `WToolBar` widgets.
 
 As each new P0 widget lands, add a matching `tests/widgets/<widget>.lui` probe.
-The harness is intentionally an interim shell; once `WAppWindow` exists it can
-replace the root while keeping the same probe interface.
+The harness is intentionally an interim shell; it can later switch to
+`WAppWindow` while keeping the same probe interface.
 
 ## Testing / definition of done
 

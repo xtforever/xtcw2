@@ -32,6 +32,9 @@
 @var int align = 0
 @ preferred (square) trigger size; the icon scales to the actual size
 @var Dimension buttonSize = 32
+@ optional explicit trigger width/height (0 = use buttonSize)
+@var Dimension buttonWidth = 0
+@var Dimension buttonHeight = 0
 @ settable open state: gui.set(id, "open", 1/0) opens/closes the menu
 @var Boolean open = False
 
@@ -44,6 +47,10 @@
 @var Pixel fg
 @var Pixel bg_sel
 @var GC gc
+@var XftFont *label_font
+@var XftDraw *label_draw
+@var XftColor label_xft
+@var Boolean label_xft_color_ok
 
 @METHODS
 
@@ -56,13 +63,17 @@
     $is_open = False;
     $open = False;
     $gc = NULL;
+    $label_font = NULL;
+    $label_draw = NULL;
+    $label_xft_color_ok = False;
 
-    if ($width == 0)  $width  = $buttonSize;
-    if ($height == 0) $height = $buttonSize;
+    if ($width == 0)  $width  = $buttonWidth  > 0 ? $buttonWidth  : $buttonSize;
+    if ($height == 0) $height = $buttonHeight > 0 ? $buttonHeight : $buttonSize;
 
     resolve_colors($);
     $background_pixel = $bg;
     make_gc($);
+    make_xft($);
 
     /* Popup shell: override-redirect, freely positioned, NOT grabbed. */
     $shell = XtCreatePopupShell("popup", overrideShellWidgetClass, $, NULL, 0);
@@ -89,6 +100,13 @@
     $open = False;
     theme_unregister($);
     if ($gc) { XtReleaseGC($, $gc); $gc = NULL; }
+    if ($label_draw) { XftDrawDestroy($label_draw); $label_draw = NULL; }
+    if ($label_font) { XftFontClose(XtDisplay($), $label_font); $label_font = NULL; }
+    if ($label_xft_color_ok) {
+        XftColorFree(XtDisplay($), DefaultVisualOfScreen(XtScreen($)),
+                     DefaultColormapOfScreen(XtScreen($)), &$label_xft);
+        $label_xft_color_ok = False;
+    }
 }
 
 @proc resize
@@ -133,11 +151,13 @@
 
 @proc query_geometry
 {
-    int s = (int)$buttonSize;
-    if (s < 8) s = 8;
+    int w = (int)($buttonWidth  > 0 ? $buttonWidth  : $buttonSize);
+    int h = (int)($buttonHeight > 0 ? $buttonHeight : $buttonSize);
+    if (w < 8) w = 8;
+    if (h < 8) h = 8;
     reply->request_mode = CWWidth | CWHeight;
-    reply->width  = (Dimension)s;
-    reply->height = (Dimension)s;
+    reply->width  = (Dimension)w;
+    reply->height = (Dimension)h;
     return XtGeometryAlmost;
 }
 
@@ -191,6 +211,49 @@
     $gc = XtGetGC($, GCForeground | GCGraphicsExposures, &v);
 }
 
+@proc void make_xft($)
+{
+    Display *dpy = XtDisplay($);
+    Screen *scr = XtScreen($);
+
+    if ($label_font) {
+        XftFontClose(dpy, $label_font);
+        $label_font = NULL;
+    }
+    if ($label_xft_color_ok) {
+        XftColorFree(dpy, DefaultVisualOfScreen(scr),
+                     DefaultColormapOfScreen(scr), &$label_xft);
+        $label_xft_color_ok = False;
+    }
+
+    $label_font = XftFontOpenName(dpy, DefaultScreen(dpy), theme_font_spec());
+
+    uint32_t rgb = theme_color_defined("button_fg") ? theme_get_rgb("button_fg")
+                 : (theme_color_defined("fg_norm") ? theme_get_rgb("fg_norm") : 0);
+    if (rgb) {
+        XRenderColor xr;
+        xr.red   = (unsigned short)(((rgb >> 16) & 0xff) * 257);
+        xr.green = (unsigned short)(((rgb >> 8)  & 0xff) * 257);
+        xr.blue  = (unsigned short)(( rgb        & 0xff) * 257);
+        xr.alpha = 0xffff;
+        if (XftColorAllocValue(dpy, DefaultVisualOfScreen(scr),
+                               DefaultColormapOfScreen(scr), &xr, &$label_xft))
+            $label_xft_color_ok = True;
+    }
+}
+
+@proc void make_xft_draw($)
+{
+    if ($label_draw) {
+        XftDrawDestroy($label_draw);
+        $label_draw = NULL;
+    }
+    if (!XtIsRealized($)) return;
+    $label_draw = XftDrawCreate(XtDisplay($), XtWindow($),
+                                DefaultVisualOfScreen(XtScreen($)),
+                                DefaultColormapOfScreen(XtScreen($)));
+}
+
 @proc void draw_icon($)
 {
     if (!XtIsRealized($) || !$gc) return;
@@ -199,9 +262,22 @@
     int W = (int)$width, H = (int)$height;
 
     if ($label && *$label) {
-        GC g = DefaultGC(dpy, DefaultScreen(dpy));
-        XSetForeground(dpy, g, $fg);
-        XDrawString(dpy, win, g, 4, H / 2 + 4, $label, (int)strlen($label));
+        if (! $label_draw) make_xft_draw($);
+        if ($label_font && $label_xft_color_ok && $label_draw) {
+            XGlyphInfo ext;
+            int len = (int)strlen($label);
+            XftTextExtentsUtf8(dpy, $label_font, (FcChar8 *)$label, len, &ext);
+            int tx = (W - (int)ext.xOff) / 2;
+            if (tx < 4) tx = 4;
+            int baseline = (H - ($label_font->ascent + $label_font->descent)) / 2
+                         + $label_font->ascent;
+            XftDrawStringUtf8($label_draw, &$label_xft, $label_font,
+                              tx, baseline, (FcChar8 *)$label, len);
+        } else {
+            GC g = DefaultGC(dpy, DefaultScreen(dpy));
+            XSetForeground(dpy, g, $fg);
+            XDrawString(dpy, win, g, 4, H / 2 + 4, $label, (int)strlen($label));
+        }
         return;
     }
 
@@ -361,6 +437,7 @@
 {
     resolve_colors($);
     make_gc($);
+    make_xft($);
     if (XtIsRealized($)) {
         XSetWindowBackground(XtDisplay($), XtWindow($), $is_open ? $bg_sel : $bg);
         XClearWindow(XtDisplay($), XtWindow($));
@@ -372,6 +449,9 @@
 @incl <X11/Shell.h>
 @incl <X11/StringDefs.h>
 @incl <X11/Core.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/extensions/Xrender.h>
+@incl <stdint.h>
 @incl <string.h>
 @incl <stdint.h>
 @incl "theme.h"

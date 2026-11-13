@@ -30,3 +30,6 @@ The probes in this directory start with the P0 widgets from
 
 `wappwindow.lui` is the first P0 implementation probe: it uses the
 `WAppWindow` menu/toolbar/content/status slots and verifies the slot layout.
+`wmenubar.lui` covers the first menu slice: `WMenuBar`, `WmenuButton` triggers
+and `WPopupMenu` content. `waction.lui` covers checkable `WAction` items with
+shortcut hints. `wtoolbar.lui` covers the themed `WToolBar` action row.

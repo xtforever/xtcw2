@@ -14,9 +14,14 @@ regressions across the toolkit.
 
 - A **LUI/Lua** application loaded by `commander/commander_runner` (the xtcw2
   host), with a multi-screen structure and a small data model.
-- A style-guide layout: header/toolbar, tabbed content, status bar, themed
-  `WListView` lists, flat `Wbutton`s, `Wedit`/`WspinBox` controls,
-  `WToggleSwitch` dietary switches and `KaroEd` editors.
+- A style-guide layout built with the improved widget set: `WAppWindow`
+  (menu/toolbar/content/status slots), `WMenuBar` + `WmenuButton` +
+  `WPopupMenu` + `WAction` menus, a `WToolBar` action row, tabbed content, status bar, themed `WListView` lists,
+  flat `Wbutton`s, `Wedit`/`WspinBox` controls, `WToggleSwitch` dietary
+  switches and `KaroEd` editors.
+- The cookbook is the **testing ground** for `../Improved-Widget-Set.md`:
+  new widgets are integrated here first, then get a `tests/widgets/*.lui`
+  probe and a C regression test where appropriate.
 - Theming via the central theme registry.
 - A **debug and a production** build (production = `-O3`, no `-DMLS_DEBUG`, no
   AddressSanitizer) plus a headless **start smoke test** under Xvfb.
@@ -103,6 +108,13 @@ This runs `commander_runner` from `commander/` (the host requires this working
 directory for its relative `../lui/?.lua` path) with the cookbook entry script
 and theme. With no `DISPLAY`, use `xvfb-run -a ./cookbook/scripts/run.sh`.
 
+For automated/manual smoke starts, add a hard timeout so no window is left
+behind:
+
+```bash
+COOKBOOK_TIMEOUT=10 ./cookbook/scripts/run.sh
+```
+
 ## Testing
 
 ```bash
@@ -114,6 +126,15 @@ and theme. With no `DISPLAY`, use `xvfb-run -a ./cookbook/scripts/run.sh`.
 `smoke-test.sh` starts a headless X server, launches the app, and checks that a
 window appears and that no fatal error was logged. The app is only required to
 *start and render*, not to be fully functional.
+
+The improved-widget shell has its own integration test:
+
+```bash
+./tests/test_cookbook_widgets.sh
+```
+
+It verifies the `WAppWindow` slot geometry, opens the File menu, and invokes a
+menu action to switch the Detail tab.
 
 ## Docker
 

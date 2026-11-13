@@ -1,0 +1,9 @@
+(WMenuBar :id "menubar" :barHeight 30
+  (WmenuButton :id "file" :label "File" :buttonWidth 64 :buttonHeight 30
+    (WPopupMenu :id "file_menu"
+      (Wbutton :id "open" :label "Open")
+      (Wbutton :id "save" :label "Save")
+      (Wbutton :id "quit" :label "Quit")))
+  (WmenuButton :id "view" :label "View" :buttonWidth 64 :buttonHeight 30
+    (WPopupMenu :id "view_menu"
+      (Wbutton :id "zoom" :label "Zoom"))))

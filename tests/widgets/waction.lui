@@ -1,0 +1,3 @@
+(WAction :id "act" :label "Show status" :checkable TRUE
+         :shortcut "Ctrl+S"
+         :gridx 0 :gridy 0 :weightx 1 :weighty 1 :fill none)

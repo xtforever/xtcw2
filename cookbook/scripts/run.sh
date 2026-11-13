@@ -12,8 +12,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$ROOT/commander"
-exec ./commander_runner \
-    -Luafile ../cookbook/app/main.lua \
-    -themeFile ../cookbook/themes/cookbook.hdf \
-    -theme default \
-    "$@"
+ARGS=(./commander_runner
+      -Luafile ../cookbook/app/main.lua
+      -themeFile ../cookbook/themes/cookbook.hdf
+      -theme default
+      "$@")
+
+# Optional hard stop for automated starts; interactive use leaves it unset.
+if [ -n "${COOKBOOK_TIMEOUT:-}" ]; then
+    exec timeout "$COOKBOOK_TIMEOUT" "${ARGS[@]}"
+fi
+exec "${ARGS[@]}"

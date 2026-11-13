@@ -1,0 +1,177 @@
+@class WMenuBar (Composite)
+@ Themed horizontal menu bar; children are natural-width menu triggers.
+
+@PUBLIC
+@ bar height; -1 uses the theme control_height metric
+@var int barHeight = -1
+@ gap between menu triggers
+@var int itemGap = 2
+
+@PRIVATE
+@var int layout_guard
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+}
+
+@proc initialize
+{
+    $layout_guard = 0;
+    if ($barHeight < 0)
+        $barHeight = theme_metric("control_height", 28);
+    if ($barHeight < 8) $barHeight = 8;
+
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+    theme_register($, menubar_colors_changed);
+    menubar_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+}
+
+@proc realize
+{
+    #realize($, mask, attributes);
+    menubar_layout($);
+}
+
+@proc resize
+{
+    menubar_layout($);
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    if (!win) return;
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    XSetForeground(dpy, gc, $background_pixel);
+    XFillRectangle(dpy, win, gc, 0, 0, $width, $height);
+}
+
+@proc set_values
+{
+    if ($barHeight != $old$barHeight || $itemGap != $old$itemGap) {
+        menubar_layout($);
+        return True;
+    }
+    return ($background_pixel != $old$background_pixel);
+}
+
+@proc change_managed
+{
+    if ($layout_guard) return;
+    menubar_layout($);
+}
+
+@proc insert_child
+{
+    (void)$;
+    #insert_child(child);
+}
+
+@proc delete_child
+{
+    (void)$;
+    #delete_child(child);
+}
+
+@proc query_geometry
+{
+    int w = 0, h = $barHeight;
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+        XtWidgetGeometry req, pref;
+        memset(&req, 0, sizeof req);
+        pref.request_mode = 0;
+        int cw = (XtQueryGeometry(child, &req, &pref) == XtGeometryAlmost &&
+                  (pref.request_mode & CWWidth)) ? (int)pref.width : (int)child->core.width;
+        if (cw < 1) cw = 1;
+        w += cw + (w > 0 ? $itemGap : 0);
+    }
+    if (w < 1) w = 1;
+    if (h < 1) h = 1;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc geometry_manager
+{
+    Dimension w = (request->request_mode & CWWidth) ? request->width : $child$width;
+    Dimension h = (request->request_mode & CWHeight) ? request->height : $child$height;
+    XtConfigureWidget(child, $child$x, $child$y, w, h, $child$border_width);
+    menubar_layout($);
+    return XtGeometryDone;
+}
+
+@UTILITIES
+
+@proc void menubar_colors_changed($)
+{
+    Pixel bg = theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+             : (theme_color_defined("bg_hi") ? get_color("bg_hi")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0));
+    if (bg) XtVaSetValues($, XtNbackground, bg, NULL);
+    if (XtIsRealized($)) {
+        XClearWindow(XtDisplay($), XtWindow($));
+        menubar_layout($);
+    }
+}
+
+@proc void menubar_layout($)
+{
+    if ($layout_guard) return;
+    $layout_guard = 1;
+
+    int x = 0;
+    int h = $barHeight;
+    if (h < 1) h = (int)$height;
+
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+
+        XtWidgetGeometry req, pref;
+        memset(&req, 0, sizeof req);
+        pref.request_mode = 0;
+        int w = (XtQueryGeometry(child, &req, &pref) == XtGeometryAlmost &&
+                 (pref.request_mode & CWWidth)) ? (int)pref.width : (int)child->core.width;
+        if (w < 1) w = 1;
+
+        XtConfigureWidget(child, (Position)x, 0, (Dimension)w, (Dimension)h,
+                          child->core.border_width);
+        x += w + $itemGap;
+    }
+
+    $layout_guard = 0;
+}
+
+@IMPORTS
+@incl <string.h>
+@incl "converters.h"
+@incl "theme.h"

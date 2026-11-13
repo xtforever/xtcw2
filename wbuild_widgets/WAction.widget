@@ -1,0 +1,64 @@
+@class WAction (Wbutton)
+@ Menu/toolbar action item with optional check state and shortcut hint.
+
+@PUBLIC
+@ action can toggle between checked/unchecked
+@var Boolean checkable = False
+@ current check state
+@var Boolean checked = False
+@ shortcut hint shown after the label (e.g. "Ctrl+O")
+@var String shortcut = <String> ""
+
+@PRIVATE
+@ original label, captured on first toggle
+@var char base_label[512]
+@var Boolean label_ready
+
+@METHODS
+@proc initialize
+{
+    $useControlColors = True;
+    wheel_colors_changed($);
+
+    const char *src = $label ? $label : "";
+    strncpy($base_label, src, sizeof($base_label) - 1);
+    $base_label[sizeof($base_label) - 1] = 0;
+    $label_ready = True;
+    if ($checkable) update_label($);
+}
+
+@ACTIONS
+@proc notify
+{
+    if ($checkable) {
+        if (! $label_ready) {
+            const char *src = $label ? $label : "";
+            strncpy($base_label, src, sizeof($base_label) - 1);
+            $base_label[sizeof($base_label) - 1] = 0;
+            $label_ready = True;
+        }
+        $checked = !$checked;
+        update_label($);
+    }
+    XtCallCallbackList($, $callback, event);
+}
+
+@UTILITIES
+@proc void update_label($)
+{
+    char buf[768];
+    const char *mark = $checked ? "[x] " : "[ ] ";
+    const char *text = $label_ready ? $base_label : ($label ? $label : "");
+    if (strncmp(text, "[x] ", 4) == 0 || strncmp(text, "[ ] ", 4) == 0)
+        text += 4;
+    if ($shortcut && *$shortcut)
+        snprintf(buf, sizeof(buf), "%s%s    %s", mark, text, $shortcut);
+    else
+        snprintf(buf, sizeof(buf), "%s%s", mark, text);
+    XtVaSetValues($, XtNlabel, buf, NULL);
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <string.h>
+@incl <stdio.h>

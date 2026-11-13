@@ -1,0 +1,5 @@
+(WToolBar :id "tb" :toolbarHeight 36 :itemGap 8 :toolbarPadding 4
+          :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 1
+  (Wbutton :id "tb_new" :label "New")
+  (Wbutton :id "tb_open" :label "Open")
+  (Wbutton :id "tb_quit" :label "Quit"))

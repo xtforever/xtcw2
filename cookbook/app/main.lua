@@ -94,8 +94,20 @@ function cb_open_recipe()
     show("screen_detail")
 end
 
+local confirm_delete = false
+
+function cb_toggle_confirm()
+    confirm_delete = not confirm_delete
+    gui.set("status", "label", "Delete confirmation: "
+        .. (confirm_delete and "on" or "off"))
+end
+
 function cb_delete_recipe()
-    gui.set("status", "label", "Delete recipe (not implemented)")
+    if confirm_delete then
+        gui.set("status", "label", "Delete recipe (confirmation on; not implemented)")
+    else
+        gui.set("status", "label", "Delete recipe (confirmation off; not implemented)")
+    end
 end
 
 local categories = { "Starter", "Main", "Dessert", "Breakfast" }
@@ -132,6 +144,10 @@ function cb_clear_shopping()
     gui.set("status", "label", "Shopping list cleared")
 end
 
+function cb_about()
+    gui.set("status", "label", "xtcw2 Cookbook — improved widget set testing ground")
+end
+
 function cb_quit() xtappexitflag() end
 
 -- ---------------------------------------------------------------------------
@@ -139,13 +155,39 @@ function cb_quit() xtappexitflag() end
 -- ---------------------------------------------------------------------------
 local ui = macros.PRELUDE .. [[
 (window :id "win" :title "xtcw2 Cookbook" :width 1000 :height 760
-  (grid :id "main" :weightx 1 :weighty 1 :defaultDistance 12
-    (Wlabel :id "hdr"
-       :label "\\includesvg{../cookbook/assets/dish.svg}{18pt}{18pt} xtcw2 Cookbook"
-       :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3 :fontSize 17)
-    (Wbutton :id "nav_quit" :label "Quit"
-       :gridx 1 :gridy 0 :weightx 0 :weighty 0 :fill 3 :callback "LUA(cb_quit)")
-    (tabs :id "tabs" :gridx 0 :gridy 1 :gridWidth 2 :weightx 1 :weighty 1 :fill 3
+  (app-window :id "main" :windowMargin 12 :rowGap 8
+                  :gridx 0 :gridy 0 :weightx 1 :weighty 1 :fill 3
+    (WMenuBar :id "menubar" :slot "menu" :barHeight 28
+      (WmenuButton :id "menu_file" :label "File"
+                   :buttonWidth 64 :buttonHeight 28
+        (WPopupMenu :id "menu_file_popup"
+          (Wbutton :id "mi_open" :label "Open recipe" :callback "LUA(cb_open_recipe)")
+          (WAction :id "mi_confirm" :label "Confirm delete"
+                   :checkable TRUE :checked FALSE :shortcut "Ctrl+D"
+                   :callback "LUA(cb_toggle_confirm)")
+          (Wbutton :id "mi_delete" :label "Delete recipe" :callback "LUA(cb_delete_recipe)")
+          (Wbutton :id "mi_quit" :label "Quit" :callback "LUA(cb_quit)")))
+      (WmenuButton :id "menu_view" :label "View"
+                   :buttonWidth 64 :buttonHeight 28
+        (WPopupMenu :id "menu_view_popup"
+          (Wbutton :id "mi_recipes" :label "Recipes" :callback "LUA(cb_nav_list)")
+          (Wbutton :id "mi_detail" :label "Detail" :callback "LUA(cb_nav_detail)")
+          (Wbutton :id "mi_editor" :label "Editor" :callback "LUA(cb_nav_editor)")
+          (Wbutton :id "mi_shopping" :label "Shopping" :callback "LUA(cb_nav_shopping)")))
+      (WmenuButton :id "menu_help" :label "Help"
+                   :buttonWidth 64 :buttonHeight 28
+        (WPopupMenu :id "menu_help_popup"
+          (Wbutton :id "mi_about" :label "About" :callback "LUA(cb_about)"))))
+    (grid :id "toolbar" :slot "toolbar" :weightx 1 :weighty 0 :fill 3 :defaultDistance 8
+      (Wlabel :id "hdr"
+         :label "\\includesvg{../cookbook/assets/dish.svg}{18pt}{18pt} xtcw2 Cookbook"
+         :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3 :fontSize 17)
+      (WToolBar :id "toolbar_actions"
+                :gridx 1 :gridy 0 :weightx 0 :weighty 0 :fill 3
+                :toolbarHeight 36 :itemGap 8 :toolbarPadding 4
+        (Wbutton :id "nav_new" :label "New" :callback "LUA(cb_nav_editor)")
+        (Wbutton :id "nav_quit" :label "Quit" :callback "LUA(cb_quit)")))
+    (tabs :id "tabs" :slot "content" :weightx 1 :weighty 1 :fill 3
        :callback "LUA(cb_tab)"
 ]]
     .. screens[1].fragment() .. "\n"
@@ -154,7 +196,7 @@ local ui = macros.PRELUDE .. [[
     .. screens[4].fragment() .. "\n"
     .. [[
     )
-    (label :id "status" :label "Ready" :gridx 0 :gridy 2 :gridWidth 2 :weightx 1 :weighty 0 :fill 3)
+    (label :id "status" :slot "status" :label "Ready" :weightx 1 :weighty 0 :fill 3)
   ))
 ]]
 

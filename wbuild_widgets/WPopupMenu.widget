@@ -1,0 +1,66 @@
+@class WPopupMenu (VBox)
+@ Themed vertical popup menu container, normally used as WmenuButton content.
+
+@PUBLIC
+@ optional title (reserved for future section headers)
+@var String title = <String> ""
+
+@PRIVATE
+@var char *title_mem
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+}
+
+@proc initialize
+{
+    $title_mem = XtNewString($title ? $title : "");
+    $title = $title_mem;
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+    theme_register($, menu_colors_changed);
+    menu_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+    XtFree($title_mem);
+    $title_mem = NULL;
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    if (!win) return;
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    XSetForeground(dpy, gc, $background_pixel);
+    XFillRectangle(dpy, win, gc, 0, 0, $width, $height);
+}
+
+@proc set_values
+{
+    if ($title != $old$title) {
+        XtFree($old$title_mem);
+        $title = $title_mem = XtNewString($title ? $title : "");
+    }
+    return ($background_pixel != $old$background_pixel);
+}
+
+@UTILITIES
+
+@proc void menu_colors_changed($)
+{
+    Pixel bg = theme_color_defined("list_bg") ? get_color("list_bg")
+             : (theme_color_defined("bg_hi") ? get_color("bg_hi")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0));
+    if (bg) XtVaSetValues($, XtNbackground, bg, NULL);
+    if (XtIsRealized($)) XClearWindow(XtDisplay($), XtWindow($));
+}
+
+@IMPORTS
+@incl "converters.h"
+@incl "theme.h"

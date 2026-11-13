@@ -148,6 +148,27 @@ check_log appwindow
 check_value appwindow "$TMP/appwindow.result" probe_class WAppWindow
 check_value appwindow "$TMP/appwindow.result" probe_id app
 
+# 2d. WMenuBar probe (menu bar + popup menu containers).
+probe menubar "$TMP/menubar.result" "$ROOT/tests/widgets/wmenubar.lui"
+check_rc menubar
+check_log menubar
+check_value menubar "$TMP/menubar.result" probe_class WMenuBar
+check_value menubar "$TMP/menubar.result" probe_id menubar
+
+# 2e. WAction probe (checkable action item).
+probe action "$TMP/action.result" "$ROOT/tests/widgets/waction.lui"
+check_rc action
+check_log action
+check_value action "$TMP/action.result" probe_class WAction
+check_value action "$TMP/action.result" probe_id act
+
+# 2f. WToolBar probe.
+probe toolbar "$TMP/toolbar.result" "$ROOT/tests/widgets/wtoolbar.lui"
+check_rc toolbar
+check_log toolbar
+check_value toolbar "$TMP/toolbar.result" probe_class WToolBar
+check_value toolbar "$TMP/toolbar.result" probe_id tb
+
 # 3. Model data through --after.
 probe list "$TMP/list.result" \
     --after "$ROOT/tests/widgets/populate_list.lua" \

@@ -50,6 +50,9 @@ echo "9c. test_t1_menu (xtcw launcher menu)"
 echo "9c2. test_run_widget (single-widget probe harness)"
 "$ROOT/tests/test_run_widget.sh"
 
+echo "9c3. test_cookbook_widgets (WAppWindow + menu integration)"
+"$ROOT/tests/test_cookbook_widgets.sh"
+
 echo "9d. test_wretex (realize/expose regression)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wretex"
 
@@ -96,6 +99,15 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtabwidget"
 
 echo "19b. test_wappwindow (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wappwindow"
+
+echo "19c. test_wmenubar (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wmenubar"
+
+echo "19d. test_waction (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_waction"
+
+echo "19e. test_wtoolbar (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtoolbar"
 
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"

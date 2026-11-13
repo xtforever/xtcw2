@@ -1882,3 +1882,57 @@ Regression coverage in `tests/test_wviewport.c` calls the vertical slider's
 `sl_motion` action at the bottom and asserts `scroll_y` reaches `maxy`.
 
 **Files:** `wbuild_widgets/Wviewport.widget`, `tests/test_wviewport.c`
+
+## wbuild: `WMenu` / `Wmenu` generated header guard collision
+
+**Symptom:** adding a new `WMenu` widget next to the existing legacy `Wmenu`
+made `register_wb.c` fail with `wMenuWidgetClass undeclared`, even though the
+generated `WMenu.h` declared it.
+
+**Cause:** wbuild derives the include guard from the uppercased class name.
+`WMenu` and `Wmenu` both produced `XTCW_WMENU_H`, so whichever header was
+included first suppressed the other.
+
+**Fix:** name the new popup-menu container `WPopupMenu` (no case-only
+collision) and expose it through the `menu-list` / `popup-menu` LUI aliases.
+`WMenuBar` remains as the menu-bar container.
+
+**Files:** `wbuild_widgets/WPopupMenu.widget`, `wbuild_widgets/WMenuBar.widget`,
+`lui/registry.lua`
+
+## WmenuButton: menu labels used the default GC font
+
+**Symptom:** the cookbook File/View/Help labels were much smaller than the
+rest of the UI, because `WmenuButton` drew the text with `XDrawString` and the
+X11 default GC font. Theme changes also had no effect on the label.
+
+**Cause:** `WmenuButton` is a `Composite`, not a `Wheel`/`Wlabel` subclass, so
+it never resolved `font_ui` or allocated an Xft font/colour.
+
+**Fix:** `WmenuButton` now opens an Xft font from `theme_font_spec()` and
+allocates its colour from `button_fg` (fallback `fg_norm`). The font/colour are
+rebuilt by the existing theme callback, and `draw_icon()` uses
+`XftDrawStringUtf8` with a centred baseline. `XDrawString` remains as a
+fallback when no theme colour is available.
+
+No new theme entries are required: menu bars use `list_header_bg`/`bg_hi`,
+popup menus use `list_bg`, and triggers use `bg_norm`/`bg_hi` plus
+`button_fg`/`fg_norm`. Dedicated `menubar_*`/`menu_*` roles can be added later
+if independent menu styling is needed.
+
+**Files:** `wbuild_widgets/WmenuButton.widget`, `tests/test_wmenubar.c`
+
+## cookbook smoke test left commander_runner running
+
+**Symptom:** after `cookbook/scripts/smoke-test.sh` finished, a
+`commander_runner` process and its window could remain open.
+
+**Cause:** the cleanup trap sent `SIGKILL` to the `timeout` wrapper. The
+wrapper never got a chance to forward a signal to its child, so
+`commander_runner` was reparented and kept running.
+
+**Fix:** launch the smoke-test app under `setsid` and terminate the whole
+process group with `SIGTERM`, wait briefly, then `SIGKILL` if needed. This
+also covers the optional `setarch` wrapper.
+
+**File:** `cookbook/scripts/smoke-test.sh`

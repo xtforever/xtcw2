@@ -416,8 +416,8 @@ content changes.
 | Need | Widget / mechanism |
 |------|--------------------|
 | Window/sheet frame | `topLevelShellWidgetClass` popup shell, `WfileChooser`/`WfileSelector` |
-| Toolbar / action bar | `Gridbox` row with `Wbutton`, `Wedit`, `WmenuButton` |
-| Menu bar / burger menu | `WmenuButton` + `WmenuPopup`, or the application menu |
+| Toolbar / action bar | `WToolBar` with `Wbutton`/`WAction` (legacy: `Gridbox` row) |
+| Menu bar / burger menu | `WMenuBar` + `WmenuButton` + `WPopupMenu` (modern); `WmenuButton` + `WmenuPopup` legacy |
 | Multi-pane main window | `Gridbox`, `Wsplitter`/`WPaned`, `Wviewport` |
 | Tabs | `WtabWidget` |
 | List/content | `WListView`, `WlistMulti`, `Wbravo`/`Wretex` |
