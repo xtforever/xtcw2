@@ -12,9 +12,21 @@ fi
 
 TMP_OUT=$(mktemp)
 
+# Pin the Xft environment so the baseline does not depend on the developer's
+# ~/.Xdefaults/~/.Xresources (e.g. Xft.dpi: 120) or the host fontconfig
+# hinting defaults.  The baselines are generated at 96 dpi with hinting and
+# antialiasing disabled.
+XFT_ARGS=(
+    -xrm "Xft.dpi: 96"
+    -xrm "Xft.hinting: false"
+    -xrm "Xft.hintstyle: none"
+    -xrm "Xft.antialias: false"
+    -xrm "Xft.rgba: none"
+)
+
 # Run the command and extract LAYOUT traces, mask hexadecimal handles (addresses)
 # Matches 0x followed by hex digits or just plain large integers if they look like handles
-$CMD 2>&1 | grep "LAYOUT" | sed -E 's/handle (0x[0-9a-f]+|[0-9]{2,})/handle MASKED/g' > "$TMP_OUT"
+"$CMD" "${XFT_ARGS[@]}" 2>&1 | grep "LAYOUT" | sed -E 's/handle (0x[0-9a-f]+|[0-9]+)/handle MASKED/g' > "$TMP_OUT"
 
 if [ ! -f "$BASELINE" ]; then
     echo "Baseline file $BASELINE not found. Creating it from current run."

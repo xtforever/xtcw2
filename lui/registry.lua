@@ -22,6 +22,8 @@ end
 -- Friendly aliases for common widgets. These keep simple GUIs terse while
 -- the generated class-name tags above allow access to the full widget set.
 M.register('window', { class = 'topLevelShellWidgetClass' })
+M.register('app-window', { class = 'WAppWindow' })
+M.register('main-window', { class = 'WAppWindow' })
 M.register('label', { class = 'Wlabel' })
 M.register('button', { class = 'Wbutton' })
 M.register('command', { class = 'command' })

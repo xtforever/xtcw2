@@ -26,7 +26,8 @@ for i, b in ipairs(bands) do
     freq_by_id[id] = b.freq
     rows[#rows + 1] = string.format(
         '    (EqFader :id "%s" :gridx %d :gridy 1 :weightx 1 :weighty 1 :fill 3' ..
-        ' :label "%s" :xftFont "Sans-10" :callback "LUA(on_band, %s)")',
+        ' :label "%s" :xftFont "Sans-10" :scaleFont "Sans-8"' ..
+        ' :callback "LUA(on_band, %s)")',
         id, i - 1, b.freq, id)
 end
 

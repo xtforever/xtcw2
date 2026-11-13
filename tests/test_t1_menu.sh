@@ -100,6 +100,27 @@ else
     bad "menu loads and resolves the .retex description (commander_runner unavailable)"
 fi
 
+# 4b. Selecting a row must update the description (not just the initial row).
+if [ "$GUI_OK" -eq 1 ]; then
+    (
+        cd "$ROOT/commander" && \
+        T1_MENU_INPUT="$TMP/menu.tsv" \
+        T1_MENU_RESULT="$TMP/late-result.tsv" \
+        T1_MENU_DESC_OUT="$TMP/late-desc.txt" \
+        T1_ROOT="$ROOT" \
+        T1_MENU_LATE_SELECT=4 \
+        xvfb-run --auto-servernum ./commander_runner -Luafile ../tools/t1_menu.lua
+    ) >"$TMP/late.out" 2>"$TMP/late.err"
+
+    if grep -q 'theme registry' "$TMP/late-desc.txt" 2>/dev/null; then
+        ok "selection updates the description"
+    else
+        bad "selection updates the description"
+    fi
+else
+    bad "selection updates the description (commander_runner unavailable)"
+fi
+
 # 5. An empty selection must not run anything.
 if T1_SKIP_BUILD=1 RUN=echo T1_MENU_SELECT=$'\t0' "$ROOT/t1.sh" > "$TMP/cancel.out" 2>&1; then
     if [ ! -s "$TMP/cancel.out" ]; then

@@ -1,0 +1,9 @@
+(WListView :id "lv"
+           :columnCount 3
+           :columnTitles "Name\tSize\tType"
+           :columnWidths "0,100,80"
+           :columnAligns "0,2,0"
+           :showHeader 1
+           :gridLines 1
+           :alternateRows 1
+           :visibleRows 12)

@@ -12,6 +12,7 @@
 --   T1_MENU_INITIAL=<key>     initial selected demo
 --   T1_MENU_AUTOSELECT=<key>  select and run that demo after startup
 --   T1_MENU_AUTOTRACE=<n>     select that trace level
+--   T1_MENU_LATE_SELECT=<n>   move down n rows, write the description, exit
 --   T1_MENU_DESC_OUT=<path>   write the resolved description body
 
 local gui = require('gui_xt')
@@ -103,18 +104,17 @@ local function run_demo(i)
     xtappexitflag()
 end
 
-function _G.on_select(i)
-    select_demo(i)
+function _G.on_select(_)
+    select_demo(gui.get('lv', 'selected'))
 end
 
-function _G.on_activate(i)
-    run_demo(i)
+function _G.on_activate(_)
+    run_demo(gui.get('lv', 'selected'))
 end
 
-function _G.on_trace(i)
-    i = tonumber(i) or 0
+function _G.on_trace(_)
+    local i = tonumber(gui.get('trace_lv', 'selected')) or 0
     trace = trace_values[i + 1] or 0
-    gui.set('trace_lbl', 'label', 'Trace: ' .. tostring(trace))
 end
 
 function _G.on_run()
@@ -147,27 +147,24 @@ local ui = [[
        :visibleRows 10
        :on-row-activated "LUA(on_select)"
        :on-activate "LUA(on_activate)")
-    (grid :id "trace_box" :gridx 1 :gridy 1 :weightx 0 :weighty 1 :fill 3
-      (label :id "trace_lbl" :label "Trace: 0"
-         :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3)
-      (listview :id "trace_lv"
-         :gridx 0 :gridy 1 :weightx 1 :weighty 1 :fill 3
-         :columnCount 1
-         :columnTitles "Trace level"
-         :columnWidths "0"
-         :showHeader 1
-         :gridLines 0
-         :visibleRows 4
-         :on-row-activated "LUA(on_trace)"
-         :on-activate "LUA(on_trace)"))
+    (listview :id "trace_lv"
+       :gridx 1 :gridy 1 :weightx 1 :weighty 1 :fill 3
+       :columnCount 1
+       :columnTitles "Trace level"
+       :columnWidths "0"
+       :showHeader 1
+       :gridLines 0
+       :visibleRows 4
+       :on-row-activated "LUA(on_trace)"
+       :on-activate "LUA(on_trace)")
     (retex :id "desc"
        :gridx 0 :gridy 2 :gridWidth 2 :weightx 1 :weighty 1 :fill 3
        :alignment 0 :fontSize 13 :autoHeight FALSE
        :height 160)
-    (button :id "run" :label "Run"
+    (button :id "run" :label "Run" :alignment 1
        :gridx 0 :gridy 3 :weightx 1 :weighty 0 :fill 3
        :callback "LUA(on_run)")
-    (button :id "quit" :label "Quit"
+    (button :id "quit" :label "Quit" :alignment 1
        :gridx 1 :gridy 3 :weightx 1 :weighty 0 :fill 3
        :callback "LUA(on_quit)")
   ))
@@ -201,6 +198,20 @@ if initial and initial ~= '' then
 end
 gui.set('lv', 'selected', initial_i)
 select_demo(initial_i)
+
+local late = tonumber(os.getenv('T1_MENU_LATE_SELECT') or '')
+if late then
+    xtapptimeout(1000, function()
+        local lv = gui.get_widget('lv')
+        for _ = 1, late do xtaction(lv, 'move_down') end
+        if desc_out and desc_out ~= '' then
+            local shown = gui.get('desc', 'text')
+            local f = io.open(desc_out, 'wb')
+            if f then f:write(shown or ''); f:close() end
+        end
+        xtappexitflag()
+    end)
+end
 
 local autoselect = os.getenv('T1_MENU_AUTOSELECT')
 if autoselect and autoselect ~= '' then

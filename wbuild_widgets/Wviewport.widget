@@ -84,11 +84,15 @@
 
     XtAddEventHandler($clip, ButtonPressMask, False,
                       (XtEventHandler) wheel_proc, (XtPointer)$);
+
+    theme_register($, wviewport_colors_changed);
+    wviewport_colors_changed($);
 }
 
 @proc destroy
 {
     XTFUNC();
+    theme_unregister($);
     /* Event handlers live in the widget's own event table and are released
      * with the widget; removing them here would run XtBuildEventMask during
      * teardown.  The only handler we must drop at runtime is the one on a
@@ -213,6 +217,10 @@
         XtQueryGeometry($content, &intended, &preferred);
         *pw = (preferred.request_mode & CWWidth)  ? (int)preferred.width  : (int)($content->core.width);
         *ph = (preferred.request_mode & CWHeight) ? (int)preferred.height : (int)($content->core.height);
+        /* The tab widget stretches the page to the viewport width; honour
+         * that core size even if the page's natural width is smaller. */
+        if ((int)($content->core.width)  > *pw) *pw = (int)($content->core.width);
+        if ((int)($content->core.height) > *ph) *ph = (int)($content->core.height);
     } else {
         *pw = 0;
         *ph = 0;
@@ -325,9 +333,11 @@
     int pos = (int)(intptr_t)d;
     int cw = 0, ch = 0;
     content_pref($, &cw, &ch);
-    int area = (int)($clip->core.height);
-    int maxy = ch - area; if (maxy < 0) maxy = 0;
-    $scroll_y = (int)((long)pos * maxy / 1000000L);
+    /* Inverse of the sync in relayout():
+     *   pos = scroll_y * RES / ch
+     * Using maxy here made a full thumb drag stop at maxy^2/ch instead of
+     * maxy (the same bug previously fixed in WListView). */
+    $scroll_y = (int)((long)pos * ch / 1000000L);
     relayout($);
 }
 
@@ -336,9 +346,9 @@
     int pos = (int)(intptr_t)d;
     int cw = 0, ch = 0;
     content_pref($, &cw, &ch);
-    int area = (int)($clip->core.width);
-    int maxx = cw - area; if (maxx < 0) maxx = 0;
-    $scroll_x = (int)((long)pos * maxx / 1000000L);
+    /* Inverse of the sync in relayout():
+     *   pos = scroll_x * RES / cw */
+    $scroll_x = (int)((long)pos * cw / 1000000L);
     relayout($);
 }
 
@@ -349,6 +359,21 @@
     else if (ev->xbutton.button == Button5) scroll_by($, 0,  40);
 }
 
+@proc void wviewport_colors_changed($)
+{
+    Pixel thumb = theme_color_defined("scrollbar_thumb") ? get_color("scrollbar_thumb")
+                : (theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+                : $background_pixel);
+    Pixel bg = theme_color_defined("gridbox_bg") ? get_color("gridbox_bg")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : $background_pixel);
+
+    $background_pixel = bg;
+    XtVaSetValues($, XtNbackground, bg, NULL);
+    if ($clip) XtVaSetValues($clip, XtNbackground, bg, NULL);
+    if ($vsb) XtVaSetValues($vsb, "foreground", thumb, "background", bg, NULL);
+    if ($hsb) XtVaSetValues($hsb, "foreground", thumb, "background", bg, NULL);
+}
+
 @IMPORTS
 @incl <X11/Core.h>
 @incl <X11/StringDefs.h>
@@ -356,5 +381,6 @@
 @incl <stdint.h>
 @incl "mls.h"
 @incl "xutil.h"
+@incl "theme.h"
 @incl "xtcw/VSlider.h"
 @incl "xtcw/HSlider.h"

@@ -1,0 +1,5 @@
+(WAppWindow :id "app" :windowMargin 16 :rowGap 12
+  (Wlabel :id "menu" :slot "menu" :label "Menu" :alignment 0)
+  (Wlabel :id "toolbar" :slot "toolbar" :label "Toolbar" :alignment 0)
+  (Wlabel :id "content" :slot "content" :label "Content" :alignment 1)
+  (Wlabel :id "status" :slot "status" :label "Status" :alignment 0))

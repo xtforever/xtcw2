@@ -4,6 +4,8 @@
 @PUBLIC
 @ frequency label shown below the fader (e.g. "1 kHz")
 @var String label = <String> ""
+@ dB scale label font (smaller than the frequency label)
+@var <XftFont> XftFont* scaleFont = <String> "Sans-8"
 @ current gain in centibel (1/100 dB)
 @var int value = 0
 @ bottom of the dB range in centibel
@@ -39,6 +41,13 @@
 @var visible_interest = False
 
 @METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
 
 @proc initialize
 {
@@ -96,6 +105,12 @@
         XtFree($old$label_mem);
         if ($label == 0) $label = "";
         $label = $label_mem = XtNewString($label);
+        do_redraw = True;
+    }
+
+    if ($scaleFont != $old$scaleFont) {
+        /* The XftFont converter caches by display and owns the font, so do
+         * not close the old pointer here (see converters-xft.c). */
         do_redraw = True;
     }
 
@@ -534,6 +549,9 @@
     if (!$draw) return;
     if ($tickStep <= 0) return;
 
+    XftFont *sf = $scaleFont ? $scaleFont : $xftFont;
+    if (!sf) return;
+
     int top = fader_track_top($);
     int bot = fader_track_bottom($);
     if (bot <= top) return;
@@ -553,7 +571,8 @@
         int y0 = value_to_y($, (int)lround(n0 * step));
         int y1 = value_to_y($, (int)lround((n0 + 1) * step));
         int gap = (y0 > y1) ? (y0 - y1) : (y1 - y0);
-        if (gap < 13) label_every = 2;
+        int label_h = sf->height > 0 ? sf->height : 13;
+        if (gap < label_h + 2) label_every = 2;
     }
 
     int i;
@@ -586,12 +605,12 @@
         }
 
         int w, h;
-        xft_calc_string_size($, $xftFont, buf, &w, &h);
+        xft_calc_string_size($, sf, buf, &w, &h);
         int px = lx;
         if (px + w > (int)$width - 2) px = (int)$width - w - 2;
         if (px < 0) px = 0;
-        int py = y + ($xftFont->ascent - $xftFont->descent) / 2;
-        XftDrawStringUtf8($draw, $col + 1, $xftFont, px, py,
+        int py = y + (sf->ascent - sf->descent) / 2;
+        XftDrawStringUtf8($draw, $col + 1, sf, px, py,
                           (FcChar8*)buf, (int)strlen(buf));
     }
 }

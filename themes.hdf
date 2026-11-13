@@ -47,6 +47,7 @@
     list_sel_bg    0x2f6fd0
     list_sel_fg    0xffffff
     list_header_bg 0xd7e8f4
+    scrollbar_thumb 0xb8cddd
     list_header_fg 0x102030
     list_line      0xc8d8e4
     list_alt_bg    0xeef6fb
@@ -101,6 +102,7 @@
     list_sel_bg    0x000000
     list_sel_fg    0xffffff
     list_header_bg 0xffffff
+    scrollbar_thumb 0x808080
     list_header_fg 0x000000
     list_line      0x000000
     list_alt_bg    0xf0f0f0
@@ -155,6 +157,7 @@
     list_sel_bg    0xff0000
     list_sel_fg    0xffffff
     list_header_bg 0xd7e8f4
+    scrollbar_thumb 0xb8cddd
     list_header_fg 0x102030
     list_line      0xc8d8e4
     list_alt_bg    0xeef6fb
@@ -211,6 +214,7 @@
     list_sel_bg    0x44475a
     list_sel_fg    0xf8f8f2
     list_header_bg 0x1e1f29
+    scrollbar_thumb 0x44475a
     list_header_fg 0xbd93f9
     list_line      0x44475a
     list_alt_bg    0x2f313e
@@ -266,6 +270,7 @@
     list_sel_bg    0x073642
     list_sel_fg    0x93a1a1
     list_header_bg 0x073642
+    scrollbar_thumb 0x586e75
     list_header_fg 0x268bd2
     list_line      0x586e75
     list_alt_bg    0x073642

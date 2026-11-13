@@ -14,8 +14,9 @@ regressions across the toolkit.
 
 - A **LUI/Lua** application loaded by `commander/commander_runner` (the xtcw2
   host), with a multi-screen structure and a small data model.
-- Use of a wide slice of the widget set: labels, buttons, lists, edits,
-  spinboxes, combos, checkboxes/radios, multi-line editors, menus and dialogs.
+- A style-guide layout: header/toolbar, tabbed content, status bar, themed
+  `WListView` lists, flat `Wbutton`s, `Wedit`/`WspinBox` controls,
+  `WToggleSwitch` dietary switches and `KaroEd` editors.
 - Theming via the central theme registry.
 - A **debug and a production** build (production = `-O3`, no `-DMLS_DEBUG`, no
   AddressSanitizer) plus a headless **start smoke test** under Xvfb.
@@ -144,7 +145,6 @@ because AddressSanitizer needs to control the address-space layout. The
 
 ## Relationship to the plan
 
-Everything this app cannot do yet — a tab widget, a table view, a toolbar/status
-bar, JSON persistence, list/model data binding, a location-independent host,
-visual regression tests, and the (now fixed) production build — is catalogued in
+Everything this app cannot do yet — JSON persistence, real list/model data
+binding, a location-independent host and visual regression tests — is catalogued in
 [`../plan-xtcw-completed.md`](../plan-xtcw-completed.md).

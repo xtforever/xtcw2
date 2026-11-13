@@ -1,5 +1,5 @@
 @class WspinBox (Wlabel)
-@ Numeric input with spin buttons
+@ Numeric input; drive it with the spin_up()/spin_down() actions
 
 @PUBLIC
 @var <Callback> XtCallbackList callback = NULL
@@ -17,6 +17,7 @@
     $edit_pos = 0;
     if ($value < $min) $value = $min;
     if ($value > $max) $value = $max;
+    sync_label($);
     TRACE(2,"WspinBox:%s initialized, value=%d", $name, $value);
 }
 
@@ -32,7 +33,7 @@
     int new_val = $value + $step;
     if (new_val <= $max) {
         $value = new_val;
-        redraw_label($);
+        sync_label($);
     }
 }
 
@@ -41,13 +42,22 @@
     int new_val = $value - $step;
     if (new_val >= $min) {
         $value = new_val;
-        redraw_label($);
+        sync_label($);
     }
 }
 
 @proc notify
 {
     XtCallCallbackList( $, $callback, event );
+}
+
+@UTILITIES
+
+@proc void sync_label($)
+{
+    char buf[32];
+    snprintf(buf, sizeof buf, "%d", $value);
+    XtVaSetValues($, XtNlabel, buf, NULL);
 }
 
 @EXPORTS
@@ -57,6 +67,7 @@
 }
 
 @IMPORTS
+@incl <stdio.h>
 @incl "mls.h"
 @incl <X11/Xft/Xft.h>
 @incl "converters-xft.h"

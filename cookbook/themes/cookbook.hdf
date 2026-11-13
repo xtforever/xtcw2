@@ -42,6 +42,7 @@
     list_sel_bg    0xffe8a3
     list_sel_fg    0x3d405b
     list_header_bg 0xf4ead2
+    scrollbar_thumb 0xb8cddd
     list_header_fg 0x3d405b
     list_line      0xd8c3a5
     list_alt_bg    0xf7efe0
@@ -96,6 +97,7 @@
     list_sel_bg    0xe07a5f
     list_sel_fg    0xffffff
     list_header_bg 0x33354d
+    scrollbar_thumb 0x5c5f7a
     list_header_fg 0xf2cc8f
     list_line      0x5c5f7a
     list_alt_bg    0x454867

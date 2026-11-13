@@ -1,0 +1,238 @@
+@class WAppWindow (Constraint)
+@ Themed application-window container with menu, toolbar, content and status slots.
+
+@EXPORTS
+@ Return the slot index for a child (0=menu, 1=toolbar, 2=content, 3=status).
+@proc int wappwindow_slot_index($, Widget child)
+{
+    String slot = NULL;
+    XtVaGetValues(child, "slot", &slot, NULL);
+    if (!slot) return 2;
+    if (strcmp(slot, "menu") == 0) return 0;
+    if (strcmp(slot, "toolbar") == 0) return 1;
+    if (strcmp(slot, "status") == 0) return 3;
+    return 2;
+}
+
+@PUBLIC
+@ outer window margin; -1 uses the theme's window_margin metric
+@var int windowMargin = -1
+@ gap between menu/toolbar/content/status rows; -1 uses theme group_gap
+@var int rowGap = -1
+
+@private-constraints
+@ child slot: "menu", "toolbar", "content" (default) or "status"
+@var String slot
+
+@PRIVATE
+@var int layout_guard
+
+@METHODS
+
+@proc class_initialize
+{
+    /* Register the constraint resource manually; wbuild's @constraints
+     * generation is not reliable for new widgets. */
+    static XtResource resources[] = {
+        { "slot", "Slot", XtRString, sizeof(String),
+          XtOffsetOf(WAppWindowConstraintRec, wAppWindow.slot),
+          XtRString, (XtPointer)"content" },
+    };
+    ConstraintWidgetClass cwc = (ConstraintWidgetClass)wAppWindowWidgetClass;
+    cwc->constraint_class.resources = resources;
+    cwc->constraint_class.num_resources = XtNumber(resources);
+}
+
+@proc initialize
+{
+    $layout_guard = 0;
+
+    if ($windowMargin < 0)
+        $windowMargin = theme_metric("window_margin", 16);
+    if ($rowGap < 0)
+        $rowGap = theme_metric("group_gap", 12);
+
+    if ($width == 0)  $width  = 640;
+    if ($height == 0) $height = 480;
+
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+    theme_register($, appwindow_colors_changed);
+    appwindow_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+}
+
+@proc realize
+{
+    #realize($, mask, attributes);
+    appwindow_layout($);
+}
+
+@proc resize
+{
+    appwindow_layout($);
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    if (!win) return;
+
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    XSetForeground(dpy, gc, $background_pixel);
+    XFillRectangle(dpy, win, gc, 0, 0, $width, $height);
+}
+
+@proc set_values
+{
+    return ($background_pixel != $old$background_pixel);
+}
+
+@proc change_managed
+{
+    if ($layout_guard) return;
+    appwindow_layout($);
+}
+
+@proc insert_child
+{
+    (void)$;
+    #insert_child(child);
+}
+
+@proc delete_child
+{
+    (void)$;
+    #delete_child(child);
+}
+
+@proc query_geometry
+{
+    int w = $width ? $width : 640;
+    int h = $height ? $height : 480;
+
+    if ((request->request_mode & CWWidth) && (int)request->width > w)
+        w = request->width;
+    if ((request->request_mode & CWHeight) && (int)request->height > h)
+        h = request->height;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc geometry_manager
+{
+    Dimension w = (request->request_mode & CWWidth) ? request->width : $child$width;
+    Dimension h = (request->request_mode & CWHeight) ? request->height : $child$height;
+
+    XtConfigureWidget(child, $child$x, $child$y, w, h, $child$border_width);
+    appwindow_layout($);
+    return XtGeometryDone;
+}
+
+@UTILITIES
+
+@proc void appwindow_colors_changed($)
+{
+    Pixel bg = get_color("bg_norm");
+    if (!bg) bg = get_color("gridbox_bg");
+    if (bg) XtVaSetValues($, XtNbackground, bg, NULL);
+    if (XtIsRealized($)) {
+        XClearWindow(XtDisplay($), XtWindow($));
+        appwindow_layout($);
+    }
+}
+
+@proc int appwindow_child_height(Widget child)
+{
+    XtWidgetGeometry request, reply;
+    memset(&request, 0, sizeof request);
+    if (XtQueryGeometry(child, &request, &reply) == XtGeometryAlmost &&
+        (reply.request_mode & CWHeight))
+        return (int)reply.height;
+    return (int)child->core.height;
+}
+
+@proc void appwindow_layout($)
+{
+    if ($layout_guard) return;
+    $layout_guard = 1;
+
+    int margin = $windowMargin;
+    int gap = $rowGap;
+    int inner_w = (int)$width - 2 * margin;
+    if (inner_w < 1) inner_w = 1;
+
+    int have[4] = { 0, 0, 0, 0 };
+    int pref[4] = { 0, 0, 0, 0 };
+
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+        int row = wappwindow_slot_index($, child);
+        have[row] = 1;
+        int h = appwindow_child_height(child);
+        if (h > pref[row]) pref[row] = h;
+    }
+
+    int top = margin;
+    int bottom = (int)$height - margin;
+    if (bottom < top) bottom = top;
+
+    int menu_h = have[0] ? pref[0] : 0;
+    int toolbar_h = have[1] ? pref[1] : 0;
+    int status_h = have[3] ? pref[3] : 0;
+
+    int y = top;
+    int menu_y = y;
+    if (have[0]) y += menu_h + (have[1] || have[2] || have[3] ? gap : 0);
+    int toolbar_y = y;
+    if (have[1]) y += toolbar_h + (have[2] || have[3] ? gap : 0);
+
+    int content_y = y;
+    int content_h = 0;
+    int status_y = bottom - status_h;
+
+    if (have[2]) {
+        content_h = status_y - content_y - (have[3] ? gap : 0);
+        if (content_h < 1) content_h = 1;
+    } else {
+        status_y = y;
+    }
+
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+        int row = wappwindow_slot_index($, child);
+        int cy = content_y;
+        int ch = content_h;
+        if (row == 0) { cy = menu_y; ch = menu_h; }
+        else if (row == 1) { cy = toolbar_y; ch = toolbar_h; }
+        else if (row == 3) { cy = status_y; ch = status_h; }
+        XtConfigureWidget(child, margin, cy, inner_w, ch,
+                          child->core.border_width);
+    }
+
+    $layout_guard = 0;
+}
+
+@IMPORTS
+@incl <string.h>
+@incl "theme.h"

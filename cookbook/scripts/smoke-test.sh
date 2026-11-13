@@ -62,7 +62,7 @@ trap cleanup EXIT INT TERM
 
 echo "[smoke] mode=$MODE, launching app (DISPLAY=${DISPLAY:-unset})"
 cd "$ROOT/commander"
-"${RUNNER[@]}" timeout 30 "$BIN" -Luafile "$LUA" -themeFile "$THEME" >"$LOG" 2>&1 &
+"${RUNNER[@]}" timeout 30 "$BIN" -Luafile "$LUA" -themeFile "$THEME" -theme default >"$LOG" 2>&1 &
 APP_PID=$!
 
 sleep 3

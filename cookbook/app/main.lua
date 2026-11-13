@@ -5,10 +5,10 @@
 --   cd commander && ./commander_runner -Luafile ../cookbook/app/main.lua \
 --                    -themeFile ../cookbook/themes/cookbook.hdf
 --
--- The host must run from commander/ because both its own `../lui/?.lua` path and
--- the cookbook's module path below are resolved relative to the working
--- directory. (Making the host location-independent is a gap recorded in
--- ../plan-xtcw-completed.md.)
+-- The layout follows style-guide.md: a header/toolbar row, a tabbed content
+-- area that fills the window, and a status bar at the bottom.  The screens use
+-- the modern themed widgets (WListView, WToggleSwitch, Wbutton, Wedit,
+-- WspinBox, KaroEd), not Xaw.
 
 package.path = '../cookbook/app/?.lua;' .. package.path
 
@@ -16,7 +16,6 @@ local gui = require('gui_xt')
 local lui = require('lui')
 local macros = require('ui.macros')
 local model = require('model.recipes')
-local persistence = require('store.persistence') -- noqa: unused for now (persistence gap)
 
 local screens = {
     require('screens.recipe_list'),
@@ -25,43 +24,58 @@ local screens = {
     require('screens.shopping_list'),
 }
 
--- ---------------------------------------------------------------------------
--- Data stores (MLS handles passed to the list-view widgets)
--- ---------------------------------------------------------------------------
-local recipe_store = gui.create_store(4)
-for _, row in ipairs(model.list_rows()) do
-    gui.store_append(recipe_store, row)
-end
+-- Screen id -> WtabWidget page index (0-based).
+local screen_index = {
+    screen_list = 0,
+    screen_detail = 1,
+    screen_editor = 2,
+    screen_shopping = 3,
+}
+local tab_names = { "Recipes", "Detail", "Editor", "Shopping" }
 
-local ingredient_store = gui.create_store(3)
-for _, row in ipairs(model.ingredient_rows(1)) do
-    gui.store_append(ingredient_store, row)
-end
-
-local shopping_store = gui.create_store(4)
+-- Shopping rows are mutable (the Done column toggles); the WListView is
+-- refreshed from this table.
+local shopping_rows = {}
 for _, row in ipairs(model.all_ingredient_rows()) do
-    gui.store_append(shopping_store, row)
+    shopping_rows[#shopping_rows + 1] = row
 end
 
--- ---------------------------------------------------------------------------
--- Screen switching (the toolkit has no tab widget yet — see the plan).
--- ---------------------------------------------------------------------------
-local active_screen = screens[1].id
+local function shopping_strings()
+    local out = {}
+    for _, row in ipairs(shopping_rows) do
+        out[#out + 1] = table.concat(row, "\t")
+    end
+    return out
+end
+
+local function load_detail(index)
+    local recipe = model.get(index)
+    if not recipe then return end
+    gui.set("det_title", "label", recipe.title)
+    gui.set("det_meta", "label", string.format(
+        "%s  ·  %s  ·  %d servings  ·  %d min",
+        recipe.author, recipe.category, recipe.servings, recipe.minutes))
+    local rows = {}
+    for _, ing in ipairs(recipe.ingredients) do
+        rows[#rows + 1] = table.concat(ing, "\t")
+    end
+    gui.set_string_list("det_ingredients", "rows", rows)
+    gui.set("det_steps", "text", recipe.steps)
+end
 
 local function show(id)
-    for _, s in ipairs(screens) do
-        if s.id == id then
-            gui.manage(s.id)
-            active_screen = id
-        else
-            gui.unmanage(s.id)
-        end
-    end
-    gui.set("status", "label",
-        "Screen: " .. id .. "  (" .. tostring(model.count()) .. " recipes)")
+    local index = screen_index[id] or 0
+    gui.set("tabs", "selected", index)
+    gui.set("status", "label", "Screen: " .. (tab_names[index + 1] or id)
+        .. "  (" .. tostring(model.count()) .. " recipes)")
 end
 
 -- Callbacks are looked up as Lua globals by the host's LUA(...) dispatch.
+function cb_tab()
+    local index = tonumber(gui.get("tabs", "selected")) or 0
+    gui.set("status", "label", "Tab: " .. (tab_names[index + 1] or "?"))
+end
+
 function cb_nav_list() show("screen_list") end
 function cb_nav_detail() show("screen_detail") end
 function cb_nav_editor() show("screen_editor") end
@@ -74,24 +88,47 @@ function cb_search()
     gui.set("status", "label", "Search: '" .. q .. "' (filtering not implemented)")
 end
 
-function cb_open_recipe() show("screen_detail") end
+function cb_open_recipe()
+    local index = (tonumber(gui.get("recipe_list", "selected")) or 0) + 1
+    load_detail(index)
+    show("screen_detail")
+end
 
 function cb_delete_recipe()
     gui.set("status", "label", "Delete recipe (not implemented)")
 end
 
+local categories = { "Starter", "Main", "Dessert", "Breakfast" }
+local category_index = 2
+
+function cb_cycle_category()
+    category_index = (category_index % #categories) + 1
+    gui.set("ed_cat", "label", categories[category_index])
+    gui.set("status", "label", "Category: " .. categories[category_index])
+end
+
 function cb_save()
     local title = gui.get("ed_title", "label") or ""
-    gui.set("status", "label", "Saved: " .. title)
+    local category = gui.get("ed_cat", "label") or ""
+    gui.set("status", "label", "Saved: " .. title .. "  (" .. category .. ")")
 end
 
 function cb_cancel() show("screen_list") end
 
 function cb_check_shopping()
-    gui.set("status", "label", "Toggle shopping item (not implemented)")
+    local index = tonumber(gui.get("shop_list", "selected")) or -1
+    if index < 0 or not shopping_rows[index + 1] then return end
+    local row = shopping_rows[index + 1]
+    row[4] = (row[4] == "yes") and "no" or "yes"
+    gui.set_string_list("shop_list", "rows", shopping_strings())
+    gui.set("status", "label", "Shopping item " .. (index + 1) .. ": " .. row[4])
 end
 
 function cb_clear_shopping()
+    for _, row in ipairs(shopping_rows) do
+        row[4] = "no"
+    end
+    gui.set_string_list("shop_list", "rows", shopping_strings())
     gui.set("status", "label", "Shopping list cleared")
 end
 
@@ -101,49 +138,37 @@ function cb_quit() xtappexitflag() end
 -- Assemble the single UI source parsed by lui.run().
 -- ---------------------------------------------------------------------------
 local ui = macros.PRELUDE .. [[
-(window :id "win" :title "xtcw2 Cookbook" :width 1000 :height 720
-  (grid :id "main" :weightx 1 :weighty 1
-    (Wlabel :id "hdr" :label "\\includesvg{../cookbook/assets/dish.svg}{18pt}{18pt} xtcw2 Cookbook - recipe manager reference app"
-           (cell 0 0 1 0) :gridWidth 5 :fill 3 :fontSize 17)
-    (Wbutton :id "nav_list"     :label "Recipes"  :gridx 0 :gridy 1 :weightx 1 :weighty 0 :fill 3 :callback "LUA(cb_nav_list)")
-    (Wbutton :id "nav_detail"   :label "Detail"   :gridx 1 :gridy 1 :weightx 1 :weighty 0 :fill 3 :callback "LUA(cb_nav_detail)")
-    (Wbutton :id "nav_editor"   :label "Editor"   :gridx 2 :gridy 1 :weightx 1 :weighty 0 :fill 3 :callback "LUA(cb_nav_editor)")
-    (Wbutton :id "nav_shopping" :label "Shopping" :gridx 3 :gridy 1 :weightx 1 :weighty 0 :fill 3 :callback "LUA(cb_nav_shopping)")
-    (Wbutton :id "nav_quit"     :label "Quit"     :gridx 4 :gridy 1 :weightx 1 :weighty 0 :fill 3 :callback "LUA(cb_quit)")
-    (label :id "status" :label "Ready" :gridx 0 :gridy 2 :gridWidth 5 :weightx 1 :weighty 0 :fill 3)
+(window :id "win" :title "xtcw2 Cookbook" :width 1000 :height 760
+  (grid :id "main" :weightx 1 :weighty 1 :defaultDistance 12
+    (Wlabel :id "hdr"
+       :label "\\includesvg{../cookbook/assets/dish.svg}{18pt}{18pt} xtcw2 Cookbook"
+       :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3 :fontSize 17)
+    (Wbutton :id "nav_quit" :label "Quit"
+       :gridx 1 :gridy 0 :weightx 0 :weighty 0 :fill 3 :callback "LUA(cb_quit)")
+    (tabs :id "tabs" :gridx 0 :gridy 1 :gridWidth 2 :weightx 1 :weighty 1 :fill 3
+       :callback "LUA(cb_tab)"
 ]]
     .. screens[1].fragment() .. "\n"
     .. screens[2].fragment() .. "\n"
     .. screens[3].fragment() .. "\n"
     .. screens[4].fragment() .. "\n"
     .. [[
+    )
+    (label :id "status" :label "Ready" :gridx 0 :gridy 2 :gridWidth 2 :weightx 1 :weighty 0 :fill 3)
   ))
 ]]
-
--- Inject the MLS store handles into the list-view models.
--- (The current screens render their data through Wlabel to stay robust; the
--- stores above exercise the gui.create_store / store_append API and would back
--- a real WtableView once that widget exists — see ../plan-xtcw-completed.md.)
-local function join_rows(rows, fmt)
-    local lines = {}
-    for _, r in ipairs(rows) do
-        lines[#lines + 1] = string.format(fmt, table.unpack(r))
-    end
-    return table.concat(lines, "\n")
-end
 
 local ok, err = lui.run(ui)
 if not ok then
     error("cookbook: " .. tostring(err))
 end
 
--- Populate the label-based lists from the model.
-gui.set("recipe_list", "label",
-    join_rows(model.list_rows(), "%-26s %-10s %2s servings  %3s min"))
-gui.set("det_ingredients", "label",
-    join_rows(model.ingredient_rows(1), "%6s %-5s %s"))
-gui.set("shop_list", "label",
-    join_rows(model.all_ingredient_rows(), "%6s %-5s %-24s [ ]"))
-
--- Show the first screen; the others are unmanaged again.
-show(active_screen)
+-- Populate the list views and the initial detail page.
+local recipe_rows = {}
+for _, row in ipairs(model.list_rows()) do
+    recipe_rows[#recipe_rows + 1] = table.concat(row, "\t")
+end
+gui.set_string_list("recipe_list", "rows", recipe_rows)
+gui.set_string_list("shop_list", "rows", shopping_strings())
+load_detail(1)
+show("screen_list")

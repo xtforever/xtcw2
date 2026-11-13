@@ -11,11 +11,14 @@
  */
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 #include <X11/Intrinsic.h>
+#include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
 #include <X11/Core.h>
 #include <xtcw/Wviewport.h>
+#include <xtcw/WviewportP.h>
 #include <xtcw/Gridbox.h>
 #include <xtcw/register_wb.h>
 #include "mls.h"
@@ -79,6 +82,38 @@ int main(int argc, char **argv)
     assert(XQueryTree(dpy, bigw, &r2, &p2, &kids2, &n2));
     assert(p2 != vpw);
     if (kids2) XFree(kids2);
+
+    /* Regression: dragging the vertical thumb fully down must reach maxy.
+     * The callback used maxy as the inverse extent while relayout() synced
+     * with the total content height, so the thumb stopped early. */
+    {
+        WviewportWidget vw = (WviewportWidget)vp;
+        int maxy = (int)big->core.height - (int)vw->wviewport.clip->core.height;
+        XButtonEvent ev;
+
+        assert(maxy > 0);
+        memset(&ev, 0, sizeof ev);
+        ev.type = ButtonPress;
+        ev.y = (int)vw->wviewport.vsb->core.height;
+        XtCallActionProc(vw->wviewport.vsb, "sl_motion", (XEvent *)&ev, NULL, 0);
+        XSync(XtDisplay(vp), False);
+        while (XtAppPending(app))
+            XtAppProcessEvent(app, XtIMAll);
+        assert(vw->wviewport.scroll_y >= maxy - 1);
+        assert(vw->wviewport.scroll_y <= maxy);
+
+        int maxx = (int)big->core.width - (int)vw->wviewport.clip->core.width;
+        assert(maxx > 0);
+        memset(&ev, 0, sizeof ev);
+        ev.type = ButtonPress;
+        ev.x = (int)vw->wviewport.hsb->core.width;
+        XtCallActionProc(vw->wviewport.hsb, "sl_motion", (XEvent *)&ev, NULL, 0);
+        XSync(XtDisplay(vp), False);
+        while (XtAppPending(app))
+            XtAppProcessEvent(app, XtIMAll);
+        assert(vw->wviewport.scroll_x >= maxx - 1);
+        assert(vw->wviewport.scroll_x <= maxx);
+    }
 
     /* runtime child swap */
     Widget big2 = XtVaCreateManagedWidget("big2", widgetClass, vp,

@@ -1,0 +1,4 @@
+(KaroEd :id "ed"
+         :xftFont "Monospace-14"
+         :grid_width 80 :grid_height 9 :auto_resize 0
+         :bg_norm "#101018" :fg_norm "#e8e8e8")

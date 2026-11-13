@@ -122,8 +122,10 @@
 
     ensure_line0($);
 
-    $height = $grid_pix_height * $grid_height;
-    $width = $grid_pix_width * $grid_width;
+    /* Respect an explicit :height/:width from the UI; otherwise derive the
+     * size from the grid dimensions. */
+    if( $height == 0 ) $height = $grid_pix_height * $grid_height;
+    if( $width == 0  ) $width  = $grid_pix_width * $grid_width;
     if( $height == 0 || $height > 4095 ) $height = 20;
     if( $width == 0 || $width > 4095  ) $width = 20;
 }
@@ -1811,6 +1813,20 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 
 
 
+@METHODS
+
+@ override the Wheel theme hook: editor content uses the input_* roles so
+@ the text area stands out from the page surface.
+@proc void colors_changed
+{
+    #colors_changed($);
+    if (theme_color_defined("input_bg")) $bg_norm = get_color("input_bg");
+    if (theme_color_defined("input_fg")) $fg_norm = get_color("input_fg");
+    xft_color_alloc($, $bg_norm, &$xft_col[COLOR_BG_NORM]);
+    xft_color_alloc($, $fg_norm, &$xft_col[COLOR_FG_NORM]);
+    if (XtIsRealized($)) redraw_full($);
+}
+
 @IMPORTS
 
 @incl <stdint.h>
@@ -1823,3 +1839,4 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @incl "mls.h"
 @incl "form_parse.h"
 @incl "micro_vars.h"
+@incl "theme.h"

@@ -771,6 +771,25 @@ fixed widget for rich demo descriptions.
 
 **Files:** `wbuild_widgets/Wretex.widget`
 
+## EqFader: font resources were not converted when created first
+
+**Symptom:** creating an `EqFader` as the first widget in a process left
+`xftFont`/`scaleFont` pointing at the resource *strings* instead of
+`XftFont*`; drawing then read garbage metrics. The demo worked only because a
+`Wlabel`/`Wbutton` was created first and registered the Xft converters.
+
+**Cause:** `EqFader` had no `class_initialize`. Xt does not automatically run
+`Wheel.class_initialize` for subclasses, so `converters_xft_init()` (and the
+other converters) were never registered before the font resources were
+converted.
+
+**Fix:** add `EqFader.class_initialize` with `converters_init(); m_init();
+conststr_init();` (same pattern as `Wlabel`). `tests/test_eqfader.c` creates an
+`EqFader` as the first widget and checks that the separate `scaleFont` is a
+valid, smaller `XftFont`.
+
+**Files:** `wbuild_widgets/EqFader.widget`, `tests/test_eqfader.c`
+
 ## WListView: empty area below a short list took the last row's colour
 
 **Symptom:** in a short `WListView` (e.g. the four-row trace selector) the
@@ -1680,3 +1699,186 @@ re-entrant calls (`applying` guard).
 **Fix:** `theme_init()` frees an existing `xcc` before creating the new one.
 
 **File:** `utils/theme.c`
+
+## t1_menu: left demo list and right trace list frames were not aligned
+
+**Symptom:** in the launcher the outer frames of the left demo list and the
+right trace-level list did not end on the same line; the right frame sat a few
+pixels lower.
+
+**Cause:** the trace list was nested in a `Gridbox` (`trace_box`) together with
+a separate `Trace: 0` label. The nested box added its own border/margins and
+the trace list started below the label, so the two list frames could not align.
+The label was redundant: the list header already says `Trace level` and the
+selected row is highlighted.
+
+**Fix:** put `trace_lv` directly into the main grid at the same `gridy` as
+`lv` (both `weightx 1`, `weighty 1`, `fill 3`) and remove the separate
+`trace_lbl` label and its `gui.set()` update.
+
+**File:** `tools/t1_menu.lua`
+
+## t1_menu / demo_listview: selecting a row did not update the description
+
+**Symptom:** clicking or keyboard-selecting a row in the left `WListView`
+moved the highlight, but the description below (and the `demo_listview` status
+label) stayed on the first row.
+
+**Cause:** LUI callbacks written as `LUA(on_select)` are invoked through the
+`LUA_callback` C bridge, which passes only the callback's *client data*
+(`on_select` / optional argument), not the widget callback's `call_data`.
+`WListView.notify` supplies the selected row as `call_data`, so
+`on_select(i)` received `nil`; `select_demo(nil)` returned without changing
+the description. The initial row worked because `select_demo(0)` was called
+explicitly.
+
+**Fix:** read the current selection from the widget instead of relying on the
+callback argument:
+
+```lua
+function on_select(_)
+    select_demo(gui.get('lv', 'selected'))
+end
+```
+
+The same fix was applied to `on_activate`/`on_trace` in `t1_menu.lua` and to
+`on_select`/`on_activate` in `demos/demo_listview.lua`.
+`tests/test_t1_menu.sh` now selects row 4 (`theme`) via the
+`T1_MENU_LATE_SELECT` hook and asserts that the description changed.
+
+**Files:** `tools/t1_menu.lua`, `demos/demo_listview.lua`,
+`tests/test_t1_menu.sh`
+
+## WspinBox: numeric value was not displayed (widget showed its name)
+
+**Symptom:** the form/contacts demos showed `agespin` / `ph_area` instead of
+the numeric value in the spinbox row; the demo looked like it was missing the
+age spin widget.
+
+**Cause:** `WspinBox` inherits `Wlabel` but never copied its `value` resource
+into the label. `Wlabel.initialize` therefore fell back to the widget name,
+and `spin_up()`/`spin_down()` only called `redraw_label()` on that stale text.
+
+**Fix:** `sync_label()` formats `value` into `XtNlabel` and is called from
+`initialize()`, `spin_up()` and `spin_down()`. The form demo now composes
+visible `-`/`+` `Wbutton`s that call the spin actions via `xtaction()` and
+resets both `value` and `label` on Cancel. `tests/test_wspinbox.c` checks the
+initial label and the label after up/down.
+
+**Files:** `wbuild_widgets/WspinBox.widget`, `demos/demo_form.lua`,
+`tests/test_wspinbox.c`
+
+## WtabWidget: unselected tab titles were invisible
+
+**Symptom:** only the selected tab title was visible; the other tabs appeared
+empty. The tab strip was painted with `gridbox_border`, while unselected text
+used `fg_norm` — in most themes those are the same dark colour.
+
+**Fix:** add a `tabBg` resource resolved from `list_header_bg` (fallback
+`gridbox_bg`); resolve `tabFg` from `list_header_fg` (fallback `fg_norm`) and
+`tabFgSel` from `accent` (fallback `fg_sel`). The strip now follows the
+style-guide header roles.
+
+**File:** `wbuild_widgets/WtabWidget.widget`
+
+## WtabWidget/Wviewport: tab pages did not fill the content area
+
+**Symptom:** a tab page with a small natural width (e.g. the cookbook recipe
+list) was rendered as a narrow island on the left; the list's flex column
+collapsed and headers/columns were clipped.
+
+**Fix:** `WtabWidget.relayout()` sizes the current page to the viewport using
+`XtQueryGeometry` (preferred height, at least the viewport height) and the clip
+width (minus the vertical bar). `Wviewport.content_pref()` honours the page's
+stretched core size. Pages now fill the tab area and only scroll when their
+preferred height is larger.
+
+**Files:** `wbuild_widgets/WtabWidget.widget`, `wbuild_widgets/Wviewport.widget`
+
+## Wviewport: scrollbars used the unthemed VSlider default colour
+
+**Symptom:** scrollbars inside tab pages were red (the X default foreground)
+instead of the theme's scrollbar colour.
+
+**Fix:** `Wviewport` registers with the theme and applies `scrollbar_thumb`
+(fallback `list_header_bg`) to the VSlider/HSlider foreground and
+`gridbox_bg`/`bg_norm` to their background and the clip. The existing
+VSlider GC rebuild makes live theme changes work.
+
+**File:** `wbuild_widgets/Wviewport.widget`
+
+## KaroEd: explicit `:height` was ignored; editor used the page background
+
+**Symptom:** a `KaroEd` with `:height 80` collapsed to a thin strip in the
+cookbook editor, and its text area blended into the page surface.
+
+**Fix:** `initialize()` only derives width/height from the grid dimensions when
+they are 0, so an explicit `:height`/`:width` is respected. A `colors_changed`
+override resolves `input_bg`/`input_fg` for the editor content (falling back to
+the Wheel colours) and reallocates the Xft colours.
+
+**File:** `wbuild_widgets/KaroEd.widget`
+
+## Cookbook: Xaw Toggle and legacy Wcombo replaced; style-guide redesign
+
+The cookbook now uses a `WtabWidget` for its four screens, `WListView` for the
+recipe/ingredient/shopping lists, `WToggleSwitch` for dietary flags, a flat
+`Wbutton` category cycler instead of the legacy `Wcombo`, and top action bars
+(Cancel/Save, Back/Edit) with a primary accent action. The layout follows
+`style-guide.md` (header/toolbar, tabbed content, status bar, themed list and
+scrollbar roles).
+
+**Files:** `cookbook/app/main.lua`, `cookbook/app/screens/*.lua`,
+`cookbook/app/ui/components.lua`, `cookbook/README.md`
+
+## run_widget.sh: normal Quit exited 1 under LeakSanitizer
+
+**Symptom:** the new single-widget probe harness rendered correctly, but
+pressing Quit (or using `--autoclose`) exited with status 1 and printed a
+LeakSanitizer report.
+
+**Cause:** the debug `commander_runner` is ASan-instrumented. Process-global
+fontconfig, Xt and task-manager allocations are reported as leaks on normal
+shutdown, independently of the probe widget.
+
+**Fix:** `run_widget.sh` exports `ASAN_OPTIONS=detect_leaks=0` by default,
+matching the cookbook smoke test. Set `RUN_WIDGET_LEAKS=1` to keep leak
+detection enabled when investigating a widget-specific leak.
+
+**File:** `run_widget.sh`
+
+## Wviewport: dragging the scrollbar thumb stopped before the bottom
+
+**Symptom:** in the cookbook Detail tab (and any `Wviewport` with a tall
+content), dragging the vertical scrollbar thumb down did not reach the bottom.
+Mouse-wheel scrolling inside the viewport did reach the end and updated the
+thumb.
+
+**Cause:** `relayout()` synced the slider position with the total content
+extent:
+
+```c
+pos = scroll_y * 1000000 / ch;   /* ch = content height */
+```
+
+but `vscroll_cb()` inverted it with the scrollable extent:
+
+```c
+scroll_y = pos * maxy / 1000000; /* maxy = ch - clip_h */
+```
+
+At a full drag (`pos = RES - frac`) this produced `maxy^2 / ch`, so the thumb
+stopped early. This is the same mapping bug previously fixed in `WListView`.
+
+**Fix:** invert with the same total extent used by `relayout()`:
+
+```c
+scroll_y = pos * ch / 1000000;   /* hscroll: scroll_x = pos * cw / 1000000 */
+```
+
+`relayout()` still clamps the result to `maxy`/`maxx`.
+
+Regression coverage in `tests/test_wviewport.c` calls the vertical slider's
+`sl_motion` action at the bottom and asserts `scroll_y` reaches `maxy`.
+
+**Files:** `wbuild_widgets/Wviewport.widget`, `tests/test_wviewport.c`

@@ -2,8 +2,8 @@
 -- Reusable S-expression fragment builders for the cookbook screens.
 --
 -- Every builder returns a string that is concatenated into the single UI source
--- parsed by lui.run(). Only widget tags and resources proven in demos/ and
--- experimental/lui_test/ are used, so the reference app stays parse-clean.
+-- parsed by lui.run().  The builders use the modern themed widgets from the
+-- style guide (Wbutton/Wedit/WspinBox/WToggleSwitch/WListView), not Xaw.
 
 local M = {}
 
@@ -41,11 +41,16 @@ function M.spin(id, value, min, max, gx, gy, wx)
         id, gx, gy, wx, value, min, max)
 end
 
--- An Xaw toggle (boolean flag).
+-- A themed boolean switch with its label.  Returns a nested Gridbox so the
+-- label and switch stay together; `id` names the WToggleSwitch itself.
 function M.toggle(id, text, gx, gy, wx)
     wx = wx or 1
-    return fmt('(toggle :id "%s" :label "%s" :gridx %d :gridy %d :gridWidth %d'
-        .. ' :weightx 1 :weighty 0 :fill 3)', id, text, gx, gy, wx)
+    return fmt('(grid :id "%s_box" :gridx %d :gridy %d :gridWidth %d'
+        .. ' :weightx 1 :weighty 0 :fill 3 :borderWidth 0\n'
+        .. '  (label :label "%s" :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3)\n'
+        .. '  (WToggleSwitch :id "%s" :gridx 1 :gridy 0 :weightx 0 :weighty 0'
+        .. ' :fill 3 :checked FALSE))',
+        id, gx, gy, wx, text, id)
 end
 
 return M

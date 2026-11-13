@@ -1,0 +1,2 @@
+(Wbutton :label "Click me" :fontSize 16
+         :gridx 0 :gridy 0 :weightx 1 :weighty 1 :fill none)

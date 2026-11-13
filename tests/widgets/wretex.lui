@@ -1,0 +1,3 @@
+(Wretex :id "text"
+        :text "Wretex probe\nSecond line with a little more text."
+        :fontSize 14 :alignment 0 :autoHeight FALSE)

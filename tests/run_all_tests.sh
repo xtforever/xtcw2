@@ -47,8 +47,17 @@ fi
 echo "9c. test_t1_menu (xtcw launcher menu)"
 "$ROOT/tests/test_t1_menu.sh"
 
+echo "9c2. test_run_widget (single-widget probe harness)"
+"$ROOT/tests/test_run_widget.sh"
+
 echo "9d. test_wretex (realize/expose regression)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wretex"
+
+echo "9e. test_eqfader (separate scale font)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_eqfader"
+
+echo "9f. test_wspinbox (value label)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wspinbox"
 
 echo "10. test_wlabel (LAYOUT verification)"
 xvfb-run --auto-servernum --server-num=99 "$DIR/verify_layout.sh" "$ROOT/tests/test_wlabel" "$DIR/baselines/test_wlabel.layout"
@@ -84,6 +93,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wviewport"
 
 echo "19. test_wtabwidget (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtabwidget"
+
+echo "19b. test_wappwindow (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wappwindow"
 
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"

@@ -75,7 +75,8 @@
 @def C_HDR_FG = 5
 @def C_ALT_BG = 6
 @def C_LINE = 7
-@def C_COUNT = 8
+@def C_SCROLL = 8
+@def C_COUNT = 9
 @def ICON_SVG = 0
 @def ICON_XPM = 1
 @def SCROLL_RES = 1000000
@@ -472,6 +473,7 @@
   $col_px[C_HDR_FG] = list_color("list_header_fg", "fg_norm", 0x000000);
   $col_px[C_ALT_BG] = list_color("list_alt_bg", "list_bg", $col_px[C_BG]);
   $col_px[C_LINE]   = list_color("list_line", "gridbox_border", 0x888888);
+  $col_px[C_SCROLL] = list_color("scrollbar_thumb", "list_header_bg", 0x888888);
 
   if (!xc) return;
   if ($colors_ready) free_xcol($);
@@ -495,11 +497,11 @@
     XClearWindow(dpy, XtWindow($));
   }
   if ($vsb) {
-    XtVaSetValues($vsb, "foreground", $col_px[C_HDR_BG],
+    XtVaSetValues($vsb, "foreground", $col_px[C_SCROLL],
                   "background", $col_px[C_BG], NULL);
   }
   if ($hsb) {
-    XtVaSetValues($hsb, "foreground", $col_px[C_HDR_BG],
+    XtVaSetValues($hsb, "foreground", $col_px[C_SCROLL],
                   "background", $col_px[C_BG], NULL);
   }
   /* Style guide: UI font + list metrics from the theme.  Use constant

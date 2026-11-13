@@ -1,0 +1,5 @@
+(Wviewport :id "vp" :allowVert 1 :allowHoriz 1 :useRight 1 :useBottom 1
+  (grid :id "content"
+    (Wlabel :label "Scrollable viewport content" :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3)
+    (Wlabel :label "Second row" :gridx 0 :gridy 1 :weightx 1 :weighty 0 :fill 3)
+    (Wlabel :label "Third row" :gridx 0 :gridy 2 :weightx 1 :weighty 0 :fill 3)))

@@ -19,6 +19,8 @@
 @var Dimension borderThickness = 4
 @ frame background and border colour (sentinel, resolved from the theme)
 @var <Pixel> Pixel frameColor = -1
+@ tab strip background colour (sentinel, resolved from the theme)
+@var <Pixel> Pixel tabBg = -1
 @ content-area background colour (sentinel, resolved from the theme)
 @var <Pixel> Pixel contentBg = -1
 @ normal tab title colour (sentinel)
@@ -216,7 +218,7 @@
         do_redraw = True;
     }
     if ($frameColor != $old$frameColor || $contentBg != $old$contentBg ||
-        $tabFg != $old$tabFg || $tabFgSel != $old$tabFgSel) {
+        $tabBg != $old$tabBg || $tabFg != $old$tabFg || $tabFgSel != $old$tabFgSel) {
         resolve_colors($);
         do_redraw = True;
     }
@@ -308,8 +310,12 @@
     Pixel fb = BlackPixelOfScreen(XtScreen($));
     $frameColor = theme_color_defined("gridbox_border") ? get_color("gridbox_border") : $background_pixel;
     $contentBg  = theme_color_defined("gridbox_bg")     ? get_color("gridbox_bg")     : $background_pixel;
-    $tabFg      = theme_color_defined("fg_norm")        ? get_color("fg_norm")        : fb;
-    $tabFgSel   = theme_color_defined("fg_sel")         ? get_color("fg_sel")         : fb;
+    $tabBg      = theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+                : (theme_color_defined("gridbox_bg")    ? get_color("gridbox_bg")     : $background_pixel);
+    $tabFg      = theme_color_defined("list_header_fg") ? get_color("list_header_fg")
+                : (theme_color_defined("fg_norm")       ? get_color("fg_norm")        : fb);
+    $tabFgSel   = theme_color_defined("accent")         ? get_color("accent")
+                : (theme_color_defined("fg_sel")        ? get_color("fg_sel")         : fb);
 
     /* draw_strip() paints only the top tab strip; the left/right/bottom
      * borderThickness area is the widget's own exposed background.  Make the
@@ -377,6 +383,30 @@
     if (vw < 1) vw = 1;
     if (vh < 1) vh = 1;
 
+    /* Make the current page fill the content area.  Its preferred height is
+     * kept when it is taller (the viewport then scrolls); the width is the
+     * clip width, so a taller page does not force a horizontal scrollbar. */
+    if ($cur_page) {
+        Dimension bar = 14;
+        if ($viewport) XtVaGetValues($viewport, XtNbarSize, &bar, NULL);
+
+        XtWidgetGeometry intended, preferred;
+        intended.request_mode = 0;
+        preferred.request_mode = 0;
+        XtQueryGeometry($cur_page, &intended, &preferred);
+        int pw = (preferred.request_mode & CWWidth)
+               ? (int)preferred.width : (int)$cur_page->core.width;
+        int ph = (preferred.request_mode & CWHeight)
+               ? (int)preferred.height : (int)$cur_page->core.height;
+        if (ph < vh) ph = vh;
+        int maxw = vw - ((ph > vh) ? (int)bar : 0);
+        if (maxw < 1) maxw = 1;
+        if (pw < maxw) pw = maxw;
+        XtConfigureWidget($cur_page, (Position)$cur_page->core.x,
+                          (Position)$cur_page->core.y,
+                          (Dimension)pw, (Dimension)ph, 0);
+    }
+
     XtConfigureWidget($viewport, (Position)bt, (Position)th,
                       (Dimension)vw, (Dimension)vh, 0);
 
@@ -394,8 +424,8 @@
     int W = (int)$width;
     int th = (int)$tabHeight;
 
-    /* frame background (tab strip + border share the frame colour) */
-    XSetForeground(dpy, gc, $frameColor);
+    /* tab strip surface; the outer frame keeps frameColor */
+    XSetForeground(dpy, gc, $tabBg);
     XFillRectangle(dpy, win, gc, 0, 0, W, th);
 
     XftFont *font = $tabFont_theme ? $tabFont_theme : $tabFont;
@@ -473,6 +503,8 @@
     $selected = idx;
 
     $in_select = 0;
+
+    if (XtIsRealized($)) relayout($);
 
     if (fire && $callback)
         XtCallCallbackList($, $callback, (XtPointer)(intptr_t)idx);

@@ -15,4 +15,5 @@ cd "$ROOT/commander"
 exec ./commander_runner \
     -Luafile ../cookbook/app/main.lua \
     -themeFile ../cookbook/themes/cookbook.hdf \
+    -theme default \
     "$@"

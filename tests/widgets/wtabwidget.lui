@@ -1,0 +1,5 @@
+(WtabWidget :id "tabs"
+  (grid :id "page_one" :tab-title "One"
+    (Wlabel :label "Page one" :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3))
+  (grid :id "page_two" :tab-title "Two"
+    (Wlabel :label "Page two" :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3)))

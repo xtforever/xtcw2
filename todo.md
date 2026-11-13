@@ -144,16 +144,16 @@ objects.
 
 ## Build / CI (found during clean-container verification)
 
-- [ ] **Layout trace baselines are font-environment specific.** `make all` builds
-      cleanly in `ci/Dockerfile` (Ubuntu 24.04), but `test_wlabel`'s LAYOUT diff
-      differs from the committed baseline (same font file/version, but Ubuntu's
-      fontconfig hinting gives a slightly different advance at the small math
-      size). It passes on the current dev host. Make the comparison robust
-      (structure-only or a tolerance) or regenerate baselines in the canonical
-      CI image.
-- [ ] `test_wlabel_selection` baseline is stale — it fails on the dev host too.
+- [x] **Layout trace baselines are font-environment specific.** `verify_layout.sh`
+      now pins `Xft.dpi: 96`, `Xft.hinting: false`, `Xft.hintstyle: none`,
+      `Xft.antialias: false` and `Xft.rgba: none` via `-xrm`, so the developer's
+      `~/.Xdefaults` (`Xft.dpi: 120`) and the host hinting defaults no longer
+      affect the comparison. `test_wlabel` passes again without changing its
+      baseline.
+- [x] `test_wlabel_selection` baseline is stale — regenerated with the pinned
+      Xft settings and masked handles.
 - [ ] `test_wlistmulti` LAYOUT baseline is flaky (pre-existing uninitialized
-      widths in WlistMulti).
+      widths in WlistMulti; the current run produces no LAYOUT output).
 - [ ] `make -C experimental/karo_widget test` fails to build `xkey.o`.
 - [ ] CI currently uses `submodules: recursive`; nanosvg is vendored now, so
       that can be dropped from `.github/workflows/ci.yml`.

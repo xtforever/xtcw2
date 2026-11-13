@@ -21,6 +21,7 @@ return {
     "SelectReq",
     "VBox",
     "VSlider",
+    "WAppWindow",
     "Wbravo",
     "Wbutton",
     "Wcheckbox",

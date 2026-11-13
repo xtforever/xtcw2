@@ -102,6 +102,7 @@ roles when a specific role is undefined (documented per widget).
 | `list_bg` | list body | `bg_norm` |
 | `list_header_bg` | column header bar | `bg_hi` (legacy) |
 | `list_alt_bg` | alternating row | `list_bg` |
+| `scrollbar_thumb` | scrollbar thumb/grip | `list_header_bg` |
 
 **Text**
 

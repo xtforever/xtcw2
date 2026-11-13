@@ -15,12 +15,12 @@ for i = 1, 60 do
     rows[#rows + 1] = string.format("@../LuaRunner/file.svg|file_%03d.txt\t%d KB\tfile", i, i * 3)
 end
 
-function on_select(i)
-    gui.set("status", "label", "selected row " .. tostring(i))
+function on_select(_)
+    gui.set("status", "label", "selected row " .. tostring(gui.get("lv", "selected")))
 end
 
-function on_activate(i)
-    gui.set("status", "label", "activated row " .. tostring(i))
+function on_activate(_)
+    gui.set("status", "label", "activated row " .. tostring(gui.get("lv", "selected")))
 end
 
 local ui = [[
