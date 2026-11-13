@@ -23,6 +23,7 @@
 
 #include "mls.h"
 #include "micro_vars.h"
+#include "theme.h"
 #include "xtcw/KaroEd.h"
 #include "xkey.h"
 
@@ -440,6 +441,7 @@ int main(int argc, char **argv)
     XtAppMainLoop(app);
 
     XtDestroyWidget(top);
+    theme_destroy();      /* widgets registered in initialize() */
     mv_destroy();
     m_destruct();
     return 0;
