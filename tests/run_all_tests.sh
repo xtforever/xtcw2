@@ -148,6 +148,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wdialog"
 echo "19m. test_wtreeview (scrolling, keyboard, focus)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtreeview"
 
+echo "19n. test_wradiogroup (keyboard selection and focus)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wradiogroup"
+
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"
 

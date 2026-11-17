@@ -7,10 +7,45 @@
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
+#include <X11/keysym.h>
+#include <unistd.h>
 #include <xtcw/WDialog.h>
 #include <xtcw/WDialogP.h>
 #include <xtcw/register_wb.h>
 #include "mls.h"
+
+static XtAppContext app;
+
+static void pump(Widget w)
+{
+    int i;
+    for (i = 0; i < 20; i++) {
+        XSync(XtDisplay(w), False);
+        while (XtAppPending(app))
+            XtAppProcessEvent(app, XtIMAll);
+        usleep(1000);
+    }
+}
+
+static void send_key(Widget w, KeySym ks)
+{
+    XKeyEvent ev;
+    memset(&ev, 0, sizeof ev);
+    ev.type = KeyPress;
+    ev.display = XtDisplay(w);
+    ev.window = XtWindow(w);
+    ev.root = DefaultRootWindow(ev.display);
+    ev.subwindow = None;
+    ev.time = CurrentTime;
+    ev.x = 1; ev.y = 1;
+    ev.x_root = 1; ev.y_root = 1;
+    ev.same_screen = True;
+    ev.keycode = XKeysymToKeycode(ev.display, ks);
+    ev.state = 0;
+    XSendEvent(ev.display, ev.window, True, KeyPressMask, (XEvent *)&ev);
+    XFlush(ev.display);
+    pump(w);
+}
 
 static int open_state(Widget d)
 {
@@ -23,7 +58,6 @@ int main(int argc, char **argv)
 {
     m_init();
 
-    XtAppContext app;
     Widget top = XtOpenApplication(&app, "TestWDialog", NULL, 0,
                                    &argc, argv, NULL, sessionShellWidgetClass,
                                    NULL, 0);
@@ -46,6 +80,7 @@ int main(int argc, char **argv)
                                          "inputValue", "Bob",
                                          NULL);
     XtRealizeWidget(top);
+    pump(top);
 
     char *s = NULL;
     XtVaGetValues(dlg, "title", &s, NULL);
@@ -72,13 +107,23 @@ int main(int argc, char **argv)
     XtVaSetValues(dlg, "open", True, NULL);
     assert(wdialog_is_open(dlg) == True);
     assert(open_state(dlg) == 1);
-    XtCallActionProc(dlg, "ok", NULL, NULL, 0);
+    assert(XtGetKeyboardFocusWidget(dw->wDialog.shell) == dw->wDialog.field);
+
+    /* Default button: Return in the focused input commits the dialog. */
+    send_key(dw->wDialog.field, XK_Return);
     assert(wdialog_is_open(dlg) == False);
     assert(wdialog_result(dlg) == 1);
     XtVaGetValues(dlg, "inputValue", &s, NULL);
     assert(s && strcmp(s, "Bob") == 0);
 
-    /* Cancel path. */
+    /* Escape cancels even while the input field has focus. */
+    XtVaSetValues(dlg, "open", True, NULL);
+    assert(wdialog_is_open(dlg) == True);
+    send_key(dw->wDialog.field, XK_Escape);
+    assert(wdialog_is_open(dlg) == False);
+    assert(wdialog_result(dlg) == 0);
+
+    /* Cancel action path. */
     XtVaSetValues(dlg, "open", True, NULL);
     XtCallActionProc(dlg, "cancel", NULL, NULL, 0);
     assert(wdialog_result(dlg) == 0);

@@ -58,8 +58,8 @@ items have since landed; this snapshot is the current source of truth.
 | Search/filter | Cookbook search is model-backed now; debounce/completion chrome still open. | `cookbook/app/main.lua` (`cb_search`), `WSearchField` |
 | Data I/O | No JSON/structured binding; persistence writes Lua chunks. | `cookbook/app/store/persistence.lua` |
 | Tree | Scrolling, focus and keyboard navigation landed; no lazy children/virtualization, no full model. | `wbuild_widgets/WTreeView.widget` |
-| Keyboard/focus | `WRadioGroup`/`WComboBox` have key translations but no focus acquisition; `WDialog` has no focus trap/default button; `WAction.shortcut` is display-only. | those widgets |
-| Dialogs | `gui.alert`/`confirm`/`prompt` use `WDialog` (messageType/details/checkbox/input row); focus trap and default-button handling remain. | `lui/gui_xt.lua`, `WDialog.widget` |
+| Keyboard/focus | `WRadioGroup`/`WComboBox` now acquire focus and handle selection keys; `WDialog` focuses its input/OK and handles Return/Escape. Full Tab trap/focus restore and `WAction.shortcut` wiring remain. | those widgets |
+| Dialogs | `gui.alert`/`confirm`/`prompt` use `WDialog` (messageType/details/checkbox/input row); initial focus and the default Return button landed, full Tab trap/focus restore remain. | `lui/gui_xt.lua`, `WDialog.widget` |
 | Table UX | Header click does not sort/toggle an indicator; no cell editing; sort is destructive and has no original-order restore. | `WListView.widget` |
 | Theme | No dedicated `menu_*`, `toolbar_*`, `status_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*` roles/metrics. | `themes.hdf`, `cookbook/themes/cookbook.hdf` |
 | Host | `commander_runner` still hardcodes `../lui/?.lua` and relative theme paths; LUI load errors are printed but do not fail the process. | `commander/commander_runner.c` |
@@ -69,7 +69,7 @@ items have since landed; this snapshot is the current source of truth.
 **Immediate next rework order**
 
 1. ~~`WTreeView` scrolling + focus/keyboard~~ (landed 2026-11-17); lazy children/virtualization remain.
-2. Focus/keyboard for `WRadioGroup`/`WComboBox`; dialog focus trap and default button.
+2. ~~Focus/keyboard for `WRadioGroup`/`WComboBox`; dialog default button and initial focus~~ (landed 2026-11-17); full Tab trap/focus restore remain.
 3. Theme roles/metrics across all themes (`menu_*`, `toolbar_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*`).
 4. Header sort indicator + cell editing for `table-view`.
 5. `WPlainTextEdit`, `WIconButton`, `WSearchField`.

@@ -59,6 +59,34 @@ int main(int argc, char **argv)
     assert(label && strcmp(label, "Dessert") == 0);
     assert(fired == 2);
 
+    /* Keyboard selection without opening the popup. */
+    XtCallActionProc(combo, "move_up", NULL, NULL, 0);
+    XtVaGetValues(combo, XtNlabel, &label, "selected", &selected, NULL);
+    assert(selected == 1);
+    assert(label && strcmp(label, "Main") == 0);
+    XtCallActionProc(combo, "move_down", NULL, NULL, 0);
+    XtVaGetValues(combo, "selected", &selected, NULL);
+    assert(selected == 2);
+    XtCallActionProc(combo, "first", NULL, NULL, 0);
+    XtVaGetValues(combo, "selected", &selected, NULL);
+    assert(selected == 0);
+    XtCallActionProc(combo, "last", NULL, NULL, 0);
+    XtVaGetValues(combo, "selected", &selected, NULL);
+    assert(selected == 2);
+
+    /* Focus state drives the accent focus ring. */
+    {
+        Boolean focused = True;
+        XtVaGetValues(combo, "hasFocus", &focused, NULL);
+        assert(focused == False);
+        XtCallActionProc(combo, "focus", NULL, NULL, 0);
+        XtVaGetValues(combo, "hasFocus", &focused, NULL);
+        assert(focused == True);
+        XtCallActionProc(combo, "focus_out", NULL, NULL, 0);
+        XtVaGetValues(combo, "hasFocus", &focused, NULL);
+        assert(focused == False);
+    }
+
     /* Popup open/close must not crash or leave the popup behind. */
     XtCallActionProc(combo, "notify", NULL, NULL, 0);
     WComboBoxWidget cw = (WComboBoxWidget)combo;
@@ -82,6 +110,19 @@ int main(int argc, char **argv)
     XtVaGetValues(combo, XtNlabel, &label, "selected", &selected, NULL);
     assert(selected == 2);
     assert(label && strcmp(label, "Dessert") == 0);
+    assert(!cw->wComboBox.entry_mode);
+
+    /* activate toggles the popup: open, then close and commit the selection. */
+    XtCallActionProc(combo, "activate", NULL, NULL, 0);
+    assert(cw->wComboBox.entry_mode);
+    XtCallActionProc(combo, "activate", NULL, NULL, 0);
+    assert(!cw->wComboBox.entry_mode);
+    assert(fired == 2);
+
+    /* Escape/dismiss closes an open popup. */
+    XtCallActionProc(combo, "notify", NULL, NULL, 0);
+    assert(cw->wComboBox.entry_mode);
+    XtCallActionProc(combo, "dismiss", NULL, NULL, 0);
     assert(!cw->wComboBox.entry_mode);
 
     XtDestroyWidget(top);

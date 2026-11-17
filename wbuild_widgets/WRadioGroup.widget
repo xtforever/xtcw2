@@ -12,6 +12,8 @@
 @var int itemGap = 0
 @ inner padding
 @var int padding = 4
+@ keyboard focus indicator
+@var Boolean hasFocus = False
 @var <Callback> XtCallbackList callback = NULL
 
 @PRIVATE
@@ -19,6 +21,7 @@
 @var Pixel fg
 @var Pixel accent
 @var Pixel border
+@var Pixel focus_ring
 @var XftFont *font
 @var XftDraw *draw
 @var XftColor text_color
@@ -69,6 +72,11 @@
     draw_items($);
 }
 
+@proc accept_focus
+{
+    return True;
+}
+
 @proc expose
 {
     draw_items($);
@@ -78,7 +86,7 @@
 {
     if ($items != $old$items || $selected != $old$selected ||
         $itemHeight != $old$itemHeight || $itemGap != $old$itemGap ||
-        $padding != $old$padding) {
+        $padding != $old$padding || $hasFocus != $old$hasFocus) {
         draw_items($);
         return True;
     }
@@ -118,6 +126,8 @@
 
 @TRANSLATIONS
 @trans <Btn1Down>: click()
+@trans <FocusIn>: focus_in()
+@trans <FocusOut>: focus_out()
 @trans <Key>Up: move_up()
 @trans <Key>Down: move_down()
 @trans <Key>Home: first()
@@ -127,6 +137,7 @@
 
 @proc click
 {
+    focus_self($);
     int n = $items ? m_len($items) : 0;
     if (n < 1) return;
     int y = event->xbutton.y - $padding;
@@ -171,6 +182,24 @@
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
 }
 
+@proc focus_in
+{
+    $hasFocus = True;
+    draw_items($);
+}
+
+@proc focus_out
+{
+    $hasFocus = False;
+    draw_items($);
+}
+
+@ focus the radio group from Lua / Xt actions
+@proc focus
+{
+    focus_self($);
+}
+
 @proc refresh
 {
     int n = $items ? m_len($items) : 0;
@@ -193,6 +222,20 @@
 
 @UTILITIES
 
+@proc void focus_self($)
+{
+    Widget shell = $, parent = $;
+    while (parent) {
+        if (XtIsShell(shell = parent)) break;
+        parent = XtParent(parent);
+    }
+    if (shell) {
+        XtSetKeyboardFocus(shell, $);
+        $hasFocus = True;
+        draw_items($);
+    }
+}
+
 @proc void radio_colors_changed($)
 {
     $bg = theme_color_defined("bg_norm") ? get_color("bg_norm")
@@ -202,6 +245,7 @@
             : (theme_color_defined("bg_sel") ? get_color("bg_sel") : $fg);
     $border = theme_color_defined("control_border") ? get_color("control_border")
             : (theme_color_defined("list_line") ? get_color("list_line") : $fg);
+    $focus_ring = theme_color_defined("accent") ? get_color("accent") : $fg;
     XtVaSetValues($, XtNbackground, $bg, NULL);
     make_xft($);
     if (XtIsRealized($)) draw_items($);
@@ -275,6 +319,11 @@
                                   (FcChar8 *)s, (int)strlen(s));
             }
         }
+    }
+
+    if ($hasFocus && W > 1 && H > 1) {
+        XSetForeground(dpy, gc, $focus_ring);
+        XDrawRectangle(dpy, win, gc, 0, 0, W - 1, H - 1);
     }
 }
 

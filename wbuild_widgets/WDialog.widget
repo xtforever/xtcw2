@@ -129,6 +129,9 @@
                                              NULL);
     XtAddCallback($ok_button, "callback", (XtCallbackProc) ok_cb, $);
     XtAddCallback($cancel_button, "callback", (XtCallbackProc) cancel_cb, $);
+    dialog_watch_keys($, $ok_button);
+    dialog_watch_keys($, $cancel_button);
+    dialog_watch_keys($, $checkbox);
     if (! $showCancel) XtUnmanageChild($cancel_button);
 
     $creating_internal = 0;
@@ -362,6 +365,7 @@
         dialog_set_input_value($);
     }
 
+    dialog_watch_keys($, $field);
     XtManageChild($field_box);
 }
 
@@ -411,7 +415,9 @@
 @proc void dialog_open($)
 {
     if (! $shell || ! $content) return;
-    if ($open) return;
+    /* The `open` resource is already True when set_values() calls us; only
+     * treat a realized shell as "already open". */
+    if ($open && XtIsRealized($shell)) return;
 
     dialog_sync_icon($);
     dialog_sync_details($);
@@ -448,7 +454,7 @@
     Widget top = $;
     while (top && !XtIsShell(top)) top = XtParent(top);
     int tx = 0, ty = 0, sw = w, sh = h;
-    if (top) {
+    if (top && XtWindow(top) != None) {
         Window child = None;
         XTranslateCoordinates(XtDisplay($), XtWindow(top),
                               DefaultRootWindow(XtDisplay($)),
@@ -463,6 +469,10 @@
     XtVaSetValues($shell, XtNx, x, XtNy, y, NULL);
     XtPopup($shell, XtGrabExclusive);
     $open = True;
+
+    /* Focus the input field when present, otherwise the default button. */
+    Widget target = $field ? $field : $ok_button;
+    if (target) XtSetKeyboardFocus($shell, target);
 }
 
 @proc void dialog_close($)
@@ -470,6 +480,27 @@
     if (! $shell) return;
     XtPopdown($shell);
     $open = False;
+}
+
+@proc void dialog_watch_keys($, Widget w)
+{
+    if (w)
+        XtAddEventHandler(w, KeyPressMask, False,
+                          (XtEventHandler) dialog_key_handler, (XtPointer)$);
+}
+
+@proc void dialog_key_handler(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    (void)w;
+    if (ev->type != KeyPress) return;
+    KeySym ks = XLookupKeysym(&ev->xkey, 0);
+    if (ks == XK_Escape) {
+        XtCallActionProc($, "cancel", ev, NULL, 0);
+        if (cont) *cont = False;
+    } else if (ks == XK_Return || ks == XK_KP_Enter) {
+        XtCallActionProc($, "ok", ev, NULL, 0);
+        if (cont) *cont = False;
+    }
 }
 
 @proc ok_cb(Widget w, $, void *data)
@@ -507,6 +538,7 @@
 @incl <stdio.h>
 @incl <X11/Shell.h>
 @incl <X11/StringDefs.h>
+@incl <X11/keysym.h>
 @incl <X11/Intrinsic.h>
 @incl "theme.h"
 @incl "mls.h"

@@ -2292,3 +2292,38 @@ requested height is not preserved for a direct shell child.
 deterministic. This is a test-harness gotcha, not a widget defect.
 
 **Files:** `tests/test_wtreeview.c`
+
+## WDialog: the `open` resource never actually opened the popup
+
+**Symptom:** `XtVaSetValues(dlg, "open", True)` made `wdialog_is_open()` return
+true, but the dialog shell was never realized or popped up; tests that only
+read the `open` resource passed while no window appeared.
+
+**Cause:** `dialog_open()` began with `if ($open) return;`. When the resource
+change was handled by `set_values()`, the new `$open` value was already true,
+so the function returned before realizing the shell.
+
+**Fix:** treat the dialog as already open only when the shell is realized
+(`if ($open && XtIsRealized($shell)) return;`). Also guard the centering
+translation with `XtWindow(top) != None`, because `gui.alert` can run before
+the application shell is realized.
+
+**Files:** `wbuild_widgets/WDialog.widget`, `tests/test_wdialog.c`,
+`tests/test_dialogs.sh`
+
+## Direct Xt tests: `StringMArray` resources need an MLS handle
+
+**Symptom:** passing `"items", "Small,Medium,Large"` to a widget with a
+`StringMArray` resource in a direct Xt test leaves the string pointer in the
+int resource; `m_len()` then reports an out-of-bounds MLS index.
+
+**Cause:** the `XtRString -> StringMArray` converter is installed by
+`converters_init()`, which the LUI creation path calls via `WcAddConverters`.
+In a direct `XtVaCreateManagedWidget()` call the conversion can run before the
+widget class/converter setup, and Xt stores the unconverted value.
+
+**Fix:** build an MLS string list with `m_create()`/`m_put()` and pass that
+handle, as `tests/test_wcombobox.c` and `tests/test_wradiogroup.c` do. This is
+a test-harness gotcha; LUI applications are unaffected.
+
+**Files:** `tests/test_wradiogroup.c`, `tests/test_wcombobox.c`

@@ -189,9 +189,10 @@ style-guide roles, keyboard handling and tests.
    - Popup list uses `WPopupMenu`; no Xaw popup shell.
    - Status: first read-only slice implemented — MLS `items`, `selected`,
      `placeholder`, themed popup below the trigger, outside-click catcher,
-     dropdown arrow, `refresh`/`select_index` actions. The cookbook editor
-     category uses it. Editable mode, completion and keyboard type-ahead
-     remain.
+     dropdown arrow, `refresh`/`select_index` actions, click/focus acquisition,
+     Up/Down/Home/End selection, Return/space popup toggle and Escape dismiss.
+     The cookbook editor category uses it. Editable mode, completion and
+     keyboard type-ahead remain.
    - Acceptance: category selection in cookbook; no widget-name fallback; theme switch.
 
 6. **WSpinBox** — `IMPROVE`
@@ -212,8 +213,8 @@ style-guide roles, keyboard handling and tests.
    - Mutually exclusive group, arrow-key navigation, labels, optional descriptions.
    - Status: vertical `WRadioGroup` implemented with MLS items, `selected`,
      click/Up/Down/Home/End, `select_index`/`refresh`, themed circles and
-     labels. The cookbook Gallery tab uses it. Optional descriptions and
-     focus-ring polish remain.
+     labels, click/focus acquisition and an accent focus ring. The cookbook
+     Gallery tab uses it. Optional descriptions and hover polish remain.
    - Acceptance: form choice groups; themed focus/hover.
 
 9. **WLineEdit** — `NEW`/`IMPROVE` (replaces `Wedit` internals)
@@ -255,7 +256,9 @@ style-guide roles, keyboard handling and tests.
       actions and callback result; it now also carries `messageType`, `icon`,
       `details`, a checkbox row and an input row (text/int/double/choice) whose
       value round-trips via `inputValue`. `gui.alert`/`confirm`/`prompt` use it.
-      A focus trap/default-button pass remains.
+      On open the input field (or OK) receives keyboard focus; Return triggers
+      the default OK action and Escape cancels from the focused field. A full
+      Tab trap and focus restore to the opener remain.
     - Themed message box (info/warning/error/question, details, checkbox).
     - Input dialog (text/int/double/choice) with validation.
     - Acceptance: cookbook delete confirmation, quit confirmation, file overwrite prompt.
