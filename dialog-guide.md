@@ -294,7 +294,7 @@ taller than one line.
 | **Help text** | `fg_norm` | `font_small`; below the field/group; optional |
 | **Inline error** | error role if defined, else `fg_norm` + warning glyph | `font_small`; below the field; `XS` gap; never hard-coded red |
 | **Checkbox** | label `fg_norm`; checked `accent` | Same font as buttons; whole row is the hit target |
-| **List** | `list_bg` / `list_fg`; selection `list_sel_bg` / `list_sel_fg` | Header `list_header_height` (24), rows `list_row_height` (26), cell pad 8/2, icons 16 |
+| **List** | `list_bg` / `list_fg`; selection `list_sel_bg` / `list_sel_fg` | Header `list_header_height` (24), rows `font_ui` line height + 2×`list_cell_pad_y` (minimum `list_row_height` 22), cell pad 8/2, icons 16 |
 | **Separator** | `list_line` | 1 px; use sparingly to group, not around every row |
 | **Progress** | track `bg_hi`, fill `accent` | 8 px (`S`) determinate bar; status text `font_small`; indeterminate if unknown |
 | **Busy label** | `fg_norm` | `font_small`; verb + object ("Saving…"), not "Please wait" |

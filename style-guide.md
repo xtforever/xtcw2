@@ -51,10 +51,10 @@ Theme keys: `window_margin` (16), `control_gap` (8), `group_gap` (12),
 | `control_height` | 24 | uniform height for buttons, inputs, toolbar items |
 | `control_padding` | 6 | inner horizontal padding |
 | `control_border` | 1 | flat 1px outline for inputs/controls |
-| `list_row_height` | 26 | list body row height |
+| `list_row_height` | 22 | minimum list body row height |
 | `list_header_height` | 24 | list column header height |
 | `list_cell_pad_x` | 8 | list cell horizontal padding |
-| `list_cell_pad_y` | 2 | list cell vertical padding |
+| `list_cell_pad_y` | 4 | list cell vertical padding |
 | `icon_size` | 16 | list/toolbar icon box |
 | `bar_size` | 14 | scrollbar thickness |
 
@@ -188,9 +188,10 @@ Rules:
   `list_sel_bg`/`list_sel_fg`, separators `list_line`.
 - Header `list_header_bg`/`list_header_fg`, height `list_header_height`,
   1px `list_line` under it.
-- Rows `list_row_height` (26), cells padded `list_cell_pad_x`/`y`, icons
-  `icon_size`. The 26px row leaves a visible gap around the `font_ui` line
-  box instead of letting consecutive lines touch.
+- Rows are `font_ui` line height + 2×`list_cell_pad_y` (default 4), with
+  `list_row_height` (22) as a minimum floor; an explicit `rowHeight` wins.
+  Cells are padded `list_cell_pad_x`/`y`, icons use `icon_size`. Deriving the
+  row from the font keeps the gap correct when the UI font or DPI changes.
 - Single font (`font_ui`) for header and cells; right-align numeric columns.
 
 ### Checkbox / toggle (`Wcheckbox`)

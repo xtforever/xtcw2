@@ -350,6 +350,9 @@ These are part of the set even when they are not separate widgets:
    `dialog_padding`, `table_row_height`, `table_header_height`,
    `tree_indent`, `tree_row_height`, `progress_height`; all shipped themes
    define them and the widgets fall back to `control_height`/`list_*` metrics.
+   List/table row height is derived from the font line box plus
+   `list_cell_pad_y`; the row-height metrics are minimums, and an explicit
+   `rowHeight` resource wins.
 3. **Model/view** — one `WModel` contract for lists, tables, trees, combos;
    virtualized rendering; O(1) row access; no per-cell widgets.
 4. **Delegates** — default text/icon/number/progress delegates; Lua custom draw

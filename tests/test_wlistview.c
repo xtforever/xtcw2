@@ -276,6 +276,30 @@ int main(int argc, char **argv)
         act("refresh");        /* open_font() / relayout must use the copy */
     }
 
+    /* Row height follows the font line box + cell padding; the theme metric
+     * is only a floor, and an explicit rowHeight always wins. */
+    {
+        int base = lww->wListView.row_h;
+        int padded;
+
+        XtVaSetValues(lv, "cellPaddingY", 8, NULL);
+        pump();
+        padded = lww->wListView.row_h;
+        assert(padded >= base + 8);
+
+        XtVaSetValues(lv, "cellPaddingY", 4, "fontSize", 24, NULL);
+        pump();
+        assert(lww->wListView.row_h > base);
+
+        XtVaSetValues(lv, "rowHeight", 40, NULL);
+        pump();
+        assert(lww->wListView.row_h == 40);
+
+        XtVaSetValues(lv, "rowHeight", 0, "fontSize", 13, NULL);
+        pump();
+        assert(lww->wListView.row_h >= base);
+    }
+
     /* Header clicks: the callback wins when registered; otherwise the list
      * toggles the sort column/order locally so the indicator updates. */
     {

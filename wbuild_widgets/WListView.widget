@@ -46,7 +46,7 @@
 @ 0 = derive header height from the font
 @var int headerHeight = 0
 @var int cellPaddingX = 6
-@var int cellPaddingY = 2
+@var int cellPaddingY = 4
 @var int iconSize = 16
 @var Boolean gridLines = True
 @var Boolean alternateRows = False
@@ -694,7 +694,7 @@
    * the documented metric instead of keeping the previous theme's value. */
   $barSize = (Dimension)theme_metric("bar_size", 14);
   $cellPaddingX = theme_metric("list_cell_pad_x", 6);
-  $cellPaddingY = theme_metric("list_cell_pad_y", 2);
+  $cellPaddingY = theme_metric("list_cell_pad_y", 4);
   $iconSize = theme_metric("icon_size", 16);
   {
     char face[128];
@@ -725,18 +725,21 @@
   if (!f) f = XftFontOpenName(dpy, DefaultScreen(dpy), "Sans-13");
   if ($font) XftFontClose(dpy, (XftFont*)$font);
   $font = f;
-  int theme_row_h = theme_metric("table_row_height", -1);
-  if (theme_row_h < 0) theme_row_h = theme_metric("list_row_height", -1);
-  int theme_header_h = theme_metric("table_header_height", -1);
-  if (theme_header_h < 0) theme_header_h = theme_metric("list_header_height", -1);
-  int row_h = ($rowHeight > 0) ? $rowHeight
-            : (theme_row_h > 0 ? theme_row_h
-                               : (f ? f->height : 16) + 2 * $cellPaddingY);
+  /* The row height follows the font line box plus the vertical cell
+   * padding.  The theme metrics are minimums, not fixed heights, so a larger
+   * font or a higher-DPI theme still gets enough room.  An explicit
+   * rowHeight/headerHeight resource always wins. */
+  int derived_h = (f ? f->height : 16) + 2 * $cellPaddingY;
+  int min_row_h = theme_metric("table_row_height", -1);
+  if (min_row_h < 0) min_row_h = theme_metric("list_row_height", -1);
+  int row_h = ($rowHeight > 0) ? $rowHeight : derived_h;
+  if ($rowHeight <= 0 && min_row_h > row_h) row_h = min_row_h;
   $row_h = row_h;
   if ($row_h < 4) $row_h = 4;
-  int header_h = ($headerHeight > 0) ? $headerHeight
-                : (theme_header_h > 0 ? theme_header_h
-                                      : (f ? f->height : 16) + 2 * $cellPaddingY);
+  int min_header_h = theme_metric("table_header_height", -1);
+  if (min_header_h < 0) min_header_h = theme_metric("list_header_height", -1);
+  int header_h = ($headerHeight > 0) ? $headerHeight : derived_h;
+  if ($headerHeight <= 0 && min_header_h > header_h) header_h = min_header_h;
   $header_h = $showHeader ? header_h : 0;
   if ($header_h < 0) $header_h = 0;
 }

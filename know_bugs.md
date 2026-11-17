@@ -2327,3 +2327,22 @@ handle, as `tests/test_wcombobox.c` and `tests/test_wradiogroup.c` do. This is
 a test-harness gotcha; LUI applications are unaffected.
 
 **Files:** `tests/test_wradiogroup.c`, `tests/test_wcombobox.c`
+
+## WListView: a fixed row-height metric ignored the font size
+
+**Symptom:** `WListView` rows used the theme's `table_row_height` (or
+`list_row_height`) as the final height. Increasing `fontSize`, changing the
+UI font, or running at a larger DPI could clip the text or leave no visible
+gap, because the row height stayed fixed.
+
+**Cause:** `open_font()` preferred the theme row-height metric over the
+font-derived line box (`font->height + 2 * cellPaddingY`).
+
+**Fix:** derive the row and header height from the font line box plus
+`list_cell_pad_y`; treat `table_row_height`/`list_row_height` and the header
+metrics as minimums only. An explicit `rowHeight`/`headerHeight` resource still
+wins. The default `list_cell_pad_y` is now 4, giving a visible gap around a
+13px UI font.
+
+**Files:** `wbuild_widgets/WListView.widget`, `tests/test_wlistview.c`,
+`themes.hdf`, `cookbook/themes/cookbook.hdf`, `style-guide.md`
