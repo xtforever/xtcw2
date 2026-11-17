@@ -2179,20 +2179,24 @@ A related false positive appears after a realized `WToolTip` presenter is used
 (`_m_next`, `renderer_render_text()`), even when the test does not destroy the
 shell. Exit status stays 0, so tests pass; the noise is misleading.
 
-**Cause:** `utils/mls.c` stores a per-list UAF protection nibble in the handle
-(`(UAF_PROTECTION << 24) | index`) and validates it in `_get_list()`. A stored
-handle that outlives a free/reuse of its slot can fail that check; the debug
-path then reports the index as out of bounds because `m_len()` on the invalid
-handle returns 0. This is a pre-existing debug-only issue, independent of the
-tooltip code (reproducible with a bare `Wlabel` and `XtDestroyWidget`).
+**Cause:** `_mlsdb_caller()` records the arguments of the *last* debug-wrapped
+MLS call in the global `debi`. `exit_error()` is registered with `atexit()`
+and has no "an error actually happened" flag: it always re-validates that
+recorded call when the process exits. By then the widget/list teardown has
+emptied or freed the relevant array, so a call that was valid when it ran is
+reported as out-of-bounds/UAF. `_m_destruct()` cleared `debi.me`, which is why
+normal `commander_runner` runs were quiet while tests that return without
+`m_destruct()` printed the block.
 
-**Workaround:** the tooltip C test clears the `tooltip` resource instead of
-destroying widgets; `test_wstatusbar`/`test_wtoolbar` never destroy their
-trees. A real fix should either store the protection per handle in the table
-entry or mask it out on lookup.
+**Fix:** every debug wrapper (`_m_create`, `_m_alloc`, `_m_free`, `_m_buf`,
+`_mls`, `_m_next`, `_m_put`, `_m_clear`) now calls `_mlsdb_done()` after a
+successful operation, clearing `debi.me`. The record survives only while a
+call is in flight, so a real `ERR`/abort inside MLS still produces the
+post-mortem (verified with an out-of-bounds `mls()` call), but stale calls at
+teardown no longer do.
 
-**Files:** `utils/mls.c` (`_get_list`, `m_free_simple`), `utils/theme.c`
-(`theme_unregister`), `tests/test_wtooltip.c`
+**Files:** `utils/mls.c` (`_mlsdb_done`, the `_m_*` wrappers),
+`tests/test_wtooltip.c`, `tests/test_wdialog.c`
 
 ## Wedit destroy crashed when the draw context was never created
 
@@ -2214,13 +2218,42 @@ field was exposed (or after the popup was popped down) passed NULL/garbage.
 debug post-mortem reports `_mls` in `WComboBox.update_label()` on the dialog's
 `inputItems` handle. Exit status stays 0.
 
-**Cause:** same MLS UAF-protection fragility as the entry above; the combo
-keeps a raw MLS handle in its `items` resource while the dialog owns/frees the
-list. The dialog now destroys the field before freeing the list, but the
-post-mortem can still flag the handle during the final widget-tree teardown.
+**Cause:** same post-mortem behaviour as the entry above: `update_label()` was
+the last recorded `_mls` call, and the dialog freed `inputItems` afterwards.
+The functional path was already correct (the dialog destroys the field before
+freeing the list); only the exit-time re-validation was wrong.
 
-**Status:** known debug-only noise; the functional dialog tests pass. A robust
-fix is to give WComboBox ownership of its items or copy them into the widget.
+**Status:** resolved by the `_mlsdb_done()` fix above. Separately, WComboBox
+still borrows the caller's `items` MLS; giving it ownership would be a good
+hardening step but is not required for correctness today.
 
 **Files:** `wbuild_widgets/WComboBox.widget`, `wbuild_widgets/WDialog.widget`,
 `tests/test_wdialog.c`
+
+## Direct Xt tests must register the ArrayInt converter
+
+**Symptom:** `test_wlistmulti` intermittently aborted during realize with
+`ERROR: mls.c ... lst Index(1432522877) out of Bounds`, called from
+`render_retex_row()` → `m_len($columnWidths)`.
+
+**Cause:** the test passed `"columnWidths", "100,100,100"` to
+`XtVaCreateManagedWidget()` without calling `converters_init()`. The
+`ArrayInt` converter is registered by `WcAddConverters()`, which the LUI/xtcw
+creation path (`WcWidgetCreation`) calls — but direct Xt tests bypass it. Xt
+then left the int resource holding the `String` pointer instead of an MLS
+handle, and `m_len()` received a pointer as the handle. Whether the field was
+zero or garbage depended on allocation history, hence the flakiness.
+
+**Mitigation:** call `converters_init()` after `XtcwRegister()` in the test.
+That is required for direct Xt tests, but it did not fully eliminate the
+flakiness: with `-xrm` font settings the widget still sometimes renders with a
+non-handle in `columnWidths` before `render_retex_row()` runs. The remaining
+issue is in the legacy `WlistMulti` resource/realize path, not in MLS; the
+`lst` abort is the symptom.
+
+**Status:** pre-existing flake, independent of the MLS post-mortem fix.
+Standalone runs pass 5/5 without the `-xrm` font pins; the layout suite can
+still fail. A proper fix should validate `columnWidths` before `m_len()` (or
+initialize it defensively in `WlistMulti.initialize`).
+
+**Files:** `tests/test_wlistmulti.c`, `wbuild_widgets/WlistMulti.widget`

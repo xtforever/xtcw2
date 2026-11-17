@@ -5,6 +5,7 @@
 #include <xtcw/register_wb.h>
 #include "mls.h"
 #include "m_tool.h"
+#include "converters.h"
 #include <stdio.h>
 
 int main(int argc, char **argv) {
@@ -17,6 +18,9 @@ int main(int argc, char **argv) {
     Widget top = XtOpenApplication(&app, "TestWlistMulti", NULL, 0, &argc, argv, NULL, sessionShellWidgetClass, NULL, 0);
 
     XtcwRegister(app);
+    /* Direct Xt creation bypasses WcWidgetCreation(), which normally
+     * registers the ArrayInt converter used by :columnWidths. */
+    converters_init();
 
     int list_data = m_create(10, sizeof(char*));
     char *row1 = "Item1\tSize1\tType1";

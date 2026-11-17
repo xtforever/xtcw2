@@ -1023,6 +1023,20 @@ static void _mlsdb_caller(const char *me, int ln, const char *fn,
 }
 
 /**
+ * @brief Clear the last-call record after a successful debug operation.
+ *
+ * exit_error() runs from atexit() and re-validates whatever call
+ * _mlsdb_caller recorded last. Without clearing it, a successful operation
+ * whose list is freed later during teardown is reported as a
+ * use-after-free/out-of-bounds at process exit. Keep the record only while an
+ * operation is in flight so the post-mortem fires for real failures
+ * (ERR/abort inside an MLS call).
+ */
+static void _mlsdb_done(void) {
+  debi.me = NULL;
+}
+
+/**
  * @brief Internal function to print an error message to stderr.
  *
  * @param format printf-style format string.
@@ -1214,6 +1228,7 @@ int _m_create(int ln, const char *fn, const char *fun, int n, int w) {
   lo->free_fn = NULL;
   lo->free_fun = NULL;
   TRACE(1, "NEW LIST %d allocated by %s:%d in %s", m, fun, ln, fn);
+  _mlsdb_done();
   return m_uaf;
 }
 
@@ -1230,8 +1245,12 @@ int _m_create(int ln, const char *fn, const char *fun, int n, int w) {
  */
 int _m_alloc(int ln, const char *fn, const char *fun, int n, int w, uint8_t free_hdl) {
 	int h = _m_create(ln,fn,fun,n,w);
+	/* _m_create() cleared the record; re-arm it for the _get_list() step so a
+	 * failure here still has caller context in the post-mortem. */
+	_mlsdb_caller(__FUNCTION__, ln, fn, fun, 1, h, 0, 0);
 	lst_t *lp = _get_list(h);
 	(*lp)->free_hdl = free_hdl;
+	_mlsdb_done();
 	return h;
 }
 
@@ -1270,6 +1289,7 @@ int _m_free(int ln, const char *fn, const char *fun, int m) {
   o->free_fn = AUTO_fn;
   TRACE(1, "FREE LIST %d freed by %s:%d in %s", m, AUTO_fun, AUTO_ln, AUTO_fn);
   AUTO_start--;
+  _mlsdb_done();
   return 0;
 }
 
@@ -1286,7 +1306,9 @@ void *_m_buf(int ln, const char *fn, const char *fun, int m) {
   if (!m)
     return 0;
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 3, m, 0, 0);
-  return m_buf(m);
+  void *result = m_buf(m);
+  _mlsdb_done();
+  return result;
 }
 
 /**
@@ -1301,7 +1323,9 @@ void *_m_buf(int ln, const char *fn, const char *fun, int m) {
  */
 void *_mls(int ln, const char *fn, const char *fun, int h, int i) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 3, h, i, 0);
-  return mls(h, i);
+  void *result = mls(h, i);
+  _mlsdb_done();
+  return result;
 }
 
 /**
@@ -1317,7 +1341,9 @@ void *_mls(int ln, const char *fn, const char *fun, int h, int i) {
  */
 int _m_next(int ln, const char *fn, const char *fun, int h, int *i, void *d) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 7, h, i ? *i : -1, d);
-  return m_next(h, i, d);
+  int result = m_next(h, i, d);
+  _mlsdb_done();
+  return result;
 }
 
 /**
@@ -1332,7 +1358,9 @@ int _m_next(int ln, const char *fn, const char *fun, int h, int *i, void *d) {
  */
 int _m_put(int ln, const char *fn, const char *fun, int h, const void *d) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 5, h, 0, d);
-  return m_put(h, d);
+  int result = m_put(h, d);
+  _mlsdb_done();
+  return result;
 }
 
 /**
@@ -1346,6 +1374,7 @@ int _m_put(int ln, const char *fn, const char *fun, int h, const void *d) {
 void _m_clear(int ln, const char *fn, const char *fun, int h) {
   _mlsdb_caller(__FUNCTION__, ln, fn, fun, 1, h, 0, 0);
   m_clear(h);
+  _mlsdb_done();
 }
 
 
