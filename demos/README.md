@@ -47,6 +47,7 @@ cd commander
 | `demo_contacts.lua` | Contact manager — multi-row form, spinbox, property round-trip |
 | `demo_drawcanvas.lua` | DrawCanvas — interactive mouse paint, timer redraw, double buffer |
 | `demo_snake.lua` | Snake — DrawCanvas game ported from `games/snake.c` (keyboard + mouse, tick-driven) |
+| `demo_iconeditor.lua` | IconEditor — DrawCanvas pixel grid + preview, menu/toolbar, file chooser, save-before-quit and XPM save/load |
 | `demo_eqfader.lua` | EQ Fader — 10-band vertical Cairo/Xft EQ fader with dB scale |
 | `demo_theme.lua` | Theme — central colour registry: switch themes and toggle borders |
 | `demo_form.lua` | Gridbox layout — labels, edit, spinbox, toggle |

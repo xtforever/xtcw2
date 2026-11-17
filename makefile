@@ -82,6 +82,8 @@ libxtcw: core widgets retex
 	cp wbuild_widgets/canvas-draw.h build/source/ 2>/dev/null || true
 	cp wbuild_widgets/drawcanvas-draw.c build/source/ 2>/dev/null || true
 	cp wbuild_widgets/drawcanvas-draw.h build/source/ 2>/dev/null || true
+	cp wbuild_widgets/iconeditor-draw.c build/source/ 2>/dev/null || true
+	cp wbuild_widgets/iconeditor-draw.h build/source/ 2>/dev/null || true
 	cp wbuild_widgets/snake-draw.c build/source/ 2>/dev/null || true
 	cp wbuild_widgets/tooltip.c build/source/ 2>/dev/null || true
 	cp wbuild_widgets/tooltip.h build/source/ 2>/dev/null || true

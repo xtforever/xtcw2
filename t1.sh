@@ -22,6 +22,7 @@ DEMOS=(
   "calc|Calculator|4x6 grid with gridWidth spanning"
   "contacts|Contacts|multi-row form, spinbox, property round-trip"
   "drawcanvas|DrawCanvas|custom drawing via a plug-in C callback"
+  "iconeditor|Icon Editor|XPM icon editor with grid, preview, tools and undo"
   "eqfader|EQ Fader|10-band Cairo vertical EQ fader"
   "theme|Theme|central theme registry: colours + borders"
   "form|Form|Gridbox layout: labels, edit, spinbox, toggle"

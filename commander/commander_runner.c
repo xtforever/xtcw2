@@ -24,6 +24,7 @@
 void register_task_lua(lua_State *L);
 void *copy_task(task_thread_args_t *args);
 void drawcanvas_plugin_init(Widget top);
+void iconeditor_plugin_init(Widget top);
 void snake_plugin_init(Widget top);
 
 #define APP_NAME "luarunner"
@@ -273,6 +274,7 @@ int main(int argc, char **argv) {
     RCB(TopLevel, quit_cb);
     wcreg_callback(TopLevel, LUA_callback, "LUA" );
     drawcanvas_plugin_init(TopLevel);
+    iconeditor_plugin_init(TopLevel);
     snake_plugin_init(TopLevel);
     
     WcInitialize(TopLevel);

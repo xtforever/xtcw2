@@ -2346,3 +2346,47 @@ wins. The default `list_cell_pad_y` is now 4, giving a visible gap around a
 
 **Files:** `wbuild_widgets/WListView.widget`, `tests/test_wlistview.c`,
 `themes.hdf`, `cookbook/themes/cookbook.hdf`, `style-guide.md`
+
+## DrawCanvas ignored requested sizes below 200x200
+
+**Symptom:** a small `DrawCanvas` used as a colour swatch (requested 60x28)
+was laid out at 200x200 or larger, pushing the surrounding toolbox out of the
+window.
+
+**Cause:** `query_geometry()` always started with a 200x200 preferred size and
+only increased it when the request was larger, so a smaller explicit
+`:width`/`:height` was discarded.
+
+**Fix:** honour the requested width/height when present, otherwise fall back to
+the widget's current size, and only use 200x200 as a last resort.
+
+**Files:** `wbuild_widgets/DrawCanvas.widget`, `demos/demo_iconeditor.lua`
+
+## IconEditor treated opaque black as transparent
+
+**Symptom:** drawing with the black palette colour produced no visible pixels
+and the XPM export contained only `None`.
+
+**Cause:** the pixel buffer used `0` as the transparent sentinel; opaque black
+(`0x000000`) was indistinguishable from transparent.
+
+**Fix:** store opaque pixels as `0xFFRRGGBB` and keep `0` for transparency.
+XPM save/load mask to 24 bits and preserve `None` separately from `#000000`.
+
+**Files:** `wbuild_widgets/iconeditor-draw.c`
+
+## Wcl late-binder crash when a plug-in invokes a Lua callback list
+
+**Symptom:** an IconEditor `changedCallback` set to `LUA(on_canvas_changed)`
+and invoked repeatedly from the plug-in crashed in `XtCallCallbackList` with
+the program counter equal to the late-binder closure address.
+
+**Cause:** the Wcl late binder for the new callback list was not stable across
+repeated invocations from the C plug-in in this setup.
+
+**Fix:** do not call Lua from the plug-in. DrawCanvas exposes a monotonically
+increasing `changeCount`; the Lua UI polls it with `xtapptimeout` and updates
+its dirty/status state. Mouse edits stay entirely in C.
+
+**Files:** `wbuild_widgets/DrawCanvas.widget`, `wbuild_widgets/iconeditor-draw.c`,
+`demos/demo_iconeditor.lua`

@@ -108,7 +108,7 @@ if [ "$GUI_OK" -eq 1 ]; then
         T1_MENU_RESULT="$TMP/late-result.tsv" \
         T1_MENU_DESC_OUT="$TMP/late-desc.txt" \
         T1_ROOT="$ROOT" \
-        T1_MENU_LATE_SELECT=4 \
+        T1_MENU_LATE_SELECT=5 \
         xvfb-run --auto-servernum ./commander_runner -Luafile ../tools/t1_menu.lua
     ) >"$TMP/late.out" 2>"$TMP/late.err"
 

@@ -141,6 +141,14 @@ int main(int argc, char **argv)
     XtVaGetValues(dlg, "inputValue", &s, NULL);
     assert(s && strcmp(s, "Medium") == 0);
 
+    /* Third (aux) action: result 2 and it closes the dialog. */
+    XtVaSetValues(dlg, "showAux", True, "auxLabel", "Cancel", NULL);
+    assert(XtIsManaged(dw->wDialog.aux_button));
+    XtVaSetValues(dlg, "open", True, NULL);
+    XtCallActionProc(dlg, "aux", NULL, NULL, 0);
+    assert(wdialog_is_open(dlg) == False);
+    assert(wdialog_result(dlg) == 2);
+
     /* Hiding the input row must not crash. */
     XtVaSetValues(dlg, "inputKind", 0, NULL);
     assert(!XtIsManaged(dw->wDialog.field_box));

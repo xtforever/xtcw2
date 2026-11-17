@@ -15,6 +15,8 @@
 @var <Callback> XtCallbackList keyCallback = NULL
 @ mouse callback: receives draw_canvas_input_t* (canvas + XButton/Motion event)
 @var <Callback> XtCallbackList mouseCallback = NULL
+@ monotonically increasing edit counter for editor plug-ins
+@var int changeCount = 0
 @ tick callback: called once per update interval, before the optional redraw
 @var <Callback> XtCallbackList tickCallback = NULL
 @ timer interval in milliseconds; 0 disables automatic updates
@@ -80,12 +82,10 @@
 @proc query_geometry
 {
     reply->request_mode = CWWidth | CWHeight;
-    reply->width = 200;
-    reply->height = 200;
-    if ((request->request_mode & CWWidth) && request->width > reply->width)
-        reply->width = request->width;
-    if ((request->request_mode & CWHeight) && request->height > reply->height)
-        reply->height = request->height;
+    reply->width = ((request->request_mode & CWWidth) && request->width > 0)
+                   ? request->width : ($width > 0 ? $width : 200);
+    reply->height = ((request->request_mode & CWHeight) && request->height > 0)
+                    ? request->height : ($height > 0 ? $height : 200);
     return XtGeometryAlmost;
 }
 

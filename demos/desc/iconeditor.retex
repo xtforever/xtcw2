@@ -1,0 +1,4 @@
+The \bf IconEditor\rm  demo uses DrawCanvas for a scalable pixel grid and a
+live preview. Pull-down menus and a toolbar drive New/Open/Save; the toolbox
+offers pencil, line, rect, circle, fill and undo. The file chooser opens XPM
+icons and Save writes a plain XPM file. Quit asks whether to save first.

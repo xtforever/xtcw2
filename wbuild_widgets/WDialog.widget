@@ -6,6 +6,10 @@
 @var String message = <String> ""
 @var String okLabel = <String> "OK"
 @var String cancelLabel = <String> "Cancel"
+@ optional third action label (empty = hidden)
+@var String auxLabel = <String> ""
+@ show the third action
+@var Boolean showAux = False
 @var Boolean showCancel = True
 @ settable open state
 @var Boolean open = False
@@ -41,6 +45,7 @@
 @var Widget field_box
 @var Widget field
 @var Widget checkbox
+@var Widget aux_button
 @var Widget ok_button
 @var Widget cancel_button
 @var int creating_internal
@@ -60,6 +65,7 @@
     $field_box = NULL;
     $field = NULL;
     $checkbox = NULL;
+    $aux_button = NULL;
     $ok_button = NULL;
     $cancel_button = NULL;
     $result = 0;
@@ -115,6 +121,12 @@
                                  "gridx", 1, "gridy", 4, "gridWidth", 2,
                                  "weightx", 1, "weighty", 0, "fill", 3,
                                  NULL);
+    $aux_button = XtVaCreateManagedWidget("dialog_aux", wbuttonWidgetClass,
+                                          $content,
+                                          "label", $auxLabel ? $auxLabel : "",
+                                          "gridx", 0, "gridy", 5,
+                                          "weightx", 1, "weighty", 0, "fill", 3,
+                                          NULL);
     $ok_button = XtVaCreateManagedWidget("dialog_ok", wbuttonWidgetClass,
                                          $content,
                                          "label", $okLabel ? $okLabel : "OK",
@@ -128,12 +140,15 @@
                                              "gridx", 2, "gridy", 5,
                                              "weightx", 1, "weighty", 0, "fill", 3,
                                              NULL);
+    XtAddCallback($aux_button, "callback", (XtCallbackProc) aux_cb, $);
     XtAddCallback($ok_button, "callback", (XtCallbackProc) ok_cb, $);
     XtAddCallback($cancel_button, "callback", (XtCallbackProc) cancel_cb, $);
+    dialog_watch_keys($, $aux_button);
     dialog_watch_keys($, $ok_button);
     dialog_watch_keys($, $cancel_button);
     dialog_watch_keys($, $checkbox);
     if (! $showCancel) XtUnmanageChild($cancel_button);
+    if (! $showAux) XtUnmanageChild($aux_button);
 
     $creating_internal = 0;
     dialog_sync_icon($);
@@ -165,6 +180,7 @@
     $field_box = NULL;
     $field = NULL;
     $checkbox = NULL;
+    $aux_button = NULL;
     $ok_button = NULL;
     $cancel_button = NULL;
 }
@@ -182,6 +198,12 @@
     if ($cancel_button && $showCancel != $old$showCancel) {
         if ($showCancel) XtManageChild($cancel_button);
         else XtUnmanageChild($cancel_button);
+    }
+    if ($aux_button && $auxLabel != $old$auxLabel)
+        XtVaSetValues($aux_button, XtNlabel, $auxLabel ? $auxLabel : "", NULL);
+    if ($aux_button && $showAux != $old$showAux) {
+        if ($showAux) XtManageChild($aux_button);
+        else XtUnmanageChild($aux_button);
     }
 
     if ($icon != $old$icon || $messageType != $old$messageType)
@@ -228,6 +250,11 @@
 {
     dialog_read_input($);
     ok_cb($ok_button, $, NULL);
+}
+
+@proc aux
+{
+    aux_cb($aux_button, $, NULL);
 }
 
 @proc cancel
@@ -519,6 +546,14 @@
     $result = 0;
     dialog_close($);
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)0);
+}
+
+@proc void aux_cb(Widget w, $, void *data)
+{
+    (void)w; (void)data;
+    $result = 2;
+    dialog_close($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)2);
 }
 
 @EXPORTS

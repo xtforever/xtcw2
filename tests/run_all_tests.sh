@@ -154,6 +154,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtreeview"
 echo "19n. test_wradiogroup (keyboard selection and focus)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wradiogroup"
 
+echo "19o. test_iconeditor (DrawCanvas icon editor + XPM save)"
+"$ROOT/tests/test_iconeditor.sh"
+
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"
 
