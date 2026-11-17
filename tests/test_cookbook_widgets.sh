@@ -121,6 +121,9 @@ xtapptimeout(2000, function()
     local dlgstatus = gui.get('status', 'message')
     f:write('dialog_open=' .. tostring(dlgopen) .. '\n')
     f:write('dialog_status=' .. tostring(dlgstatus) .. '\n')
+    cb_sort_recipe_list(1)
+    f:write('header_sort_col=' .. tostring(gui.get('recipe_list', 'sortColumn')) .. '\n')
+    f:write('header_sort_status=' .. tostring(gui.get('status', 'message')) .. '\n')
     f:write('tab_after_menu=' .. tostring(tab) .. '\n')
     f:close()
     gui.set('menu_file', 'open', false)
@@ -217,6 +220,8 @@ check_eq_simple tree_before 2
 check_eq_simple tree_after 4
 check_eq_simple dialog_open true
 check_eq_simple dialog_status "Dialog: Cancel"
+check_eq_simple header_sort_col 1
+check_eq_simple header_sort_status "Sorted by column 2 (ascending)"
 check_eq_simple tab_after_menu 1
 if ! grep -q '^status_message=Screen:' "$TMP/out.txt"; then
     echo "FAIL: status message did not update" >&2

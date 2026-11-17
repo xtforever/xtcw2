@@ -22,6 +22,7 @@ static int notify_count = 0;
 static int activate_count = 0;
 static int last_sel = -2;
 static int g_rows = 0;
+static int header_col = -1;
 
 static void pump(void)
 {
@@ -47,6 +48,12 @@ static void on_activate(Widget w, XtPointer cd, XtPointer cb)
 {
     (void)w; (void)cd; (void)cb;
     activate_count++;
+}
+
+static void on_header(Widget w, XtPointer cd, XtPointer cb)
+{
+    (void)w; (void)cd;
+    header_col = (int)(intptr_t)cb;
 }
 
 static void set_int_array(const char *res, const int *vals, int n)
@@ -267,6 +274,38 @@ int main(int argc, char **argv)
         XtVaGetValues(lv, "fontFace", &got, NULL);
         assert(got && strcmp(got, "Serif") == 0);
         act("refresh");        /* open_font() / relayout must use the copy */
+    }
+
+    /* Header clicks: the callback wins when registered; otherwise the list
+     * toggles the sort column/order locally so the indicator updates. */
+    {
+        XEvent ev;
+        int sc;
+        Boolean asc;
+
+        memset(&ev, 0, sizeof ev);
+        ev.xbutton.x = 5;
+        ev.xbutton.y = 2;
+        ev.xbutton.time = 1000;
+
+        XtVaSetValues(lv, "sortColumn", 0, "sortAscending", True, NULL);
+        XtAddCallback(lv, "headerClicked", on_header, NULL);
+        XtCallActionProc(lv, "click", (XEvent *)&ev, NULL, 0);
+        pump();
+        assert(header_col == 0);
+        XtRemoveCallback(lv, "headerClicked", on_header, NULL);
+
+        XtVaSetValues(lv, "sortAscending", True, NULL);
+        XtCallActionProc(lv, "click", (XEvent *)&ev, NULL, 0);
+        pump();
+        XtVaGetValues(lv, "sortAscending", &asc, NULL);
+        assert(asc == False);
+
+        XtVaSetValues(lv, "sortColumn", 1, "sortAscending", True, NULL);
+        XtCallActionProc(lv, "click", (XEvent *)&ev, NULL, 0);
+        pump();
+        XtVaGetValues(lv, "sortColumn", &sc, "sortAscending", &asc, NULL);
+        assert(sc == 0 && asc == True);
     }
 
     /* Regression: the full-pixmap clear must use C_BG, not the last row's

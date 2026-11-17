@@ -153,8 +153,15 @@
 
   if (my < $list_y) {
     int c = column_at($, mx + $top_x);
-    if (c >= 0)
-      XtCallCallbackList($, $headerClicked, (XtPointer)(intptr_t)c);
+    if (c >= 0) {
+      if (XtHasCallbacks($, "headerClicked") == XtCallbackHasSome) {
+        XtCallCallbackList($, $headerClicked, (XtPointer)(intptr_t)c);
+      } else {
+        if ($sortColumn == c) $sortAscending = ! $sortAscending;
+        else { $sortColumn = c; $sortAscending = True; }
+        sort($, event, NULL, NULL);
+      }
+    }
     return;
   }
 
@@ -467,7 +474,8 @@
     redraw = 1;
   }
   if ($allowHoriz != $old$allowHoriz || $allowVert != $old$allowVert ||
-      $barSize != $old$barSize || $visibleRows != $old$visibleRows) {
+      $barSize != $old$barSize || $visibleRows != $old$visibleRows ||
+      $sortColumn != $old$sortColumn || $sortAscending != $old$sortAscending) {
     $dirty = 1;
     redraw = 1;
   }
@@ -1038,6 +1046,22 @@
     if (ax + w < 0) continue;
     if (x > (int)$width) break;
     draw_cell_text($, ax, 0, w, $header_h, t, $col_align[i], ci);
+    if (i == $sortColumn && $sortColumn >= 0 && w > 16) {
+      int tx = x + w - 11;
+      int ty = $header_h / 2;
+      XPoint tri[3];
+      if ($sortAscending) {
+        tri[0].x = (short)(tx - 4); tri[0].y = (short)(ty + 2);
+        tri[1].x = (short)(tx + 4); tri[1].y = (short)(ty + 2);
+        tri[2].x = (short)tx;       tri[2].y = (short)(ty - 3);
+      } else {
+        tri[0].x = (short)(tx - 4); tri[0].y = (short)(ty - 2);
+        tri[1].x = (short)(tx + 4); tri[1].y = (short)(ty - 2);
+        tri[2].x = (short)tx;       tri[2].y = (short)(ty + 3);
+      }
+      XSetForeground($dpy, $gc, $col_px[C_HDR_FG]);
+      XFillPolygon($dpy, $pixmap, $gc, tri, 3, Convex, CoordModeOrigin);
+    }
     if ($gridLines && i + 1 < $ncols) {
       int lx = x + w;
       XDrawLine($dpy, $pixmap, $icon_gc, lx, 2, lx, $header_h - 3);

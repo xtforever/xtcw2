@@ -329,6 +329,19 @@ function cb_sort_recipes()
     gui.set("status", "message", "Recipes sorted by name")
 end
 
+function cb_sort_recipe_list(col)
+    col = tonumber(col) or 0
+    local cur = tonumber(gui.get("recipe_list", "sortColumn")) or -1
+    local asc = true
+    if cur == col then
+        asc = not (gui.get("recipe_list", "sortAscending") and true or false)
+    end
+    gui.sort_model("recipe_list", col, asc)
+    gui.set("status", "message",
+            string.format("Sorted by column %d (%s)", col + 1,
+                          asc and "ascending" or "descending"))
+end
+
 function cb_category_changed()
     local idx = tonumber(gui.get("ed_cat", "selected")) or -1
     category_index = idx + 1
