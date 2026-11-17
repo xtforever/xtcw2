@@ -1,0 +1,412 @@
+@class WTreeView (Core)
+@ Themed tree view with expand/collapse and keyboard navigation.
+
+@PUBLIC
+@ MLS list of "level<TAB>text" node strings
+@var int nodes = 0
+@ selected node index
+@var int selected = -1
+@ row height; -1 uses theme control_height
+@var int itemHeight = -1
+@ pixels per tree level
+@var int indent = 18
+@ number of currently visible nodes
+@var int visibleCount = 0
+@var <Callback> XtCallbackList callback = NULL
+
+@PRIVATE
+@var Pixel bg
+@var Pixel fg
+@var Pixel sel_bg
+@var Pixel border
+@var XftFont *font
+@var XftDraw *draw
+@var XftColor text_color
+@var Boolean text_color_ok
+@var int *expanded
+@var int *visible_nodes
+@var int expanded_cap
+@var int visible_cap
+
+@METHODS
+
+@proc initialize
+{
+    $font = NULL;
+    $draw = NULL;
+    $text_color_ok = False;
+    $expanded = calloc(16, sizeof(int));
+    $visible_nodes = calloc(16, sizeof(int));
+    $expanded_cap = 16;
+    $visible_cap = 16;
+    if ($itemHeight < 0)
+        $itemHeight = theme_metric("control_height", 24);
+    if ($itemHeight < 18) $itemHeight = 18;
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+    theme_register($, tree_colors_changed);
+    tree_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+    free($expanded); $expanded = NULL;
+    free($visible_nodes); $visible_nodes = NULL;
+    if ($draw) { XftDrawDestroy($draw); $draw = NULL; }
+    if ($font) { XftFontClose(XtDisplay($), $font); $font = NULL; }
+    if ($text_color_ok) {
+        XftColorFree(XtDisplay($), DefaultVisualOfScreen(XtScreen($)),
+                     DefaultColormapOfScreen(XtScreen($)), &$text_color);
+        $text_color_ok = False;
+    }
+}
+
+@proc realize
+{
+    #realize($, mask, attributes);
+    make_xft($);
+    rebuild($);
+}
+
+@proc resize
+{
+    draw_tree($);
+}
+
+@proc expose
+{
+    draw_tree($);
+}
+
+@proc set_values
+{
+    int redraw = 0;
+    if ($nodes != $old$nodes) {
+        int n = $nodes ? m_len($nodes) : 0;
+        if (n > $expanded_cap) {
+            $expanded = realloc($expanded, (size_t)n * sizeof(int));
+            memset($expanded + $expanded_cap, 0,
+                   (size_t)(n - $expanded_cap) * sizeof(int));
+            $expanded_cap = n;
+        }
+        for (int i = 0; i < n; i++) $expanded[i] = 0;
+        rebuild($);
+        redraw = 1;
+    }
+    if ($itemHeight != $old$itemHeight || $indent != $old$indent) {
+        rebuild($);
+        redraw = 1;
+    }
+    if ($selected != $old$selected) redraw = 1;
+    if ($background_pixel != $old$background_pixel) redraw = 1;
+    if (redraw) draw_tree($);
+    return redraw;
+}
+
+@proc query_geometry
+{
+    int w = 180;
+    int h = 2 * 4 + $visibleCount * $itemHeight;
+    if ($font && $nodes) {
+        for (int r = 0; r < $visibleCount; r++) {
+            int i = $visible_nodes[r];
+            int level = tree_level($, i);
+            const char *text = tree_text($, i);
+            XGlyphInfo ext;
+            XftTextExtentsUtf8(XtDisplay($), $font, (FcChar8 *)text,
+                               (int)strlen(text), &ext);
+            int tw = 32 + level * $indent + (int)ext.xOff;
+            if (tw > w) w = tw;
+        }
+    }
+    if (h < 1) h = 1;
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>: click()
+@trans <Key>Up: move_up()
+@trans <Key>Down: move_down()
+@trans <Key>Left: collapse()
+@trans <Key>Right: expand()
+
+@ACTIONS
+
+@proc click
+{
+    int row = (event->xbutton.y - 4) / ($itemHeight > 0 ? $itemHeight : 1);
+    if (row < 0 || row >= $visibleCount) return;
+    int node = $visible_nodes[row];
+    $selected = node;
+    if (tree_has_children($, node)) {
+        $expanded[node] = !$expanded[node];
+        rebuild($);
+    }
+    draw_tree($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)node);
+}
+
+@proc move_up
+{
+    int row = tree_visible_row($, $selected);
+    if (row > 0) {
+        $selected = $visible_nodes[row - 1];
+        draw_tree($);
+        XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+    }
+}
+
+@proc move_down
+{
+    int row = tree_visible_row($, $selected);
+    if (row >= 0 && row + 1 < $visibleCount) {
+        $selected = $visible_nodes[row + 1];
+        draw_tree($);
+        XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+    }
+}
+
+@proc expand
+{
+    if ($selected < 0 || $selected >= m_len($nodes)) return;
+    if (tree_has_children($, $selected)) {
+        $expanded[$selected] = 1;
+        rebuild($);
+        draw_tree($);
+    }
+}
+
+@proc collapse
+{
+    if ($selected < 0 || $selected >= m_len($nodes)) return;
+    $expanded[$selected] = 0;
+    rebuild($);
+    draw_tree($);
+}
+
+@proc refresh
+{
+    rebuild($);
+    draw_tree($);
+}
+
+@ select a node by index and optionally toggle it
+@proc select_node
+{
+    if (! num_params || ! params || ! params[0]) return;
+    int idx = atoi(params[0]);
+    if (idx < 0 || idx >= m_len($nodes)) return;
+    $selected = idx;
+    draw_tree($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@UTILITIES
+
+@proc int tree_level($, int i)
+{
+    const char *s = STR($nodes, i);
+    return atoi(s);
+}
+
+@proc const char *tree_text($, int i)
+{
+    const char *s = STR($nodes, i);
+    const char *p = strchr(s, '\t');
+    return p ? p + 1 : s;
+}
+
+@proc int tree_parent($, int i)
+{
+    int level = tree_level($, i);
+    if (level <= 0) return -1;
+    for (int j = i - 1; j >= 0; j--) {
+        if (tree_level($, j) == level - 1) return j;
+    }
+    return -1;
+}
+
+@proc int tree_has_children($, int i)
+{
+    int level = tree_level($, i);
+    for (int j = i + 1; j < m_len($nodes); j++) {
+        int l = tree_level($, j);
+        if (l <= level) return 0;
+        if (l == level + 1) return 1;
+    }
+    return 0;
+}
+
+@proc int tree_visible_row($, int node)
+{
+    for (int r = 0; r < $visibleCount; r++)
+        if ($visible_nodes[r] == node) return r;
+    return -1;
+}
+
+@proc void rebuild($)
+{
+    int old_visible = $visibleCount;
+    int n = $nodes ? m_len($nodes) : 0;
+    if (n > $visible_cap) {
+        $visible_nodes = realloc($visible_nodes, (size_t)n * sizeof(int));
+        $visible_cap = n;
+    }
+    $visibleCount = 0;
+    if (n == 0) return;
+
+    for (int i = 0; i < n; i++) {
+        int level = tree_level($, i);
+        int vis = (level == 0);
+        if (!vis) {
+            int p = tree_parent($, i);
+            while (p >= 0) {
+                if (!$expanded[p]) { vis = 0; break; }
+                vis = 1;
+                if (tree_level($, p) == 0) break;
+                p = tree_parent($, p);
+            }
+        }
+        if (vis) $visible_nodes[$visibleCount++] = i;
+    }
+
+    if (XtIsRealized($) && old_visible != $visibleCount) {
+        int h = 8 + $visibleCount * $itemHeight;
+        if (h != (int)$height) {
+            XtWidgetGeometry req;
+            memset(&req, 0, sizeof req);
+            req.request_mode = CWHeight;
+            req.height = (Dimension)h;
+            XtMakeGeometryRequest($, &req, NULL);
+        }
+    }
+}
+
+@proc void tree_colors_changed($)
+{
+    $bg = theme_color_defined("bg_norm") ? get_color("bg_norm")
+        : (theme_color_defined("gridbox_bg") ? get_color("gridbox_bg") : $background_pixel);
+    $fg = theme_color_defined("fg_norm") ? get_color("fg_norm") : $background_pixel;
+    $sel_bg = theme_color_defined("bg_sel") ? get_color("bg_sel")
+            : (theme_color_defined("accent") ? get_color("accent") : $bg);
+    $border = theme_color_defined("list_line") ? get_color("list_line")
+            : (theme_color_defined("control_border") ? get_color("control_border") : $fg);
+    XtVaSetValues($, XtNbackground, $bg, NULL);
+    make_xft($);
+    rebuild($);
+    if (XtIsRealized($)) draw_tree($);
+}
+
+@proc void make_xft($)
+{
+    Display *dpy = XtDisplay($);
+    Screen *scr = XtScreen($);
+    if ($font) { XftFontClose(dpy, $font); $font = NULL; }
+    $font = XftFontOpenName(dpy, DefaultScreen(dpy), theme_font_spec());
+
+    if ($text_color_ok) {
+        XftColorFree(dpy, DefaultVisualOfScreen(scr),
+                     DefaultColormapOfScreen(scr), &$text_color);
+        $text_color_ok = False;
+    }
+    uint32_t rgb = theme_color_defined("fg_norm") ? theme_get_rgb("fg_norm")
+                 : (theme_color_defined("button_fg") ? theme_get_rgb("button_fg") : 0);
+    if (rgb) {
+        XRenderColor xr;
+        xr.red   = (unsigned short)(((rgb >> 16) & 0xff) * 257);
+        xr.green = (unsigned short)(((rgb >> 8)  & 0xff) * 257);
+        xr.blue  = (unsigned short)(( rgb        & 0xff) * 257);
+        xr.alpha = 0xffff;
+        if (XftColorAllocValue(dpy, DefaultVisualOfScreen(scr),
+                               DefaultColormapOfScreen(scr), &xr, &$text_color))
+            $text_color_ok = True;
+    }
+}
+
+@proc void draw_tree($)
+{
+    if (!XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    int W = (int)$width, H = (int)$height;
+    if (W < 1 || H < 1) return;
+
+    XSetForeground(dpy, gc, $bg);
+    XFillRectangle(dpy, win, gc, 0, 0, W, H);
+
+    if (! $draw) {
+        $draw = XftDrawCreate(dpy, win,
+                              DefaultVisualOfScreen(XtScreen($)),
+                              DefaultColormapOfScreen(XtScreen($)));
+    }
+
+    for (int r = 0; r < $visibleCount; r++) {
+        int i = $visible_nodes[r];
+        int y = 4 + r * $itemHeight;
+        int level = tree_level($, i);
+        if (i == $selected) {
+            XSetForeground(dpy, gc, $sel_bg);
+            XFillRectangle(dpy, win, gc, 0, y, W, $itemHeight);
+        }
+        int has = tree_has_children($, i);
+        int open = $expanded[i];
+
+        /* Draw the expander as vector geometry instead of "[+]/[-]" text.
+         * Bracket glyphs are taller than the font's ascent/descent, so they
+         * visually overlap between rows; a box sized from itemHeight always
+         * stays inside its row regardless of the theme font. */
+        int box = $itemHeight - 8;
+        if (box > 13) box = 13;
+        if (box < 7) box = 7;
+        int box_x = 4 + level * $indent;
+        int box_y = y + ($itemHeight - box) / 2;
+        if (has) {
+            int mid = box_y + box / 2;
+            XSetForeground(dpy, gc, $fg);
+            XDrawRectangle(dpy, win, gc, box_x, box_y, box - 1, box - 1);
+            XDrawLine(dpy, win, gc, box_x + 2, mid, box_x + box - 3, mid);
+            if (!open) {
+                XDrawLine(dpy, win, gc, box_x + box / 2, box_y + 2,
+                          box_x + box / 2, box_y + box - 3);
+            }
+        }
+        int text_x = box_x + box + 6;
+
+        if ($font && $text_color_ok && $draw) {
+            int baseline = y + ($itemHeight - ($font->ascent + $font->descent)) / 2
+                         + $font->ascent;
+            const char *text = tree_text($, i);
+            XftDrawStringUtf8($draw, &$text_color, $font,
+                              text_x, baseline,
+                              (FcChar8 *)text, (int)strlen(text));
+        }
+    }
+}
+
+@EXPORTS
+@proc int wtreeview_visible_count($)
+{
+    return $visibleCount;
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <X11/extensions/Xrender.h>
+@incl <stdint.h>
+@incl <stdio.h>
+@incl <stdlib.h>
+@incl <string.h>
+@incl "mls.h"
+@incl "converters.h"
+@incl "theme.h"

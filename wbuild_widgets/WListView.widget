@@ -18,6 +18,11 @@
 @var ArrayInt columnKinds = 0
 @ MLS list of tab-separated row strings (caller owns the strings)
 @var int rows = 0
+@ optional stable row ids parallel to |rows| (MLS list); kept in sync when sorting
+@var int rowIds = 0
+@ sort column for WTableView-style sorting; -1 = unsorted
+@var int sortColumn = -1
+@var Boolean sortAscending = True
 @ virtual list: callback receives a wlist_entry_t* (pos/max/data)
 @var <Callback> XtCallbackList getEntry = NULL
 @ selection changed (selected index)
@@ -30,6 +35,8 @@
 @var <Callback> XtCallbackList headerClicked = NULL
 @ selected row, -1 = none
 @var int selected = -1
+@ selected row's id from |rowIds|, -1 = none
+@var int selectedId = -1
 @ preferred number of visible rows for query_geometry
 @var int visibleRows = 8
 @ 0 = derive row height from the font
@@ -61,6 +68,8 @@
 @trans <Key>Return: activate()
 
 @PRIVATE
+@type row_sort_ctx = struct { int col; int asc; }
+@type row_sort_pair = struct { char *row; char *id; }
 @def COLT_TEXT = 0
 @def COLT_ICON = 1
 @def COLT_ICON_TEXT = 2
@@ -220,6 +229,36 @@
     if (r > n - 1) r = n - 1;
     set_selected($, r);
   }
+}
+
+@proc sort
+{
+  if (! $rows || $sortColumn < 0) return;
+  int n = m_len($rows);
+  if (n < 2) return;
+  char **data = (char **)m_buf($rows);
+  char **ids = ($rowIds && m_len($rowIds) >= n) ? (char **)m_buf($rowIds) : NULL;
+
+  row_sort_pair *pairs = (row_sort_pair *)malloc((size_t)n * sizeof *pairs);
+  if (! pairs) return;
+  for (int i = 0; i < n; i++) {
+    pairs[i].row = data[i];
+    pairs[i].id = ids ? ids[i] : NULL;
+  }
+
+  row_sort_ctx ctx;
+  ctx.col = $sortColumn;
+  ctx.asc = $sortAscending ? 1 : 0;
+  qsort_r(pairs, n, sizeof *pairs, row_pair_cmp, &ctx);
+
+  for (int i = 0; i < n; i++) {
+    data[i] = pairs[i].row;
+    if (ids) ids[i] = pairs[i].id;
+  }
+  free(pairs);
+
+  update_selected_id($);
+  redraw_list($);
 }
 
 @proc activate
@@ -395,10 +434,12 @@
     $dirty = 1;
     redraw = 1;
   }
-  if ($rows != $old$rows || $columnCount != $old$columnCount ||
+  if ($rows != $old$rows || $rowIds != $old$rowIds ||
+      $columnCount != $old$columnCount ||
       $columnWidths != $old$columnWidths || $columnTitles != $old$columnTitles ||
       $columnAligns != $old$columnAligns || $columnKinds != $old$columnKinds) {
     rebuild_columns($);
+    update_selected_id($);
     $dirty = 1;
     redraw = 1;
   }
@@ -410,6 +451,7 @@
     redraw = 1;
   }
   if ($selected != $old$selected) {
+    update_selected_id($);
     ensure_selected_visible($);
     $dirty = 1;
     redraw = 1;
@@ -428,6 +470,42 @@
 }
 
 @UTILITIES
+
+@proc void row_field(const char *row, int col, char *out, int out_size)
+{
+  const char *p = row ? row : "";
+  for (int c = 0; c < col && p; c++) {
+    p = strchr(p, '\t');
+    if (p) p++;
+  }
+  if (!p) { if (out_size > 0) out[0] = 0; return; }
+  const char *e = strchr(p, '\t');
+  int len = e ? (int)(e - p) : (int)strlen(p);
+  if (len >= out_size) len = out_size - 1;
+  memcpy(out, p, len);
+  out[len] = 0;
+}
+
+@proc int row_pair_cmp(const void *pa, const void *pb, void *arg)
+{
+  const row_sort_pair *a = (const row_sort_pair *)pa;
+  const row_sort_pair *b = (const row_sort_pair *)pb;
+  row_sort_ctx *ctx = (row_sort_ctx *)arg;
+  char fa[256], fb[256];
+  row_field(a->row, ctx->col, fa, sizeof fa);
+  row_field(b->row, ctx->col, fb, sizeof fb);
+
+  char *ea = NULL, *eb = NULL;
+  double da = strtod(fa, &ea);
+  double db = strtod(fb, &eb);
+  int cmp;
+  if (ea && *ea == 0 && eb && *eb == 0)
+    cmp = (da < db) ? -1 : (da > db) ? 1 : 0;
+  else
+    cmp = strcasecmp(fa, fb);
+
+  return ctx->asc ? cmp : -cmp;
+}
 
 @proc void focus_self($)
 {
@@ -671,6 +749,16 @@
   return n;
 }
 
+@proc void update_selected_id($)
+{
+  int id = -1;
+  if ($selected >= 0 && $rowIds && $selected < m_len($rowIds)) {
+    const char *s = STR($rowIds, $selected);
+    if (s && *s) id = atoi(s);
+  }
+  $selectedId = id;
+}
+
 @proc void set_selected($, int row)
 {
   int n = row_count($);
@@ -679,6 +767,7 @@
   if (row < -1) row = -1;
   if (row == $selected) return;
   $selected = row;
+  update_selected_id($);
   ensure_selected_visible($);
   $dirty = 1;
   redraw_list($);
@@ -1198,6 +1287,9 @@
 }
 
 @IMPORTS
+@incl <stdlib.h>
+@incl <string.h>
+@incl <strings.h>
 @incl <X11/Intrinsic.h>
 @incl <X11/IntrinsicP.h>
 @incl <X11/StringDefs.h>

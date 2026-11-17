@@ -24,10 +24,10 @@ xtapptimeout(400, function()
     gui.set('menu_file', 'open', true)
 end)
 
-xtapptimeout(900, function()
+xtapptimeout(2000, function()
     local f = io.open(os.getenv('COOKBOOK_PROBE_OUT'), 'w')
     for _, id in ipairs({'main','menubar','toolbar','toolbar_actions','tabs','status','ed_cat',
-                         'gal_check','gal_progress','gal_combo','gal_radio','gal_name',
+                         'gal_check','gal_progress','gal_combo','gal_radio','gal_name','tree_view',
                          'menu_file','menu_view','menu_help'}) do
         local g = gui.geometry(id) or {}
         f:write(string.format('%s.x=%d\n%s.y=%d\n%s.width=%d\n%s.height=%d\n',
@@ -42,6 +42,44 @@ xtapptimeout(900, function()
     if cat then xtaction(cat, 'select_index', 2) end
     local combo_label = gui.get('ed_cat', 'label')
     local combo_selected = gui.get('ed_cat', 'selected')
+    local sortmi = gui.get_widget('mi_sort')
+    if sortmi then xtaction(sortmi, 'notify') end
+    local sort_status = gui.get('status', 'message')
+
+    -- Row-id mapping: after sorting, row 0 must still resolve to Apple Crumble.
+    gui.set('recipe_list', 'selected', 0)
+    local sorted_id = gui.get('recipe_list', 'selectedId')
+    cb_open_recipe()
+    local sorted_title = gui.get('det_title', 'label')
+
+    -- Editor CRUD + persistence + confirm delete.
+    cb_new_recipe()
+    gui.set('ed_title', 'label', 'Test Dish')
+    gui.set('ed_author', 'label', 'Tester')
+    gui.set('ed_serv', 'value', 2)
+    gui.set('ed_time', 'value', 7)
+    local edcat = gui.get_widget('ed_cat')
+    if edcat then xtaction(edcat, 'select_index', 3) end
+    gui.set('ed_veg', 'checked', true)
+    local eding = gui.get_widget('ed_ingredients')
+    if eding then xtaction(eding, 'set_text', '1\tcup\tFlour\n2\t\tEggs') end
+    local edsteps = gui.get_widget('ed_steps')
+    if edsteps then xtaction(edsteps, 'set_text', 'Mix.\nBake.') end
+    cb_save()
+    local save_status = gui.get('status', 'message')
+    local saved_title = gui.get('det_title', 'label')
+    local count_after_save = mls_len(gui.get('recipe_list', 'rows'))
+    local pf = io.open(os.getenv('COOKBOOK_DATA'), 'r')
+    local persist_file = pf ~= nil
+    if pf then pf:close() end
+
+    cb_delete_recipe()
+    local confirm_open = gui.get('confirm_delete', 'open')
+    local confirm_dlg = gui.get_widget('confirm_delete')
+    if confirm_dlg then xtaction(confirm_dlg, 'ok') end
+    local delete_status = gui.get('status', 'message')
+    local count_after_delete = mls_len(gui.get('recipe_list', 'rows'))
+
     local mi = gui.get_widget('mi_detail')
     if mi then xtaction(mi, 'notify') end
     local tab = gui.get('tabs', 'selected')
@@ -51,6 +89,16 @@ xtapptimeout(900, function()
     f:write('confirm_label_has_x=' .. tostring(confirm_label:find('%[x%]') ~= nil) .. '\n')
     f:write('combo_label=' .. tostring(combo_label) .. '\n')
     f:write('combo_selected=' .. tostring(combo_selected) .. '\n')
+    f:write('sort_status=' .. tostring(sort_status) .. '\n')
+    f:write('sorted_id=' .. tostring(sorted_id) .. '\n')
+    f:write('sorted_title=' .. tostring(sorted_title) .. '\n')
+    f:write('save_status=' .. tostring(save_status) .. '\n')
+    f:write('saved_title=' .. tostring(saved_title) .. '\n')
+    f:write('count_after_save=' .. tostring(count_after_save) .. '\n')
+    f:write('persist_file=' .. tostring(persist_file) .. '\n')
+    f:write('confirm_open=' .. tostring(confirm_open) .. '\n')
+    f:write('delete_status=' .. tostring(delete_status) .. '\n')
+    f:write('count_after_delete=' .. tostring(count_after_delete) .. '\n')
     f:write('gallery_check=' .. tostring(gui.get('gal_check', 'checked')) .. '\n')
     f:write('gallery_progress=' .. tostring(gui.get('gal_progress', 'value')) .. '\n')
     f:write('gallery_combo=' .. tostring(gui.get('gal_combo', 'label')) .. '\n')
@@ -59,6 +107,20 @@ xtapptimeout(900, function()
     f:write('gallery_radio=' .. tostring(gui.get('gal_radio', 'selected')) .. '\n')
     f:write('gallery_name_label=' .. tostring(gui.get('gal_name', 'label')) .. '\n')
     f:write('gallery_name_placeholder=' .. tostring(gui.get('gal_name', 'placeholder')) .. '\n')
+    local tree_before = gui.get('tree_view', 'visibleCount')
+    local tree = gui.get_widget('tree_view')
+    if tree then xtaction(tree, 'select_node', 0); xtaction(tree, 'expand') end
+    local tree_after = gui.get('tree_view', 'visibleCount')
+    f:write('tree_before=' .. tostring(tree_before) .. '\n')
+    f:write('tree_after=' .. tostring(tree_after) .. '\n')
+    local dlgbtn = gui.get_widget('gal_dialog_btn')
+    if dlgbtn then xtaction(dlgbtn, 'notify') end
+    local dlgopen = gui.get('gal_dialog', 'open')
+    local dlg = gui.get_widget('gal_dialog')
+    if dlg then xtaction(dlg, 'cancel') end
+    local dlgstatus = gui.get('status', 'message')
+    f:write('dialog_open=' .. tostring(dlgopen) .. '\n')
+    f:write('dialog_status=' .. tostring(dlgstatus) .. '\n')
     f:write('tab_after_menu=' .. tostring(tab) .. '\n')
     f:close()
     gui.set('menu_file', 'open', false)
@@ -67,6 +129,7 @@ end)
 LUA
 
 export COOKBOOK_PROBE_OUT="$TMP/out.txt"
+export COOKBOOK_DATA="$TMP/recipes.lua"
 export ASAN_OPTIONS="detect_leaks=0${ASAN_OPTIONS:+:$ASAN_OPTIONS}"
 (
     cd "$ROOT/commander" || exit 1
@@ -134,12 +197,26 @@ check_eq_simple confirm_checked true
 check_eq_simple confirm_label_has_x true
 check_eq_simple combo_label Dessert
 check_eq_simple combo_selected 2
+check_eq_simple sort_status "Recipes sorted by name"
+check_eq_simple sorted_id 3
+check_eq_simple sorted_title "Apple Crumble"
+check_eq_simple save_status "Saved: Test Dish"
+check_eq_simple saved_title "Test Dish"
+check_eq_simple count_after_save 6
+check_eq_simple persist_file true
+check_eq_simple confirm_open true
+check_eq_simple delete_status "Deleted: Test Dish"
+check_eq_simple count_after_delete 5
 check_eq_simple gallery_check true
 check_eq_simple gallery_progress 62
 check_eq_simple gallery_combo Medium
 check_eq_simple gallery_radio 2
 check_eq_simple gallery_name_label ""
 check_eq_simple gallery_name_placeholder "Type your name"
+check_eq_simple tree_before 2
+check_eq_simple tree_after 4
+check_eq_simple dialog_open true
+check_eq_simple dialog_status "Dialog: Cancel"
 check_eq_simple tab_after_menu 1
 if ! grep -q '^status_message=Screen:' "$TMP/out.txt"; then
     echo "FAIL: status message did not update" >&2

@@ -131,9 +131,10 @@
 
     if (size_changed && $autoHeight) {
         int w, h;
-        calculate_size($, 0, &w, &h);
-        if (w != $width || h != $height) {
-             XtVaSetValues($, XtNwidth, (Dimension)w, XtNheight, (Dimension)h, NULL);
+        int tw = (int)$width;
+        calculate_size($, tw, &w, &h);
+        if (h != (int)$height) {
+            XtVaSetValues($, XtNheight, (Dimension)h, NULL);
         }
     }
 
@@ -149,7 +150,6 @@
     reply->request_mode = CWWidth | CWHeight;
     reply->width = w;
     reply->height = h;
-
     $prefered_width = w;
     $prefered_height = h;
 
@@ -158,9 +158,11 @@
 
 @proc set_values_almost
 {
-    request->width = reply->width;
-    request->height = reply->height;
-    request->request_mode = CWWidth | CWHeight;
+    /* Follow the Xt contract: adopt the parent's compromise wholesale. In
+     * particular request_mode must become reply->request_mode; XtSetValues()
+     * loops while request_mode != 0. The old code forced CWWidth|CWHeight,
+     * so a parent "No" reply (request_mode == 0) never terminated the loop. */
+    *request = *reply;
     $dirty = 1;
 }
 

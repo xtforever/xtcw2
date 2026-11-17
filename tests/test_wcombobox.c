@@ -73,7 +73,16 @@ int main(int argc, char **argv)
                           DefaultRootWindow(XtDisplay(combo)),
                           0, 0, &cx, &cy, &child);
     assert(sy >= cy + (int)combo->core.height);
-    XtCallActionProc(combo, "dismiss", NULL, NULL, 0);
+    WidgetList buttons = NULL;
+    Cardinal nbuttons = 0;
+    XtVaGetValues(cw->wComboBox.menu, XtNchildren, &buttons,
+                  XtNnumChildren, &nbuttons, NULL);
+    assert(nbuttons == 3);
+    XtCallActionProc(buttons[2], "notify", NULL, NULL, 0);
+    XtVaGetValues(combo, XtNlabel, &label, "selected", &selected, NULL);
+    assert(selected == 2);
+    assert(label && strcmp(label, "Dessert") == 0);
+    assert(!cw->wComboBox.entry_mode);
 
     XtDestroyWidget(top);
     XtDestroyApplicationContext(app);

@@ -6,6 +6,8 @@ Run one widget in the standard 700×600 harness:
 ./run_widget.sh '(Wlabel :label "Hello" :fontSize 20)'
 ./run_widget.sh tests/widgets/wlabel.lui
 ./run_widget.sh --after tests/widgets/populate_list.lua tests/widgets/wlistview.lui
+./run_widget.sh --after tests/widgets/populate_table.lua tests/widgets/wtableview.lui
+./run_widget.sh --after tests/widgets/populate_tree.lua tests/widgets/wtreeview.lui
 ./run_widget.sh --autoclose 500 '(Wlabel :label "probe")'
 ```
 
@@ -35,5 +37,5 @@ and `WPopupMenu` content. `waction.lui` covers checkable `WAction` items with
 shortcut hints. `wtoolbar.lui` covers the themed `WToolBar` action row. `wstatusbar.lui`
 covers the message + permanent-widget `WStatusBar`. `wcombobox.lui` covers the
 read-only `WComboBox` and its popup menu. `wradiogroup.lui` covers the themed
-radio group. `wlineedit.lui` covers placeholder + clear-button input. `wprogressbar.lui`, `wcheckbox.lui`
+radio group. `wlineedit.lui` covers placeholder + clear-button input. `wtableview.lui` covers the sortable `table-view` list mode. `wdialog.lui` covers the themed modal dialog. `wtreeview.lui` covers the expandable tree view. `wprogressbar.lui`, `wcheckbox.lui`
 and `wformlayout.lui` cover the newer form/feedback widgets.

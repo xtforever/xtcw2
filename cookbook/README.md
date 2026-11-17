@@ -18,7 +18,10 @@ regressions across the toolkit.
   (menu/toolbar/content/status slots), `WMenuBar` + `WmenuButton` +
   `WPopupMenu` + `WAction` menus, a `WToolBar` action row, a Gallery tab for new widgets, a `WStatusBar`, themed `WListView` lists,
   flat `Wbutton`s, `Wedit`/`WspinBox` controls, `WToggleSwitch` dietary
-  switches, a `WComboBox` category selector, `WCheckBox`, `WProgressBar`, `WFormLayout`, `WRadioGroup`, `WLineEdit` and `KaroEd` editors.
+  switches, a `WComboBox` category selector, `WCheckBox`, `WProgressBar`, `WFormLayout`, `WRadioGroup`, `WLineEdit`, a sortable `table-view` recipe list, a full-height `WTreeView` Tree tab, `WDialog` and `KaroEd` editors.
+- Recipe CRUD with a Lua-chunk persistence store (`data/`, override with
+  `COOKBOOK_DATA`), a themed delete confirmation, and stable row ids so sorting
+  preserves the selection→model mapping.
 - The cookbook is the **testing ground** for `../Improved-Widget-Set.md`:
   new widgets are integrated here first, then get a `tests/widgets/*.lui`
   probe and a C regression test where appropriate.
@@ -166,6 +169,9 @@ because AddressSanitizer needs to control the address-space layout. The
 
 ## Relationship to the plan
 
-Everything this app cannot do yet — JSON persistence, real list/model data
-binding, a location-independent host and visual regression tests — is catalogued in
-[`../plan-xtcw-completed.md`](../plan-xtcw-completed.md).
+The app now persists recipes (Lua-chunk store under `data/`, overridable with
+`COOKBOOK_DATA`), does full editor create/update, deletes through a themed
+confirm dialog, and keeps a stable row-id mapping when the recipe table is
+sorted. Remaining gaps — JSON/structured I/O, a shared `WModel`/filter layer,
+tree scrolling, a location-independent host and visual regression baselines —
+are catalogued in [`../plan-xtcw-completed.md`](../plan-xtcw-completed.md).

@@ -224,6 +224,27 @@ check_log lineedit
 check_value lineedit "$TMP/lineedit.result" probe_class WLineEdit
 check_value lineedit "$TMP/lineedit.result" probe_id le
 
+# 2o. Table-view (WListView sort mode) probe.
+probe tableview "$TMP/tableview.result" "$ROOT/tests/widgets/wtableview.lui"
+check_rc tableview
+check_log tableview
+check_value tableview "$TMP/tableview.result" probe_class table-view
+check_value tableview "$TMP/tableview.result" probe_id table
+
+# 2p. WDialog probe.
+probe dialog "$TMP/dialog.result" "$ROOT/tests/widgets/wdialog.lui"
+check_rc dialog
+check_log dialog
+check_value dialog "$TMP/dialog.result" probe_class WDialog
+check_value dialog "$TMP/dialog.result" probe_id dlg
+
+# 2q. WTreeView probe.
+probe treeview "$TMP/treeview.result" "$ROOT/tests/widgets/wtreeview.lui"
+check_rc treeview
+check_log treeview
+check_value treeview "$TMP/treeview.result" probe_class tree-view
+check_value treeview "$TMP/treeview.result" probe_id tree
+
 # 3. Model data through --after.
 probe list "$TMP/list.result" \
     --after "$ROOT/tests/widgets/populate_list.lua" \

@@ -23,8 +23,13 @@ function M.fragment()
         '    (WComboBox :id "gal_combo" :role "field" :placeholder "Main" :linesHeight 4)',
         '    (label :role "label" :label "Size:")',
         '    (WRadioGroup :id "gal_radio" :role "field" :items "Small,Medium,Large" :selected 1 :itemHeight 26)',
+        '    (label :role "label" :label "Dialog:")',
+        '    (Wbutton :id "gal_dialog_btn" :role "field" :label "Show dialog" :callback "LUA(cb_show_dialog)")',
         '  )',
         '  (label :id "gal_hint" :label "Use this tab to exercise new widgets before they get their own probes." :gridx 0 :gridy 3 :gridWidth 4 :weightx 1 :weighty 0 :fill 3 :useSmallFont TRUE)',
+        '  (WDialog :id "gal_dialog" :gridx 0 :gridy 4 :gridWidth 4 :weightx 1 :weighty 0 :fill 3',
+        '           :title "Gallery dialog" :message "This is a themed WDialog." :okLabel "OK" :cancelLabel "Cancel"',
+        '           :callback "LUA(cb_dialog_result)")',
         ')',
     }, "\n")
 end

@@ -28,6 +28,7 @@ return {
     "Wcheckbox",
     "WComboBox",
     "Wcombo",
+    "WDialog",
     "WeditMV",
     "Wedit",
     "WfileChooser",
@@ -64,6 +65,7 @@ return {
     "Wtext",
     "WToggleSwitch",
     "WToolBar",
+    "WTreeView",
     "Wviewport",
     "WviewVar",
 }

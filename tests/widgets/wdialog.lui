@@ -1,0 +1,2 @@
+(WDialog :id "dlg" :title "Delete recipe?" :message "This cannot be undone."
+         :showCancel TRUE :okLabel "Delete" :cancelLabel "Cancel")

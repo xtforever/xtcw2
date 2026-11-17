@@ -189,9 +189,10 @@
     for (int i = 0; i < n; i++) {
         Widget item = XtVaCreateManagedWidget("item", wbuttonWidgetClass, $menu,
                                               XtNlabel, STR($items, i),
+                                              "user_data", i,
                                               NULL);
         XtAddCallback(item, "callback", (XtCallbackProc) item_selected_cb,
-                      (XtPointer)(intptr_t)i);
+                      (XtPointer)$);
     }
 
     Dimension ch = 0;
@@ -234,7 +235,8 @@
 
 @proc item_selected_cb(Widget w, $, void *class_data)
 {
-    int idx = (int)(intptr_t)class_data;
+    int idx = -1;
+    XtVaGetValues(w, "user_data", &idx, NULL);
     if (idx >= 0 && idx < m_len($items)) {
         $selected = idx;
         update_label($);

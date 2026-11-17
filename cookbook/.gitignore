@@ -1,2 +1,5 @@
 # Build/run artifacts produced by cookbook/scripts/test-all.sh
 dist/
+
+# Runtime recipe store written by the app (persistence)
+data/

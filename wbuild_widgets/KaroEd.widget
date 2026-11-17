@@ -1425,6 +1425,38 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
     edit_notify($, KEDIT_INSERT);
 }
 
+@  Replace the whole buffer with params[0] (a '\n'-separated string).
+  Used by Lua forms to populate a KaroEd from a model value.
+@proc set_text
+{
+    if( ! num_params || ! params || ! params[0] ) return;
+    lines_clear($);
+
+    const char *p = params[0];
+    while( 1 ) {
+        const char *e = strchr(p, '\n');
+        size_t len = e ? (size_t)(e - p) : strlen(p);
+        char *line = (char*)malloc(len + 1);
+        if( ! line ) break;
+        memcpy(line, p, len);
+        line[len] = 0;
+        writeln($, line);
+        free(line);
+        if( ! e ) break;
+        p = e + 1;
+    }
+    if( m_len($lines) == 0 ) {
+        char empty[1] = { 0 };
+        writeln($, empty);
+    }
+
+    $rsel.x = 0;
+    $rsel.y = 0;
+    $top_y = 0;
+    $has_selection = False;
+    redraw_full($);
+}
+
 
 @proc page_up
 {
@@ -1830,6 +1862,8 @@ ConvertSelection($, Atom * selection, Atom * target, Atom * type,
 @IMPORTS
 
 @incl <stdint.h>
+@incl <stdlib.h>
+@incl <string.h>
 @incl <X11/Xft/Xft.h>
 @incl <X11/Xaw/XawImP.h>
 @incl <X11/Xatom.h>

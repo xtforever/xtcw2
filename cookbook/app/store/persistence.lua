@@ -64,6 +64,11 @@ end
 
 -- Save recipes to a file. Returns true or nil + error.
 function M.save(path, recipes)
+    -- The default data path lives in cookbook/data/, which is not committed.
+    local dir = path:match("^(.*)/[^/]+$")
+    if dir and dir ~= "" then
+        os.execute("mkdir -p " .. string.format("%q", dir))
+    end
     local f, err = io.open(path, "w")
     if not f then
         return nil, err

@@ -1,0 +1,6 @@
+(table-view :id "table" :columnCount 2
+            :columnTitles "Name\tQty"
+            :columnWidths "0,80"
+            :showHeader 1 :gridLines 1 :alternateRows 1
+            :sortColumn 0 :sortAscending TRUE
+            :gridx 0 :gridy 0 :weightx 1 :weighty 1 :fill 3)

@@ -1,0 +1,247 @@
+@class WDialog (Composite)
+@ Themed modal dialog shell with title, message and OK/Cancel actions.
+
+@PUBLIC
+@var String title = <String> "Dialog"
+@var String message = <String> ""
+@var String okLabel = <String> "OK"
+@var String cancelLabel = <String> "Cancel"
+@var Boolean showCancel = True
+@ settable open state
+@var Boolean open = False
+@ last result: 1 = OK, 0 = Cancel (readable from Lua after the callback)
+@var int result = 0
+@var <Callback> XtCallbackList callback = NULL
+
+@PRIVATE
+@var Widget shell
+@var Widget content
+@var Widget title_label
+@var Widget message_label
+@var Widget ok_button
+@var Widget cancel_button
+@var int creating_internal
+
+@METHODS
+
+@proc initialize
+{
+    $shell = NULL;
+    $content = NULL;
+    $title_label = NULL;
+    $message_label = NULL;
+    $ok_button = NULL;
+    $cancel_button = NULL;
+    $result = 0;
+    $creating_internal = 1;
+
+    $shell = XtCreatePopupShell("dialog", overrideShellWidgetClass, $, NULL, 0);
+    $content = XtVaCreateManagedWidget("dialog_content", gridboxWidgetClass,
+                                       $shell,
+                                       "defaultDistance", 12,
+                                       "borderWidth", 0,
+                                       NULL);
+
+    $title_label = XtVaCreateManagedWidget("dialog_title", wlabelWidgetClass,
+                                           $content,
+                                           "label", $title ? $title : "",
+                                           "gridx", 0, "gridy", 0, "gridWidth", 2,
+                                           "weightx", 1, "weighty", 0, "fill", 3,
+                                           "fontSize", 16,
+                                           NULL);
+    $message_label = XtVaCreateManagedWidget("dialog_message", wlabelWidgetClass,
+                                             $content,
+                                             "label", $message ? $message : "",
+                                             "gridx", 0, "gridy", 1, "gridWidth", 2,
+                                             "weightx", 1, "weighty", 1, "fill", 3,
+                                             "alignment", 0,
+                                             NULL);
+    $ok_button = XtVaCreateManagedWidget("dialog_ok", wbuttonWidgetClass,
+                                         $content,
+                                         "label", $okLabel ? $okLabel : "OK",
+                                         "gridx", 0, "gridy", 2,
+                                         "weightx", 1, "weighty", 0, "fill", 3,
+                                         "primary", True,
+                                         NULL);
+    $cancel_button = XtVaCreateManagedWidget("dialog_cancel", wbuttonWidgetClass,
+                                             $content,
+                                             "label", $cancelLabel ? $cancelLabel : "Cancel",
+                                             "gridx", 1, "gridy", 2,
+                                             "weightx", 1, "weighty", 0, "fill", 3,
+                                             NULL);
+    XtAddCallback($ok_button, "callback", (XtCallbackProc) ok_cb, $);
+    XtAddCallback($cancel_button, "callback", (XtCallbackProc) cancel_cb, $);
+    if (! $showCancel) XtUnmanageChild($cancel_button);
+
+    $creating_internal = 0;
+    theme_register($, dialog_colors_changed);
+    dialog_colors_changed($);
+}
+
+@proc destroy
+{
+    theme_unregister($);
+    $shell = NULL;
+    $content = NULL;
+    $title_label = NULL;
+    $message_label = NULL;
+    $ok_button = NULL;
+    $cancel_button = NULL;
+}
+
+@proc set_values
+{
+    if ($title_label && $title != $old$title)
+        XtVaSetValues($title_label, XtNlabel, $title ? $title : "", NULL);
+    if ($message_label && $message != $old$message)
+        XtVaSetValues($message_label, XtNlabel, $message ? $message : "", NULL);
+    if ($ok_button && $okLabel != $old$okLabel)
+        XtVaSetValues($ok_button, XtNlabel, $okLabel ? $okLabel : "OK", NULL);
+    if ($cancel_button && $cancelLabel != $old$cancelLabel)
+        XtVaSetValues($cancel_button, XtNlabel, $cancelLabel ? $cancelLabel : "Cancel", NULL);
+    if ($cancel_button && $showCancel != $old$showCancel) {
+        if ($showCancel) XtManageChild($cancel_button);
+        else XtUnmanageChild($cancel_button);
+    }
+    if ($open != $old$open) {
+        if ($open) dialog_open($);
+        else dialog_close($);
+    }
+    return True;
+}
+
+@TRANSLATIONS
+@trans <Key>Escape: cancel()
+
+@ACTIONS
+@proc show
+{
+    dialog_open($);
+}
+
+@proc hide
+{
+    dialog_close($);
+}
+
+@proc ok
+{
+    ok_cb($ok_button, $, NULL);
+}
+
+@proc cancel
+{
+    cancel_cb($cancel_button, $, NULL);
+}
+
+@UTILITIES
+
+@proc void dialog_colors_changed($)
+{
+    Pixel bg = theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0);
+    Pixel border = theme_color_defined("list_line") ? get_color("list_line")
+                 : (theme_color_defined("control_border") ? get_color("control_border") : bg);
+    if ($shell && bg) {
+        XtVaSetValues($shell, XtNbackground, bg,
+                      XtNborderWidth, 1,
+                      XtNborderColor, border ? border : bg,
+                      NULL);
+    }
+    if ($content && bg) XtVaSetValues($content, XtNbackground, bg, NULL);
+}
+
+@proc void dialog_open($)
+{
+    if (! $shell || ! $content) return;
+    if ($open) return;
+
+    XtRealizeWidget($shell);
+    dialog_colors_changed($);
+    Pixel bg = theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0);
+    if (bg) {
+        Display *dpy = XtDisplay($);
+        Window win = XtWindow($shell);
+        Pixel border = theme_color_defined("list_line") ? get_color("list_line")
+                     : (theme_color_defined("control_border") ? get_color("control_border") : bg);
+        XSetWindowBackground(dpy, win, bg);
+        XSetWindowBorder(dpy, win, border);
+        XSetWindowBorderWidth(dpy, win, 1);
+        XClearWindow(dpy, win);
+    }
+
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    XtQueryGeometry($content, &req, &pref);
+    int w = (pref.request_mode & CWWidth) ? (int)pref.width : 360;
+    int h = (pref.request_mode & CWHeight) ? (int)pref.height : 160;
+    if (w < 320) w = 320;
+    if (h < 120) h = 120;
+    XtResizeWidget($shell, (Dimension)w, (Dimension)h, 0);
+
+    Widget top = $;
+    while (top && !XtIsShell(top)) top = XtParent(top);
+    int tx = 0, ty = 0, sw = w, sh = h;
+    if (top) {
+        Window child = None;
+        XTranslateCoordinates(XtDisplay($), XtWindow(top),
+                              DefaultRootWindow(XtDisplay($)),
+                              0, 0, &tx, &ty, &child);
+        sw = (int)top->core.width;
+        sh = (int)top->core.height;
+    }
+    int x = tx + (sw - w) / 2;
+    int y = ty + (sh - h) / 2;
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    XtVaSetValues($shell, XtNx, x, XtNy, y, NULL);
+    XtPopup($shell, XtGrabExclusive);
+    $open = True;
+}
+
+@proc void dialog_close($)
+{
+    if (! $shell) return;
+    XtPopdown($shell);
+    $open = False;
+}
+
+@proc ok_cb(Widget w, $, void *data)
+{
+    (void)w; (void)data;
+    $result = 1;
+    dialog_close($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)1);
+}
+
+@proc cancel_cb(Widget w, $, void *data)
+{
+    (void)w; (void)data;
+    $result = 0;
+    dialog_close($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)0);
+}
+
+@EXPORTS
+@proc Boolean wdialog_is_open($)
+{
+    return $open ? True : False;
+}
+
+@proc int wdialog_result($)
+{
+    return $result;
+}
+
+@IMPORTS
+@incl <string.h>
+@incl <stdint.h>
+@incl <X11/Shell.h>
+@incl <X11/StringDefs.h>
+@incl <X11/Intrinsic.h>
+@incl "theme.h"
+@incl "xtcw/Gridbox.h"
+@incl "xtcw/Wlabel.h"
+@incl "xtcw/Wbutton.h"

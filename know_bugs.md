@@ -2004,3 +2004,163 @@ host fallback warning path.
 40px high with 6px padding.
 
 **Files:** `cookbook/app/main.lua`, `t1.sh`
+
+## WComboBox popup item callback crashed
+
+**Symptom:** selecting an item from a `WComboBox` popup aborted with an ASan
+SEGV in `item_selected_cb` while reading `$items`/`m_len()`.
+
+**Cause:** the Wbutton callback was registered with the item index as
+`client_data`, but the callback signature treats `client_data` as the
+`WComboBox` widget. `self` therefore became `0`, `1`, `2`, ... and the first
+field access dereferenced an invalid pointer.
+
+**Fix:** register the callback with the combo as `client_data` and store the
+item index in the Wbutton's `user_data` resource. `item_selected_cb()` now
+reads the index from the button (`w`) and uses the combo (`self`) for state,
+label updates and the user callback.
+
+Regression coverage in `tests/test_wcombobox.c` invokes the third popup item
+and asserts the selected value/label.
+
+**File:** `wbuild_widgets/WComboBox.widget`
+
+## WTreeView clipped after expanding
+
+**Symptom:** expanding a tree node showed only the first rows; newly visible
+children had no space and the tree looked truncated.
+
+**Cause:** `WTreeView.rebuild()` changed `visibleCount` but did not request a
+new widget height. The surrounding `WFormLayout` kept the old row height, so
+additional rows were drawn outside the visible area.
+
+**Fix:** `rebuild()` now calls `XtMakeGeometryRequest(CWHeight)` when
+`visibleCount` changes, and the tree rows use indented markers/text. The
+cookbook also has a dedicated full-height **Tree** tab instead of squeezing the
+tree into the Gallery form.
+
+**Files:** `wbuild_widgets/WTreeView.widget`, `cookbook/app/screens/tree_view.lua`
+
+## GitNexus runner fails under the default Node 14
+
+**Symptom:** `node .gitnexus/run.cjs impact ...` aborted with a `node-gyp`
+build failure in `tree-sitter-javascript` (`ValueError: invalid mode: 'rU'`)
+and `npx gitnexus@latest` exit code 1.
+
+**Cause:** the shell's default nvm Node is v14.5.0, so `run.cjs` selected the
+`npx` rung and tried to install GitNexus with an interpreter the package does
+not support (`engines: node ^22.18.0 || >=24.11.0`).
+
+**Fix:** added `~/.local/bin/gitnexus`, a wrapper that pins the CLI to Node
+22.19.0 and the existing npx-cached GitNexus 1.6.12 install. `run.cjs` now
+finds `gitnexus` on `PATH` first and never falls through to `npx`. A global
+`npm i -g gitnexus` also works but duplicates ~1.9G on this full disk.
+
+**Files:** `~/.local/bin/gitnexus` (machine-local), `.gitnexus/run.cjs`
+(generated).
+
+## GitNexus refuses a copied index as "foreign"
+
+**Symptom:** after fixing the Node runner, `gitnexus analyze --index-only`
+failed with `Storage path is in state "foreign" but requires one of: missing,
+empty, owned`.
+
+**Cause:** `.gitnexus/` was copied from `/home/jens/git/xtcw2` into this
+worktree/copy, so `meta.json` still recorded the old `repoPath` and
+`storagePath`. GitNexus 1.6.12 validates that metadata and rejects the index.
+
+**Fix:** removed the copied `.gitnexus/` directory (regenerable, gitignored)
+and re-ran `gitnexus analyze --index-only` from
+`/home/jens/git/xtcw2-x1`, which rebuilt and registered the index in place.
+
+**Files:** `.gitnexus/` (generated).
+
+## WTreeView expander brackets overlap between rows
+
+**Symptom:** the `[+]`/`[-]` expander glyphs looked taller than the row pitch
+and visually touched/overlapped the row above or below, even with
+`:itemHeight 26`.
+
+**Cause:** bracket glyphs in the theme font extend well above `ascent` and
+below `descent`. Centering normal text in `itemHeight` therefore did not
+reserve enough vertical space for the bracket glyphs.
+
+**Fix:** `draw_tree()` no longer renders the marker as text. It draws a
+vector box sized from `itemHeight` (`7..13` px), vertically centered in the
+row, with a horizontal minus line and an optional vertical plus line for
+collapsed nodes. The box can never exceed the row, independent of the theme
+font. Text x-position follows the box width.
+
+**Files:** `wbuild_widgets/WTreeView.widget`
+
+## WListView sorting broke selection → model mapping
+
+**Symptom:** after `table-view.sort`, opening the selected row showed the wrong
+recipe. Sorting by name left row 0 highlighted but `selected` was still a
+display index, while the cookbook used it as a model index.
+
+**Cause:** `WListView.sort()` sorted the `$rows` array in place and had no
+parallel identity column, so the row index no longer mapped to the original
+data row.
+
+**Fix:** added `rowIds` (an MLS list parallel to `rows`) and a public
+`selectedId` resource. Sorting now permutes `rows` and `rowIds` together via a
+`row_sort_pair` array, and `update_selected_id()` keeps `selectedId` in sync
+on selection, row changes and sorting. The cookbook sets `rowIds` from
+`model.list_ids()` and opens/deletes by `selectedId`.
+
+**Files:** `wbuild_widgets/WListView.widget`, `cookbook/app/main.lua`
+
+## WDialog result was invisible to Lua callbacks
+
+**Symptom:** the cookbook confirm dialog reported "Delete cancelled" even after
+clicking OK.
+
+**Cause:** `LUA(...)` callbacks are invoked as `funcname()`; the host does not
+forward `XtCallCallbackList`'s `call_data`. `WDialog` kept its result in a
+private field, so Lua could not distinguish OK from Cancel.
+
+**Fix:** exposed `result` as a public `WDialog` resource (1 = OK, 0 = Cancel).
+Cookbook callbacks use the callback argument when present and fall back to
+`gui.get(id, "result")`. `cb_dialog_result` was updated the same way.
+
+**Files:** `wbuild_widgets/WDialog.widget`, `cookbook/app/main.lua`
+
+## Wretex autoHeight endless loop when replacing text
+
+**Symptom:** updating a `Wretex` text a second time with `autoHeight TRUE`
+inside a weighted `Gridbox` cell caused an endless geometry loop; the grid grew
+to tens of thousands of pixels and the app hung.
+
+**Cause:** `Wretex.set_values_almost()` copied `reply->width/height` but then
+forced `request->request_mode = CWWidth | CWHeight`. Xt's `XtSetValues()` loops
+while `request_mode != 0`; when the parent denied the request it set
+`reply->request_mode = 0`, but the forced mask kept the loop alive forever.
+The width/height copied from that non-compromise reply were uninitialised
+garbage, which is why the grid kept growing.
+
+**Fix:** `set_values_almost()` now follows the Xt contract and does
+`*request = *reply;`, so `request_mode` becomes 0 when the parent has no
+compromise and the loop terminates. `set_values()` also computes the auto
+height from the widget's current width instead of a hardcoded 400pt width. The
+cookbook no longer needs the `:autoHeight FALSE` workaround.
+
+**Files:** `wbuild_widgets/Wretex.widget`, `cookbook/app/screens/recipe_detail.lua`
+
+## DrawCanvas `accept_focus` must live in `@METHODS`
+
+**Symptom:** a `DrawCanvas` with `:takeFocus TRUE` never received keyboard
+events; the generated `accept_focus` was a static `void` helper and the class
+record still used `XtInheritAcceptFocus`.
+
+**Cause:** `@proc accept_focus { return True; }` was placed in the widget's
+`@UTILITIES` section. wbuild emits utility procs as plain `void` functions and
+does not install them in the Core class record. Core methods such as
+`accept_focus`, `resize`, `expose` and `set_values` must be in `@METHODS`.
+
+**Fix:** moved `accept_focus` into `@METHODS`. The widget now registers a real
+`Boolean accept_focus(Widget, Time*)`, and `takeFocus` schedules
+`XtSetKeyboardFocus` after realize (a zero-timeout avoids setting focus before
+the shell is mapped).
+
+**Files:** `wbuild_widgets/DrawCanvas.widget`
