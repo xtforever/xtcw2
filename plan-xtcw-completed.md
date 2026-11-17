@@ -53,13 +53,13 @@ items have since landed; this snapshot is the current source of truth.
 
 | Area | Gap | Where |
 |---|---|---|
-| P0 widgets | No code yet for `WPlainTextEdit`, `WModel`, `WToolTip`, `WIconButton`, `WSearchField`. | `wbuild_widgets/`, `lui/registry.lua` |
-| Model | No shared `WModel` (row ids/flags/sort/filter). Only `WListView.rowIds` exists today. | `wbuild_widgets/WListView.widget`, `lui/gui_xt.lua` |
-| Search/filter | Cookbook search only writes a status message; no filter proxy. | `cookbook/app/main.lua` (`cb_search`), `WListView` |
+| P0 widgets | No code yet for `WPlainTextEdit`, `WIconButton`, `WSearchField`. | `wbuild_widgets/`, `lui/registry.lua` |
+| Model | `WModel`/proxy covers rows/ids/sort/filter, but not flags, delegates, tree nodes or a C-side fast path. | `lui/wmodel.lua`, `lui/gui_xt.lua` |
+| Search/filter | Cookbook search is model-backed now; debounce/completion chrome still open. | `cookbook/app/main.lua` (`cb_search`), `WSearchField` |
 | Data I/O | No JSON/structured binding; persistence writes Lua chunks. | `cookbook/app/store/persistence.lua` |
 | Tree | No scrolling/virtualization, no lazy children, no focus/keyboard. | `wbuild_widgets/WTreeView.widget` |
 | Keyboard/focus | `WTreeView`, `WRadioGroup`, `WComboBox` have key translations but no focus acquisition; `WDialog` has no focus trap/default button; `WAction.shortcut` is display-only. | those widgets |
-| Dialogs | No `WMessageBox`/`WInputDialog`; `gui.confirm`/`alert`/`prompt` still build raw legacy windows. | `lui/gui_xt.lua`, `WDialog.widget` |
+| Dialogs | `gui.alert`/`confirm`/`prompt` use `WDialog` (messageType/details/checkbox/input row); focus trap and default-button handling remain. | `lui/gui_xt.lua`, `WDialog.widget` |
 | Table UX | Header click does not sort/toggle an indicator; no cell editing; sort is destructive and has no original-order restore. | `WListView.widget` |
 | Theme | No dedicated `menu_*`, `toolbar_*`, `status_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*` roles/metrics. | `themes.hdf`, `cookbook/themes/cookbook.hdf` |
 | Host | `commander_runner` still hardcodes `../lui/?.lua` and relative theme paths; LUI load errors are printed but do not fail the process. | `commander/commander_runner.c` |
@@ -68,11 +68,11 @@ items have since landed; this snapshot is the current source of truth.
 
 **Immediate next rework order**
 
-1. Search/filter on top of a small `WModel`/proxy (also fixes shopping-list aggregation).
-2. `WTreeView` scrolling + focus/keyboard, then lazy children.
-3. Focus/keyboard for `WRadioGroup`/`WComboBox`; dialog focus trap and `WMessageBox`/`WInputDialog`.
-4. Theme roles/metrics across all themes.
-5. Header sort indicator + cell editing for `table-view`.
+1. `WTreeView` scrolling + focus/keyboard, then lazy children.
+2. Focus/keyboard for `WRadioGroup`/`WComboBox`; dialog focus trap and default button.
+3. Theme roles/metrics across all themes (`menu_*`, `toolbar_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*`).
+4. Header sort indicator + cell editing for `table-view`.
+5. `WPlainTextEdit`, `WIconButton`, `WSearchField`.
 6. Host location independence and LUI error propagation.
 7. Visual baselines and the remaining keyboard/persistence tests.
 

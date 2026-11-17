@@ -44,7 +44,8 @@ This is a living document. It is derived from:
 | Menus | `WMenuBar`, `WPopupMenu`, `WAction`, `WmenuButton` (modern); `Wmenu`, `WmenuPopup` (legacy) | First modern menu slice with checkable actions; keyboard mnemonics and full `WMenu` pending |
 | Toolbar | `WToolBar` (new) | Themed natural-width action row; cookbook integration done |
 | Status bar | `WStatusBar` (new) | Message + permanent right widgets; cookbook integration done |
-| Dialogs | `WDialog` (new); `MessageBox`, `WfileChooser`, `WfileSelector` (legacy/partial) | Themed modal title/message + OK/Cancel; message/input helpers and focus trap pending |
+| Dialogs | `WDialog` (new); `MessageBox`, `WfileChooser`, `WfileSelector` (legacy/partial) | Themed modal + message/input helpers (`gui.alert/confirm/prompt`); focus trap pending |
+| Model | `lui/wmodel.lua` (`WModel`/`ProxyModel`) | Columns, rows, stable ids, sort and filter proxy; C-side flags/delegates pending |
 | Selection | `WComboBox` (new) | Read-only items, selected index and themed popup; editable/completion later |
 | Choice | `WRadioGroup` (new) | Vertical radio group with click/keyboard selection |
 | Feedback | `WProgressBar` (new); `Gauge`, `VSlider`, `HSlider`, `EqFader` | Determinate progress; indeterminate animation and tooltips pending |
@@ -57,10 +58,10 @@ This is a living document. It is derived from:
 
 ### Status snapshot (2026-11-17)
 
-Phase 1 (P0) is partially landed: 13 of 18 items have a usable slice with a
-LUI tag, a probe and (mostly) a C test. Five P0 items have no code yet:
-**`WPlainTextEdit`**, **`WModel`**, **`WToolTip`**, **`WIconButton`** and
-**`WSearchField`**. Phase 2/3 beyond the `WTreeView` slice have not started.
+Phase 1 (P0) is partially landed: 15 of 18 items have a usable slice with a
+LUI tag, a probe and (mostly) a C test. Three P0 items have no code yet:
+**`WPlainTextEdit`**, **`WIconButton`** and **`WSearchField`**. Phase 2/3
+beyond the `WTreeView` slice have not started.
 The detailed gap list (search/filter, keyboard/focus, theme roles, host
 hardening) lives in `plan-xtcw-completed.md`.
 
@@ -231,24 +232,30 @@ style-guide roles, keyboard handling and tests.
 
 11. **WModel** — `NEW` (list/table/tree model contract)
     - `rows`, `columns`, `get(row,col)`, `set`, `flags`, `sort`, `filter`, `header`.
-    - Status: not started.
+    - Status: lightweight Lua contract implemented in `lui/wmodel.lua`:
+      columns/rows/stable ids, sort and a case-insensitive filter proxy, pushed
+      via `gui.set_model`/`set_model_filter`/`sort_model`. The cookbook recipe
+      list is model-backed. `flags`, delegates, tree nodes and a C-side fast
+      path remain.
     - Lua table-friendly: `gui.set_model(id, {…})`; MLS string rows remain a fast path.
     - Acceptance: `WListView`, `WTableView`, `WTreeView`, `WComboBox` share one model.
 
 12. **WTableView** — `NEW`
     - Flat table: columns, header, sorting, selection, editing, virtualized rows.
     - Status: first slice implemented as the `table-view` LUI alias over
-      `WListView`, with `sortColumn`/`sortAscending` and a `sort` action. The
-      cookbook recipe list uses it. Full `WModel`, delegates, filtering and
-      editing remain.
+      `WListView`, with `sortColumn`/`sortAscending`, a `sort` action and the
+      shared `WModel`/filter proxy (`gui.set_model_filter`). The cookbook recipe
+      list uses it. Delegates, header-click sorting and cell editing remain.
     - Build on `WListView` rendering + `WModel`; no per-cell widgets.
     - Acceptance: recipe/ingredient/shopping tables; 10k rows smooth; keyboard navigation.
 
 13. **WDialog / WMessageBox / WInputDialog** — `NEW`/`IMPROVE`
     - Modal/modeless dialog base with action bar, default/cancel, focus trap, Esc/Enter.
-    - Status: themed modal `WDialog` with title, message, OK/Cancel, open/close
-      actions and callback result; cookbook Gallery uses it. Dedicated
-      `WMessageBox`/`WInputDialog` helpers and focus trap remain.
+    - Status: themed modal `WDialog` with title/message, OK/Cancel, open/close
+      actions and callback result; it now also carries `messageType`, `icon`,
+      `details`, a checkbox row and an input row (text/int/double/choice) whose
+      value round-trips via `inputValue`. `gui.alert`/`confirm`/`prompt` use it.
+      A focus trap/default-button pass remains.
     - Themed message box (info/warning/error/question, details, checkbox).
     - Input dialog (text/int/double/choice) with validation.
     - Acceptance: cookbook delete confirmation, quit confirmation, file overwrite prompt.
@@ -267,7 +274,10 @@ style-guide roles, keyboard handling and tests.
 
 16. **WToolTip** — `NEW`
     - Hover/focus tooltips with delay, screen-edge placement, theme roles.
-    - Status: not started.
+    - Status: hover manager + themed `WToolTip` presenter implemented; widgets
+      accept a `tooltip` resource (Wheel family and `WListView`), the cookbook
+      toolbar/list use it. Keyboard-focus tooltips and dedicated `tooltip_*`
+      theme roles remain.
     - Acceptance: toolbar/action/list tooltips; keyboard focus shows help.
 
 17. **WIconButton / WToolButton** — `NEW`/`IMPROVE`
@@ -277,7 +287,8 @@ style-guide roles, keyboard handling and tests.
 
 18. **WSearchField** — `NEW`
     - Search icon, clear button, completion, Enter/`on-change` callback.
-    - Status: not started.
+    - Status: not started; the cookbook search field is a `WLineEdit` wired to
+      the model filter, so only the icon/completion chrome is missing.
     - Acceptance: cookbook/t1_menu search; debounced filtering.
 
 ### P1 — data views, dialogs and platform features
@@ -405,7 +416,7 @@ P0 foundation widgets:
 
 `Wlabel`, `Wbutton`, `WspinBox`, `Wcheckbox`, `WListView`, `WtabWidget`,
 `Wviewport`, `KaroEd`, `Wretex`, `WToggleSwitch`, plus the new `WAppWindow`,
-`WMenuBar`, `WPopupMenu`, `WAction`, `WToolBar`, `WStatusBar`, `WComboBox`, `WProgressBar`, `WRadioGroup`, `WLineEdit`, `table-view`, `WTreeView`, `WDialog`, improved `WCheckBox` and `WFormLayout` widgets.
+`WMenuBar`, `WPopupMenu`, `WAction`, `WToolBar`, `WStatusBar`, `WComboBox`, `WProgressBar`, `WRadioGroup`, `WLineEdit`, `table-view`, `WTreeView`, `WDialog`, `WToolTip`, improved `WCheckBox` and `WFormLayout` widgets.
 
 As each new P0 widget lands, add a matching `tests/widgets/<widget>.lui` probe.
 The harness is intentionally an interim shell; it can later switch to

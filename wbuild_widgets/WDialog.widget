@@ -103,6 +103,9 @@
                                   "borderWidth", 0,
                                   "gridx", 1, "gridy", 3, "gridWidth", 2,
                                   "weightx", 1, "weighty", 0, "fill", 3,
+                                  /* Unmanaged until an input row is used; a
+                                   * zero-size Gridbox would abort if realized. */
+                                  "width", 1, "height", 1,
                                   NULL);
     $checkbox = XtVaCreateWidget("dialog_checkbox", wcheckboxWidgetClass,
                                  $content,
