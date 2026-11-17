@@ -2257,3 +2257,38 @@ still fail. A proper fix should validate `columnWidths` before `m_len()` (or
 initialize it defensively in `WlistMulti.initialize`).
 
 **Files:** `tests/test_wlistmulti.c`, `wbuild_widgets/WlistMulti.widget`
+
+## WTreeView: rows below the viewport and keyboard actions were unreachable
+
+**Symptom:** a `WTreeView` taller than its allocated space silently clipped the
+remaining rows; the mouse wheel, `Home`/`End`, `PageUp`/`PageDown` and the
+existing arrow translations had no effect because the widget never acquired
+keyboard focus.
+
+**Cause:** `draw_tree()` always started at row 0 and `rebuild()` only grew the
+widget; there was no scroll offset. The class also inherited `Core` and had no
+`focus_self()` call on click, so Xt never delivered key events to it.
+
+**Fix:** added `firstVisible`/`visibleRows` resources and an `autoHeight`
+switch, draw only the rows that fit (`autoHeight FALSE` keeps the allocated
+height), added wheel/page/home/end actions plus `ensure_visible()`, and set
+keyboard focus on click via `XtSetKeyboardFocus()` with `FocusIn`/`FocusOut`
+actions drawing an accent focus ring.
+
+**Files:** `wbuild_widgets/WTreeView.widget`, `tests/test_wtreeview.c`,
+`tests/widgets/wtreeview.lui`
+
+## WTreeView test: a Core child of a shell is stretched to the shell size
+
+**Symptom:** a `WTreeView` created with `XtNheight 120` directly under the
+session shell reported height 300 (the shell height) after realize, so the
+scroll-window assertions saw the wrong `visibleRows`.
+
+**Cause:** the shell lays out its managed child to fill the shell; the tree's
+requested height is not preserved for a direct shell child.
+
+**Fix:** put the tree inside a `Gridbox` with `weightx/weighty 0` and
+`fill "none"`, then the requested height survives and the scroll window is
+deterministic. This is a test-harness gotcha, not a widget defect.
+
+**Files:** `tests/test_wtreeview.c`

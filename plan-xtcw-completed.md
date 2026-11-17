@@ -35,7 +35,7 @@ items have since landed; this snapshot is the current source of truth.
 - Forms/inputs: `WComboBox` (read-only), `WRadioGroup`, `WLineEdit`,
   `WSpinBox`, `WCheckBox`, `WFormLayout`, `WProgressBar`.
 - Data views: `WListView`, `table-view` (sortable first slice), `WTreeView`
-  (first slice), `WDialog`.
+  (scrolling, focus and keyboard navigation), `WDialog`.
 - Cookbook: recipes are persisted as a Lua chunk, the editor does full
   create/update, delete uses a real themed confirm dialog, and the recipe list
   carries stable row ids so sorting no longer corrupts selection→model mapping.
@@ -57,8 +57,8 @@ items have since landed; this snapshot is the current source of truth.
 | Model | `WModel`/proxy covers rows/ids/sort/filter, but not flags, delegates, tree nodes or a C-side fast path. | `lui/wmodel.lua`, `lui/gui_xt.lua` |
 | Search/filter | Cookbook search is model-backed now; debounce/completion chrome still open. | `cookbook/app/main.lua` (`cb_search`), `WSearchField` |
 | Data I/O | No JSON/structured binding; persistence writes Lua chunks. | `cookbook/app/store/persistence.lua` |
-| Tree | No scrolling/virtualization, no lazy children, no focus/keyboard. | `wbuild_widgets/WTreeView.widget` |
-| Keyboard/focus | `WTreeView`, `WRadioGroup`, `WComboBox` have key translations but no focus acquisition; `WDialog` has no focus trap/default button; `WAction.shortcut` is display-only. | those widgets |
+| Tree | Scrolling, focus and keyboard navigation landed; no lazy children/virtualization, no full model. | `wbuild_widgets/WTreeView.widget` |
+| Keyboard/focus | `WRadioGroup`/`WComboBox` have key translations but no focus acquisition; `WDialog` has no focus trap/default button; `WAction.shortcut` is display-only. | those widgets |
 | Dialogs | `gui.alert`/`confirm`/`prompt` use `WDialog` (messageType/details/checkbox/input row); focus trap and default-button handling remain. | `lui/gui_xt.lua`, `WDialog.widget` |
 | Table UX | Header click does not sort/toggle an indicator; no cell editing; sort is destructive and has no original-order restore. | `WListView.widget` |
 | Theme | No dedicated `menu_*`, `toolbar_*`, `status_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*` roles/metrics. | `themes.hdf`, `cookbook/themes/cookbook.hdf` |
@@ -68,7 +68,7 @@ items have since landed; this snapshot is the current source of truth.
 
 **Immediate next rework order**
 
-1. `WTreeView` scrolling + focus/keyboard, then lazy children.
+1. ~~`WTreeView` scrolling + focus/keyboard~~ (landed 2026-11-17); lazy children/virtualization remain.
 2. Focus/keyboard for `WRadioGroup`/`WComboBox`; dialog focus trap and default button.
 3. Theme roles/metrics across all themes (`menu_*`, `toolbar_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*`).
 4. Header sort indicator + cell editing for `table-view`.
@@ -269,7 +269,7 @@ cookbook capability, **P2** = polish.
 | D2. General file I/O helpers (beyond the single `task_copy` C binding). | G18 | 🟡 partial (`persistence.lua` uses plain `io`/`os.execute`) |
 | D3. Raster image widget (PNG/JPEG), complementing `IconSVG`. | G17, C10 | ⬜ open |
 | D4. `WdatePicker` and `WsearchBox`. | G15, G16 | ⬜ open |
-| D5. `WgridView` / `WtreeView`. | G13, G14 | 🟡 partial (`WTreeView` first slice; scrolling/lazy/model open) |
+| D5. `WgridView` / `WtreeView`. | G13, G14 | 🟡 partial (`WTreeView` slice with scrolling/focus/keyboard; lazy/model open) |
 | D6. Localisation / unit-conversion framework. | G20, C15 | ⬜ open |
 
 ### Phase E — Quality assurance (P0–P1)

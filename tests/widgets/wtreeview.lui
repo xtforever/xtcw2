@@ -1,2 +1,2 @@
-(tree-view :id "tree" :itemHeight 26 :indent 18
+(tree-view :id "tree" :itemHeight 26 :indent 18 :autoHeight FALSE
            :gridx 0 :gridy 0 :weightx 1 :weighty 1 :fill 3)

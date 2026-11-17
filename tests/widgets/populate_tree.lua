@@ -1,10 +1,11 @@
--- Example --after hook for tests/widgets/wtreeview.lui.
-gui.set_string_list('tree', 'nodes', {
-    '0\tRecipes', '1\tItalian', '2\tSpaghetti', '1\tDessert', '2\tCake',
-    '0\tShopping', '1\tGroceries',
-})
+-- Populate the WTreeView probe with enough nodes to exercise scrolling.
+-- 40 flat nodes are created; selecting row 20 scrolls it into view.
+local nodes = {}
+for i = 0, 39 do
+    nodes[#nodes + 1] = '0\tRow ' .. i
+end
+gui.set_string_list('tree', 'nodes', nodes)
 local w = gui.get_widget('tree')
 if w then
-    xtaction(w, 'select_node', 0)
-    xtaction(w, 'expand')
+    xtaction(w, 'select_node', 20)
 end

@@ -145,6 +145,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtooltip"
 echo "19l. test_wdialog (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wdialog"
 
+echo "19m. test_wtreeview (scrolling, keyboard, focus)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtreeview"
+
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"
 

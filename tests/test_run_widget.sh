@@ -246,11 +246,14 @@ check_value inputdialog "$TMP/inputdialog.result" probe_class WDialog
 check_value inputdialog "$TMP/inputdialog.result" probe_id idlg
 
 # 2q. WTreeView probe.
-probe treeview "$TMP/treeview.result" "$ROOT/tests/widgets/wtreeview.lui"
+probe treeview "$TMP/treeview.result" \
+    --after "$ROOT/tests/widgets/populate_tree.lua" \
+    "$ROOT/tests/widgets/wtreeview.lui"
 check_rc treeview
 check_log treeview
 check_value treeview "$TMP/treeview.result" probe_class tree-view
 check_value treeview "$TMP/treeview.result" probe_id tree
+check_value treeview "$TMP/treeview.result" visible_count 40
 
 # 2r. Table-view + WModel filter (rowCount reflects the filtered view).
 probe tablefilter "$TMP/tablefilter.result" \

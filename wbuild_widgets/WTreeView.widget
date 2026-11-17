@@ -12,6 +12,14 @@
 @var int indent = 18
 @ number of currently visible nodes
 @var int visibleCount = 0
+@ first visible row (scroll offset)
+@var int firstVisible = 0
+@ rows that fit in the current viewport (updated on draw)
+@var int visibleRows = 0
+@ keyboard focus indicator
+@var Boolean hasFocus = False
+@ grow to fit all visible nodes; FALSE keeps the allocated height and scrolls
+@var Boolean autoHeight = True
 @var <Callback> XtCallbackList callback = NULL
 
 @PRIVATE
@@ -19,6 +27,7 @@
 @var Pixel fg
 @var Pixel sel_bg
 @var Pixel border
+@var Pixel focus_ring
 @var XftFont *font
 @var XftDraw *draw
 @var XftColor text_color
@@ -73,6 +82,11 @@
     draw_tree($);
 }
 
+@proc accept_focus
+{
+    return True;
+}
+
 @proc expose
 {
     draw_tree($);
@@ -90,6 +104,7 @@
             $expanded_cap = n;
         }
         for (int i = 0; i < n; i++) $expanded[i] = 0;
+        $firstVisible = 0;
         rebuild($);
         redraw = 1;
     }
@@ -98,6 +113,9 @@
         redraw = 1;
     }
     if ($selected != $old$selected) redraw = 1;
+    if ($firstVisible != $old$firstVisible) redraw = 1;
+    if ($hasFocus != $old$hasFocus) redraw = 1;
+    if ($autoHeight != $old$autoHeight) redraw = 1;
     if ($background_pixel != $old$background_pixel) redraw = 1;
     if (redraw) draw_tree($);
     return redraw;
@@ -107,6 +125,10 @@
 {
     int w = 180;
     int h = 2 * 4 + $visibleCount * $itemHeight;
+    if (! $autoHeight) {
+        int fixed = (int)$height;
+        if (fixed > 1) h = fixed;
+    }
     if ($font && $nodes) {
         for (int r = 0; r < $visibleCount; r++) {
             int i = $visible_nodes[r];
@@ -135,23 +157,34 @@
 
 @TRANSLATIONS
 @trans <Btn1Down>: click()
+@trans <Btn4Down>: scroll_up()
+@trans <Btn5Down>: scroll_down()
+@trans <FocusIn>: focus_in()
+@trans <FocusOut>: focus_out()
 @trans <Key>Up: move_up()
 @trans <Key>Down: move_down()
 @trans <Key>Left: collapse()
 @trans <Key>Right: expand()
+@trans <Key>Home: move_home()
+@trans <Key>End: move_end()
+@trans <Key>Prior: page_up()
+@trans <Key>Next: page_down()
 
 @ACTIONS
 
 @proc click
 {
-    int row = (event->xbutton.y - 4) / ($itemHeight > 0 ? $itemHeight : 1);
-    if (row < 0 || row >= $visibleCount) return;
+    focus_self($);
+    int row = (event->xbutton.y - 4) / ($itemHeight > 0 ? $itemHeight : 1)
+            + $firstVisible;
+    if (row < $firstVisible || row >= $visibleCount) return;
     int node = $visible_nodes[row];
     $selected = node;
     if (tree_has_children($, node)) {
         $expanded[node] = !$expanded[node];
         rebuild($);
     }
+    ensure_visible($, row);
     draw_tree($);
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)node);
 }
@@ -161,6 +194,7 @@
     int row = tree_visible_row($, $selected);
     if (row > 0) {
         $selected = $visible_nodes[row - 1];
+        ensure_visible($, row - 1);
         draw_tree($);
         XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
     }
@@ -171,9 +205,90 @@
     int row = tree_visible_row($, $selected);
     if (row >= 0 && row + 1 < $visibleCount) {
         $selected = $visible_nodes[row + 1];
+        ensure_visible($, row + 1);
         draw_tree($);
         XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
     }
+}
+
+@proc move_home
+{
+    if ($visibleCount <= 0) return;
+    $selected = $visible_nodes[0];
+    $firstVisible = 0;
+    draw_tree($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc move_end
+{
+    if ($visibleCount <= 0) return;
+    $selected = $visible_nodes[$visibleCount - 1];
+    ensure_visible($, $visibleCount - 1);
+    draw_tree($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc page_up
+{
+    int rows = rows_in_view($);
+    int row = tree_visible_row($, $selected);
+    if (row < 0) row = $firstVisible;
+    row -= rows;
+    if (row < 0) row = 0;
+    if ($visibleCount <= 0) return;
+    $selected = $visible_nodes[row];
+    ensure_visible($, row);
+    draw_tree($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc page_down
+{
+    int rows = rows_in_view($);
+    int row = tree_visible_row($, $selected);
+    if (row < 0) row = $firstVisible;
+    row += rows;
+    if (row >= $visibleCount) row = $visibleCount - 1;
+    if (row < 0) return;
+    $selected = $visible_nodes[row];
+    ensure_visible($, row);
+    draw_tree($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc scroll_up
+{
+    int step = 3;
+    $firstVisible -= step;
+    if ($firstVisible < 0) $firstVisible = 0;
+    draw_tree($);
+}
+
+@proc scroll_down
+{
+    int step = 3;
+    $firstVisible += step;
+    if ($firstVisible > max_first_row($)) $firstVisible = max_first_row($);
+    draw_tree($);
+}
+
+@proc focus_in
+{
+    $hasFocus = True;
+    draw_tree($);
+}
+
+@proc focus_out
+{
+    $hasFocus = False;
+    draw_tree($);
+}
+
+@ focus the tree from Lua / Xt actions
+@proc focus
+{
+    focus_self($);
 }
 
 @proc expand
@@ -207,11 +322,55 @@
     int idx = atoi(params[0]);
     if (idx < 0 || idx >= m_len($nodes)) return;
     $selected = idx;
+    ensure_visible($, tree_visible_row($, idx));
     draw_tree($);
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
 }
 
 @UTILITIES
+
+@proc int rows_in_view($)
+{
+    int h = (int)$height - 8;
+    int rows;
+    if ($itemHeight <= 0) return 1;
+    rows = h / $itemHeight;
+    if (rows < 1) rows = 1;
+    return rows;
+}
+
+@proc int max_first_row($)
+{
+    int m = $visibleCount - rows_in_view($);
+    return m > 0 ? m : 0;
+}
+
+@proc void ensure_visible($, int row)
+{
+    int rows = rows_in_view($);
+    if (row < 0) row = 0;
+    if (row < $firstVisible) {
+        $firstVisible = row;
+    } else if (row >= $firstVisible + rows) {
+        $firstVisible = row - rows + 1;
+    }
+    if ($firstVisible < 0) $firstVisible = 0;
+    if ($firstVisible > max_first_row($)) $firstVisible = max_first_row($);
+}
+
+@proc void focus_self($)
+{
+    Widget shell = $, parent = $;
+    while (parent) {
+        if (XtIsShell(shell = parent)) break;
+        parent = XtParent(parent);
+    }
+    if (shell) {
+        XtSetKeyboardFocus(shell, $);
+        $hasFocus = True;
+        draw_tree($);
+    }
+}
 
 @proc int tree_level($, int i)
 {
@@ -280,7 +439,7 @@
         if (vis) $visible_nodes[$visibleCount++] = i;
     }
 
-    if (XtIsRealized($) && old_visible != $visibleCount) {
+    if ($autoHeight && XtIsRealized($) && old_visible != $visibleCount) {
         int h = 8 + $visibleCount * $itemHeight;
         if (h != (int)$height) {
             XtWidgetGeometry req;
@@ -301,6 +460,7 @@
             : (theme_color_defined("accent") ? get_color("accent") : $bg);
     $border = theme_color_defined("list_line") ? get_color("list_line")
             : (theme_color_defined("control_border") ? get_color("control_border") : $fg);
+    $focus_ring = theme_color_defined("accent") ? get_color("accent") : $fg;
     XtVaSetValues($, XtNbackground, $bg, NULL);
     make_xft($);
     rebuild($);
@@ -351,9 +511,15 @@
                               DefaultColormapOfScreen(XtScreen($)));
     }
 
-    for (int r = 0; r < $visibleCount; r++) {
+    $visibleRows = rows_in_view($);
+    if ($firstVisible > max_first_row($)) $firstVisible = max_first_row($);
+    if ($firstVisible < 0) $firstVisible = 0;
+
+    int last = $firstVisible + $visibleRows;
+    if (last > $visibleCount) last = $visibleCount;
+    for (int r = $firstVisible; r < last; r++) {
         int i = $visible_nodes[r];
-        int y = 4 + r * $itemHeight;
+        int y = 4 + (r - $firstVisible) * $itemHeight;
         int level = tree_level($, i);
         if (i == $selected) {
             XSetForeground(dpy, gc, $sel_bg);
@@ -391,6 +557,11 @@
                               text_x, baseline,
                               (FcChar8 *)text, (int)strlen(text));
         }
+    }
+
+    if ($hasFocus && W > 1 && H > 1) {
+        XSetForeground(dpy, gc, $focus_ring);
+        XDrawRectangle(dpy, win, gc, 0, 0, W - 1, H - 1);
     }
 }
 

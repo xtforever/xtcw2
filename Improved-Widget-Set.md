@@ -95,7 +95,7 @@ legacy; **Legacy** = works but should be replaced; **Missing** = not present.
 | `QLCDNumber` | — | Missing | optional | P2 |
 | `QListView`/`QListWidget` | `WListView` | Good | keep; formalize model API | — |
 | `QTableView`/`QTableWidget` | `table-view` alias over `WListView` | Partial | **WModel** + header/sort/filter/editing | P0/P1 |
-| `QTreeView`/`QTreeWidget` | `WTreeView` (first slice) | Partial | lazy children, scrolling, model | P1 |
+| `QTreeView`/`QTreeWidget` | `WTreeView` (first slice) | Partial | lazy children, virtualization, model | P1 |
 | `QHeaderView` | internal to `WListView` | Partial | reusable **WTableHeader** | P1 |
 | `QAbstractItemModel` | MLS string rows | Partial | **WModel** (rows/cols/get/flags/sort/filter) | P0 |
 | `QSortFilterProxyModel` | — | Missing | **WSortFilterModel** | P1 |
@@ -294,10 +294,12 @@ style-guide roles, keyboard handling and tests.
 ### P1 — data views, dialogs and platform features
 
 - **WTreeView** — hierarchical model, expand/collapse, lazy children, keyboard.
-  - Status: first slice implemented as a themed Core widget with
-    `level<TAB>text` MLS nodes, expand/collapse, click/arrow navigation and
-    `visibleCount`. The cookbook Gallery uses it. Lazy children and a full
-    model remain.
+  - Status: themed Core widget with `level<TAB>text` MLS nodes, expand/collapse,
+    `visibleCount`, scrolling (wheel/scroll actions, `firstVisible`,
+    `visibleRows`) and keyboard navigation (`Home`/`End`/`PageUp`/`PageDown`,
+    arrows) with click-to-focus and a focus ring. `autoHeight FALSE` keeps the
+    allocated height and scrolls. The cookbook Gallery and Tree screens use it.
+    Lazy children, virtualization and a full model remain.
 - **WTableHeader** — reusable header, resize, sort indicator, alignment.
 - **WSortFilterModel** — sort/filter proxy over `WModel`.
 - **WItemDelegate** — cell renderer/editor hooks (text, icon, progress, custom Lua draw).
