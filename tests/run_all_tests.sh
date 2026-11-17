@@ -136,6 +136,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wcheckbox"
 echo "19j. test_wformlayout (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wformlayout"
 
+echo "19k. test_wtooltip (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtooltip"
+
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"
 

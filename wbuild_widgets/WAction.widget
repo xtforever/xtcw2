@@ -25,6 +25,7 @@
     $base_label[sizeof($base_label) - 1] = 0;
     $label_ready = True;
     if ($checkable) update_label($);
+    wtooltip_set($, $tooltip);
 }
 
 @ACTIONS

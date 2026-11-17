@@ -2164,3 +2164,32 @@ does not install them in the Core class record. Core methods such as
 the shell is mapped).
 
 **Files:** `wbuild_widgets/DrawCanvas.widget`
+
+## MLS debug post-mortem false positives after widget teardown
+
+**Symptom:** destroying a realized `Wlabel` (or any widget whose `destroy`
+calls `theme_unregister()`) prints a post-mortem block at exit:
+
+```
+ERROR in function: '_mls'. Handle: 6. Called by 'theme_unregister()' ...
+Array Index out of bounds i=0 should be lower than m_len(6)=0.
+```
+
+A related false positive appears after a realized `WToolTip` presenter is used
+(`_m_next`, `renderer_render_text()`), even when the test does not destroy the
+shell. Exit status stays 0, so tests pass; the noise is misleading.
+
+**Cause:** `utils/mls.c` stores a per-list UAF protection nibble in the handle
+(`(UAF_PROTECTION << 24) | index`) and validates it in `_get_list()`. A stored
+handle that outlives a free/reuse of its slot can fail that check; the debug
+path then reports the index as out of bounds because `m_len()` on the invalid
+handle returns 0. This is a pre-existing debug-only issue, independent of the
+tooltip code (reproducible with a bare `Wlabel` and `XtDestroyWidget`).
+
+**Workaround:** the tooltip C test clears the `tooltip` resource instead of
+destroying widgets; `test_wstatusbar`/`test_wtoolbar` never destroy their
+trees. A real fix should either store the protection per handle in the table
+entry or mask it out on lookup.
+
+**Files:** `utils/mls.c` (`_get_list`, `m_free_simple`), `utils/theme.c`
+(`theme_unregister`), `tests/test_wtooltip.c`

@@ -1,0 +1,2 @@
+(Wbutton :id "tipbtn" :label "Hover me" :tooltip "Tooltip text"
+         :gridx 0 :gridy 0 :weightx 0 :weighty 0 :fill 0)

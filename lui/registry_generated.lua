@@ -65,6 +65,7 @@ return {
     "Wtext",
     "WToggleSwitch",
     "WToolBar",
+    "WToolTip",
     "WTreeView",
     "Wviewport",
     "WviewVar",

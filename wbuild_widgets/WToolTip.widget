@@ -1,0 +1,204 @@
+@class WToolTip (Composite)
+@ Themed hover-tooltip presenter; created automatically, or add one in LUI to configure.
+
+@PUBLIC
+@ delay in milliseconds before a hover tooltip appears
+@var int delay = 600
+@var Boolean enabled = True
+@ text to show (also settable from Lua/actions)
+@var String text = <String> ""
+@ 0 = below-right of the pointer, 1 = above, 2 = below
+@var int placement = 0
+@ presenter state; True while the tooltip shell is mapped
+@var Boolean open = False
+
+@PRIVATE
+@var Widget shell
+@var Widget content
+@var Widget label
+@var int creating_internal
+
+@METHODS
+
+@proc initialize
+{
+    $shell = NULL;
+    $content = NULL;
+    $label = NULL;
+    $open = False;
+    $creating_internal = 1;
+
+    $shell = XtCreatePopupShell("tooltip", overrideShellWidgetClass, $, NULL, 0);
+    $content = XtVaCreateManagedWidget("tooltip_content", gridboxWidgetClass,
+                                       $shell,
+                                       "defaultDistance", 8,
+                                       "borderWidth", 0,
+                                       NULL);
+    $label = XtVaCreateManagedWidget("tooltip_label", wlabelWidgetClass,
+                                     $content,
+                                     "label", $text ? $text : "",
+                                     "borderWidth", 0,
+                                     NULL);
+
+    $creating_internal = 0;
+    wtooltip_configure($delay, $enabled);
+    wtooltip_set_presenter($);
+    theme_register($, tooltip_colors_changed);
+    tooltip_colors_changed($);
+}
+
+@proc destroy
+{
+    wtooltip_clear_presenter($);
+    theme_unregister($);
+    $shell = NULL;
+    $content = NULL;
+    $label = NULL;
+    $open = False;
+}
+
+@proc set_values
+{
+    if ($delay != $old$delay || $enabled != $old$enabled)
+        wtooltip_configure($delay, $enabled);
+    if ($label && $text != $old$text)
+        XtVaSetValues($label, XtNlabel, $text ? $text : "", NULL);
+    if ($open != $old$open) {
+        if ($open) wtooltip_present($, $text, -1, -1);
+        else wtooltip_dismiss($);
+    }
+    return True;
+}
+
+@TRANSLATIONS
+@trans <Key>Escape: hide()
+
+@ACTIONS
+
+@proc show
+{
+    wtooltip_present($, $text, -1, -1);
+}
+
+@proc hide
+{
+    wtooltip_dismiss($);
+}
+
+@UTILITIES
+
+@proc void tooltip_colors_changed($)
+{
+    Pixel bg = theme_color_defined("tooltip_bg") ? get_color("tooltip_bg")
+             : (theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0));
+    Pixel fg = theme_color_defined("tooltip_fg") ? get_color("tooltip_fg")
+             : (theme_color_defined("fg_norm") ? get_color("fg_norm") : 0);
+    Pixel border = theme_color_defined("tooltip_border") ? get_color("tooltip_border")
+                 : (theme_color_defined("control_border") ? get_color("control_border")
+                 : (theme_color_defined("list_line") ? get_color("list_line") : bg));
+
+    if ($shell && bg) {
+        XtVaSetValues($shell, XtNbackground, bg,
+                      XtNborderWidth, 1,
+                      XtNborderColor, border ? border : bg,
+                      NULL);
+    }
+    if ($content && bg) XtVaSetValues($content, XtNbackground, bg, NULL);
+    if ($label) {
+        XtVaSetValues($label,
+                      "bg_norm", bg,
+                      "fg_norm", fg,
+                      NULL);
+    }
+}
+
+@proc void tooltip_place($, int w, int h, int root_x, int root_y, int *out_x, int *out_y)
+{
+    Display *dpy = XtDisplay($);
+    int screen = DefaultScreen(dpy);
+    int screen_w = DisplayWidth(dpy, screen);
+    int screen_h = DisplayHeight(dpy, screen);
+
+    int x, y;
+    if (root_x < 0 || root_y < 0) {
+        /* Called from an action without pointer coordinates: use the widget. */
+        Widget top = $;
+        while (top && !XtIsShell(top)) top = XtParent(top);
+        int tx = 0, ty = 0;
+        if (top && XtWindow(top)) {
+            Window child;
+            XTranslateCoordinates(dpy, XtWindow(top), DefaultRootWindow(dpy),
+                                  0, 0, &tx, &ty, &child);
+            tx += (int)top->core.width / 2;
+            ty += (int)top->core.height / 2;
+        }
+        root_x = tx;
+        root_y = ty;
+    }
+
+    x = root_x + 12;
+    if ($placement == 1) y = root_y - h - 8;
+    else y = root_y + 18;
+
+    if (x + w > screen_w) x = screen_w - w - 2;
+    if (y + h > screen_h) y = root_y - h - 8;
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+
+    *out_x = x;
+    *out_y = y;
+}
+
+@EXPORTS
+
+@proc Widget wtooltip_create(Widget parent)
+{
+    return XtVaCreateWidget("xtcw_tooltip", wToolTipWidgetClass, parent, NULL);
+}
+
+@proc void wtooltip_present(Widget w, const char *text, int root_x, int root_y)
+{
+    if (! ((WToolTipWidget)w)->wToolTip.shell || ! ((WToolTipWidget)w)->wToolTip.content || ! ((WToolTipWidget)w)->wToolTip.label) return;
+
+    XtVaSetValues(((WToolTipWidget)w)->wToolTip.label, XtNlabel, text ? text : "", NULL);
+    tooltip_colors_changed(w);
+
+    if (! XtIsRealized(((WToolTipWidget)w)->wToolTip.shell)) XtRealizeWidget(((WToolTipWidget)w)->wToolTip.shell);
+
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    XtQueryGeometry(((WToolTipWidget)w)->wToolTip.content, &req, &pref);
+    int width = (pref.request_mode & CWWidth) ? (int)pref.width : 80;
+    int height = (pref.request_mode & CWHeight) ? (int)pref.height : 24;
+    if (width < 24) width = 24;
+    if (height < 18) height = 18;
+
+    int x, y;
+    tooltip_place(w, width, height, root_x, root_y, &x, &y);
+    XtResizeWidget(((WToolTipWidget)w)->wToolTip.shell, (Dimension)width, (Dimension)height, 0);
+    XtVaSetValues(((WToolTipWidget)w)->wToolTip.shell, XtNx, x, XtNy, y, NULL);
+
+    XtPopup(((WToolTipWidget)w)->wToolTip.shell, XtGrabNone);
+    if (XtWindow(((WToolTipWidget)w)->wToolTip.shell))
+        XRaiseWindow(XtDisplay(w), XtWindow(((WToolTipWidget)w)->wToolTip.shell));
+    ((WToolTipWidget)w)->wToolTip.open = True;
+}
+
+@proc void wtooltip_dismiss(Widget w)
+{
+    if (! ((WToolTipWidget)w)->wToolTip.shell) return;
+    if (((WToolTipWidget)w)->wToolTip.open) XtPopdown(((WToolTipWidget)w)->wToolTip.shell);
+    ((WToolTipWidget)w)->wToolTip.open = False;
+}
+
+@IMPORTS
+@incl <string.h>
+@incl <X11/Shell.h>
+@incl <X11/StringDefs.h>
+@incl <X11/Intrinsic.h>
+@incl "theme.h"
+@incl "tooltip.h"
+@incl "xtcw/Gridbox.h"
+@incl "xtcw/Wlabel.h"

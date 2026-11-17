@@ -14,6 +14,8 @@
 @var <Pixel> Pixel fg_hi    = <String>  "white"
 @var int user_data = 0
 @var String focus_group = <String> ""
+@ optional hover tooltip text (shown by the tooltip manager)
+@var String tooltip = <String> ""
 @var int state = 0
 @var Boolean register_focus_group = True
 @ style-guide roles: controls use button_* instead of bg_norm/fg_norm

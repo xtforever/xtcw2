@@ -254,6 +254,13 @@ check_log tablefilter
 check_value tablefilter "$TMP/tablefilter.result" probe_class table-view
 check_value tablefilter "$TMP/tablefilter.result" row_count 3
 
+# 2s. Tooltip resource on a button (manager registration must not break creation).
+probe tooltip "$TMP/tooltip.result" "$ROOT/tests/widgets/wtooltip.lui"
+check_rc tooltip
+check_log tooltip
+check_value tooltip "$TMP/tooltip.result" probe_class Wbutton
+check_value tooltip "$TMP/tooltip.result" probe_id tipbtn
+
 # 3. Model data through --after.
 probe list "$TMP/list.result" \
     --after "$ROOT/tests/widgets/populate_list.lua" \

@@ -24,6 +24,7 @@ function M.fragment()
         '     :columnAligns "0,0,2,2"',
         '     :columnKinds "0,0,0,0"',
         '     :showHeader 1 :gridLines 1 :alternateRows 1 :visibleRows 6 :selected 0 :sortColumn 0 :sortAscending TRUE',
+        '     :tooltip "Double-click a row to open the recipe"',
         '     :on-row-activated "LUA(cb_open_recipe)" :on-activate "LUA(cb_open_recipe)")',
         '  (Wbutton :id "delete_recipe_btn" :label "Delete" :gridx 0 :gridy 3 :weightx 1 :weighty 0 :fill 3 :callback "LUA(cb_delete_recipe)")',
         '  (Wbutton :id "new_recipe_btn" :label "New recipe" :gridx 1 :gridy 3 :weightx 1 :weighty 0 :fill 3 :callback "LUA(cb_new_recipe)")',

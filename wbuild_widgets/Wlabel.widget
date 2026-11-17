@@ -133,10 +133,12 @@
   $dirty = 1;
   TRACE(2, "LAYOUT handle %p, class %s, name %s, width %d, height %d, x %d, y %d, color %08x, content %s", 
         $, "Wlabel", $name, (int)$width, (int)$height, (int)$x, (int)$y, 0, $label);
+  wtooltip_set($, $tooltip);
 }
 
 @proc destroy
 {
+    wtooltip_unregister($);
     theme_unregister($);
     if ($para_ptr) {
         retex_paragraph_free($para_ptr);
@@ -155,6 +157,8 @@
     int do_expose = 0;
     int redraw_flag = 0;
     int size_changed = 0;
+
+    if ($tooltip != $old$tooltip) wtooltip_set($, $tooltip);
 
     if ($label != $old$label) {
         XtFree($old$label_mem);
@@ -559,6 +563,7 @@
 @incl "converters-xft.h"
 @incl "theme.h"
 @incl "focus-group.h"
+@incl "tooltip.h"
 @incl "apputil.h"
 @incl "xutil.h"
 @incl "converters.h"

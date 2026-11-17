@@ -16,6 +16,7 @@
     $useControlColors = True;
     if ($leftGap == 0) $leftGap = 22;
     wheel_colors_changed($);
+    wtooltip_set($, $tooltip);
 }
 
 @proc expose
@@ -26,6 +27,7 @@
 
 @proc destroy
 {
+    wtooltip_unregister($);
     if ($para_ptr) { retex_paragraph_free((RetexParagraph*)$para_ptr); $para_ptr = NULL; }
     if ($backend_ptr) {
         Backend *be = (Backend*)$backend_ptr;
@@ -118,6 +120,7 @@
 @incl "mls.h"
 @incl <X11/Xft/Xft.h>
 @incl "converters-xft.h"
+@incl "tooltip.h"
 @incl "theme.h"
 @incl "retex.h"
 @incl "backend.h"

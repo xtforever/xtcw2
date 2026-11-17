@@ -56,6 +56,8 @@
 @var Boolean allowHoriz = True
 @var Boolean allowVert = True
 @var Dimension barSize = 14
+@ optional hover tooltip text
+@var String tooltip = <String> ""
 
 @TRANSLATIONS
 @trans <Btn1Down>: click()
@@ -338,10 +340,12 @@
   theme_register($, list_apply_theme);
   list_apply_theme($);        /* also applies font_ui + metrics + open_font */
   rebuild_columns($);
+  wtooltip_set($, $tooltip);
 }
 
 @proc destroy
 {
+  wtooltip_unregister($);
   theme_unregister($);
   free_icons($);
   if ($titles) { m_free_strings($titles, 0); $titles = 0; }
@@ -425,6 +429,8 @@
 @proc set_values
 {
   int redraw = 0;
+
+  if ($tooltip != $old$tooltip) wtooltip_set($, $tooltip);
 
   if ($fontFace != $old$fontFace || $fontSize != $old$fontSize ||
       $rowHeight != $old$rowHeight || $headerHeight != $old$headerHeight) {
@@ -1311,6 +1317,7 @@
 @incl "mls.h"
 @incl "m_tool.h"
 @incl "theme.h"
+@incl "tooltip.h"
 @incl "Wlist-common.h"
 @incl "xtcw/VSlider.h"
 @incl "xtcw/HSlider.h"

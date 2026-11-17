@@ -433,7 +433,8 @@ local ui = macros.PRELUDE .. [[
           (Wbutton :id "mi_detail" :label "Detail" :callback "LUA(cb_nav_detail)")
           (Wbutton :id "mi_editor" :label "Editor" :callback "LUA(cb_nav_editor)")
           (Wbutton :id "mi_shopping" :label "Shopping" :callback "LUA(cb_nav_shopping)")
-          (Wbutton :id "mi_sort" :label "Sort recipes" :callback "LUA(cb_sort_recipes)")))
+          (Wbutton :id "mi_sort" :label "Sort recipes" :tooltip "Sort by name"
+                    :callback "LUA(cb_sort_recipes)")))
       (WmenuButton :id "menu_help" :label "Help"
                    :buttonWidth 64 :buttonHeight 28
         (WPopupMenu :id "menu_help_popup"
@@ -445,8 +446,10 @@ local ui = macros.PRELUDE .. [[
       (WToolBar :id "toolbar_actions"
                 :gridx 1 :gridy 0 :weightx 0 :weighty 0 :fill 3
                 :toolbarHeight 36 :itemGap 8 :toolbarPadding 4
-        (Wbutton :id "nav_new" :label "New" :callback "LUA(cb_new_recipe)")
-        (Wbutton :id "nav_quit" :label "Quit" :callback "LUA(cb_quit)")))
+        (Wbutton :id "nav_new" :label "New" :tooltip "Create a new recipe"
+                 :callback "LUA(cb_new_recipe)")
+        (Wbutton :id "nav_quit" :label "Quit" :tooltip "Quit the cookbook"
+                 :callback "LUA(cb_quit)")))
     (tabs :id "tabs" :slot "content" :weightx 1 :weighty 1 :fill 3
        :callback "LUA(cb_tab)"
 ]]
