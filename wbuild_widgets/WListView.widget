@@ -726,7 +726,9 @@
   if ($font) XftFontClose(dpy, (XftFont*)$font);
   $font = f;
   int theme_row_h = theme_metric("table_row_height", -1);
+  if (theme_row_h < 0) theme_row_h = theme_metric("list_row_height", -1);
   int theme_header_h = theme_metric("table_header_height", -1);
+  if (theme_header_h < 0) theme_header_h = theme_metric("list_header_height", -1);
   int row_h = ($rowHeight > 0) ? $rowHeight
             : (theme_row_h > 0 ? theme_row_h
                                : (f ? f->height : 16) + 2 * $cellPaddingY);

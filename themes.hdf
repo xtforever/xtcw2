@@ -59,7 +59,7 @@
     control_gap    8
     group_gap      12
     action_gap     8
-    list_row_height 22
+    list_row_height 26
     list_header_height 24
     list_cell_pad_x 8
     list_cell_pad_y 2
@@ -101,7 +101,7 @@
     toolbar_height   24
     status_height    24
     dialog_padding   12
-    table_row_height 22
+    table_row_height 26
     table_header_height 24
     tree_indent      18
     tree_row_height  24
@@ -155,7 +155,7 @@
     control_gap    8
     group_gap      12
     action_gap     8
-    list_row_height 22
+    list_row_height 26
     list_header_height 24
     list_cell_pad_x 8
     list_cell_pad_y 2
@@ -197,7 +197,7 @@
     toolbar_height   24
     status_height    24
     dialog_padding   12
-    table_row_height 22
+    table_row_height 26
     table_header_height 24
     tree_indent      18
     tree_row_height  24
@@ -251,7 +251,7 @@
     control_gap    8
     group_gap      12
     action_gap     8
-    list_row_height 22
+    list_row_height 26
     list_header_height 24
     list_cell_pad_x 8
     list_cell_pad_y 2
@@ -293,7 +293,7 @@
     toolbar_height   24
     status_height    24
     dialog_padding   12
-    table_row_height 22
+    table_row_height 26
     table_header_height 24
     tree_indent      18
     tree_row_height  24
@@ -349,7 +349,7 @@
     control_gap    8
     group_gap      12
     action_gap     8
-    list_row_height 22
+    list_row_height 26
     list_header_height 24
     list_cell_pad_x 8
     list_cell_pad_y 2
@@ -391,7 +391,7 @@
     toolbar_height   24
     status_height    24
     dialog_padding   12
-    table_row_height 22
+    table_row_height 26
     table_header_height 24
     tree_indent      18
     tree_row_height  24
@@ -446,7 +446,7 @@
     control_gap    8
     group_gap      12
     action_gap     8
-    list_row_height 22
+    list_row_height 26
     list_header_height 24
     list_cell_pad_x 8
     list_cell_pad_y 2
@@ -488,7 +488,7 @@
     toolbar_height   24
     status_height    24
     dialog_padding   12
-    table_row_height 22
+    table_row_height 26
     table_header_height 24
     tree_indent      18
     tree_row_height  24
