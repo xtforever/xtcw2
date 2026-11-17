@@ -53,6 +53,9 @@ echo "9c2. test_run_widget (single-widget probe harness)"
 echo "9c3. test_cookbook_widgets (WAppWindow + menu integration)"
 "$ROOT/tests/test_cookbook_widgets.sh"
 
+echo "9c4. test_docs_consistency (registry vs. widget sources)"
+"$ROOT/tests/test_docs_consistency.sh"
+
 echo "9d. test_wretex (realize/expose regression)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wretex"
 

@@ -41,21 +41,28 @@ This is a living document. It is derived from:
 |---|---|---|
 | Base/theme | `Wheel`, `Wlabel`, `Frame`, `Gridbox`, `VBox`, `HBox` | Solid foundation; `Wheel` is the theme/input base |
 | App shell | `WAppWindow` (new) | Themed 4-slot container: menu, toolbar, content, status |
-| Menus | `WMenuBar`, `WPopupMenu`, `WAction` (new), `WmenuButton` | First modern menu slice with checkable actions; keyboard mnemonics pending |
+| Menus | `WMenuBar`, `WPopupMenu`, `WAction`, `WmenuButton` (modern); `Wmenu`, `WmenuPopup` (legacy) | First modern menu slice with checkable actions; keyboard mnemonics and full `WMenu` pending |
 | Toolbar | `WToolBar` (new) | Themed natural-width action row; cookbook integration done |
 | Status bar | `WStatusBar` (new) | Message + permanent right widgets; cookbook integration done |
+| Dialogs | `WDialog` (new); `MessageBox`, `WfileChooser`, `WfileSelector` (legacy/partial) | Themed modal title/message + OK/Cancel; message/input helpers and focus trap pending |
 | Selection | `WComboBox` (new) | Read-only items, selected index and themed popup; editable/completion later |
 | Choice | `WRadioGroup` (new) | Vertical radio group with click/keyboard selection |
-| Feedback | `WProgressBar` (new) | Determinate progress + percentage text |
+| Feedback | `WProgressBar` (new); `Gauge`, `VSlider`, `HSlider`, `EqFader` | Determinate progress; indeterminate animation and tooltips pending |
 | Layout | `WFormLayout` (new) | Two-column label/field form layout |
 | Buttons | `Wbutton`, `Wcheckbox`, `WToggleSwitch`, `WpixBtn` | `Wbutton`/`WToggleSwitch` good; checkbox indicator implemented; icon button legacy |
 | Text input | `WLineEdit` (new), `Wedit`, `WeditMV`, `Wpassword`, `KaroEd`, `Wbravo`, `Wretex` | `WLineEdit` adds placeholder/clear; `KaroEd`/`Wbravo` strong; validation/completion pending |
-| Lists | `WListView` (modern), `Wlist`, `Wlist4`, `WlistMulti`, `Wls`, `WlsMulti` | `WListView` is the future; legacy lists must be frozen |
+| Lists | `WListView`, `table-view`, `WTreeView`, legacy `Wlist*`/`Wls*` | `WListView`/table/tree are the future; legacy lists frozen |
 | Tabs/scroll | `WtabWidget`, `Wviewport`, `WSplitter`, `WPaned` | Modern after recent fixes; splitter/paned need consolidation |
-| Menus | `Wmenu`, `WmenuButton`, `WmenuPopup` | Legacy menu internals; no menu bar/action model |
-| Dialogs | `MessageBox`, `WfileChooser`, `WfileSelector` | File chooser improved; message box and input dialogs are legacy/missing |
-| Feedback | `Gauge`, `VSlider`, `HSlider`, `EqFader` | Sliders good; no progress bar/status bar/tooltips |
-| Data/domain | `WListView`, `DrawCanvas`, `Canvas`, `IconSVG`, `Board`, `Dartboard` | Good domain widgets; no table/tree/model abstraction |
+| Data/domain | `WListView`, `table-view`, `WTreeView`, `DrawCanvas`, `Canvas`, `IconSVG`, `Board`, `Dartboard` | Table/tree are first slices; no shared `WModel` yet |
+
+### Status snapshot (2026-11-17)
+
+Phase 1 (P0) is partially landed: 13 of 18 items have a usable slice with a
+LUI tag, a probe and (mostly) a C test. Five P0 items have no code yet:
+**`WPlainTextEdit`**, **`WModel`**, **`WToolTip`**, **`WIconButton`** and
+**`WSearchField`**. Phase 2/3 beyond the `WTreeView` slice have not started.
+The detailed gap list (search/filter, keyboard/focus, theme roles, host
+hardening) lives in `plan-xtcw-completed.md`.
 
 ## PyQt5/Qt5 comparison
 
@@ -64,14 +71,14 @@ legacy; **Legacy** = works but should be replaced; **Missing** = not present.
 
 | Qt / PyQt5 | Current Xt widget | Status | Improved-Widget-Set action | Priority |
 |---|---|---|---|---|
-| `QMainWindow` | shell + `Gridbox` + `WtabWidget` | Partial | **WAppWindow** (menu/toolbar/content/status) | P0 |
+| `QMainWindow` | `WAppWindow` (new) + `WtabWidget` | Partial | finish slot integration and keyboard/focus | P0 |
 | `QDialog` | `MessageBox`, `WfileSelector` | Partial | **WDialog** (modal/modeless, buttons, focus) | P0 |
 | `QLabel` | `Wlabel` | Good | keep; add link/rich helpers | — |
 | `QPushButton` | `Wbutton` | Good | keep; add default/primary roles | — |
 | `QToolButton` | `Wbutton`, `WpixBtn` | Partial | **WIconButton** (icon/text/toggle/menu) | P0 |
 | `QRadioButton` | `Wradio`, `Radio2` | Legacy | **WRadioGroup** / themed radio | P0 |
 | `QCheckBox` | `Wcheckbox` | Partial | improve check indicator + tri-state | P0 |
-| `QComboBox` | `Wcombo` | Legacy/broken | **WComboBox** (editable, model, completion) | P0 |
+| `QComboBox` | `WComboBox` (read-only), `Wcombo` (legacy) | Partial | editable mode, model, completion | P0 |
 | `QSpinBox` | `WspinBox` | Partial | improve +/- buttons, format, validation | P0 |
 | `QDoubleSpinBox` | — | Missing | extend **WSpinBox** with double/step | P1 |
 | `QLineEdit` | `Wedit` | Legacy | **WLineEdit** (validation, completion, clear) | P0 |
@@ -80,14 +87,14 @@ legacy; **Legacy** = works but should be replaced; **Missing** = not present.
 | `QTextBrowser` | `Wretex`/`Wlabel` | Good | keep; add link/scroll helpers | — |
 | `QSlider` | `VSlider`, `HSlider` | Good/Partial | improve ticks/labels/hit area | P1 |
 | `QScrollBar` | `VSlider`, `HSlider` | Good | keep; unify theming | — |
-| `QProgressBar` | `Gauge` | Legacy | **WProgressBar** (determinate/indeterminate) | P0 |
+| `QProgressBar` | `WProgressBar` (new), `Gauge` (analog) | Partial | indeterminate animation | P0 |
 | `QDial` | — | Missing | optional | P2 |
 | `QCalendarWidget` | — | Missing | **WCalendarWidget** | P1 |
 | `QDateEdit`/`QTimeEdit`/`QDateTimeEdit` | — | Missing | **WDateEdit**/`WTimeEdit`/`WDateTimeEdit` | P1 |
 | `QLCDNumber` | — | Missing | optional | P2 |
 | `QListView`/`QListWidget` | `WListView` | Good | keep; formalize model API | — |
-| `QTableView`/`QTableWidget` | flat `WListView` only | Partial | **WTableView** + header/sort/filter | P0/P1 |
-| `QTreeView`/`QTreeWidget` | — | Missing | **WTreeView** (lazy, keyboard) | P1 |
+| `QTableView`/`QTableWidget` | `table-view` alias over `WListView` | Partial | **WModel** + header/sort/filter/editing | P0/P1 |
+| `QTreeView`/`QTreeWidget` | `WTreeView` (first slice) | Partial | lazy children, scrolling, model | P1 |
 | `QHeaderView` | internal to `WListView` | Partial | reusable **WTableHeader** | P1 |
 | `QAbstractItemModel` | MLS string rows | Partial | **WModel** (rows/cols/get/flags/sort/filter) | P0 |
 | `QSortFilterProxyModel` | — | Missing | **WSortFilterModel** | P1 |
@@ -95,7 +102,7 @@ legacy; **Legacy** = works but should be replaced; **Missing** = not present.
 | `QCompleter` | — | Missing | **WCompleter** | P1 |
 | `QValidator` | — | Missing | **WValidator** (int/double/regex) | P1 |
 | `QMenuBar` | — | Missing | **WMenuBar** | P0 |
-| `QMenu` | `Wmenu`, `WmenuPopup` | Legacy | **WMenu** (submenu/checkable/icons) | P0 |
+| `QMenu` | `WPopupMenu`/`WAction` (new), `Wmenu`/`WmenuPopup` (legacy) | Partial | submenu/checkable/icons, mnemonics | P0 |
 | `QAction` | `Wbravo` actions / `LUA` callbacks | Partial | **WAction** (text/icon/shortcut/checkable) | P0 |
 | `QToolBar` | `Gridbox` row of `Wbutton` | Partial | **WToolBar** (overflow, separators, tooltips) | P0 |
 | `QStatusBar` | `label` | Partial | **WStatusBar** (message + permanent widgets) | P0 |
@@ -112,7 +119,7 @@ legacy; **Legacy** = works but should be replaced; **Missing** = not present.
 | `QMdiArea` | — | Missing | optional | P2 |
 | `QToolBox` | — | Missing | optional | P2 |
 | `QWizard` | — | Missing | **WWizard** on `WStackedWidget` | P1 |
-| `QMessageBox` | `MessageBox` | Legacy | **WMessageBox** (themed, buttons, details) | P0 |
+| `QMessageBox` | `WDialog` (new), `MessageBox` (legacy) | Partial | **WMessageBox** resources/helpers (themed, buttons, details) | P0 |
 | `QFileDialog` | `WfileChooser`/`WfileSelector` | Good/Partial | **WFileDialog** polish (shortcuts, multi-select, overwrite) | P1 |
 | `QColorDialog` | — | Missing | **WColorDialog** | P1 |
 | `QFontDialog` | — | Missing | **WFontDialog** | P1 |
@@ -124,7 +131,7 @@ legacy; **Legacy** = works but should be replaced; **Missing** = not present.
 | `QTimer` | `xtapptimeout` | Good | keep | — |
 | `QProcess` | Lua `os.execute`/`popen` | Partial | optional **WProcess** helper | P2 |
 | `QThread` | Xt single-thread | — | not planned; async helper only | P2 |
-| `QGraphicsView`/`QGraphicsScene` | `DrawCanvas`, `Canvas` | Partial | extend canvas/scene API | P2 |
+| `QGraphicsView`/`QGraphicsScene` | `DrawCanvas`, `Canvas` | Partial | DrawCanvas has key/mouse callbacks, timer updates and double buffering; scene API still open | P2 |
 | `QOpenGLWidget` | — | Missing | optional | P2 |
 | `QWebEngineView` | — | Missing | not planned (external if needed) | P2 |
 | `QMediaPlayer` | — | Missing | not planned | P2 |
@@ -218,21 +225,30 @@ style-guide roles, keyboard handling and tests.
 
 10. **WPlainTextEdit** — `NEW`
     - Simple multiline text editor with style-guide chrome, line/column status, undo/redo, clipboard.
+    - Status: not started.
     - `KaroEd` remains the code editor; `Wbravo` remains the rich editor.
     - Acceptance: cookbook ingredient/step editors without KaroEd complexity; large text performance.
 
 11. **WModel** — `NEW` (list/table/tree model contract)
     - `rows`, `columns`, `get(row,col)`, `set`, `flags`, `sort`, `filter`, `header`.
+    - Status: not started.
     - Lua table-friendly: `gui.set_model(id, {…})`; MLS string rows remain a fast path.
     - Acceptance: `WListView`, `WTableView`, `WTreeView`, `WComboBox` share one model.
 
 12. **WTableView** — `NEW`
     - Flat table: columns, header, sorting, selection, editing, virtualized rows.
+    - Status: first slice implemented as the `table-view` LUI alias over
+      `WListView`, with `sortColumn`/`sortAscending` and a `sort` action. The
+      cookbook recipe list uses it. Full `WModel`, delegates, filtering and
+      editing remain.
     - Build on `WListView` rendering + `WModel`; no per-cell widgets.
     - Acceptance: recipe/ingredient/shopping tables; 10k rows smooth; keyboard navigation.
 
 13. **WDialog / WMessageBox / WInputDialog** — `NEW`/`IMPROVE`
     - Modal/modeless dialog base with action bar, default/cancel, focus trap, Esc/Enter.
+    - Status: themed modal `WDialog` with title, message, OK/Cancel, open/close
+      actions and callback result; cookbook Gallery uses it. Dedicated
+      `WMessageBox`/`WInputDialog` helpers and focus trap remain.
     - Themed message box (info/warning/error/question, details, checkbox).
     - Input dialog (text/int/double/choice) with validation.
     - Acceptance: cookbook delete confirmation, quit confirmation, file overwrite prompt.
@@ -251,19 +267,26 @@ style-guide roles, keyboard handling and tests.
 
 16. **WToolTip** — `NEW`
     - Hover/focus tooltips with delay, screen-edge placement, theme roles.
+    - Status: not started.
     - Acceptance: toolbar/action/list tooltips; keyboard focus shows help.
 
 17. **WIconButton / WToolButton** — `NEW`/`IMPROVE`
     - SVG/XPM icon + optional text, toggle, menu arrow, primary/secondary.
+    - Status: not started.
     - Acceptance: toolbar, file chooser, t1_menu actions; icon scaling `icon_size`.
 
 18. **WSearchField** — `NEW`
     - Search icon, clear button, completion, Enter/`on-change` callback.
+    - Status: not started.
     - Acceptance: cookbook/t1_menu search; debounced filtering.
 
 ### P1 — data views, dialogs and platform features
 
 - **WTreeView** — hierarchical model, expand/collapse, lazy children, keyboard.
+  - Status: first slice implemented as a themed Core widget with
+    `level<TAB>text` MLS nodes, expand/collapse, click/arrow navigation and
+    `visibleCount`. The cookbook Gallery uses it. Lazy children and a full
+    model remain.
 - **WTableHeader** — reusable header, resize, sort indicator, alignment.
 - **WSortFilterModel** — sort/filter proxy over `WModel`.
 - **WItemDelegate** — cell renderer/editor hooks (text, icon, progress, custom Lua draw).
@@ -382,7 +405,7 @@ P0 foundation widgets:
 
 `Wlabel`, `Wbutton`, `WspinBox`, `Wcheckbox`, `WListView`, `WtabWidget`,
 `Wviewport`, `KaroEd`, `Wretex`, `WToggleSwitch`, plus the new `WAppWindow`,
-`WMenuBar`, `WPopupMenu`, `WAction`, `WToolBar`, `WStatusBar`, `WComboBox`, `WProgressBar`, `WRadioGroup`, `WLineEdit`, improved `WCheckBox` and `WFormLayout` widgets.
+`WMenuBar`, `WPopupMenu`, `WAction`, `WToolBar`, `WStatusBar`, `WComboBox`, `WProgressBar`, `WRadioGroup`, `WLineEdit`, `table-view`, `WTreeView`, `WDialog`, improved `WCheckBox` and `WFormLayout` widgets.
 
 As each new P0 widget lands, add a matching `tests/widgets/<widget>.lui` probe.
 The harness is intentionally an interim shell; it can later switch to

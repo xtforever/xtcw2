@@ -44,6 +44,13 @@ Conventions the agents expect:
 
 ## 3. Prerequisites
 
+On Debian/Ubuntu, `tools/install_dev_deps.sh` installs the build and test
+dependencies (including Xvfb, scrot, Python PIL/numpy) and initialises the
+`LuaRunner/nanosvg` submodule. If your `python3` comes from pyenv/conda, the
+apt Python packages are not visible to it; run the script with `--pip` (or
+install `pillow`/`numpy` for that interpreter manually). `--check` reports
+missing tools without changing the system.
+
 Build tools:
 
 ```bash

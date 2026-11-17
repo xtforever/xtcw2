@@ -21,6 +21,63 @@ the deployment path) and thereby exposes the gaps collected below.
 
 ---
 
+## Status snapshot (2026-11-17)
+
+The original gap list below is kept as a historical record. Many of its P0/P1
+items have since landed; this snapshot is the current source of truth.
+
+**Landed since the first draft**
+
+- Build/deploy: production mode honours `debug_enable`, `distclean` exists,
+  CI checks out submodules and installs `bison`/`flex`/`swig`/`xvfb`/`x11-utils`.
+- App chrome: `WAppWindow`, `WMenuBar`/`WPopupMenu`/`WAction`, `WToolBar`,
+  `WStatusBar`, `WtabWidget`.
+- Forms/inputs: `WComboBox` (read-only), `WRadioGroup`, `WLineEdit`,
+  `WSpinBox`, `WCheckBox`, `WFormLayout`, `WProgressBar`.
+- Data views: `WListView`, `table-view` (sortable first slice), `WTreeView`
+  (first slice), `WDialog`.
+- Cookbook: recipes are persisted as a Lua chunk, the editor does full
+  create/update, delete uses a real themed confirm dialog, and the recipe list
+  carries stable row ids so sorting no longer corrupts selection→model mapping.
+- QA: single-widget probes for the new widgets plus `tests/test_cookbook_widgets.sh`
+  covering geometry, menus, sorting, tree expand, dialog, CRUD and persistence.
+- Rendering: `Wretex` no longer loops on repeated `autoHeight` text updates
+  (`set_values_almost` now follows the Xt `request_mode` contract); the cookbook
+  workaround was removed.
+- Canvas: `DrawCanvas` now has key/mouse callbacks, timer-driven dirty repaints,
+  optional double buffering and deferred focus. The interactive paint demo and
+  the Snake game (`demos/demo_snake.lua`, `wbuild_widgets/snake-draw.c`) exercise
+  the new API.
+
+**Still open / needs rework**
+
+| Area | Gap | Where |
+|---|---|---|
+| P0 widgets | No code yet for `WPlainTextEdit`, `WModel`, `WToolTip`, `WIconButton`, `WSearchField`. | `wbuild_widgets/`, `lui/registry.lua` |
+| Model | No shared `WModel` (row ids/flags/sort/filter). Only `WListView.rowIds` exists today. | `wbuild_widgets/WListView.widget`, `lui/gui_xt.lua` |
+| Search/filter | Cookbook search only writes a status message; no filter proxy. | `cookbook/app/main.lua` (`cb_search`), `WListView` |
+| Data I/O | No JSON/structured binding; persistence writes Lua chunks. | `cookbook/app/store/persistence.lua` |
+| Tree | No scrolling/virtualization, no lazy children, no focus/keyboard. | `wbuild_widgets/WTreeView.widget` |
+| Keyboard/focus | `WTreeView`, `WRadioGroup`, `WComboBox` have key translations but no focus acquisition; `WDialog` has no focus trap/default button; `WAction.shortcut` is display-only. | those widgets |
+| Dialogs | No `WMessageBox`/`WInputDialog`; `gui.confirm`/`alert`/`prompt` still build raw legacy windows. | `lui/gui_xt.lua`, `WDialog.widget` |
+| Table UX | Header click does not sort/toggle an indicator; no cell editing; sort is destructive and has no original-order restore. | `WListView.widget` |
+| Theme | No dedicated `menu_*`, `toolbar_*`, `status_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*` roles/metrics. | `themes.hdf`, `cookbook/themes/cookbook.hdf` |
+| Host | `commander_runner` still hardcodes `../lui/?.lua` and relative theme paths; LUI load errors are printed but do not fail the process. | `commander/commander_runner.c` |
+| Parser | LUI number grammar has no leading sign. | `lui/parser.lua` |
+| QA | No screenshot baselines; keyboard/persistence/search paths are only partly covered. | `tests/` |
+
+**Immediate next rework order**
+
+1. Search/filter on top of a small `WModel`/proxy (also fixes shopping-list aggregation).
+2. `WTreeView` scrolling + focus/keyboard, then lazy children.
+3. Focus/keyboard for `WRadioGroup`/`WComboBox`; dialog focus trap and `WMessageBox`/`WInputDialog`.
+4. Theme roles/metrics across all themes.
+5. Header sort indicator + cell editing for `table-view`.
+6. Host location independence and LUI error propagation.
+7. Visual baselines and the remaining keyboard/persistence tests.
+
+---
+
 ## 0. Context: what "a project built with xtcw2" looks like
 
 A concrete xtcw2 application is currently:
@@ -106,6 +163,11 @@ Legend: ✅ available today · ⚠️ partially available · ❌ missing.
 
 ## 2. Gap analysis: what xtcw2 is missing
 
+> **Historical note:** the tables in §2 and the capability mapping in §1.2
+> describe the state at the first draft. Use the *Status snapshot (2026-11-16)*
+> at the top of this file for current status; the text below is retained to
+> show why each gap existed.
+
 Each gap below is directly motivated by the capability or cross-cutting need it
 blocks. Priorities: **P0** = blocks deployment / correctness, **P1** = blocks a
 core cookbook capability, **P2** = polish / nice-to-have.
@@ -174,8 +236,8 @@ cookbook capability, **P2** = polish.
 | A1. Honour `debug_enable` in `commander/makefile` (real production build, no `-DMLS_DEBUG`/ASan). | G1, X3 | ✅ done |
 | A2. Add a root `distclean` target; make `clean` remove `LuaRunner/luaxt*.o`; stop tracking generated `luaxt_wrap.c`. | G2 | ✅ done (`.gitignore`) |
 | A3. Stop tracking build artifacts (the `tests/test_*` binaries) so `make clean`/`distclean` no longer dirties the worktree. | G2, build hygiene | ⬜ open |
-| A4. Fix CI (`.github/workflows/ci.yml`): `submodules: recursive`, correct targets, add `bison flex swig libxtst-dev x11-utils`, `make clean` before test builds. | G4 | ⬜ open (Step 10) |
-| A5. Document the real prerequisites (`lua-lpeg`, `swig`, `bison`, `flex`, submodule init) in `overview.md`. | G3/G4 | ⬜ open |
+| A4. Fix CI (`.github/workflows/ci.yml`): `submodules: recursive`, correct targets, add `bison flex swig libxtst-dev x11-utils`, `make clean` before test builds. | G4 | ✅ done |
+| A5. Document the real prerequisites (`lua-lpeg`, `swig`, `bison`, `flex`, submodule init) in `overview.md`. | G3/G4 | ✅ done |
 | A6. An app template / `dist` packaging story (the `cookbook/` layout + Docker is a starting point). | G3, X4 | 🟡 partial (`cookbook/`) |
 
 ### Phase B — Host/runtime robustness (P0–P1)
@@ -192,31 +254,31 @@ cookbook capability, **P2** = polish.
 | Task | Addresses | Status |
 |------|-----------|--------|
 | C1. Fix `WlsMulti`/`WlistMulti` `BadAlloc` on `X_CreatePixmap` when nested in a `Gridbox` (size audit + regression test). | G12-adjacent, `know_bugs.md` | ⬜ open |
-| C2. `WtableView`: multi-column, cell-based, editable, sortable (replaces the `Wlist4`/`WlistMulti` stopgaps). | G12 | ⬜ open |
-| C3. `WtabWidget`: tab bar + content pages (the cookbook's screen switcher). | G8 | ⬜ open |
-| C4. `Wmenubar` container for `Wmenu`/`WmenuPopup`. | G9 | ⬜ open |
-| C5. `Wtoolbar` and `WstatusBar` application chrome. | G10, G11 | ⬜ open |
-| C6. List/model data binding: model change → widget refresh, selection → detail binding. | G19, X1 | ⬜ open |
-| C7. Harden `MessageBox` + a small standard-dialog set (alert/confirm/prompt are already partly in `gui_xt.lua`). | C13 | 🟡 partial |
+| C2. `WtableView`: multi-column, cell-based, editable, sortable (replaces the `Wlist4`/`WlistMulti` stopgaps). | G12 | 🟡 partial (`table-view` first slice: sort + row ids; editing/filtering open) |
+| C3. `WtabWidget`: tab bar + content pages (the cookbook's screen switcher). | G8 | ✅ done |
+| C4. `Wmenubar` container for `Wmenu`/`WmenuPopup`. | G9 | ✅ done (`WMenuBar`/`WPopupMenu`/`WAction`) |
+| C5. `Wtoolbar` and `WstatusBar` application chrome. | G10, G11 | ✅ done (`WToolBar`, `WStatusBar`) |
+| C6. List/model data binding: model change → widget refresh, selection → detail binding. | G19, X1 | 🟡 partial (`WListView.rowIds` + cookbook refresh/selection; shared `WModel` open) |
+| C7. Harden `MessageBox` + a small standard-dialog set (alert/confirm/prompt are already partly in `gui_xt.lua`). | C13 | 🟡 partial (`WDialog` landed; `WMessageBox`/`WInputDialog` and focus trap open) |
 
 ### Phase D — Data & content (P1–P2)
 
 | Task | Addresses | Status |
 |------|-----------|--------|
-| D1. JSON (or equivalent) read/write bindings for the Lua layer. | G18, C9 | ⬜ open |
-| D2. General file I/O helpers (beyond the single `task_copy` C binding). | G18 | ⬜ open |
+| D1. JSON (or equivalent) read/write bindings for the Lua layer. | G18, C9 | ⬜ open (cookbook persists Lua chunks via `io`) |
+| D2. General file I/O helpers (beyond the single `task_copy` C binding). | G18 | 🟡 partial (`persistence.lua` uses plain `io`/`os.execute`) |
 | D3. Raster image widget (PNG/JPEG), complementing `IconSVG`. | G17, C10 | ⬜ open |
 | D4. `WdatePicker` and `WsearchBox`. | G15, G16 | ⬜ open |
-| D5. `WgridView` / `WtreeView`. | G13, G14 | ⬜ open |
+| D5. `WgridView` / `WtreeView`. | G13, G14 | 🟡 partial (`WTreeView` first slice; scrolling/lazy/model open) |
 | D6. Localisation / unit-conversion framework. | G20, C15 | ⬜ open |
 
 ### Phase E — Quality assurance (P0–P1)
 
 | Task | Addresses | Status |
 |------|-----------|--------|
-| E1. Visual/geometry regression framework: screenshot baselines, `width>0`/`height>0` assertions, X11 error counter. | G21, X5 | ⬜ open |
-| E2. Widget verification matrix: TRACE(50) + property round-trip for every widget class. | G22 | ⬜ open |
-| E3. Add the `cookbook/` smoke test to CI (build both modes, run `test-all.sh`). | G4, E1 | ⬜ open (Step 10) |
+| E1. Visual/geometry regression framework: screenshot baselines, `width>0`/`height>0` assertions, X11 error counter. | G21, X5 | 🟡 partial (geometry assertions + widget probes; no baselines) |
+| E2. Widget verification matrix: TRACE(50) + property round-trip for every widget class. | G22 | 🟡 partial (probes for the new widgets; many legacy classes untested) |
+| E3. Add the `cookbook/` smoke test to CI (build both modes, run `test-all.sh`). | G4, E1 | 🟡 partial (`tests/test_cookbook_widgets.sh` exists; CI wiring open) |
 
 ### Suggested order
 

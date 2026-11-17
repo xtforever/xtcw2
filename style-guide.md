@@ -419,6 +419,7 @@ content changes.
 | Toolbar / action bar | `WToolBar` with `Wbutton`/`WAction` (legacy: `Gridbox` row) |
 | Status bar | `WStatusBar` |
 | Form | `WFormLayout` |
+| Dialog | `WDialog` |
 | Selection | `WComboBox` |
 | Single-line input | `WLineEdit` (legacy: `Wedit`) |
 | Choice | `WRadioGroup` |
@@ -426,6 +427,6 @@ content changes.
 | Menu bar / burger menu | `WMenuBar` + `WmenuButton` + `WPopupMenu` (modern); `WmenuButton` + `WmenuPopup` legacy |
 | Multi-pane main window | `Gridbox`, `Wsplitter`/`WPaned`, `Wviewport` |
 | Tabs | `WtabWidget` |
-| List/content | `WListView`, `WlistMulti`, `Wbravo`/`Wretex` |
+| List/content | `WListView`, `table-view`, `WTreeView`, `WlistMulti`, `Wbravo`/`Wretex` |
 | Scrollable page | `Wviewport` (clip + `VSlider`/`HSlider`) |
 | Theme/metrics | `font_ui`, `button_*`, `input_*`, `list_*`, `accent`, `control_*`, `window_margin` |
