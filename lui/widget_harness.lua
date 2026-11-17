@@ -230,6 +230,17 @@ local function write_result()
         'probe_id=' .. probe_id,
         'probe_class=' .. probe_class,
     }
+
+    -- Data-view probes can expose their visible row count.
+    local row_count = gui.get(probe_id, 'rowCount')
+    if row_count ~= nil then
+        lines[#lines + 1] = 'row_count=' .. tostring(row_count)
+    end
+    local visible_count = gui.get(probe_id, 'visibleCount')
+    if visible_count ~= nil then
+        lines[#lines + 1] = 'visible_count=' .. tostring(visible_count)
+    end
+
     f:write(table.concat(lines, '\n') .. '\n')
     f:close()
 end

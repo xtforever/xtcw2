@@ -245,6 +245,15 @@ check_log treeview
 check_value treeview "$TMP/treeview.result" probe_class tree-view
 check_value treeview "$TMP/treeview.result" probe_id tree
 
+# 2r. Table-view + WModel filter (rowCount reflects the filtered view).
+probe tablefilter "$TMP/tablefilter.result" \
+    --after "$ROOT/tests/widgets/populate_table_filter.lua" \
+    "$ROOT/tests/widgets/wtableview.lui"
+check_rc tablefilter
+check_log tablefilter
+check_value tablefilter "$TMP/tablefilter.result" probe_class table-view
+check_value tablefilter "$TMP/tablefilter.result" row_count 3
+
 # 3. Model data through --after.
 probe list "$TMP/list.result" \
     --after "$ROOT/tests/widgets/populate_list.lua" \

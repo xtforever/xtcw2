@@ -16,6 +16,7 @@ local gui = require('gui_xt')
 local lui = require('lui')
 local macros = require('ui.macros')
 local model = require('model.recipes')
+local WModel = require('wmodel')
 local persistence = require('store.persistence')
 
 -- The data file is resolved from commander/'s working directory. Tests set
@@ -83,23 +84,26 @@ end
 
 -- Rebuild the recipe table from the model and keep a stable row<->id mapping.
 -- `select_id` selects that recipe after the refresh, if it is still present.
+local function build_recipe_model()
+    return WModel.new{
+        columns = {
+            { title = "Name",     width = 0 },
+            { title = "Category", width = 120 },
+            { title = "Servings", width = 110, align = 2 },
+            { title = "Minutes",  width = 100, align = 2 },
+        },
+        rows = model.list_rows(),
+        ids = model.list_ids(),
+    }
+end
+
 local function refresh_recipe_list(select_id)
-    local rows, ids = {}, {}
-    for _, r in ipairs(model.recipes) do
-        rows[#rows + 1] = table.concat({
-            r.title or "", r.category or "",
-            tostring(r.servings or 0), tostring(r.minutes or 0) }, "\t")
-        ids[#ids + 1] = tostring(r.id)
-    end
-    gui.set_string_list("recipe_list", "rows", rows)
-    gui.set_string_list("recipe_list", "rowIds", ids)
+    gui.set_model("recipe_list", build_recipe_model(),
+                  { sort_column = 0, sort_ascending = true })
     if select_id then
-        for i, id in ipairs(ids) do
-            if tonumber(id) == tonumber(select_id) then
-                gui.set("recipe_list", "selected", i - 1)
-                break
-            end
-        end
+        local proxy = gui.get_model("recipe_list")
+        local view = proxy and proxy:view_of_id(select_id)
+        if view then gui.set("recipe_list", "selected", view - 1) end
     end
 end
 
@@ -148,7 +152,9 @@ function cb_noop() end
 
 function cb_search()
     local q = gui.get("search_ed", "label") or ""
-    gui.set("status", "message", "Search: '" .. q .. "' (filtering not implemented)")
+    local n = gui.set_model_filter("recipe_list", q)
+    gui.set("status", "message",
+            string.format("Search: '%s' — %d recipe(s)", q, n))
 end
 
 function cb_open_recipe()
@@ -319,8 +325,7 @@ function cb_dialog_result(ok)
 end
 
 function cb_sort_recipes()
-    local w = gui.get_widget("recipe_list")
-    if w then xtaction(w, "sort") end
+    gui.sort_model("recipe_list", 0, true)
     gui.set("status", "message", "Recipes sorted by name")
 end
 

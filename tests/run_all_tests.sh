@@ -44,6 +44,15 @@ else
     echo "test_retex_file SKIPPED (no lua interpreter)"
 fi
 
+echo "9b2. test_model (WModel/ProxyModel, pure Lua)"
+if command -v lua5.3 >/dev/null 2>&1; then
+    XTCW_ROOT="$ROOT" lua5.3 "$ROOT/tests/test_model.lua"
+elif command -v lua >/dev/null 2>&1; then
+    XTCW_ROOT="$ROOT" lua "$ROOT/tests/test_model.lua"
+else
+    echo "test_model SKIPPED (no lua interpreter)"
+fi
+
 echo "9c. test_t1_menu (xtcw launcher menu)"
 "$ROOT/tests/test_t1_menu.sh"
 

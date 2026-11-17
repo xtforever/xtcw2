@@ -1,8 +1,10 @@
 local backend = require('backend_xt')
+local WModel = require('wmodel')
 local luaxt = luaxt or require('luaxt')
 
 local M = {}
 local handlers = {}
+local model_proxies = {}
 
 backend.set_handler_registrar(function(name, fn)
     handlers[name] = fn
@@ -56,6 +58,91 @@ end
 
 function M.get_widget(id)
     return backend.get_widget(id)
+end
+
+-- Push a WModel proxy into a WListView/table-view. The proxy keeps the
+-- source model, the active filter and the sort order, so refreshing the
+-- widget does not lose the current search.
+local function push_model(id, proxy)
+    local w = backend.get_widget(id)
+    if not w then return 0 end
+    local cols = proxy:columns()
+    local titles, widths, aligns, kinds = {}, {}, {}, {}
+    for i, col in ipairs(cols) do
+        titles[i] = col.title or ""
+        widths[i] = tostring(col.width or 0)
+        aligns[i] = tostring(col.align or 0)
+        kinds[i] = tostring(col.kind or 0)
+    end
+
+    local keep_id = tonumber(M.get(id, 'selectedId'))
+
+    M.set(id, 'columnCount', #cols)
+    if #cols > 0 then
+        M.set(id, 'columnTitles', table.concat(titles, '\t'))
+        M.set(id, 'columnWidths', table.concat(widths, ','))
+        M.set(id, 'columnAligns', table.concat(aligns, ','))
+        M.set(id, 'columnKinds', table.concat(kinds, ','))
+    end
+    if proxy:sort_column() then
+        -- The widget resource is 0-based; the model contract is 1-based.
+        M.set(id, 'sortColumn', proxy:sort_column() - 1)
+        M.set(id, 'sortAscending', proxy:sort_ascending() and true or false)
+    end
+
+    M.set_string_list(id, 'rows', proxy:rows())
+    M.set_string_list(id, 'rowIds', proxy:ids())
+
+    if keep_id and keep_id >= 0 then
+        local view = proxy:view_of_id(keep_id)
+        if view then M.set(id, 'selected', view - 1) end
+    end
+    return proxy:count()
+end
+
+-- Attach a WModel to a list/table. `opts` may carry `filter`,
+-- `filter_columns`, `sort_column` and `sort_ascending`.
+function M.set_model(id, model, opts)
+    opts = opts or {}
+    local proxy = model_proxies[id]
+    if not proxy then
+        proxy = WModel.proxy(model)
+        model_proxies[id] = proxy
+    else
+        proxy:set_source(model)
+    end
+    if opts.filter ~= nil then proxy:set_filter(opts.filter, opts.filter_columns) end
+    if opts.sort_column ~= nil then
+        proxy:set_sort(opts.sort_column + 1, opts.sort_ascending)
+    end
+    return push_model(id, proxy)
+end
+
+-- Apply a case-insensitive substring filter over the attached model and
+-- return the number of visible rows.
+function M.set_model_filter(id, text, cols)
+    local proxy = model_proxies[id]
+    if not proxy then return 0 end
+    proxy:set_filter(text, cols)
+    return push_model(id, proxy)
+end
+
+-- `col` is the 0-based column index used by the widget resources.
+function M.sort_model(id, col, ascending)
+    local proxy = model_proxies[id]
+    if not proxy then return 0 end
+    proxy:set_sort(col + 1, ascending)
+    return push_model(id, proxy)
+end
+
+function M.model_refresh(id)
+    local proxy = model_proxies[id]
+    if not proxy then return 0 end
+    return push_model(id, proxy)
+end
+
+function M.get_model(id)
+    return model_proxies[id]
 end
 
 function M.geometry(id)

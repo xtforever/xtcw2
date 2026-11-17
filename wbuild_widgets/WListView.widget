@@ -18,6 +18,8 @@
 @var ArrayInt columnKinds = 0
 @ MLS list of tab-separated row strings (caller owns the strings)
 @var int rows = 0
+@ read-only number of source rows (useful for probes and status messages)
+@var int rowCount = 0
 @ optional stable row ids parallel to |rows| (MLS list); kept in sync when sorting
 @var int rowIds = 0
 @ sort column for WTableView-style sorting; -1 = unsorted
@@ -315,6 +317,7 @@
   $top_y = 0;
   $dirty = 1;
   $colors_ready = 0;
+  $rowCount = $rows ? m_len($rows) : 0;
   $fontFace_mem = strdup($fontFace ? $fontFace : "Sans");
   $fontFace = $fontFace_mem;
   $last_click_time = 0;
@@ -438,6 +441,7 @@
       $columnCount != $old$columnCount ||
       $columnWidths != $old$columnWidths || $columnTitles != $old$columnTitles ||
       $columnAligns != $old$columnAligns || $columnKinds != $old$columnKinds) {
+    $rowCount = $rows ? m_len($rows) : 0;
     rebuild_columns($);
     update_selected_id($);
     $dirty = 1;
