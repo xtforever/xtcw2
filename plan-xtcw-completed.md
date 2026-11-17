@@ -60,7 +60,7 @@ items have since landed; this snapshot is the current source of truth.
 | Tree | Scrolling, focus and keyboard navigation landed; no lazy children/virtualization, no full model. | `wbuild_widgets/WTreeView.widget` |
 | Keyboard/focus | `WRadioGroup`/`WComboBox` now acquire focus and handle selection keys; `WDialog` focuses its input/OK and handles Return/Escape. Full Tab trap/focus restore and `WAction.shortcut` wiring remain. | those widgets |
 | Dialogs | `gui.alert`/`confirm`/`prompt` use `WDialog` (messageType/details/checkbox/input row); initial focus and the default Return button landed, full Tab trap/focus restore remain. | `lui/gui_xt.lua`, `WDialog.widget` |
-| Table UX | Header click sorts and draws an asc/desc indicator (callback or local fallback); no cell editing, and local sort has no original-order restore. | `WListView.widget`, `cookbook/app/main.lua` |
+| Table UX | Header click sorts and draws an asc/desc indicator; header separators can be dragged to resize columns (`columnResize`, resize cursor). No cell editing, and local sort has no original-order restore. | `WListView.widget`, `cookbook/app/main.lua` |
 | Theme | Surface roles/metrics (`menu_*`, `toolbar_*`, `status_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*`) are defined in every shipped theme and consumed by the widgets; screenshot baselines for each theme remain. | `themes.hdf`, `cookbook/themes/cookbook.hdf`, `tests/test_theme_roles.sh` |
 | Host | `commander_runner` still hardcodes `../lui/?.lua` and relative theme paths; LUI load errors are printed but do not fail the process. | `commander/commander_runner.c` |
 | Parser | LUI number grammar has no leading sign. | `lui/parser.lua` |

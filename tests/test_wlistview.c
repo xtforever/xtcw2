@@ -308,6 +308,45 @@ int main(int argc, char **argv)
         assert(sc == 0 && asc == True);
     }
 
+    /* Column resize: drag the separator between columns 0 and 1. */
+    {
+        XEvent ev;
+        int sep, before, after;
+
+        memset(&ev, 0, sizeof ev);
+        before = lww->wListView.col_w[0];
+        sep = lww->wListView.col_x[0] + before - lww->wListView.top_x;
+        ev.xbutton.x = sep;
+        ev.xbutton.y = 2;
+        ev.xbutton.time = 2000;
+
+        header_col = -1;
+        XtAddCallback(lv, "headerClicked", on_header, NULL);
+        XtCallActionProc(lv, "click", (XEvent *)&ev, NULL, 0);
+        pump();
+        assert(header_col == -1);          /* separator drag, not a header click */
+
+        ev.xmotion.x = sep + 30;
+        ev.xmotion.y = 2;
+        XtCallActionProc(lv, "motion", (XEvent *)&ev, NULL, 0);
+        pump();
+        XtCallActionProc(lv, "release", NULL, NULL, 0);
+        pump();
+        XtRemoveCallback(lv, "headerClicked", on_header, NULL);
+
+        after = lww->wListView.col_w[0];
+        assert(after == before + 30);
+
+        /* Dragging far left clamps to minColumnWidth. */
+        ev.xbutton.x = lww->wListView.col_x[0] + after - lww->wListView.top_x;
+        XtCallActionProc(lv, "click", (XEvent *)&ev, NULL, 0);
+        ev.xmotion.x = 0;
+        XtCallActionProc(lv, "motion", (XEvent *)&ev, NULL, 0);
+        XtCallActionProc(lv, "release", NULL, NULL, 0);
+        pump();
+        assert(lww->wListView.col_w[0] >= lww->wListView.minColumnWidth);
+    }
+
     /* Regression: the full-pixmap clear must use C_BG, not the last row's
      * background.  A short list leaves an empty area below the rows; select
      * the last row so draw_rows() leaves the shared GC at C_SEL_BG, then

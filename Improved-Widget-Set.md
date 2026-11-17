@@ -245,9 +245,11 @@ style-guide roles, keyboard handling and tests.
     - Flat table: columns, header, sorting, selection, editing, virtualized rows.
     - Status: first slice implemented as the `table-view` LUI alias over
       `WListView`, with `sortColumn`/`sortAscending`, a `sort` action, the
-      shared `WModel`/filter proxy (`gui.set_model_filter`) and header-click
-      sorting with an ascending/descending indicator. The cookbook recipe list
-      sorts through its model on `on-header`. Delegates and cell editing remain.
+      shared `WModel`/filter proxy (`gui.set_model_filter`), header-click
+      sorting with an ascending/descending indicator, and column resizing by
+      dragging a header separator (with the standard horizontal-resize cursor).
+      The cookbook recipe list sorts through its model on `on-header`.
+      Delegates and cell editing remain.
     - Build on `WListView` rendering + `WModel`; no per-cell widgets.
     - Acceptance: recipe/ingredient/shopping tables; 10k rows smooth; keyboard navigation.
 

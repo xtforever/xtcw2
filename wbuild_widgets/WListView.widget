@@ -58,9 +58,18 @@
 @var Dimension barSize = 14
 @ optional hover tooltip text
 @var String tooltip = <String> ""
+@ enable dragging column separators in the header
+@var Boolean columnResize = True
+@ pixels around a column separator that start a resize
+@var int resizeSlop = 4
+@ minimum column width while resizing
+@var int minColumnWidth = 24
 
 @TRANSLATIONS
 @trans <Btn1Down>: click()
+@trans <Btn1Up>: release()
+@trans <MotionNotify>: motion()
+@trans <LeaveWindow>: leave()
 @trans <Btn4Down>: scroll_up()
 @trans <Btn5Down>: scroll_down()
 @trans <Key>Up: move_up()
@@ -136,6 +145,13 @@
 @var int colors_ready
 @var ulong last_click_time
 @var int last_click_row
+@var int resizing
+@var int resize_col
+@var int resize_start_x
+@var int resize_start_w
+@var int *drag_widths
+@var int drag_n
+@var Cursor resize_cursor
 @var Pixel col_px[C_COUNT]
 @var void *xcol
 
@@ -152,6 +168,19 @@
   focus_self($);
 
   if (my < $list_y) {
+    int rc = $columnResize ? resize_column_at($, mx + $top_x) : -1;
+    if (rc >= 0) {
+      drag_widths_ensure($);
+      if ($drag_widths) {
+        $drag_widths[rc] = $col_w[rc];
+        $resizing = 1;
+        $resize_col = rc;
+        $resize_start_x = mx;
+        $resize_start_w = $col_w[rc];
+        set_resize_cursor($, 1);
+      }
+      return;
+    }
     int c = column_at($, mx + $top_x);
     if (c >= 0) {
       if (XtHasCallbacks($, "headerClicked") == XtCallbackHasSome) {
@@ -176,6 +205,46 @@
     do_activate($);
   $last_click_time = t;
   $last_click_row = row;
+}
+
+@proc release
+{
+  if (! $resizing) return;
+  $resizing = 0;
+  $resize_col = -1;
+  set_resize_cursor($, 0);
+}
+
+@proc motion
+{
+  if (! XtIsRealized($)) return;
+  int mx = event->xmotion.x;
+  int my = event->xmotion.y;
+
+  if ($resizing) {
+    int w = $resize_start_w + (mx - $resize_start_x);
+    if (w < $minColumnWidth) w = $minColumnWidth;
+    drag_widths_ensure($);
+    if ($drag_widths && $resize_col >= 0 && $resize_col < $ncols) {
+      $drag_widths[$resize_col] = w;
+      rebuild_columns($);
+      $dirty = 1;
+      relayout($);
+    }
+    return;
+  }
+
+  if ($columnResize && $showHeader && my < $list_y) {
+    int rc = resize_column_at($, mx + $top_x);
+    set_resize_cursor($, rc >= 0);
+  } else {
+    set_resize_cursor($, 0);
+  }
+}
+
+@proc leave
+{
+  if (! $resizing) set_resize_cursor($, 0);
 }
 
 @proc scroll_up
@@ -331,6 +400,13 @@
   $fontFace = $fontFace_mem;
   $last_click_time = 0;
   $last_click_row = -1;
+  $resizing = 0;
+  $resize_col = -1;
+  $resize_start_x = 0;
+  $resize_start_w = 0;
+  $drag_widths = NULL;
+  $drag_n = 0;
+  $resize_cursor = XCreateFontCursor($dpy, XC_sb_h_double_arrow);
   $xcol = calloc(C_COUNT, sizeof(XftColor));
 
   if ($width == 0) $width = 280;
@@ -361,6 +437,8 @@
   free($col_x);
   free($col_align);
   free($col_kind);
+  free($drag_widths); $drag_widths = NULL; $drag_n = 0;
+  if ($resize_cursor) { XFreeCursor($dpy, $resize_cursor); $resize_cursor = None; }
   if ($draw) { XftDrawDestroy((XftDraw*)$draw); $draw = NULL; }
   if ($pixmap) { XFreePixmap($dpy, $pixmap); $pixmap = 0; }
   $cache_w = 0; $cache_h = 0;
@@ -436,6 +514,10 @@
 @proc set_values
 {
   int redraw = 0;
+
+  if ($columnWidths != $old$columnWidths) {
+    free($drag_widths); $drag_widths = NULL; $drag_n = 0;
+  }
 
   if ($tooltip != $old$tooltip) wtooltip_set($, $tooltip);
 
@@ -674,6 +756,10 @@
     if (tc > n) n = tc;
   }
 
+  if ($drag_widths && $drag_n != n) {
+    free($drag_widths); $drag_widths = NULL; $drag_n = 0;
+  }
+
   free($col_w);
   free($col_x);
   free($col_align);
@@ -685,7 +771,7 @@
   $ncols = n;
 
   for (i = 0; i < n; i++) {
-    int w = ($columnWidths && i < m_len($columnWidths)) ? INT($columnWidths, i) : 0;
+    int w = effective_width($, i);
     int a = ($columnAligns && i < m_len($columnAligns)) ? INT($columnAligns, i) : ALIGN_LEFT;
     int k = ($columnKinds && i < m_len($columnKinds)) ? INT($columnKinds, i) : COLT_TEXT;
     if (a < ALIGN_LEFT || a > ALIGN_RIGHT) a = ALIGN_LEFT;
@@ -713,7 +799,7 @@
     }
     /* give any rounding remainder to the first weighted column */
     for (i = 0; i < n && used < avail; i++) {
-      if ($columnWidths == 0 || i >= m_len($columnWidths) || INT($columnWidths, i) <= 0) {
+      if (effective_width($, i) <= 0) {
         $col_w[i] += avail - used;
         break;
       }
@@ -728,6 +814,45 @@
     }
     $total_w = x;
   }
+}
+
+@proc int effective_width($, int i)
+{
+  if ($drag_widths && i < $drag_n && $drag_widths[i] > 0)
+    return $drag_widths[i];
+  if ($columnWidths && i < m_len($columnWidths))
+    return INT($columnWidths, i);
+  return 0;
+}
+
+@proc void drag_widths_ensure($)
+{
+  if ($drag_widths && $drag_n == $ncols) return;
+  free($drag_widths);
+  $drag_widths = (int *)calloc((size_t)$ncols, sizeof(int));
+  $drag_n = $drag_widths ? $ncols : 0;
+}
+
+@proc int resize_column_at($, int px)
+{
+  int i;
+  if (! $columnResize || ! $showHeader) return -1;
+  for (i = 0; i < $ncols; i++) {
+    int sep = $col_x[i] + $col_w[i];
+    int d = px - sep;
+    if (d < 0) d = -d;
+    if (d <= $resizeSlop) return i;
+  }
+  return -1;
+}
+
+@proc void set_resize_cursor($, int on)
+{
+  if (! XtIsRealized($)) return;
+  if (on && $resize_cursor)
+    XDefineCursor(XtDisplay($), XtWindow($), $resize_cursor);
+  else
+    XUndefineCursor(XtDisplay($), XtWindow($));
 }
 
 @proc int column_at($, int px)
@@ -1339,6 +1464,7 @@
 @incl <X11/IntrinsicP.h>
 @incl <X11/StringDefs.h>
 @incl <X11/Xft/Xft.h>
+@incl <X11/cursorfont.h>
 @incl <X11/Xatom.h>
 @incl <X11/Xmu/Converters.h>
 @incl <stdlib.h>
