@@ -2,7 +2,7 @@
 @ Themed horizontal toolbar with natural-width action children.
 
 @PUBLIC
-@ toolbar height; -1 uses the theme control_height metric
+@ toolbar height; -1 uses the theme toolbar_height/control_height metric
 @var int toolbarHeight = -1
 @ gap between actions
 @var int itemGap = -1
@@ -17,8 +17,11 @@
 @proc initialize
 {
     $layout_guard = 0;
-    if ($toolbarHeight < 0)
-        $toolbarHeight = theme_metric("control_height", 28);
+    if ($toolbarHeight < 0) {
+        $toolbarHeight = theme_metric("toolbar_height", -1);
+        if ($toolbarHeight < 0)
+            $toolbarHeight = theme_metric("control_height", 28);
+    }
     if ($toolbarHeight < 8) $toolbarHeight = 8;
     if ($itemGap < 0)
         $itemGap = theme_metric("control_gap", 8);

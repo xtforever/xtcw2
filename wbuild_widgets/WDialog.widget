@@ -71,7 +71,8 @@
     $shell = XtCreatePopupShell("dialog", overrideShellWidgetClass, $, NULL, 0);
     $content = XtVaCreateManagedWidget("dialog_content", gridboxWidgetClass,
                                        $shell,
-                                       "defaultDistance", 12,
+                                       "defaultDistance",
+                                       theme_metric("dialog_padding", 12),
                                        "borderWidth", 0,
                                        NULL);
 

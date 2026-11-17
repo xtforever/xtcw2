@@ -102,14 +102,18 @@
 
 @proc void progress_colors_changed($)
 {
-    $bg = theme_color_defined("input_bg") ? get_color("input_bg")
+    $bg = theme_color_defined("progress_bg") ? get_color("progress_bg")
+        : (theme_color_defined("input_bg") ? get_color("input_bg")
         : (theme_color_defined("list_bg") ? get_color("list_bg")
-        : (theme_color_defined("bg_hi") ? get_color("bg_hi") : $background_pixel));
-    $fill = theme_color_defined("accent") ? get_color("accent")
-          : (theme_color_defined("bg_sel") ? get_color("bg_sel") : $bg);
-    $border = theme_color_defined("control_border") ? get_color("control_border")
-            : (theme_color_defined("list_line") ? get_color("list_line") : $fill);
-    $fg = theme_color_defined("fg_norm") ? get_color("fg_norm") : $background_pixel;
+        : (theme_color_defined("bg_hi") ? get_color("bg_hi") : $background_pixel)));
+    $fill = theme_color_defined("progress_fill") ? get_color("progress_fill")
+          : (theme_color_defined("accent") ? get_color("accent")
+          : (theme_color_defined("bg_sel") ? get_color("bg_sel") : $bg));
+    $border = theme_color_defined("progress_border") ? get_color("progress_border")
+            : (theme_color_defined("list_line") ? get_color("list_line")
+            : (theme_color_defined("control_border") ? get_color("control_border") : $fill));
+    $fg = theme_color_defined("progress_fg") ? get_color("progress_fg")
+        : (theme_color_defined("fg_norm") ? get_color("fg_norm") : $background_pixel);
 
     XtVaSetValues($, XtNbackground, $bg, NULL);
     make_xft($);

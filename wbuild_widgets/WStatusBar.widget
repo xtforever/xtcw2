@@ -50,6 +50,8 @@
 
     if ($auto_height) {
         $barHeight = statusbar_label_height($) + 2 * $barPadding + 4;
+        int min_h = theme_metric("status_height", 32);
+        if ($barHeight < min_h) $barHeight = min_h;
         if ($barHeight < 32) $barHeight = 32;
         if (auto_widget_height) $height = (Dimension)$barHeight;
     }

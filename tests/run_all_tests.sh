@@ -65,6 +65,9 @@ echo "9c3. test_cookbook_widgets (WAppWindow + menu integration)"
 echo "9c4. test_docs_consistency (registry vs. widget sources)"
 "$ROOT/tests/test_docs_consistency.sh"
 
+echo "9c4b. test_theme_roles (surface roles in every shipped theme)"
+"$ROOT/tests/test_theme_roles.sh"
+
 echo "9c5. test_dialogs (gui.alert/confirm/prompt helpers)"
 "$ROOT/tests/test_dialogs.sh"
 

@@ -8,8 +8,8 @@
 @var int selected = -1
 @ row height; -1 uses theme control_height
 @var int itemHeight = -1
-@ pixels per tree level
-@var int indent = 18
+@ pixels per tree level; -1 uses the theme tree_indent metric
+@var int indent = -1
 @ number of currently visible nodes
 @var int visibleCount = 0
 @ first visible row (scroll offset)
@@ -48,9 +48,15 @@
     $visible_nodes = calloc(16, sizeof(int));
     $expanded_cap = 16;
     $visible_cap = 16;
-    if ($itemHeight < 0)
-        $itemHeight = theme_metric("control_height", 24);
+    if ($itemHeight < 0) {
+        $itemHeight = theme_metric("tree_row_height", -1);
+        if ($itemHeight < 0)
+            $itemHeight = theme_metric("control_height", 24);
+    }
     if ($itemHeight < 18) $itemHeight = 18;
+    if ($indent < 0)
+        $indent = theme_metric("tree_indent", 18);
+    if ($indent < 4) $indent = 4;
     XtVaSetValues($, XtNborderWidth, 0, NULL);
     theme_register($, tree_colors_changed);
     tree_colors_changed($);
@@ -453,13 +459,17 @@
 
 @proc void tree_colors_changed($)
 {
-    $bg = theme_color_defined("bg_norm") ? get_color("bg_norm")
-        : (theme_color_defined("gridbox_bg") ? get_color("gridbox_bg") : $background_pixel);
-    $fg = theme_color_defined("fg_norm") ? get_color("fg_norm") : $background_pixel;
-    $sel_bg = theme_color_defined("bg_sel") ? get_color("bg_sel")
-            : (theme_color_defined("accent") ? get_color("accent") : $bg);
-    $border = theme_color_defined("list_line") ? get_color("list_line")
-            : (theme_color_defined("control_border") ? get_color("control_border") : $fg);
+    $bg = theme_color_defined("tree_bg") ? get_color("tree_bg")
+        : (theme_color_defined("bg_norm") ? get_color("bg_norm")
+        : (theme_color_defined("gridbox_bg") ? get_color("gridbox_bg") : $background_pixel));
+    $fg = theme_color_defined("tree_fg") ? get_color("tree_fg")
+        : (theme_color_defined("fg_norm") ? get_color("fg_norm") : $background_pixel);
+    $sel_bg = theme_color_defined("tree_sel_bg") ? get_color("tree_sel_bg")
+            : (theme_color_defined("bg_sel") ? get_color("bg_sel")
+            : (theme_color_defined("accent") ? get_color("accent") : $bg));
+    $border = theme_color_defined("tree_line") ? get_color("tree_line")
+            : (theme_color_defined("list_line") ? get_color("list_line")
+            : (theme_color_defined("control_border") ? get_color("control_border") : $fg));
     $focus_ring = theme_color_defined("accent") ? get_color("accent") : $fg;
     XtVaSetValues($, XtNbackground, $bg, NULL);
     make_xft($);

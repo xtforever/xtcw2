@@ -336,12 +336,17 @@ style-guide roles, keyboard handling and tests.
 
 These are part of the set even when they are not separate widgets:
 
-1. **Theme roles for new surfaces** — add to every theme:
-   `menu_bg/menu_fg/menu_sel`, `toolbar_bg/toolbar_fg`, `status_bg/status_fg`,
-   `tooltip_bg/tooltip_fg`, `table_*`, `tree_*`, `progress_*`, `dialog_*`,
-   `scrollbar_thumb` (already added).
+1. **Theme roles for new surfaces** — now present in every shipped theme:
+   `menu_bg/menu_fg/menu_sel/menu_border`, `toolbar_bg/toolbar_fg/toolbar_border`,
+   `status_bg/status_fg/status_border`, `tooltip_bg/tooltip_fg/tooltip_border`,
+   `table_*`, `tree_*`, `progress_*`, `dialog_bg/dialog_border`,
+   `scrollbar_thumb`. `WMenuBar`/`WPopupMenu`, `WToolBar`, `WStatusBar`,
+   `WToolTip`, `WListView`, `WTreeView`, `WProgressBar` and `WDialog` resolve
+   these roles with fallbacks to the older `list_*`/`bg_*` keys.
 2. **Metrics** — `menu_height`, `toolbar_height`, `status_height`,
-   `dialog_padding`, `table_row_height`, `tree_indent`, `progress_height`.
+   `dialog_padding`, `table_row_height`, `table_header_height`,
+   `tree_indent`, `tree_row_height`, `progress_height`; all shipped themes
+   define them and the widgets fall back to `control_height`/`list_*` metrics.
 3. **Model/view** — one `WModel` contract for lists, tables, trees, combos;
    virtualized rendering; O(1) row access; no per-cell widgets.
 4. **Delegates** — default text/icon/number/progress delegates; Lua custom draw

@@ -65,6 +65,47 @@
     list_cell_pad_y 2
     icon_size      16
     bar_size       14
+    ; --- widget surface roles ---
+    menu_bg          0xd7e8f4
+    menu_fg          0x102030
+    menu_sel         0x2f6fd0
+    menu_border      0xc8d8e4
+    toolbar_bg       0xd7e8f4
+    toolbar_fg       0x102030
+    toolbar_border   0xc8d8e4
+    status_bg        0xd7e8f4
+    status_fg        0x000000
+    status_border    0xc8d8e4
+    tooltip_bg       0xd7e8f4
+    tooltip_fg       0x000000
+    tooltip_border   0xc8d8e4
+    table_bg         0xf7fbfe
+    table_fg         0x102030
+    table_sel_bg     0x2f6fd0
+    table_sel_fg     0xffffff
+    table_header_bg  0xd7e8f4
+    table_header_fg  0x102030
+    table_alt_bg     0xeef6fb
+    table_line       0xc8d8e4
+    tree_bg          0xf7fbfe
+    tree_fg          0x102030
+    tree_sel_bg      0x2f6fd0
+    tree_line        0xc8d8e4
+    progress_bg      0xffffff
+    progress_fill    0x2f6fd0
+    progress_border  0xc8d8e4
+    progress_fg      0x000000
+    dialog_bg        0xf7fbfe
+    dialog_border    0xc8d8e4
+    menu_height      24
+    toolbar_height   24
+    status_height    24
+    dialog_padding   12
+    table_row_height 22
+    table_header_height 24
+    tree_indent      18
+    tree_row_height  24
+    progress_height  16
 ))
 
 (theme highcontrast (
@@ -120,6 +161,47 @@
     list_cell_pad_y 2
     icon_size      16
     bar_size       14
+    ; --- widget surface roles ---
+    menu_bg          0xffffff
+    menu_fg          0x000000
+    menu_sel         0x000000
+    menu_border      0x000000
+    toolbar_bg       0xffffff
+    toolbar_fg       0x000000
+    toolbar_border   0x000000
+    status_bg        0xffffff
+    status_fg        0x000000
+    status_border    0x000000
+    tooltip_bg       0xffffff
+    tooltip_fg       0x000000
+    tooltip_border   0x000000
+    table_bg         0xffffff
+    table_fg         0x000000
+    table_sel_bg     0x000000
+    table_sel_fg     0xffffff
+    table_header_bg  0xffffff
+    table_header_fg  0x000000
+    table_alt_bg     0xf0f0f0
+    table_line       0x000000
+    tree_bg          0xffffff
+    tree_fg          0x000000
+    tree_sel_bg      0x000000
+    tree_line        0x000000
+    progress_bg      0xffffff
+    progress_fill    0x000000
+    progress_border  0x000000
+    progress_fg      0x000000
+    dialog_bg        0xffffff
+    dialog_border    0x000000
+    menu_height      24
+    toolbar_height   24
+    status_height    24
+    dialog_padding   12
+    table_row_height 22
+    table_header_height 24
+    tree_indent      18
+    tree_row_height  24
+    progress_height  16
 ))
 
 (theme test (
@@ -175,6 +257,47 @@
     list_cell_pad_y 2
     icon_size      16
     bar_size       14
+    ; --- widget surface roles ---
+    menu_bg          0xd7e8f4
+    menu_fg          0x102030
+    menu_sel         0xff0000
+    menu_border      0xc8d8e4
+    toolbar_bg       0xd7e8f4
+    toolbar_fg       0x102030
+    toolbar_border   0xc8d8e4
+    status_bg        0xd7e8f4
+    status_fg        0x000000
+    status_border    0xc8d8e4
+    tooltip_bg       0xd7e8f4
+    tooltip_fg       0x000000
+    tooltip_border   0xc8d8e4
+    table_bg         0xf7fbfe
+    table_fg         0x102030
+    table_sel_bg     0xff0000
+    table_sel_fg     0xffffff
+    table_header_bg  0xd7e8f4
+    table_header_fg  0x102030
+    table_alt_bg     0xeef6fb
+    table_line       0xc8d8e4
+    tree_bg          0xf7fbfe
+    tree_fg          0x102030
+    tree_sel_bg      0xff0000
+    tree_line        0xc8d8e4
+    progress_bg      0xffffff
+    progress_fill    0xff0000
+    progress_border  0xc8d8e4
+    progress_fg      0x000000
+    dialog_bg        0xf7fbfe
+    dialog_border    0xc8d8e4
+    menu_height      24
+    toolbar_height   24
+    status_height    24
+    dialog_padding   12
+    table_row_height 22
+    table_header_height 24
+    tree_indent      18
+    tree_row_height  24
+    progress_height  16
 ))
 
 ; ---- commonly used themes (official palettes) --------------------------
@@ -232,6 +355,47 @@
     list_cell_pad_y 2
     icon_size      16
     bar_size       14
+    ; --- widget surface roles ---
+    menu_bg          0x1e1f29
+    menu_fg          0xbd93f9
+    menu_sel         0xbd93f9
+    menu_border      0x44475a
+    toolbar_bg       0x1e1f29
+    toolbar_fg       0xf8f8f2
+    toolbar_border   0x44475a
+    status_bg        0x1e1f29
+    status_fg        0xf8f8f2
+    status_border    0x44475a
+    tooltip_bg       0x1e1f29
+    tooltip_fg       0xf8f8f2
+    tooltip_border   0x44475a
+    table_bg         0x282a36
+    table_fg         0xf8f8f2
+    table_sel_bg     0x44475a
+    table_sel_fg     0xf8f8f2
+    table_header_bg  0x1e1f29
+    table_header_fg  0xbd93f9
+    table_alt_bg     0x2f313e
+    table_line       0x44475a
+    tree_bg          0x282a36
+    tree_fg          0xf8f8f2
+    tree_sel_bg      0x44475a
+    tree_line        0x44475a
+    progress_bg      0x1e1f29
+    progress_fill    0xbd93f9
+    progress_border  0x44475a
+    progress_fg      0xf8f8f2
+    dialog_bg        0x282a36
+    dialog_border    0x44475a
+    menu_height      24
+    toolbar_height   24
+    status_height    24
+    dialog_padding   12
+    table_row_height 22
+    table_header_height 24
+    tree_indent      18
+    tree_row_height  24
+    progress_height  16
 ))
 
 ; Solarized Dark - https://ethanschoonover.com/solarized  (Ethan Schoonover)
@@ -288,4 +452,45 @@
     list_cell_pad_y 2
     icon_size      16
     bar_size       14
+    ; --- widget surface roles ---
+    menu_bg          0x073642
+    menu_fg          0x268bd2
+    menu_sel         0x268bd2
+    menu_border      0x586e75
+    toolbar_bg       0x073642
+    toolbar_fg       0x93a1a1
+    toolbar_border   0x586e75
+    status_bg        0x073642
+    status_fg        0x839496
+    status_border    0x586e75
+    tooltip_bg       0x073642
+    tooltip_fg       0x839496
+    tooltip_border   0x586e75
+    table_bg         0x002b36
+    table_fg         0x839496
+    table_sel_bg     0x073642
+    table_sel_fg     0x93a1a1
+    table_header_bg  0x073642
+    table_header_fg  0x268bd2
+    table_alt_bg     0x073642
+    table_line       0x586e75
+    tree_bg          0x002b36
+    tree_fg          0x839496
+    tree_sel_bg      0x073642
+    tree_line        0x586e75
+    progress_bg      0x002b36
+    progress_fill    0x268bd2
+    progress_border  0x586e75
+    progress_fg      0x839496
+    dialog_bg        0x002b36
+    dialog_border    0x586e75
+    menu_height      24
+    toolbar_height   24
+    status_height    24
+    dialog_padding   12
+    table_row_height 22
+    table_header_height 24
+    tree_indent      18
+    tree_row_height  24
+    progress_height  16
 ))

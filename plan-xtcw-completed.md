@@ -61,7 +61,7 @@ items have since landed; this snapshot is the current source of truth.
 | Keyboard/focus | `WRadioGroup`/`WComboBox` now acquire focus and handle selection keys; `WDialog` focuses its input/OK and handles Return/Escape. Full Tab trap/focus restore and `WAction.shortcut` wiring remain. | those widgets |
 | Dialogs | `gui.alert`/`confirm`/`prompt` use `WDialog` (messageType/details/checkbox/input row); initial focus and the default Return button landed, full Tab trap/focus restore remain. | `lui/gui_xt.lua`, `WDialog.widget` |
 | Table UX | Header click does not sort/toggle an indicator; no cell editing; sort is destructive and has no original-order restore. | `WListView.widget` |
-| Theme | No dedicated `menu_*`, `toolbar_*`, `status_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*` roles/metrics. | `themes.hdf`, `cookbook/themes/cookbook.hdf` |
+| Theme | Surface roles/metrics (`menu_*`, `toolbar_*`, `status_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*`) are defined in every shipped theme and consumed by the widgets; screenshot baselines for each theme remain. | `themes.hdf`, `cookbook/themes/cookbook.hdf`, `tests/test_theme_roles.sh` |
 | Host | `commander_runner` still hardcodes `../lui/?.lua` and relative theme paths; LUI load errors are printed but do not fail the process. | `commander/commander_runner.c` |
 | Parser | LUI number grammar has no leading sign. | `lui/parser.lua` |
 | QA | No screenshot baselines; keyboard/persistence/search paths are only partly covered. | `tests/` |
@@ -70,7 +70,7 @@ items have since landed; this snapshot is the current source of truth.
 
 1. ~~`WTreeView` scrolling + focus/keyboard~~ (landed 2026-11-17); lazy children/virtualization remain.
 2. ~~Focus/keyboard for `WRadioGroup`/`WComboBox`; dialog default button and initial focus~~ (landed 2026-11-17); full Tab trap/focus restore remain.
-3. Theme roles/metrics across all themes (`menu_*`, `toolbar_*`, `dialog_*`, `tooltip_*`, `tree_*`, `table_*`, `progress_*`).
+3. ~~Theme roles/metrics across all themes~~ (landed 2026-11-17); per-theme screenshot baselines remain.
 4. Header sort indicator + cell editing for `table-view`.
 5. `WPlainTextEdit`, `WIconButton`, `WSearchField`.
 6. Host location independence and LUI error propagation.
