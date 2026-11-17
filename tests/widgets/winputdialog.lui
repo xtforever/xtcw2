@@ -1,0 +1,4 @@
+(WDialog :id "idlg" :title "Rename recipe" :message "New name:"
+         :inputKind 1 :inputValue "Spaghetti Carbonara"
+         :inputPlaceholder "Recipe name"
+         :showCancel TRUE :okLabel "Rename" :cancelLabel "Cancel")

@@ -2193,3 +2193,34 @@ entry or mask it out on lookup.
 
 **Files:** `utils/mls.c` (`_get_list`, `m_free_simple`), `utils/theme.c`
 (`theme_unregister`), `tests/test_wtooltip.c`
+
+## Wedit destroy crashed when the draw context was never created
+
+**Symptom:** destroying a dialog that contains a `WLineEdit`/`Wedit` field
+(e.g. the new `gui.prompt` helper) aborted with a SIGSEGV inside
+`XftDrawDestroy`.
+
+**Cause:** `Wedit.destroy` called `XftDrawDestroy($draw)` unconditionally.
+`$draw` is only created on the first expose; a dialog destroyed before the
+field was exposed (or after the popup was popped down) passed NULL/garbage.
+
+**Fix:** guard the call with `if ($draw) { XftDrawDestroy($draw); $draw = NULL; }`.
+
+**Files:** `wbuild_widgets/Wedit.widget`
+
+## WComboBox choice teardown trips the MLS post-mortem check
+
+**Symptom:** after a `WDialog` with `inputKind 4` (choice) is destroyed, the
+debug post-mortem reports `_mls` in `WComboBox.update_label()` on the dialog's
+`inputItems` handle. Exit status stays 0.
+
+**Cause:** same MLS UAF-protection fragility as the entry above; the combo
+keeps a raw MLS handle in its `items` resource while the dialog owns/frees the
+list. The dialog now destroys the field before freeing the list, but the
+post-mortem can still flag the handle during the final widget-tree teardown.
+
+**Status:** known debug-only noise; the functional dialog tests pass. A robust
+fix is to give WComboBox ownership of its items or copy them into the widget.
+
+**Files:** `wbuild_widgets/WComboBox.widget`, `wbuild_widgets/WDialog.widget`,
+`tests/test_wdialog.c`

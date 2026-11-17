@@ -1,5 +1,5 @@
 @class WDialog (Composite)
-@ Themed modal dialog shell with title, message and OK/Cancel actions.
+@ Themed modal dialog shell with title, message, optional details/checkbox and OK/Cancel.
 
 @PUBLIC
 @var String title = <String> "Dialog"
@@ -11,6 +11,24 @@
 @var Boolean open = False
 @ last result: 1 = OK, 0 = Cancel (readable from Lua after the callback)
 @var int result = 0
+@ message kind: 0 = plain, 1 = info, 2 = warning, 3 = error, 4 = question
+@var int messageType = 0
+@ optional icon filename (SVG); empty = theme icon for messageType
+@var String icon = <String> ""
+@ optional details text shown below the message
+@var String details = <String> ""
+@ optional checkbox row (empty label = hidden)
+@var String checkboxLabel = <String> ""
+@var Boolean checkboxChecked = False
+@ input row: 0 = none, 1 = text, 2 = int, 3 = double (text), 4 = choice
+@var int inputKind = 0
+@ current/initial input value as text
+@var String inputValue = <String> ""
+@var String inputPlaceholder = <String> ""
+@ newline-separated choices for inputKind 4
+@var String inputItems = <String> ""
+@var int inputMin = 0
+@var int inputMax = 1000
 @var <Callback> XtCallbackList callback = NULL
 
 @PRIVATE
@@ -18,9 +36,16 @@
 @var Widget content
 @var Widget title_label
 @var Widget message_label
+@var Widget details_label
+@var Widget icon_label
+@var Widget field_box
+@var Widget field
+@var Widget checkbox
 @var Widget ok_button
 @var Widget cancel_button
 @var int creating_internal
+@var char *inputValue_mem
+@var int items_mls
 
 @METHODS
 
@@ -30,10 +55,18 @@
     $content = NULL;
     $title_label = NULL;
     $message_label = NULL;
+    $details_label = NULL;
+    $icon_label = NULL;
+    $field_box = NULL;
+    $field = NULL;
+    $checkbox = NULL;
     $ok_button = NULL;
     $cancel_button = NULL;
     $result = 0;
     $creating_internal = 1;
+    $items_mls = 0;
+    $inputValue_mem = strdup($inputValue ? $inputValue : "");
+    $inputValue = $inputValue_mem;
 
     $shell = XtCreatePopupShell("dialog", overrideShellWidgetClass, $, NULL, 0);
     $content = XtVaCreateManagedWidget("dialog_content", gridboxWidgetClass,
@@ -45,28 +78,50 @@
     $title_label = XtVaCreateManagedWidget("dialog_title", wlabelWidgetClass,
                                            $content,
                                            "label", $title ? $title : "",
-                                           "gridx", 0, "gridy", 0, "gridWidth", 2,
+                                           "gridx", 1, "gridy", 0, "gridWidth", 2,
                                            "weightx", 1, "weighty", 0, "fill", 3,
                                            "fontSize", 16,
                                            NULL);
     $message_label = XtVaCreateManagedWidget("dialog_message", wlabelWidgetClass,
                                              $content,
                                              "label", $message ? $message : "",
-                                             "gridx", 0, "gridy", 1, "gridWidth", 2,
+                                             "gridx", 1, "gridy", 1, "gridWidth", 2,
                                              "weightx", 1, "weighty", 1, "fill", 3,
                                              "alignment", 0,
                                              NULL);
+    $details_label = XtVaCreateWidget("dialog_details", wlabelWidgetClass,
+                                      $content,
+                                      "label", $details ? $details : "",
+                                      "gridx", 1, "gridy", 2, "gridWidth", 2,
+                                      "weightx", 1, "weighty", 0, "fill", 3,
+                                      "fontSize", 12,
+                                      "alignment", 0,
+                                      NULL);
+    $field_box = XtVaCreateWidget("dialog_field_box", gridboxWidgetClass,
+                                  $content,
+                                  "defaultDistance", 6,
+                                  "borderWidth", 0,
+                                  "gridx", 1, "gridy", 3, "gridWidth", 2,
+                                  "weightx", 1, "weighty", 0, "fill", 3,
+                                  NULL);
+    $checkbox = XtVaCreateWidget("dialog_checkbox", wcheckboxWidgetClass,
+                                 $content,
+                                 "label", $checkboxLabel ? $checkboxLabel : "",
+                                 "checked", $checkboxChecked,
+                                 "gridx", 1, "gridy", 4, "gridWidth", 2,
+                                 "weightx", 1, "weighty", 0, "fill", 3,
+                                 NULL);
     $ok_button = XtVaCreateManagedWidget("dialog_ok", wbuttonWidgetClass,
                                          $content,
                                          "label", $okLabel ? $okLabel : "OK",
-                                         "gridx", 0, "gridy", 2,
+                                         "gridx", 1, "gridy", 5,
                                          "weightx", 1, "weighty", 0, "fill", 3,
                                          "primary", True,
                                          NULL);
     $cancel_button = XtVaCreateManagedWidget("dialog_cancel", wbuttonWidgetClass,
                                              $content,
                                              "label", $cancelLabel ? $cancelLabel : "Cancel",
-                                             "gridx", 1, "gridy", 2,
+                                             "gridx", 2, "gridy", 5,
                                              "weightx", 1, "weighty", 0, "fill", 3,
                                              NULL);
     XtAddCallback($ok_button, "callback", (XtCallbackProc) ok_cb, $);
@@ -74,6 +129,10 @@
     if (! $showCancel) XtUnmanageChild($cancel_button);
 
     $creating_internal = 0;
+    dialog_sync_icon($);
+    dialog_sync_details($);
+    dialog_sync_checkbox($);
+    dialog_sync_input($);
     theme_register($, dialog_colors_changed);
     dialog_colors_changed($);
 }
@@ -81,10 +140,24 @@
 @proc destroy
 {
     theme_unregister($);
+    /* Destroy the input field before freeing its choice strings; Xt destroys
+     * children after this method runs. */
+    if ($field) { XtDestroyWidget($field); $field = NULL; }
+    if ($items_mls) {
+        m_free_strings($items_mls, 0);
+        $items_mls = 0;
+    }
+    free($inputValue_mem);
+    $inputValue_mem = NULL;
     $shell = NULL;
     $content = NULL;
     $title_label = NULL;
     $message_label = NULL;
+    $details_label = NULL;
+    $icon_label = NULL;
+    $field_box = NULL;
+    $field = NULL;
+    $checkbox = NULL;
     $ok_button = NULL;
     $cancel_button = NULL;
 }
@@ -103,6 +176,26 @@
         if ($showCancel) XtManageChild($cancel_button);
         else XtUnmanageChild($cancel_button);
     }
+
+    if ($icon != $old$icon || $messageType != $old$messageType)
+        dialog_sync_icon($);
+    if ($details != $old$details)
+        dialog_sync_details($);
+    if ($checkboxLabel != $old$checkboxLabel || $checkboxChecked != $old$checkboxChecked)
+        dialog_sync_checkbox($);
+    if ($inputKind != $old$inputKind || $inputItems != $old$inputItems ||
+        $inputPlaceholder != $old$inputPlaceholder || $inputMin != $old$inputMin ||
+        $inputMax != $old$inputMax)
+        dialog_sync_input($);
+    if ($inputValue != $old$inputValue) {
+        if ($inputValue != $inputValue_mem) {
+            free($inputValue_mem);
+            $inputValue_mem = strdup($inputValue ? $inputValue : "");
+            $inputValue = $inputValue_mem;
+        }
+        dialog_set_input_value($);
+    }
+
     if ($open != $old$open) {
         if ($open) dialog_open($);
         else dialog_close($);
@@ -126,6 +219,7 @@
 
 @proc ok
 {
+    dialog_read_input($);
     ok_cb($ok_button, $, NULL);
 }
 
@@ -138,10 +232,12 @@
 
 @proc void dialog_colors_changed($)
 {
-    Pixel bg = theme_color_defined("list_header_bg") ? get_color("list_header_bg")
-             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0);
-    Pixel border = theme_color_defined("list_line") ? get_color("list_line")
-                 : (theme_color_defined("control_border") ? get_color("control_border") : bg);
+    Pixel bg = theme_color_defined("dialog_bg") ? get_color("dialog_bg")
+             : (theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0));
+    Pixel border = theme_color_defined("dialog_border") ? get_color("dialog_border")
+                 : (theme_color_defined("list_line") ? get_color("list_line")
+                 : (theme_color_defined("control_border") ? get_color("control_border") : bg));
     if ($shell && bg) {
         XtVaSetValues($shell, XtNbackground, bg,
                       XtNborderWidth, 1,
@@ -149,6 +245,164 @@
                       NULL);
     }
     if ($content && bg) XtVaSetValues($content, XtNbackground, bg, NULL);
+    if ($field_box && bg) XtVaSetValues($field_box, XtNbackground, bg, NULL);
+}
+
+@proc void dialog_sync_icon($)
+{
+    const char *name = $icon ? $icon : "";
+    if (! name[0] && $messageType > 0) {
+        /* Optional theme-provided icons; no hard-coded asset paths. */
+        static const char *keys[] = { "", "dialog_icon_info", "dialog_icon_warning",
+                                      "dialog_icon_error", "dialog_icon_question" };
+        int t = $messageType;
+        if (t >= 1 && t <= 4 && theme_str_defined(keys[t]))
+            name = theme_get_str(keys[t]);
+    }
+    if (! name || ! name[0]) {
+        if ($icon_label) XtUnmanageChild($icon_label);
+        return;
+    }
+    if (! $icon_label) {
+        /* IconSVG aborts on an empty filename, so create it only when used. */
+        $icon_label = XtVaCreateManagedWidget("dialog_icon", iconSVGWidgetClass,
+                                              $content,
+                                              "filename", name,
+                                              "gridx", 0, "gridy", 0, "gridHeight", 3,
+                                              "weightx", 0, "weighty", 0, "fill", 0,
+                                              NULL);
+    } else {
+        XtVaSetValues($icon_label, "filename", name, NULL);
+        XtManageChild($icon_label);
+    }
+}
+
+@proc void dialog_sync_details($)
+{
+    if (! $details_label) return;
+    XtVaSetValues($details_label, XtNlabel, $details ? $details : "", NULL);
+    if ($details && $details[0]) XtManageChild($details_label);
+    else XtUnmanageChild($details_label);
+}
+
+@proc void dialog_sync_checkbox($)
+{
+    if (! $checkbox) return;
+    XtVaSetValues($checkbox,
+                  XtNlabel, $checkboxLabel ? $checkboxLabel : "",
+                  "checked", $checkboxChecked,
+                  NULL);
+    if ($checkboxLabel && $checkboxLabel[0]) XtManageChild($checkbox);
+    else XtUnmanageChild($checkbox);
+}
+
+@proc void dialog_sync_input($)
+{
+    if (! $field_box) return;
+
+    if ($inputKind == 0) {
+        if ($field) XtUnmanageChild($field);
+        XtUnmanageChild($field_box);
+        return;
+    }
+
+    /* Rebuild the field when the kind changes (or on first use). */
+    if ($field) {
+        XtDestroyWidget($field);
+        $field = NULL;
+    }
+
+    if ($inputKind == 1 || $inputKind == 3) {
+        $field = XtVaCreateManagedWidget("dialog_input", wLineEditWidgetClass,
+                                         $field_box,
+                                         "label", $inputValue ? $inputValue : "",
+                                         "placeholder", $inputPlaceholder ? $inputPlaceholder : "",
+                                         "gridx", 0, "gridy", 0,
+                                         "weightx", 1, "weighty", 0, "fill", 3,
+                                         NULL);
+    } else if ($inputKind == 2) {
+        $field = XtVaCreateManagedWidget("dialog_input", wspinBoxWidgetClass,
+                                         $field_box,
+                                         "value", atoi($inputValue ? $inputValue : "0"),
+                                         "min", $inputMin,
+                                         "max", $inputMax,
+                                         "gridx", 0, "gridy", 0,
+                                         "weightx", 1, "weighty", 0, "fill", 3,
+                                         NULL);
+    } else if ($inputKind == 4) {
+        if ($items_mls) {
+            m_free_strings($items_mls, 0);
+            $items_mls = 0;
+        }
+        $items_mls = m_create(8, sizeof(char *));
+        const char *p = $inputItems ? $inputItems : "";
+        while (*p) {
+            const char *e = strchr(p, '\n');
+            size_t len = e ? (size_t)(e - p) : strlen(p);
+            char *s = (char *)malloc(len + 1);
+            if (s) {
+                memcpy(s, p, len);
+                s[len] = 0;
+                m_put($items_mls, &s);
+            }
+            if (! e) break;
+            p = e + 1;
+        }
+        $field = XtVaCreateManagedWidget("dialog_input", wComboBoxWidgetClass,
+                                         $field_box,
+                                         "items", $items_mls,
+                                         "selected", -1,
+                                         "placeholder", $inputPlaceholder ? $inputPlaceholder : "Select...",
+                                         "gridx", 0, "gridy", 0,
+                                         "weightx", 1, "weighty", 0, "fill", 3,
+                                         NULL);
+        dialog_set_input_value($);
+    }
+
+    XtManageChild($field_box);
+}
+
+@proc void dialog_set_input_value($)
+{
+    if (! $field) return;
+    if ($inputKind == 1 || $inputKind == 3) {
+        XtVaSetValues($field, XtNlabel, $inputValue ? $inputValue : "", NULL);
+    } else if ($inputKind == 2) {
+        XtVaSetValues($field, "value", atoi($inputValue ? $inputValue : "0"), NULL);
+    } else if ($inputKind == 4) {
+        int idx = -1;
+        for (int i = 0; i < m_len($items_mls); i++) {
+            const char *s = STR($items_mls, i);
+            if (s && $inputValue && strcmp(s, $inputValue) == 0) { idx = i; break; }
+        }
+        XtVaSetValues($field, "selected", idx, NULL);
+        XtCallActionProc($field, "refresh", NULL, NULL, 0);
+    }
+}
+
+@proc void dialog_read_input($)
+{
+    if (! $field || $inputKind == 0) return;
+
+    char buf[512];
+    buf[0] = 0;
+    if ($inputKind == 1 || $inputKind == 3) {
+        char *s = NULL;
+        XtVaGetValues($field, XtNlabel, &s, NULL);
+        snprintf(buf, sizeof buf, "%s", s ? s : "");
+    } else if ($inputKind == 2) {
+        int v = 0;
+        XtVaGetValues($field, "value", &v, NULL);
+        snprintf(buf, sizeof buf, "%d", v);
+    } else if ($inputKind == 4) {
+        char *s = NULL;
+        XtVaGetValues($field, XtNlabel, &s, NULL);
+        snprintf(buf, sizeof buf, "%s", s ? s : "");
+    }
+
+    free($inputValue_mem);
+    $inputValue_mem = strdup(buf);
+    $inputValue = $inputValue_mem;
 }
 
 @proc void dialog_open($)
@@ -156,15 +410,22 @@
     if (! $shell || ! $content) return;
     if ($open) return;
 
+    dialog_sync_icon($);
+    dialog_sync_details($);
+    dialog_sync_checkbox($);
+    dialog_sync_input($);
+
     XtRealizeWidget($shell);
     dialog_colors_changed($);
-    Pixel bg = theme_color_defined("list_header_bg") ? get_color("list_header_bg")
-             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0);
+    Pixel bg = theme_color_defined("dialog_bg") ? get_color("dialog_bg")
+             : (theme_color_defined("list_header_bg") ? get_color("list_header_bg")
+             : (theme_color_defined("bg_norm") ? get_color("bg_norm") : 0));
     if (bg) {
         Display *dpy = XtDisplay($);
         Window win = XtWindow($shell);
-        Pixel border = theme_color_defined("list_line") ? get_color("list_line")
-                     : (theme_color_defined("control_border") ? get_color("control_border") : bg);
+        Pixel border = theme_color_defined("dialog_border") ? get_color("dialog_border")
+                     : (theme_color_defined("list_line") ? get_color("list_line")
+                     : (theme_color_defined("control_border") ? get_color("control_border") : bg));
         XSetWindowBackground(dpy, win, bg);
         XSetWindowBorder(dpy, win, border);
         XSetWindowBorderWidth(dpy, win, 1);
@@ -211,6 +472,7 @@
 @proc ok_cb(Widget w, $, void *data)
 {
     (void)w; (void)data;
+    dialog_read_input($);
     $result = 1;
     dialog_close($);
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)1);
@@ -237,11 +499,19 @@
 
 @IMPORTS
 @incl <string.h>
+@incl <stdlib.h>
 @incl <stdint.h>
+@incl <stdio.h>
 @incl <X11/Shell.h>
 @incl <X11/StringDefs.h>
 @incl <X11/Intrinsic.h>
 @incl "theme.h"
+@incl "mls.h"
 @incl "xtcw/Gridbox.h"
 @incl "xtcw/Wlabel.h"
 @incl "xtcw/Wbutton.h"
+@incl "xtcw/Wcheckbox.h"
+@incl "xtcw/WLineEdit.h"
+@incl "xtcw/WspinBox.h"
+@incl "xtcw/WComboBox.h"
+@incl "xtcw/IconSVG.h"

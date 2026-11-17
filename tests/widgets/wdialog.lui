@@ -1,2 +1,4 @@
 (WDialog :id "dlg" :title "Delete recipe?" :message "This cannot be undone."
+         :messageType 2 :details "The photo and ingredients are removed too."
+         :checkboxLabel "Also remove the photo" :checkboxChecked TRUE
          :showCancel TRUE :okLabel "Delete" :cancelLabel "Cancel")

@@ -93,7 +93,9 @@
 {
         theme_unregister($);
         free_colors($);
-        XftDrawDestroy( $draw );
+        /* The draw context only exists after the first expose; a dialog that
+         * is destroyed before it was realized must not crash here. */
+        if( $draw ) { XftDrawDestroy( $draw ); $draw = NULL; }
         m_free($glyph_m);
         m_free($str_m);
         m_free($glyph_xoff_m);

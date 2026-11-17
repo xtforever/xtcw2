@@ -238,6 +238,13 @@ check_log dialog
 check_value dialog "$TMP/dialog.result" probe_class WDialog
 check_value dialog "$TMP/dialog.result" probe_id dlg
 
+# 2p2. WDialog input-row probe.
+probe inputdialog "$TMP/inputdialog.result" "$ROOT/tests/widgets/winputdialog.lui"
+check_rc inputdialog
+check_log inputdialog
+check_value inputdialog "$TMP/inputdialog.result" probe_class WDialog
+check_value inputdialog "$TMP/inputdialog.result" probe_id idlg
+
 # 2q. WTreeView probe.
 probe treeview "$TMP/treeview.result" "$ROOT/tests/widgets/wtreeview.lui"
 check_rc treeview

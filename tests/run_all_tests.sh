@@ -65,6 +65,9 @@ echo "9c3. test_cookbook_widgets (WAppWindow + menu integration)"
 echo "9c4. test_docs_consistency (registry vs. widget sources)"
 "$ROOT/tests/test_docs_consistency.sh"
 
+echo "9c5. test_dialogs (gui.alert/confirm/prompt helpers)"
+"$ROOT/tests/test_dialogs.sh"
+
 echo "9d. test_wretex (realize/expose regression)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wretex"
 
@@ -138,6 +141,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wformlayout"
 
 echo "19k. test_wtooltip (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wtooltip"
+
+echo "19l. test_wdialog (headless Xvfb)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wdialog"
 
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"

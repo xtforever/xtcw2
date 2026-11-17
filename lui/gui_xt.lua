@@ -29,6 +29,7 @@ end
 
 function M.get(id, prop)
     local w = backend.get_widget(id)
+    if not w then return nil end
     if w then
         local mapped_prop = prop
         if prop == 'spinValue' then mapped_prop = 'value'
@@ -244,44 +245,107 @@ function M.modal_loop(check_fn)
     end
 end
 
-function M.alert(msg)
-    local running = true
-    _G._alert_close = function() running = false end
-    local win = backend.build({'window', ':title', 'Alert', ':width', 300, ':height', 150,
-        {'grid', {'label', ':label', msg, ':gridx', 0, ':gridy', 0, ':width', 280, ':height', 100},
-                 {'button', ':label', 'OK', ':gridx', 0, ':gridy', 1, ':callback', 'LUA(_alert_close)'}}})
-    xtmanage(win)
-    M.modal_loop(function() return running end)
-    xtunmanage(win)
+-- Dialogs ---------------------------------------------------------------
+-- alert/confirm/prompt build a themed WDialog instead of raw legacy windows.
+local dialog_seq = 0
+
+local function build_dialog(opts)
+    dialog_seq = dialog_seq + 1
+    local id = 'xtcw_dialog_' .. dialog_seq
+    local function kw(name) return { keyword = name } end
+    local node = {
+        'WDialog', kw(':id'), id,
+        kw(':title'), opts.title or 'Dialog',
+        kw(':message'), opts.message or '',
+        kw(':okLabel'), opts.ok_label or 'OK',
+        kw(':cancelLabel'), opts.cancel_label or 'Cancel',
+        kw(':showCancel'), opts.show_cancel ~= false,
+    }
+    local function prop(key, value)
+        if value == nil then return end
+        node[#node + 1] = kw(key)
+        node[#node + 1] = value
+    end
+    prop(':messageType', opts.message_type)
+    prop(':icon', opts.icon)
+    prop(':details', opts.details)
+    prop(':checkboxLabel', opts.checkbox_label)
+    prop(':checkboxChecked', opts.checkbox_checked)
+    prop(':inputKind', opts.input_kind)
+    prop(':inputValue', opts.input_value)
+    prop(':inputPlaceholder', opts.placeholder)
+    prop(':inputItems', opts.items)
+    prop(':inputMin', opts.min)
+    prop(':inputMax', opts.max)
+    backend.build(node)
+    return id
 end
 
-function M.confirm(msg)
-    local running, result = true, false
-    _G._confirm_yes = function() result = true; running = false end
-    _G._confirm_no = function() result = false; running = false end
-    local win = backend.build({'window', ':title', 'Confirm', ':width', 300, ':height', 150,
-        {'grid', {'label', ':label', msg, ':gridx', 0, ':gridy', 0, ':gridWidth', 2, ':height', 100},
-                 {'button', ':label', 'Yes', ':gridx', 0, ':gridy', 1, ':callback', 'LUA(_confirm_yes)'},
-                 {'button', ':label', 'No', ':gridx', 1, ':gridy', 1, ':callback', 'LUA(_confirm_no)'}}})
-    xtmanage(win)
-    M.modal_loop(function() return running end)
-    xtunmanage(win)
-    return result
+-- Show a dialog, run a nested event loop and return (result, inputValue).
+local function run_dialog(id)
+    if not M.get_widget(id) then return nil end
+    M.set(id, 'open', true)
+    if M.get(id, 'open') ~= true then
+        M.destroy(id)
+        return nil
+    end
+    M.modal_loop(function() return M.get(id, 'open') == true end)
+    local result = M.get(id, 'result')
+    local value = M.get(id, 'inputValue')
+    M.destroy(id)
+    return result, value
 end
 
-function M.prompt(title, msg, default)
-    local running, result = true, nil
-    _G._prompt_ok = function() result = M.get('prompt_input', 'label'); running = false end
-    _G._prompt_cancel = function() running = false end
-    local win = backend.build({'window', ':title', title or 'Prompt', ':width', 400, ':height', 200,
-        {'grid', {'label', ':label', msg, ':gridx', 0, ':gridy', 0, ':gridWidth', 2, ':height', 50},
-                 {'edit', ':id', 'prompt_input', ':label', default or '', ':gridx', 0, ':gridy', 1, ':gridWidth', 2, ':width', 380, ':height', 50},
-                 {'button', ':label', 'OK', ':gridx', 0, ':gridy', 2, ':callback', 'LUA(_prompt_ok)'},
-                 {'button', ':label', 'Cancel', ':gridx', 1, ':gridy', 2, ':callback', 'LUA(_prompt_cancel)'}}})
-    xtmanage(win)
-    M.modal_loop(function() return running end)
-    xtunmanage(win)
-    return result
+function M.alert(msg, opts)
+    opts = opts or {}
+    local id = build_dialog{
+        title = opts.title or 'Alert',
+        message = msg,
+        message_type = opts.message_type or 1,
+        icon = opts.icon,
+        details = opts.details,
+        checkbox_label = opts.checkbox_label,
+        checkbox_checked = opts.checkbox_checked,
+        show_cancel = false,
+    }
+    run_dialog(id)
+end
+
+function M.confirm(msg, opts)
+    opts = opts or {}
+    local id = build_dialog{
+        title = opts.title or 'Confirm',
+        message = msg,
+        message_type = opts.message_type or 4,
+        icon = opts.icon,
+        details = opts.details,
+        checkbox_label = opts.checkbox_label,
+        checkbox_checked = opts.checkbox_checked,
+        ok_label = opts.ok_label,
+        cancel_label = opts.cancel_label,
+    }
+    local result = run_dialog(id)
+    return result == 1
+end
+
+function M.prompt(title, msg, default, opts)
+    opts = opts or {}
+    local id = build_dialog{
+        title = title or 'Prompt',
+        message = msg,
+        message_type = opts.message_type,
+        input_kind = opts.input_kind or 1,
+        input_value = default or '',
+        placeholder = opts.placeholder,
+        items = opts.items,
+        min = opts.min,
+        max = opts.max,
+        ok_label = opts.ok_label,
+        cancel_label = opts.cancel_label,
+    }
+    local result, value = run_dialog(id)
+    if result == 1 then return value end
+    return nil
 end
 
 function M.create_store(cols)
