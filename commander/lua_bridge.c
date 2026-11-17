@@ -40,6 +40,7 @@ void lua_bridge_register_bindings(void) {
     lua_register(L_GLOBAL, "xtaction", xtaction_lua);
     lua_register(L_GLOBAL, "callF", xtaction_lua); // callF mapped to xtaction for now
     lua_register(L_GLOBAL, "xtgetvalue", xtgetvalue_lua);
+    lua_register(L_GLOBAL, "xtkaroed_get_text", xtkaroed_get_text_lua);
     lua_register(L_GLOBAL, "xtmanage", xtmanage_lua);
     lua_register(L_GLOBAL, "xtunmanage", xtunmanage_lua);
     lua_register(L_GLOBAL, "xtdestroy", xtdestroy_lua);

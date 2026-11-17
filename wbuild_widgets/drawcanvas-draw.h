@@ -23,10 +23,21 @@ typedef struct draw_canvas_st {
 
 } draw_canvas_t;
 
+/* Input event passed to key/mouse callbacks. The struct lives on the stack in
+ * the widget action and is only valid for the duration of the callback. */
+typedef struct draw_canvas_input_st {
+    draw_canvas_t *canvas;
+    XEvent *event;
+} draw_canvas_input_t;
+
 /* Plug-in drawing function (registered as the widget's callback). */
 void drawcanvas_draw_cb( Widget w, XtPointer user, XtPointer class );
 
-/* Registers the plug-in callback name with Wcl. Call once with the shell. */
+/* Interactive paint plug-in callbacks. */
+void drawcanvas_key_cb( Widget w, XtPointer user, XtPointer class );
+void drawcanvas_mouse_cb( Widget w, XtPointer user, XtPointer class );
+
+/* Registers the plug-in callback names with Wcl. Call once with the shell. */
 void drawcanvas_plugin_init( Widget top );
 
 #endif

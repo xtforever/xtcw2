@@ -13,6 +13,7 @@ int xtcreate_lua(lua_State *L);
 int xtsetvalue_lua(lua_State *L);
 int xtgetvalue_lua(lua_State *L);
 int xtaction_lua(lua_State *L);
+int xtkaroed_get_text_lua(lua_State *L);
 int xtmanage_lua(lua_State *L);
 int xtunmanage_lua(lua_State *L);
 int xtdestroy_lua(lua_State *L);

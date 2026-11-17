@@ -9,10 +9,29 @@
 @PUBLIC
 @var <XftFont> XftFont* xftFont = <String> "Serif-22"
 @var Pixel foreground = XtDefaultForeground
+@ draw callback: paint the whole scene into the current drawable
 @var <Callback> XtCallbackList callback = NULL
+@ key callback: receives draw_canvas_input_t* (canvas + XKeyEvent)
+@var <Callback> XtCallbackList keyCallback = NULL
+@ mouse callback: receives draw_canvas_input_t* (canvas + XButton/Motion event)
+@var <Callback> XtCallbackList mouseCallback = NULL
+@ tick callback: called once per update interval, before the optional redraw
+@var <Callback> XtCallbackList tickCallback = NULL
+@ timer interval in milliseconds; 0 disables automatic updates
+@var int updateInterval = 0
+@ draw into an offscreen pixmap and blit once per update
+@var Boolean doubleBuffer = True
+@ request keyboard focus when the widget is realized
+@var Boolean takeFocus = False
 
 @PRIVATE
 @var draw_canvas_t canv
+@var XtIntervalId timer
+@var XtIntervalId focus_timer
+@var Pixmap pixmap
+@var int pixmap_w
+@var int pixmap_h
+@var Boolean dirty
 
 @def BG   = $canv.xcol
 @def FG   = ($canv.xcol+1)
@@ -34,6 +53,12 @@
 
 	if( $width <=0 ) $width = 20;
 	if( $height <=0 ) $height = 20;
+	$timer = 0;
+	$focus_timer = 0;
+	$pixmap = 0;
+	$pixmap_w = 0;
+	$pixmap_h = 0;
+	$dirty = True;
 	init_colors($);
 	DRAW=0;
 }
@@ -41,9 +66,15 @@
 @proc destroy
 {
         XTFUNC();
-        if( DRAW ) XftDrawDestroy( DRAW );
-        XtReleaseGC( $, $canv.gc[0] );
-        XtReleaseGC( $, $canv.gc[1] );
+        if( $timer ) { XtRemoveTimeOut( $timer ); $timer = 0; }
+        if( $focus_timer ) { XtRemoveTimeOut( $focus_timer ); $focus_timer = 0; }
+        if( DRAW ) { XftDrawDestroy( DRAW ); DRAW = 0; }
+        if( $pixmap ) {
+            XFreePixmap( $canv.dpy, $pixmap );
+            $pixmap = 0;
+        }
+        if( $canv.gc[0] ) XtReleaseGC( $, $canv.gc[0] );
+        if( $canv.gc[1] ) XtReleaseGC( $, $canv.gc[1] );
 }
 
 @proc query_geometry
@@ -60,9 +91,10 @@
 
 @proc set_values_almost
 {
-    request->width = reply->width;
-    request->height = reply->height;
-    request->request_mode = CWWidth | CWHeight;
+    /* Follow the Xt contract: adopt the parent's compromise wholesale.
+     * Forcing CWWidth|CWHeight keeps XtSetValues() looping when the parent
+     * replies "No" (request_mode == 0). */
+    *request = *reply;
 }
 
 @proc resize
@@ -70,7 +102,10 @@
 	XTFUNC();
     $canv.win_width  = $width;
     $canv.win_height = $height;
-
+    if( XtIsRealized($) ) {
+        create_buffer($);
+        paint1($);
+    }
 }
 
 @proc realize
@@ -80,13 +115,12 @@
         		  (Visual *) CopyFromParent,
 			  *mask, attributes);
     Display *dpy = XtDisplay($);
-  	DRAW = XftDrawCreate(dpy, XtWindow($),
-                 DefaultVisual(dpy, DefaultScreen(dpy)), None);
-
     $canv.xfont    = $xftFont;
     $canv.dpy      =  dpy;
     $canv.screen   = DefaultScreen(dpy);
-    
+    $canv.win_width  = $width;
+    $canv.win_height = $height;
+
     XGCValues     values;
     values.graphics_exposures = False;
     values.foreground = $foreground;
@@ -101,20 +135,141 @@
       (unsigned) GCForeground | GCBackground | GCGraphicsExposures,
       &values);
 
-     $canv.app_context = XtWidgetToApplicationContext( $ );
+    $canv.app_context = XtWidgetToApplicationContext( $ );
+
+    create_buffer($);
+    if( $takeFocus ) schedule_focus($);
+    $dirty = True;
+    paint1($);
+    start_timer($);
 }
 
 @proc set_values
 {
-	return True; /* yes we want a redraw */	
+    if( $updateInterval != $old$updateInterval ) {
+        stop_timer($);
+        if( XtIsRealized($) && $updateInterval > 0 ) start_timer($);
+    }
+    if( $doubleBuffer != $old$doubleBuffer ) {
+        if( XtIsRealized($) ) {
+            create_buffer($);
+            paint1($);
+        }
+    }
+    if( $xftFont != $old$xftFont || $foreground != $old$foreground ) {
+        init_colors($);
+        $canv.xfont = $xftFont;
+        if( XtIsRealized($) ) paint1($);
+    }
+    if( $takeFocus && ! $old$takeFocus && XtIsRealized($) )
+        schedule_focus($);
+	return True; /* yes we want a redraw */
 }
 
+@proc accept_focus
+{
+    return True;
+}
 
 @UTILITIES
 @proc paint1($)
 {
     XTFUNC();
+    if( ! XtIsRealized($) ) return;
+    if( $doubleBuffer ) create_buffer($);
     XtCallCallbackList( $, $callback, (XtPointer) & $canv );
+    if( $doubleBuffer && $pixmap ) {
+        XCopyArea( $canv.dpy, $pixmap, XtWindow($), $canv.gc[0],
+                   0, 0, (unsigned)$width, (unsigned)$height, 0, 0 );
+    }
+    XFlush( $canv.dpy );
+}
+
+@proc void create_buffer($)
+{
+    if( ! XtIsRealized($) ) return;
+    int w = (int)$width;  if( w < 1 ) w = 1;
+    int h = (int)$height; if( h < 1 ) h = 1;
+
+    if( $doubleBuffer ) {
+        if( $pixmap && $pixmap_w == w && $pixmap_h == h ) return;
+        if( DRAW ) { XftDrawDestroy( DRAW ); DRAW = 0; }
+        if( $pixmap ) { XFreePixmap( $canv.dpy, $pixmap ); $pixmap = 0; }
+        $pixmap = XCreatePixmap( $canv.dpy, XtWindow($),
+                                 (unsigned)w, (unsigned)h,
+                                 (unsigned)DefaultDepth($canv.dpy, $canv.screen) );
+        $pixmap_w = w;
+        $pixmap_h = h;
+        if( $pixmap )
+            DRAW = XftDrawCreate( $canv.dpy, $pixmap,
+                                  DefaultVisual($canv.dpy, $canv.screen),
+                                  DefaultColormap($canv.dpy, $canv.screen) );
+    } else {
+        if( $pixmap ) {
+            if( DRAW ) { XftDrawDestroy( DRAW ); DRAW = 0; }
+            XFreePixmap( $canv.dpy, $pixmap );
+            $pixmap = 0;
+            $pixmap_w = $pixmap_h = 0;
+        }
+    }
+    if( ! DRAW )
+        DRAW = XftDrawCreate( $canv.dpy, XtWindow($),
+                              DefaultVisual($canv.dpy, $canv.screen),
+                              DefaultColormap($canv.dpy, $canv.screen) );
+}
+
+@proc void start_timer($)
+{
+    if( $timer || $updateInterval <= 0 || ! XtIsRealized($) ) return;
+    $timer = XtAppAddTimeOut( $canv.app_context, (unsigned long)$updateInterval,
+                              timer_cb, $ );
+}
+
+@proc void stop_timer($)
+{
+    if( $timer ) {
+        XtRemoveTimeOut( $timer );
+        $timer = 0;
+    }
+}
+
+@proc void timer_cb(XtPointer client, XtIntervalId *id)
+{
+    Widget self = (Widget)client;
+    $timer = 0;
+    if( ! XtIsRealized($) ) return;
+    if( $tickCallback )
+        XtCallCallbackList( $, $tickCallback, (XtPointer) & $canv );
+    if( $dirty ) {
+        $dirty = False;
+        paint1($);
+    }
+    if( $updateInterval > 0 )
+        $timer = XtAppAddTimeOut( $canv.app_context, (unsigned long)$updateInterval,
+                                  timer_cb, $ );
+}
+
+@proc void focus_self($)
+{
+    Widget shell = $, parent = $;
+    while( parent ) {
+        if( XtIsShell(shell = parent) ) break;
+        parent = XtParent(parent);
+    }
+    if( shell ) XtSetKeyboardFocus( shell, $ );
+}
+
+@proc void schedule_focus($)
+{
+    if( $focus_timer ) return;
+    $focus_timer = XtAppAddTimeOut( $canv.app_context, 0, focus_cb, $ );
+}
+
+@proc void focus_cb(XtPointer client, XtIntervalId *id)
+{
+    Widget self = (Widget)client;
+    $focus_timer = 0;
+    if( XtIsRealized($) ) focus_self($);
 }
 
 @proc init_colors($)
@@ -123,6 +278,42 @@
  	pixel_to_xftcolor( $, $foreground,       FG );
 }
 
+@TRANSLATIONS
+@trans <KeyDown>: key()
+@trans <Btn1Down>: mouse()
+@trans <Btn1Motion>: mouse()
+@trans <Btn1Up>: mouse()
+
+@ACTIONS
+@proc mark_dirty
+{
+    $dirty = True;
+}
+
+@proc redraw
+{
+    $dirty = False;
+    paint1($);
+}
+
+@proc key
+{
+    if( ! $keyCallback || ! event ) return;
+    draw_canvas_input_t input;
+    input.canvas = & $canv;
+    input.event = event;
+    XtCallCallbackList( $, $keyCallback, (XtPointer) & input );
+}
+
+@proc mouse
+{
+    if( event && event->type == ButtonPress ) focus_self($);
+    if( ! $mouseCallback || ! event ) return;
+    draw_canvas_input_t input;
+    input.canvas = & $canv;
+    input.event = event;
+    XtCallCallbackList( $, $mouseCallback, (XtPointer) & input );
+}
 
 @EXPORTS
 @incl "drawcanvas-draw.h"

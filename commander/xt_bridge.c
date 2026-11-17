@@ -6,6 +6,7 @@
 #include <X11/ConstrainP.h>
 #include <WcCreate.h>
 #include <WcCreateP.h>
+#include "xtcw/KaroEd.h"
 #include "mls.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -369,6 +370,16 @@ int xtgetvalue_lua(lua_State *L) {
         if (val) lua_pushstring(L, val);
         else lua_pushnil(L);
     }
+    return 1;
+}
+
+/* Return a KaroEd's full buffer as a Lua string. KaroEd has no `text`
+ * resource, so forms need this explicit getter to round-trip editor content. */
+int xtkaroed_get_text_lua(lua_State *L) {
+    Widget w = luaarg_to_widget(L, 1);
+    char *text = w ? karoEd_get_text(w) : NULL;
+    lua_pushstring(L, text ? text : "");
+    if (text) XtFree(text);
     return 1;
 }
 
