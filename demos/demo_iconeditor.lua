@@ -160,7 +160,7 @@ function cb_about()
 end
 
 local ui = [[
-(window :id "win" :title "IconEditor — XPM" :width 920 :height 760
+(window :id "win" :title "IconEditor — XPM" :width 920 :height 820
   (app-window :id "app" :windowMargin 10 :rowGap 6
               :gridx 0 :gridy 0 :weightx 1 :weighty 1 :fill 3
     (menu-bar :id "menubar" :slot "menu" :barHeight 28
@@ -180,7 +180,7 @@ local ui = [[
         (popup-menu :id "m_help_popup"
           (button :id "mi_about" :label "About" :callback "LUA(cb_about)"))))
 
-    (tool-bar :id "toolbar" :slot "toolbar" :toolbarHeight 38
+    (tool-bar :id "toolbar" :slot "toolbar" :toolbarHeight 42
               :itemGap 6 :toolbarPadding 4
       (button :id "tb_new" :label "New" :tooltip "New icon" :callback "LUA(cb_new)")
       (file-selector :id "fs" :label "Open…" :pattern "*.xpm" :directory "."
@@ -202,7 +202,7 @@ local ui = [[
             :width 260 :defaultDistance 4
         (label :id "preview_lbl" :label "Preview" :gridx 0 :gridy 0
                :weightx 1 :weighty 0 :fill 3 :fontSize 12 :topGap 1 :bottomGap 1)
-        (DrawCanvas :id "preview" :gridx 0 :gridy 1 :width 128 :height 128
+        (DrawCanvas :id "preview" :gridx 0 :gridy 1 :width 120 :height 120
                     :bg "#202020" :foreground "#ffffff"
                     :callback "iconeditor_preview_cb"
                     :updateInterval 20 :doubleBuffer TRUE)
@@ -212,15 +212,15 @@ local ui = [[
         (grid :id "tools" :gridx 0 :gridy 3 :weightx 1 :weighty 0 :fill 3
               :defaultDistance 4
           (button :id "tool_pencil" :label "Pencil" :gridx 0 :gridy 0
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_tool, pencil)")
+                  :weightx 1 :fill 3 :callback "LUA(on_tool, pencil)")
           (button :id "tool_line" :label "Line" :gridx 1 :gridy 0
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_tool, line)")
+                  :weightx 1 :fill 3 :callback "LUA(on_tool, line)")
           (button :id "tool_rect" :label "Rect" :gridx 0 :gridy 1
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_tool, rect)")
+                  :weightx 1 :fill 3 :callback "LUA(on_tool, rect)")
           (button :id "tool_ellipse" :label "Circle" :gridx 1 :gridy 1
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_tool, ellipse)")
+                  :weightx 1 :fill 3 :callback "LUA(on_tool, ellipse)")
           (button :id "tool_fill" :label "Fill" :gridx 0 :gridy 2
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_tool, fill)")
+                  :weightx 1 :fill 3 :callback "LUA(on_tool, fill)")
           (button :id "tool_undo" :label "Undo" :gridx 1 :gridy 2
                   :weightx 1 :fill 3 :callback "LUA(on_undo)"))
 
@@ -233,21 +233,21 @@ local ui = [[
         (grid :id "colors" :gridx 0 :gridy 6 :weightx 1 :weighty 0 :fill 3
               :defaultDistance 4
           (button :id "col_black" :label "Black" :gridx 0 :gridy 0
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_color, 000000)")
+                  :weightx 1 :fill 3 :callback "LUA(on_color, 000000)")
           (button :id "col_white" :label "White" :gridx 1 :gridy 0
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_color, ffffff)")
+                  :weightx 1 :fill 3 :callback "LUA(on_color, ffffff)")
           (button :id "col_red" :label "Red" :gridx 0 :gridy 1
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_color, ff0000)")
+                  :weightx 1 :fill 3 :callback "LUA(on_color, ff0000)")
           (button :id "col_green" :label "Green" :gridx 1 :gridy 1
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_color, 00aa00)")
+                  :weightx 1 :fill 3 :callback "LUA(on_color, 00aa00)")
           (button :id "col_blue" :label "Blue" :gridx 0 :gridy 2
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_color, 0000ff)")
+                  :weightx 1 :fill 3 :callback "LUA(on_color, 0000ff)")
           (button :id "col_yellow" :label "Yellow" :gridx 1 :gridy 2
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_color, ffff00)")
+                  :weightx 1 :fill 3 :callback "LUA(on_color, ffff00)")
           (button :id "col_magenta" :label "Magenta" :gridx 0 :gridy 3
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_color, ff00ff)")
+                  :weightx 1 :fill 3 :callback "LUA(on_color, ff00ff)")
           (button :id "col_cyan" :label "Cyan" :gridx 1 :gridy 3
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_color, 00ffff)"))
+                  :weightx 1 :fill 3 :callback "LUA(on_color, 00ffff)"))
 
         (label :id "size_lbl" :label "Size" :gridx 0 :gridy 7
                :weightx 1 :weighty 0 :fill 3 :fontSize 12 :topGap 1 :bottomGap 1)
@@ -258,7 +258,7 @@ local ui = [[
           (spinbox :id "sp_h" :value 32 :min 4 :max 64 :step 1
                    :gridx 1 :gridy 0 :weightx 1 :fill 3)
           (button :id "resize_btn" :label "Resize" :gridx 2 :gridy 0
-                  :weightx 1 :height 28 :fill 3 :callback "LUA(on_resize)"))
+                  :weightx 1 :fill 3 :callback "LUA(on_resize)"))
       ))
 
     (status-bar :id "status" :slot "status" :message "Ready — draw with the selected tool"

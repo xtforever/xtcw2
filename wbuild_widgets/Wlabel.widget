@@ -7,6 +7,11 @@
     if (!XtIsRealized($)) return;
     
     if ($state != $last_state) { $dirty = 1; $last_state = $state; }
+    /* The geometry manager may resize the window without calling the class
+     * resize method.  Detect the stale pixmap here so text is re-laid out at
+     * the real height instead of staying clipped at the natural height. */
+    if ($backend_ptr && ($cache_w != (int)$width || $cache_h != (int)$height))
+        $dirty = 1;
 
     if ($dirty || !$backend_ptr) {
         update_cache($);
@@ -86,6 +91,8 @@
 @var Pixmap pixmap
 @var int prefered_width
 @var int prefered_height
+@var int cache_w
+@var int cache_h
 @var Bool dirty
 @var String label_mem
 @ Owned storage for the theme UI font face (Xt borrows String resources).
@@ -124,6 +131,8 @@
   $last_state = -1;
   $prefered_width = 100; 
   $prefered_height = 20;
+  $cache_w = 0;
+  $cache_h = 0;
 
   // Initial measurement
   calculate_size($, 0, &$prefered_width, &$prefered_height);
@@ -364,6 +373,17 @@
 
 @proc void update_cache($)
 {
+    /* The geometry manager can resize the X window without a class resize
+     * method running first.  Keep the backing pixmap in sync with the actual
+     * widget size so text is not clipped at the old (natural) height. */
+    if ($backend_ptr &&
+        ($cache_w != (int)$width || $cache_h != (int)$height)) {
+        Backend *old = (Backend*)$backend_ptr;
+        old->destroy(old);
+        $backend_ptr = NULL;
+        $pixmap = 0;
+        $dirty = 1;
+    }
     if (!$backend_ptr) {
         if (!XtIsRealized($)) return;
         /* Cap dimensions to 4000 to avoid X11 limitations */
@@ -372,6 +392,8 @@
         $backend_ptr = backend_xpixmap_create(XtDisplay($), XtWindow($), w, h);
         if (!$backend_ptr) return;
         $pixmap = backend_xpixmap_get_pixmap((Backend*)$backend_ptr);
+        $cache_w = w;
+        $cache_h = h;
     }
 
     if ($para_ptr) {
@@ -380,8 +402,10 @@
     }
 
     Backend *be = (Backend*)$backend_ptr;
-    
-    int inner_w_px = (int)$width - ($leftGap + $rightGap);
+    int cw = $cache_w > 0 ? $cache_w : (int)$width;
+    int ch = $cache_h > 0 ? $cache_h : (int)$height;
+
+    int inner_w_px = cw - ($leftGap + $rightGap);
     if (inner_w_px < 10) inner_w_px = 10;
     double layout_width_pt = px2pt($, inner_w_px);
 
@@ -391,8 +415,8 @@
     {
         double dpi = be->get_dpi(be);
         if (dpi < 1.0 || dpi > 1000.0) dpi = 96.0;
-        double w_pt = (double)$width * 72.0 / dpi;
-        double h_pt = (double)$height * 72.0 / dpi;
+        double w_pt = (double)cw * 72.0 / dpi;
+        double h_pt = (double)ch * 72.0 / dpi;
         be->draw_rect(be, 0, 0, w_pt, h_pt, xftcolor_to_argb($, COLOR_BG_NORM + $state));
     }
     be->flush(be);
@@ -412,7 +436,10 @@
     double text_h_pt = retex_paragraph_get_height($para_ptr);
     double text_w_pt = retex_paragraph_get_width($para_ptr);
     
-    double inner_h_pt = px2pt($, (double)$height - ($topGap + $bottomGap));
+    /* Centre in the full widget height.  topGap/bottomGap are part of the
+     * natural size; subtracting them here top-aligned text in explicit-height
+     * buttons and made the glyph bottoms look cut off. */
+    double inner_h_pt = px2pt($, (double)ch);
     if (inner_h_pt < 0) inner_h_pt = 0;
 
     double v_centering_offset_pt = (inner_h_pt - text_h_pt) / 2.0;
@@ -422,10 +449,10 @@
      * Horizontal positioning: paragraph starts at leftGap, fills to width-rightGap.
      * Vertical positioning: paragraph is vertically centered via v_centering_offset. */
     double x_pt = px2pt($, (double)$leftGap);
-    double y_pt = px2pt($, (double)$topGap) + v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
+    double y_pt = v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
 
     $layout_x_offset_pt = x_pt;
-    $layout_y_offset_pt = y_pt - retex_paragraph_get_first_line_height($para_ptr);
+    $layout_y_offset_pt = v_centering_offset_pt;
 
     TRACE(2, "update_cache: text_w=%.2f, text_h=%.2f, layout_x_off=%.2f, layout_y_off=%.2f", 
           text_w_pt, text_h_pt, $layout_x_offset_pt, $layout_y_offset_pt);

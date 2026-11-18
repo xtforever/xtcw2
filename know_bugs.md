@@ -2390,3 +2390,24 @@ its dirty/status state. Mouse edits stay entirely in C.
 
 **Files:** `wbuild_widgets/DrawCanvas.widget`, `wbuild_widgets/iconeditor-draw.c`,
 `demos/demo_iconeditor.lua`
+
+## Wbutton labels were clipped at the bottom
+
+**Symptom:** every button label (toolbar, toolbox, menu items) looked cut off
+along the bottom; the glyph bottoms sat on the line-box edge, and fixed-height
+buttons left no vertical breathing room.
+
+**Cause:** `Wbutton` overrode `initialize` without calling the `Wlabel`
+initializer, and its natural height was exactly the re-tex line box.  The
+label centering subtracted `topGap`/`bottomGap` from the available height, so
+explicit-height buttons top-aligned the text and the last line pixels were
+clipped.  A stale backing pixmap could also survive a geometry-manager resize.
+
+**Fix:** call the superclass initializer, set a 3px top/bottom gap before the
+natural size is measured, centre the paragraph in the full widget height, and
+keep the pixmap cache in sync with the widget size.  The IconEditor demo now
+uses natural-height buttons and a slightly taller window instead of fixed
+28px rows.
+
+**Files:** `wbuild_widgets/Wbutton.widget`, `wbuild_widgets/Wlabel.widget`,
+`demos/demo_iconeditor.lua`
