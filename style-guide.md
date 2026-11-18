@@ -66,6 +66,9 @@ size.
 `control_height` is a **target/minimum**; the actual row height follows the
 `font_ui` metrics. Inputs and buttons in the same toolbar should end up within a
 couple of pixels of each other (use `control_padding` and small label gaps).
+`Wlabel`/`Wbutton` default `topGap`/`bottomGap` to 3px so the re-tex line box
+does not clip glyph descenders; override them per widget when a tighter layout
+is needed.
 
 ## 4. Typography
 

@@ -70,8 +70,9 @@
 @var String fontFace = "Sans"
 @ default size
 @var int fontSize = 13
-@var int topGap = 0
-@var int bottomGap = 0
+@ default vertical padding around the re-tex line box (labels and buttons)
+@var int topGap = 3
+@var int bottomGap = 3
 @var int leftGap = 0
 @var int rightGap = 0
 @var Boolean autoHeight = FALSE

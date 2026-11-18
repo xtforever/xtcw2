@@ -2406,12 +2406,15 @@ because the inherited initializer had already measured the natural height; an
 explicit `#initialize` call fixed the height but ran the inherited initializer
 twice.
 
-**Fix:** install `topGap`/`bottomGap = 3` as `Wbutton` resource defaults in
-`class_initialize` (before libXt calls the inherited initializer), centre the
-paragraph in the full widget height, and keep the pixmap cache in sync with
-the widget size.  The explicit `#initialize` call was removed again.  The
-IconEditor demo now uses natural-height buttons and a slightly taller window
-instead of fixed 28px rows.
+**Fix:** make `topGap`/`bottomGap = 3` the `Wlabel` resource defaults, so every
+label-derived widget (including `Wbutton`) gets the padding before the
+inherited initializer measures the natural height.  Centre the paragraph in
+the full widget height and keep the pixmap cache in sync with the widget
+size.  `Wbutton` no longer needs a `class_initialize` resource override; the
+explicit `#initialize` call stays removed.  The IconEditor demo uses
+natural-height buttons and a slightly taller window instead of fixed 28px
+rows.
 
-**Files:** `wbuild_widgets/Wbutton.widget`, `wbuild_widgets/Wlabel.widget`,
-`demos/demo_iconeditor.lua`
+**Files:** `wbuild_widgets/Wlabel.widget`, `wbuild_widgets/Wbutton.widget`,
+`demos/demo_iconeditor.lua`, `tests/baselines/test_wlabel.layout`,
+`tests/baselines/test_wlabel_selection.layout`
