@@ -2,14 +2,24 @@
 @ simple Button with Wheel Support 
 
 @METHODS 
+@proc class_initialize
+{
+        /* Buttons need a little vertical padding around the re-tex line box.
+         * Set the resource defaults here, before libXt calls the inherited
+         * Wlabel initializer (which measures the natural height). */
+        static XtResource res[] = {
+            { XtNtopGap, XtCTopGap, XtRInt, sizeof(int),
+              XtOffsetOf(WlabelRec, wlabel.topGap), XtRImmediate, (XtPointer)3 },
+            { XtNbottomGap, XtCBottomGap, XtRInt, sizeof(int),
+              XtOffsetOf(WlabelRec, wlabel.bottomGap), XtRImmediate, (XtPointer)3 },
+        };
+        WbuttonWidgetClass c = (WbuttonWidgetClass)wbuttonWidgetClass;
+        c->core_class.resources = res;
+        c->core_class.num_resources = XtNumber(res);
+}
+
 @proc initialize
 {
-        /* Give the re-tex line box room above/below the glyphs before the
-         * superclass measures the natural height.  Without this the line box
-         * fills the button and the glyph bottoms are clipped. */
-        if ($topGap <= 0) $topGap = 3;
-        if ($bottomGap <= 0) $bottomGap = 3;
-        #initialize(request, self, args, num_args);
         TRACE(2,"Wbutton:%s focus group: %s", $name, $focus_group );
         /* Controls use the button_* colour roles and the shared UI font. */
         $useControlColors = True;

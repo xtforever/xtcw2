@@ -2397,17 +2397,21 @@ its dirty/status state. Mouse edits stay entirely in C.
 along the bottom; the glyph bottoms sat on the line-box edge, and fixed-height
 buttons left no vertical breathing room.
 
-**Cause:** `Wbutton` overrode `initialize` without calling the `Wlabel`
-initializer, and its natural height was exactly the re-tex line box.  The
-label centering subtracted `topGap`/`bottomGap` from the available height, so
-explicit-height buttons top-aligned the text and the last line pixels were
-clipped.  A stale backing pixmap could also survive a geometry-manager resize.
+**Cause:** `libXt` calls the inherited `Wlabel` initializer before the
+`Wbutton` initializer, so the label was set up.  The clipping came from the
+natural height being exactly the re-tex line box (no vertical padding), from
+subtracting `topGap`/`bottomGap` during centering, and from fixed 28px button
+rows in the demo.  Setting the gaps in `Wbutton.initialize` was too late,
+because the inherited initializer had already measured the natural height; an
+explicit `#initialize` call fixed the height but ran the inherited initializer
+twice.
 
-**Fix:** call the superclass initializer, set a 3px top/bottom gap before the
-natural size is measured, centre the paragraph in the full widget height, and
-keep the pixmap cache in sync with the widget size.  The IconEditor demo now
-uses natural-height buttons and a slightly taller window instead of fixed
-28px rows.
+**Fix:** install `topGap`/`bottomGap = 3` as `Wbutton` resource defaults in
+`class_initialize` (before libXt calls the inherited initializer), centre the
+paragraph in the full widget height, and keep the pixmap cache in sync with
+the widget size.  The explicit `#initialize` call was removed again.  The
+IconEditor demo now uses natural-height buttons and a slightly taller window
+instead of fixed 28px rows.
 
 **Files:** `wbuild_widgets/Wbutton.widget`, `wbuild_widgets/Wlabel.widget`,
 `demos/demo_iconeditor.lua`
