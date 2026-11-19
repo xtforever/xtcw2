@@ -29,6 +29,8 @@
 @var <Callback> XtCallbackList getEntry = NULL
 @ selection changed (selected index)
 @var <Callback> XtCallbackList notify = NULL
+@ single mouse click on a row (selected index); fires before |activate|
+@var <Callback> XtCallbackList clicked = NULL
 @ double-click / Return on a row (selected index)
 @var <Callback> XtCallbackList activate = NULL
 @ viewport changed
@@ -201,10 +203,17 @@
 
   set_selected($, row);
 
-  if (row == $last_click_row && t - $last_click_time < 400)
-    do_activate($);
+  int double_click = (row == $last_click_row && t - $last_click_time < 400);
   $last_click_time = t;
   $last_click_row = row;
+
+  /* Fire |clicked| first.  A combo popup uses it to commit and close the
+   * popup asynchronously; doing that before |activate| keeps the double-click
+   * path safe when the callback tears the list down. */
+  if (XtHasCallbacks($, "clicked") == XtCallbackHasSome)
+    XtCallCallbackList($, $clicked, (XtPointer)(intptr_t)row);
+  if (double_click)
+    do_activate($);
 }
 
 @proc release
@@ -396,6 +405,7 @@
   $dirty = 1;
   $colors_ready = 0;
   $rowCount = $rows ? m_len($rows) : 0;
+  update_selected_id($);
   $fontFace_mem = strdup($fontFace ? $fontFace : "Sans");
   $fontFace = $fontFace_mem;
   $last_click_time = 0;
@@ -509,6 +519,17 @@
     XtConfigureWidget(child, child->core.x, child->core.y, w, h, child->core.border_width);
   }
   return XtGeometryDone;
+}
+
+@proc get_values_hook
+{
+  int i;
+  for (i = 0; i < *num_args; i++) {
+    if (strcmp(args[i].name, "selectedId") == 0) {
+      update_selected_id($);
+      *((int*)args[i].value) = $selectedId;
+    }
+  }
 }
 
 @proc set_values

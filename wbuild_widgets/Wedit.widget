@@ -6,13 +6,23 @@
 
 
 @TRANSLATIONS
+@trans <Shift>Left:    select_left()
+@trans <Shift>Right:   select_right()
+@trans <Shift>Home:    select_home()
+@trans <Shift>End:     select_end()
+@trans <Key>Home:      move_home()
+@trans <Key>End:       move_end()
 @trans <Key>Right:     forward_char()
 @trans <Key>Left:      backward_char()
 @trans <Key>Delete:    remove_char()
-@trans <Key>BackSpace: backward_char() remove_char()
-@trans <Ctrl>x:        info()
+@trans <Key>BackSpace: backspace()
+@trans <Ctrl>a:        select_all()
+@trans <Ctrl>c:        copy_selection()
+@trans <Ctrl>x:        cut_selection()
 @trans <Ctrl>v:        insert_selection()
 @trans <Btn1Down>:     set_cursor()
+@trans <Btn1Motion>:   extend_selection()
+@trans <Btn1Up>:       finish_selection()
 @trans <Key>Return:    notify()
 @trans <Key>:          insert_char()
 
@@ -27,7 +37,13 @@
 @var int lineWidth = 1
 @var int cornerRoundPercent = 20
 @var <Callback> XtCallbackList callback  = NULL
+@ text changed by typing, deleting or pasting (not by programmatic set_values)
+@var <Callback> XtCallbackList changed = NULL
 @var String label = NULL
+@ placeholder hint shown by WLineEdit when the text is empty
+@var String placeholder = <String> ""
+@ current cursor position in glyph indices (read via get_values_hook)
+@var int cursorPos = 0
 
 @PRIVATE
 @def BG = 0
@@ -41,6 +57,8 @@
 @var int str_m
 @var int label_m
 @var int glyph_m
+@ Owned copy of the placeholder string (XtRString is not copied by Xt).
+@var char placeholder_buf[256]
 @var int glyph_xoff_m
 
 
@@ -59,9 +77,19 @@
 @var int left_pixel_offset
 @var int dirty
 @var int dirty_str
+@ selection range in glyph indices; |sel_end| is exclusive
+@var int sel_start
+@var int sel_end
+@var int sel_anchor
+@var Boolean has_selection
+@var Boolean selecting
+@ Owned clipboard payloads for PRIMARY and CLIPBOARD ownership
+@var char *clip_primary
+@var char *clip_clipboard
 
 @CLASSVARS
 @var Atom XA_UTF8_STRING = 0
+@var Atom XA_CLIPBOARD = 0
 
 @METHODS
 
@@ -74,6 +102,13 @@
   wedit_apply_theme($);
   int w,h;
   if($label == NULL) $label = $name;
+  if ($placeholder && *$placeholder) {
+      snprintf($placeholder_buf, sizeof($placeholder_buf), "%s", $placeholder);
+      $placeholder = $placeholder_buf;
+  } else {
+      $placeholder_buf[0] = 0;
+      $placeholder = $placeholder_buf;
+  }
   $glyph_m = m_create( 50, sizeof(XftGlyphFontSpec) );
   $glyph_xoff_m = m_create( 50, sizeof(int) );
   $str_m  = m_create( 50, 1 );
@@ -86,6 +121,8 @@
   if( $height < h) $height = h;
   if(! $XA_UTF8_STRING )
       $XA_UTF8_STRING = XInternAtom(XtDisplay($), "UTF8_STRING", True);
+  if(! $XA_CLIPBOARD )
+      $XA_CLIPBOARD = XInternAtom(XtDisplay($), "CLIPBOARD", False);
   theme_register($, wedit_apply_theme);
 }
 
@@ -100,6 +137,8 @@
         m_free($str_m);
         m_free($glyph_xoff_m);
         m_free($label_m);
+        free($clip_primary); $clip_primary = NULL;
+        free($clip_clipboard); $clip_clipboard = NULL;
 }
 
 @proc set_values
@@ -109,6 +148,16 @@
         if( strcmp(args[i].name, "label" ) ==0 )
             {
                 copy_str($, $label );
+            }
+        else if( strcmp(args[i].name, "placeholder" ) ==0 )
+            {
+                if ($placeholder && *$placeholder) {
+                    snprintf($placeholder_buf, sizeof($placeholder_buf), "%s",
+                             $placeholder);
+                } else {
+                    $placeholder_buf[0] = 0;
+                }
+                $placeholder = $placeholder_buf;
             }
     }
     reinit($);
@@ -122,12 +171,27 @@
         if( strcmp(args[i].name, "label" ) ==0 )
             {
                 int l = m_len($str_m);
+                if (l <= 0) {
+                    m_clear($label_m);
+                    m_putc($label_m, 0);
+                    *((char**)args[i].value) = m_buf($label_m);
+                    return;
+                }
                 m_write($label_m, 0, m_buf($str_m), l );
                 CHAR($label_m, l-1)=0;
                 *((char**)args[i].value) = m_buf($label_m);
                 return;
             }
+        else if( strcmp(args[i].name, "cursorPos" ) ==0 )
+            {
+                *((int*)args[i].value) = $crsr_pos;
+            }
     }
+}
+
+@ hook for subclasses to draw decorations on top of the text (e.g. a clear button)
+@proc void draw_extras($)
+{
 }
 
 
@@ -255,6 +319,8 @@
 @proc draw_cursor($)
 {
         XRectangle r;
+        if (! XtIsRealized($) || ! $pix.data) return;
+        if (m_len($glyph_m) <= 0) return;
         if( $crsr_pos >= m_len($glyph_m) )
             $crsr_pos=m_len($glyph_m)-1;
 
@@ -274,10 +340,15 @@
 @ clear the pixmap, draw text on pixmap, draw pixmap on window
 @proc paint($)
 {
+        if (! XtIsRealized($) || ! $pix.data) return;
         clear_pixmap($);
+        draw_selection($);
         draw_text_on_pixmap($);
         draw_pixmap_on_window($); $crsr_on = 0;
         draw_cursor($);
+        /* Extras (placeholder, clear button, ...) are drawn directly on the
+         * window, so they must be repainted after every pixmap copy. */
+        $draw_extras($);
         $dirty = 0;
 }
 
@@ -300,6 +371,171 @@
     cursor_undraw($);
     $crsr_rect = *r;
     cursor_toggle($);
+}
+
+@proc void wedit_focus_self($)
+{
+    Widget top = $;
+    while (top && !XtIsShell(top)) top = XtParent(top);
+    if (top) XtSetKeyboardFocus(top, $);
+}
+
+@proc void ensure_str_sentinel($)
+{
+    if (m_len($str_m) == 0) m_putc($str_m, '.');
+}
+
+@proc void clamp_left_offset($)
+{
+    int n = m_len($glyph_m) - 1;
+    if (n < 0) n = 0;
+    if ($left_char_offset < 0) $left_char_offset = 0;
+    if ($left_char_offset > n) $left_char_offset = n;
+}
+
+@proc void selection_clear($)
+{
+    $has_selection = False;
+    $sel_start = $crsr_pos;
+    $sel_end = $crsr_pos;
+    $dirty = 1;
+}
+
+@proc void selection_set($, int a, int b)
+{
+    int n = m_len($glyph_m) - 1;
+    if (n < 0) n = 0;
+    if (a > b) { int t = a; a = b; b = t; }
+    if (a < 0) a = 0;
+    if (b > n) b = n;
+    $sel_start = a;
+    $sel_end = b;
+    $has_selection = (a != b);
+    $dirty = 1;
+}
+
+@proc int pos_from_x($, int x)
+{
+    int n = m_len($glyph_xoff_m);
+    if (n <= 0) return 0;
+    x -= $pix.r.x;
+    int p = $left_char_offset;
+    int pix = 0;
+    do {
+        pix += INT($glyph_xoff_m, p);
+        if (x < pix) break;
+        p++;
+    } while (p < n - 1);
+    return p;
+}
+
+@proc void delete_selection($)
+{
+    if (! $has_selection) return;
+    int s = $sel_start, e = $sel_end;
+    if (s > e) { int t = s; s = e; e = t; }
+    int b1 = char_offset($, s);
+    int b2 = char_offset($, e);
+    if (b2 > b1) m_remove($str_m, b1, b2 - b1);
+    ensure_str_sentinel($);
+    str_to_glyphlist($);
+    clamp_left_offset($);
+    $crsr_pos = s;
+    selection_clear($);
+    $dirty = 1;
+    notify_changed($);
+}
+
+@proc char *selected_text($)
+{
+    if (! $has_selection) return NULL;
+    int s = $sel_start, e = $sel_end;
+    if (s > e) { int t = s; s = e; e = t; }
+    int b1 = char_offset($, s);
+    int b2 = char_offset($, e);
+    int len = b2 - b1;
+    if (len <= 0) return NULL;
+    char *out = (char*)malloc((size_t)len + 1);
+    if (! out) return NULL;
+    memcpy(out, m_buf($str_m) + b1, (size_t)len);
+    out[len] = 0;
+    return out;
+}
+
+@proc void draw_selection($)
+{
+    if (! $has_selection) return;
+    int s = $sel_start, e = $sel_end;
+    if (s > e) { int t = s; s = e; e = t; }
+    int x1 = screen_px($, s);
+    int x2 = screen_px($, e);
+    if (x1 < 0) x1 = 0;
+    if (x2 > (int)$pix.r.width) x2 = (int)$pix.r.width;
+    if (x2 <= x1) return;
+    Display *dpy = XtDisplay($);
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    Pixel bg = theme_color_defined("list_sel_bg") ? get_color("list_sel_bg")
+             : (theme_color_defined("bg_sel") ? get_color("bg_sel") : 0x204080);
+    XSetForeground(dpy, gc, bg);
+    XFillRectangle(dpy, $pix.data, gc, x1, 0,
+                   (unsigned)(x2 - x1), (unsigned)$pix.r.height);
+}
+
+@proc Boolean ConvertSelection(Widget w, Atom *selection, Atom *target,
+                               Atom *type, XtPointer *value,
+                               unsigned long *length, int *format)
+{
+    WeditWidget self = (WeditWidget)w;
+    char *s = (*selection == XA_PRIMARY) ? self->wedit.clip_primary
+                                         : self->wedit.clip_clipboard;
+    if (! s) return False;
+    if (*target == XA_STRING ||
+        *target == ((WeditWidgetClass)self->core.widget_class)->wedit_class.XA_UTF8_STRING) {
+        *type = *target;
+        *value = (XtPointer)s;
+        *length = (unsigned long)strlen(s);
+        *format = 8;
+        return True;
+    }
+    return False;
+}
+
+@proc void LoseSelection(Widget w, Atom *selection)
+{
+    WeditWidget self = (WeditWidget)w;
+    if (*selection == XA_PRIMARY) {
+        free(self->wedit.clip_primary);
+        self->wedit.clip_primary = NULL;
+    } else if (*selection ==
+               ((WeditWidgetClass)self->core.widget_class)->wedit_class.XA_CLIPBOARD) {
+        free(self->wedit.clip_clipboard);
+        self->wedit.clip_clipboard = NULL;
+    }
+}
+
+@proc void copy_to_clipboard($, const char *text)
+{
+    Time t = XtLastTimestampProcessed(XtDisplay($));
+    if (! t) t = CurrentTime;
+    free($clip_primary);
+    free($clip_clipboard);
+    $clip_primary = strdup(text);
+    $clip_clipboard = strdup(text);
+    XtOwnSelection($, XA_PRIMARY, t,
+                   (XtConvertSelectionProc)ConvertSelection,
+                   (XtLoseSelectionProc)LoseSelection, (XtPointer)NULL);
+    XtOwnSelection($, $XA_CLIPBOARD, t,
+                   (XtConvertSelectionProc)ConvertSelection,
+                   (XtLoseSelectionProc)LoseSelection, (XtPointer)NULL);
+}
+
+@proc void do_copy_selection($)
+{
+    char *text = selected_text($);
+    if (text) {
+        copy_to_clipboard($, text);
+        free(text);
+    }
 }
 
 
@@ -329,6 +565,11 @@
         m_write( $str_m, 0, s, strlen(s) );
         m_putc( $str_m, '.' );
         str_to_glyphlist($);
+        $left_char_offset = 0;
+        $has_selection = False;
+        $sel_start = 0;
+        $sel_end = 0;
+        $crsr_pos = 0;
         $dirty = 1;
 }
 
@@ -492,6 +733,8 @@
   und neuberechnung der glyphs
 @proc insert_char_at_cursor($, char *buf, int len )
 {
+    if ($has_selection) delete_selection($);
+    ensure_str_sentinel($);
     int p = char_offset($,$crsr_pos);
     m_ins( $str_m, p, len );
     m_write( $str_m, p, buf, len );
@@ -508,7 +751,79 @@
     p1 = char_offset($,$crsr_pos);
     p2=p1; m_utf8char( $str_m, &p2 );
     m_remove( $str_m, p1, p2-p1 );
+    ensure_str_sentinel($);
+    str_to_glyphlist($);
+    clamp_left_offset($);
     $dirty     = 1;
+    notify_changed($);
+}
+
+@proc void notify_changed($)
+{
+    XtCallCallbackList($, $changed, NULL);
+}
+
+@ True if |buf[0..len)| is well-formed UTF-8.
+@proc Bool wedit_is_valid_utf8(unsigned char *buf, int len)
+{
+    int n = 0, w = 0;
+    if (len <= 0) return False;
+    return FcUtf8Len(buf, len, &n, &w) ? True : False;
+}
+
+@ Encode a Unicode code point as UTF-8; returns the byte count (0 if none).
+@proc int wedit_char_to_utf8(unsigned int cp, unsigned char *out)
+{
+    if (cp < 0x80) {
+        out[0] = (unsigned char)cp;
+        return 1;
+    }
+    if (cp < 0x800) {
+        out[0] = (unsigned char)(0xC0 | (cp >> 6));
+        out[1] = (unsigned char)(0x80 | (cp & 0x3F));
+        return 2;
+    }
+    if (cp < 0x10000) {
+        out[0] = (unsigned char)(0xE0 | (cp >> 12));
+        out[1] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
+        out[2] = (unsigned char)(0x80 | (cp & 0x3F));
+        return 3;
+    }
+    if (cp < 0x110000) {
+        out[0] = (unsigned char)(0xF0 | (cp >> 18));
+        out[1] = (unsigned char)(0x80 | ((cp >> 12) & 0x3F));
+        out[2] = (unsigned char)(0x80 | ((cp >> 6) & 0x3F));
+        out[3] = (unsigned char)(0x80 | (cp & 0x3F));
+        return 4;
+    }
+    return 0;
+}
+
+@ Map an X keysym to a Unicode code point (0 if not printable Latin-1/Unicode).
+@proc unsigned int wedit_keysym_to_ucs(KeySym ks)
+{
+    unsigned int cp = (unsigned int)ks;
+    if (cp >= 0x01000000) return cp - 0x01000000;   /* Unicode keysym */
+    if (cp >= 0x20 && cp < 0x80) return cp;         /* ASCII */
+    if (cp >= 0xA0 && cp <= 0xFF) return cp;        /* Latin-1 */
+    return 0;
+}
+
+@ Turn the raw key string from _XawLookupString() into valid UTF-8.
+  XLookupString returns Latin-1 for keysyms such as a-diaeresis, which would
+  corrupt the UTF-8 text buffer.  Prefer already-valid UTF-8; otherwise encode
+  the keysym's code point.
+@proc int wedit_normalize_key_input(unsigned char *buf, int len, KeySym ks,
+                                    unsigned char *out, int outsize)
+{
+    int n;
+    if (len > 0 && wedit_is_valid_utf8(buf, len) && len <= outsize) {
+        memcpy(out, buf, len);
+        return len;
+    }
+    n = wedit_char_to_utf8(wedit_keysym_to_ucs(ks), out);
+    if (n > outsize) return 0;
+    return n;
 }
 
 @proc char scroll_left($)
@@ -604,9 +919,19 @@
 {
     char *s = value;
     int len = *length;
-    if( is_empty(s) || len <= 0 ) return;
+    if( is_empty(s) || len <= 0 ) {
+        if ((intptr_t)client == 1) {
+            Time t = XtLastTimestampProcessed(XtDisplay($));
+            if (! t) t = CurrentTime;
+            XtGetSelectionValue($, XA_PRIMARY, $XA_UTF8_STRING,
+                                RequestSelection, (XtPointer)0, t);
+        }
+        return;
+    }
     insert_char_at_cursor($,s,len);
     while( utf8char(&s) != -1 ) cursor_right($);
+    selection_clear($);
+    notify_changed($);
     paint($);
 }
 
@@ -617,62 +942,223 @@
     dump($);
 }
 
+@ select glyph range [params[0], params[1]); used for inline completion
+@proc select_range
+{
+    if (! num_params || ! params || ! params[0]) return;
+    int a = atoi(params[0]);
+    int b = (*num_params > 1 && params[1]) ? atoi(params[1]) : a;
+    selection_set($, a, b);
+    $crsr_pos = b;
+    paint($);
+}
+
+@ clear the selection without changing the text
+@proc clear_selection
+{
+    selection_clear($);
+    paint($);
+}
+
+@ focus this widget
+@proc focus
+{
+    wedit_focus_self($);
+}
+
+@proc select_all
+{
+    int n = m_len($glyph_m) - 1;
+    if (n < 0) n = 0;
+    $sel_anchor = 0;
+    $crsr_pos = n;
+    selection_set($, 0, n);
+    paint($);
+}
+
+@proc copy_selection
+{
+    do_copy_selection($);
+}
+
+@proc cut_selection
+{
+    if (! $has_selection) return;
+    do_copy_selection($);
+    delete_selection($);
+    paint($);
+}
+
+@proc move_home
+{
+    if ($has_selection) {
+        int s = ($sel_start < $sel_end) ? $sel_start : $sel_end;
+        $crsr_pos = s;
+        selection_clear($);
+    } else {
+        $crsr_pos = 0;
+    }
+    paint($);
+}
+
+@proc move_end
+{
+    int n = m_len($glyph_m) - 1;
+    if (n < 0) n = 0;
+    if ($has_selection) {
+        int e = ($sel_start > $sel_end) ? $sel_start : $sel_end;
+        $crsr_pos = e;
+        selection_clear($);
+    } else {
+        $crsr_pos = n;
+    }
+    paint($);
+}
+
+@proc select_home
+{
+    if (! $has_selection) $sel_anchor = $crsr_pos;
+    $crsr_pos = 0;
+    selection_set($, $sel_anchor, 0);
+    paint($);
+}
+
+@proc select_end
+{
+    int n = m_len($glyph_m) - 1;
+    if (n < 0) n = 0;
+    if (! $has_selection) $sel_anchor = $crsr_pos;
+    $crsr_pos = n;
+    selection_set($, $sel_anchor, n);
+    paint($);
+}
+
+@proc select_left
+{
+    if (! $has_selection) $sel_anchor = $crsr_pos;
+    cursor_left($);
+    selection_set($, $sel_anchor, $crsr_pos);
+    paint($);
+}
+
+@proc select_right
+{
+    if (! $has_selection) $sel_anchor = $crsr_pos;
+    cursor_right($);
+    selection_set($, $sel_anchor, $crsr_pos);
+    paint($);
+}
+
+@proc extend_selection
+{
+    if (! $selecting) return;
+    int p = pos_from_x($, event->xmotion.x);
+    $crsr_pos = p;
+    selection_set($, $sel_anchor, $crsr_pos);
+    paint($);
+}
+
+@proc finish_selection
+{
+    $selecting = False;
+    if (! $has_selection) {
+        $sel_start = $crsr_pos;
+        $sel_end = $crsr_pos;
+    }
+    paint($);
+}
+
+@proc backspace
+{
+    if ($has_selection) {
+        delete_selection($);
+        paint($);
+        return;
+    }
+    cursor_left($);
+    remove_char_at_cursor($);
+    paint($);
+}
+
 @proc backward_char
 {
-    cursor_left($);
-    if( $dirty ) paint($); else draw_cursor($);
+    if ($has_selection) {
+        int s = ($sel_start < $sel_end) ? $sel_start : $sel_end;
+        $crsr_pos = s;
+        selection_clear($);
+    } else {
+        cursor_left($);
+    }
+    paint($);
 }
 
 @proc forward_char
 {
-    cursor_right($);
-    if( $dirty ) paint($); else draw_cursor($);
+    if ($has_selection) {
+        int e = ($sel_start > $sel_end) ? $sel_start : $sel_end;
+        $crsr_pos = e;
+        selection_clear($);
+    } else {
+        cursor_right($);
+    }
+    paint($);
 }
 
 @proc insert_char
 {
-    int len;
-    unsigned char buf[32];
-    KeySym key_sim;
+    int len, outlen;
+    unsigned char buf[64];
+    unsigned char u8[64];
+    KeySym key_sim = NoSymbol;
 
     len = _XawLookupString($,(XKeyEvent *) event, (char*)buf,sizeof buf, &key_sim );
-    if (len <= 0) return;
+    if (len > 0) {
+        outlen = wedit_normalize_key_input(buf, len, key_sim, u8, sizeof u8);
+    } else {
+        /* Some servers report only a Unicode keysym (for example a CJK
+         * character injected via XTEST).  Encode the keysym directly. */
+        unsigned int cp = wedit_keysym_to_ucs(key_sim);
+        if (cp == 0) return;
+        outlen = wedit_char_to_utf8(cp, u8);
+    }
+    if (outlen <= 0) return;
 
-    insert_char_at_cursor($, (char*)buf, len );
+    insert_char_at_cursor($, (char*)u8, outlen );
     cursor_right($);
+    notify_changed($);
     paint($);
 }
 
 @proc remove_char
 {
+    if ($has_selection) {
+        delete_selection($);
+        paint($);
+        return;
+    }
     remove_char_at_cursor($);
     paint($);
 }
 
 @proc set_cursor
 {
-    int x = event->xbutton.x;
-    int y = event->xbutton.y;
-    x -= $pix.r.x;
-    y -= $pix.r.y;
-    int p = $left_char_offset;
-    int pix = 0;
-    do {
-        pix += INT($glyph_xoff_m, p);
-        if( x < pix ) break;
-        p++;
-    } while( p < (m_len($glyph_xoff_m)-1) );
+    int p = pos_from_x($, event->xbutton.x);
     $crsr_pos = p;
-    draw_cursor($);
+    $selecting = True;
+    $sel_anchor = p;
+    selection_clear($);
+    paint($);
 }
 
 @ insert_selection(Widget aw, XEvent * event, String * params, Cardinal * num_params)
 
 @proc insert_selection
 {
-    XtGetSelectionValue($, XA_PRIMARY, $XA_UTF8_STRING,
+    Time t = XtLastTimestampProcessed(XtDisplay($));
+    if (! t) t = CurrentTime;
+    XtGetSelectionValue($, $XA_CLIPBOARD, $XA_UTF8_STRING,
                         RequestSelection,
-                        NULL, 0 );
+                        (XtPointer)1, t);
 }
 
 @proc notify
@@ -684,6 +1170,9 @@
 
 @IMPORTS
 @incl <assert.h>
+@incl <stdio.h>
+@incl <stdlib.h>
+@incl <string.h>
 @incl <X11/Intrinsic.h>
 @incl <X11/Xatom.h>
 @incl <X11/Xmu/Converters.h>

@@ -425,7 +425,7 @@ content changes.
 | Status bar | `WStatusBar` |
 | Form | `WFormLayout` |
 | Dialog | `WDialog` |
-| Selection | `WComboBox` |
+| Selection | `WComboBox` (read-only), `WComboBoxEdit` (editable, prefix-filtered) |
 | Single-line input | `WLineEdit` (legacy: `Wedit`) |
 | Choice | `WRadioGroup` |
 | Feedback | `WProgressBar` |

@@ -133,6 +133,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wstatusbar"
 echo "19g. test_wcombobox (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wcombobox"
 
+echo "19h. test_wcomboedit (editable combo + filtered dropdown)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wcomboedit"
+
 echo "19h. test_wprogressbar (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wprogressbar"
 
@@ -157,6 +160,12 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wradiogroup"
 echo "19o. test_iconeditor (DrawCanvas icon editor + XPM save)"
 "$ROOT/tests/test_iconeditor.sh"
 
+echo "19p. test_lifecycle (graceful shutdown + close registry)"
+"$ROOT/tests/test_lifecycle.sh"
+
+echo "19q. test_xt_errno (xtaction error codes)"
+"$ROOT/tests/test_xt_errno.sh"
+
 echo "20. test_utf8"
 "$ROOT/tests/test_utf8"
 
@@ -168,6 +177,9 @@ echo "22. test_ptable"
 
 echo "22b. test_rtable (rich atom piece table)"
 "$ROOT/tests/test_rtable"
+
+echo "22c. test_markdown (Markdown subset parser)"
+"$ROOT/tests/test_markdown"
 
 echo "23. test_tokenize_plain"
 "$ROOT/tests/test_tokenize_plain"
@@ -192,6 +204,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_rich_wbravo"
 
 echo "26c. test_wbravo_state (full-state snapshot save/load)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wbravo_state"
+
+echo "26d. test_wmarkdown (Markdown viewer widget)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wmarkdown"
 echo "26d. test_wlistview (multi-column list view)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wlistview"
 echo "26e. test_wfilechooser (file chooser over WListView)"
@@ -202,5 +217,28 @@ echo "27. test_mls_trace (trace level + post-mortem source lookup)"
 
 echo "28. test_wmenubutton (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wmenubutton"
+
+echo "29. AdmPanel launcher pure-Lua tests"
+if command -v lua5.3 >/dev/null 2>&1; then
+    lua5.3 "$ROOT/tests/test_launcher_vars.lua"
+    lua5.3 "$ROOT/tests/test_launcher_prompt.lua"
+    lua5.3 "$ROOT/tests/test_launcher_config.lua"
+    lua5.3 "$ROOT/tests/test_launcher_sql.lua"
+    lua5.3 "$ROOT/tests/test_launcher_scriptmeta.lua"
+else
+    echo "AdmPanel pure-Lua tests SKIPPED (no lua5.3)"
+fi
+
+echo "29b. AdmPanel launcher headless tests"
+"$ROOT/tests/test_launcher_ui.sh"
+"$ROOT/tests/test_launcher_script.sh"
+"$ROOT/tests/test_launcher_prompt_flow.sh"
+"$ROOT/tests/test_launcher_dialog.sh"
+"$ROOT/tests/test_launcher_sql_ui.sh"
+"$ROOT/tests/test_launcher_db.sh"
+"$ROOT/tests/test_launcher_sql_real.sh"
+"$ROOT/tests/test_launcher_described.sh"
+"$ROOT/tests/test_launcher_required.sh"
+"$ROOT/tests/test_launcher_dropdown_guard.sh"
 
 echo "All tests PASSED."

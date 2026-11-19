@@ -445,12 +445,88 @@ lui.run([[
 
 ### Quitting
 
-- A C `quit_cb` is registered via `RCB(TopLevel, quit_cb)`. Use a bare
-  `:callback "quit_cb"` to invoke it — it sets the Xt exit flag and is the cleanest way
-  to quit.
-- From Lua, `xtappexitflag()` sets the Xt exit flag directly (e.g. inside a `LUA(...)`
-  callback).
-- `os.exit(0)` works but terminates the process abruptly (skipping cleanup).
+- Use `graceful_shutdown()` from Lua (or the C `quit_cb`) to request a clean
+  shutdown. It sets the Xt exit flag; `commander_runner` then runs the full
+  teardown (widget destroy, Lua close, theme/font/MLS cleanup).
+- `xtappexitflag()` still works as the low-level primitive.
+- `os.exit(0)` terminates the process abruptly and skips cleanup. Avoid it in
+  demos/apps.
+
+### Window-manager close button
+
+`commander_runner` installs `WM_DELETE_WINDOW` on the top-level shell. Any
+number of close handlers can be registered; a handler returns `false` to veto
+the close (for example to show an "unsaved changes" dialog):
+
+```lua
+local close_id = window_close_register(function()
+    if not dirty then return true end
+    gui.set("quit_dlg", "open", true)
+    return false          -- veto until the dialog decides
+end)
+
+-- Optional: remove the handler later.
+-- window_close_unregister(close_id)
+```
+
+The legacy global `on_close()` hook is still supported and runs after the
+registered handlers. A missing handler, `nil`, or `true` allows the close.
+
+When the close is allowed, `graceful_shutdown()` sets the exit flag and the
+normal teardown runs, including `m_destruct()`. Without `WM_DELETE_WINDOW` a
+window manager kills the client, so the teardown never runs. See
+`demos/demo_iconeditor.lua` for a complete example.
+
+C applications can use the same registry:
+
+```c
+static int on_close(void *data)
+{
+    return allow_close ? 1 : 0;   /* 0 vetoes */
+}
+window_close_register(on_close, NULL);
+graceful_shutdown();
+```
+
+### Action errors (errno-style)
+
+`xtaction()` returns `(code, message)`. `code == 0` means success; any other
+value is an error set by the C action. C actions are `void`, so they report
+through the shared `xt_errno`/`xt_errmsg` state:
+
+```c
+#include "xt_error.h"
+
+xt_error_set(XT_ERR_OPEN, "cannot open '%s'", path);
+```
+
+```lua
+local rc, msg = xtaction(canvas, "iconeditor_save", path)
+if rc ~= 0 then
+    set_status("Save failed: " .. (msg ~= "" and msg or ("error " .. rc)))
+    return false
+end
+```
+
+The binding clears the state before every call, so a stale error cannot leak
+into the next action. Codes are defined in `utils/xt_error.h`:
+
+| Code | Meaning |
+| --- | --- |
+| `XT_OK` | success |
+| `XT_ERR_ARG` | missing/invalid argument |
+| `XT_ERR_NO_WIDGET` | widget handle not resolved |
+| `XT_ERR_PATH` | empty path |
+| `XT_ERR_OPEN` | file could not be opened |
+| `XT_ERR_WRITE` | write/close failed |
+| `XT_ERR_FORMAT` | malformed input |
+| `XT_ERR_STATE` | action not valid in the current state |
+| `XT_ERR_RANGE` | value out of range |
+| `XT_ERR_COLORS` | too many colours for the format |
+| `XT_ERR_MEMORY` | allocation failed |
+
+The state is UI-thread only. Existing `xtaction(...)` calls that ignore the
+return values keep working unchanged.
 
 ---
 

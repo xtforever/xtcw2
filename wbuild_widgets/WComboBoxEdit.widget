@@ -1,0 +1,839 @@
+@class WComboBoxEdit (Composite)
+@ Editable combo box: a text field plus a dropdown list that filters by the
+  typed prefix while the popup is open.
+
+@PUBLIC
+@ MLS list of string items
+@var int items = 0
+@ optional MLS list of values parallel to |items|
+@var int keys = 0
+@ selected original item index, -1 = free text
+@var int selected = -1
+@ current edit text
+@var String text = <String> ""
+@ alias for |text| (WLineEdit/Wedit convention)
+@var String label = NULL
+@ placeholder shown when the edit is empty
+@var String placeholder = <String> ""
+@ maximum popup height in rows
+@var int linesHeight = 8
+@ width of the dropdown arrow button
+@var int arrowWidth = 22
+@ item chosen or Return pressed (selected index, -1 = free text)
+@var <Callback> XtCallbackList callback = NULL
+@ text changed by typing, deleting or pasting
+@var <Callback> XtCallbackList changed = NULL
+@ value for the current selection (from |keys|, or the edit text)
+@var String selectedKey = NULL
+
+@PRIVATE
+@var Widget edit
+@var Widget shell
+@var Widget list
+@var Window catcher
+@var int entry_mode
+@var int filtered
+@var int filtered_ids
+@var Boolean commit_pending
+@var XtIntervalId commit_timer
+@var XtIntervalId raise_timer
+@var int layout_guard
+@ inline completion state
+@var Boolean completion_active
+@var int typed_len
+@var char completion_prefix[256]
+
+@METHODS
+
+@proc initialize
+{
+    $edit = NULL;
+    $shell = NULL;
+    $list = NULL;
+    $catcher = None;
+    $entry_mode = 0;
+    $filtered = 0;
+    $filtered_ids = 0;
+    $commit_pending = False;
+    $commit_timer = 0;
+    $raise_timer = 0;
+    $layout_guard = 0;
+    $completion_active = False;
+    $typed_len = 0;
+    $completion_prefix[0] = 0;
+
+    if ($width == 0) $width = 240;
+    if ($height == 0) $height = 30;
+
+    XtVaSetValues($, XtNborderWidth, 1, NULL);
+    theme_register($, comboedit_theme_changed);
+
+    const char *initial = ($text && *$text) ? $text : ($label ? $label : "");
+    $edit = XtVaCreateManagedWidget("combo_edit", wLineEditWidgetClass, $,
+                                    "label", initial,
+                                    "placeholder", $placeholder ? $placeholder : "",
+                                    "showClear", True,
+                                    "clearWidth", 18,
+                                    "borderWidth", 0,
+                                    "topGap", 0, "bottomGap", 0,
+                                    NULL);
+    XtAddCallback($edit, "changed", (XtCallbackProc) edit_changed_cb, (XtPointer)$);
+    XtAddEventHandler($edit, KeyPressMask, False,
+                      (XtEventHandler) edit_key_event, (XtPointer)$);
+    XtAddEventHandler($edit, ButtonPressMask, False,
+                      (XtEventHandler) edit_button_event, (XtPointer)$);
+
+    comboedit_theme_changed($);
+    comboedit_layout($);
+}
+
+@proc expose
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    if (!win) return;
+    GC gc = DefaultGC(dpy, DefaultScreen(dpy));
+    int W = (int)$width, H = (int)$height;
+    int aw = $arrowWidth > 0 ? $arrowWidth : 22;
+    if (aw > W - 10) aw = W / 3;
+    if (aw < 8) aw = 8;
+    int x0 = W - aw;
+
+    Pixel bg = theme_color_defined("input_bg") ? get_color("input_bg")
+             : $background_pixel;
+    Pixel abg = theme_color_defined("button_bg") ? get_color("button_bg")
+              : (theme_color_defined("bg_hi") ? get_color("bg_hi") : bg);
+    Pixel line = theme_color_defined("control_border") ? get_color("control_border")
+               : (theme_color_defined("input_border") ? get_color("input_border")
+               : BlackPixelOfScreen(XtScreen($)));
+    Pixel fg = theme_color_defined("button_fg") ? get_color("button_fg")
+             : (theme_color_defined("fg_norm") ? get_color("fg_norm")
+             : WhitePixelOfScreen(XtScreen($)));
+
+    XSetForeground(dpy, gc, bg);
+    XFillRectangle(dpy, win, gc, 0, 0, (unsigned)W, (unsigned)H);
+    XSetForeground(dpy, gc, abg);
+    XFillRectangle(dpy, win, gc, x0, 0, (unsigned)aw, (unsigned)H);
+    XSetForeground(dpy, gc, line);
+    XDrawLine(dpy, win, gc, x0, 0, x0, H - 1);
+
+    int cx = x0 + aw / 2;
+    int cy = H / 2;
+    XPoint pts[3];
+    pts[0].x = (short)(cx - 4); pts[0].y = (short)(cy - 2);
+    pts[1].x = (short)(cx + 4); pts[1].y = (short)(cy - 2);
+    pts[2].x = (short)cx;       pts[2].y = (short)(cy + 3);
+    XSetForeground(dpy, gc, fg);
+    XFillPolygon(dpy, win, gc, pts, 3, Convex, CoordModeOrigin);
+}
+
+@proc destroy
+{
+    if ($commit_timer) { XtRemoveTimeOut($commit_timer); $commit_timer = 0; }
+    if ($raise_timer) { XtRemoveTimeOut($raise_timer); $raise_timer = 0; }
+    free_catcher($);
+    if ($shell) {
+        XtDestroyWidget($shell);
+        $shell = NULL;
+        $list = NULL;
+    }
+    free_filter($);
+    theme_unregister($);
+}
+
+@proc realize
+{
+    #realize($, mask, attributes);
+    comboedit_layout($);
+}
+
+@proc resize
+{
+    comboedit_layout($);
+    if ($entry_mode) comboedit_resize_popup($);
+}
+
+@proc change_managed
+{
+    comboedit_layout($);
+    if ($entry_mode) comboedit_resize_popup($);
+}
+
+@proc query_geometry
+{
+    int w = 240;
+    int h = 30;
+    if ($edit) {
+        XtWidgetGeometry req, pref;
+        memset(&req, 0, sizeof req);
+        pref.request_mode = 0;
+        if (XtQueryGeometry($edit, &req, &pref) == XtGeometryAlmost) {
+            if ((pref.request_mode & CWWidth) && pref.width > 0)
+                w = (int)pref.width + $arrowWidth + 8;
+            if ((pref.request_mode & CWHeight) && pref.height > 0)
+                h = (int)pref.height;
+        }
+    }
+    if (w < 80) w = 80;
+    if (h < 20) h = 20;
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)w;
+    reply->height = (Dimension)h;
+    if ((request->request_mode & CWWidth) && request->width > reply->width)
+        reply->width = request->width;
+    if ((request->request_mode & CWHeight) && request->height > reply->height)
+        reply->height = request->height;
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@proc geometry_manager
+{
+    Dimension w = (request->request_mode & CWWidth) ? request->width : $child$width;
+    Dimension h = (request->request_mode & CWHeight) ? request->height : $child$height;
+    XtConfigureWidget(child, $child$x, $child$y, w, h, $child$border_width);
+    comboedit_layout($);
+    return XtGeometryDone;
+}
+
+@proc set_values
+{
+    int redraw = 0;
+
+    if ($items != $old$items) {
+        int n = $items ? m_len($items) : 0;
+        if ($selected >= n) $selected = -1;
+        if ($entry_mode) comboedit_refilter($, comboedit_text($));
+        redraw = 1;
+    }
+
+    if ($selected != $old$selected) {
+        if ($items && $selected >= 0 && $selected < m_len($items)) {
+            set_edit_text($, STR($items, $selected));
+            comboedit_select_all_text($);
+        }
+        if ($entry_mode) close_popup($);
+        redraw = 1;
+    }
+
+    if ($text != $old$text || $label != $old$label) {
+        const char *v = ($text != $old$text) ? $text : $label;
+        set_edit_text($, v ? v : "");
+        $completion_active = False;
+        $typed_len = comboedit_utf8_len(v ? v : "");
+        $completion_prefix[0] = 0;
+        if ($entry_mode) comboedit_refilter($, comboedit_text($));
+        redraw = 1;
+    }
+
+    if ($placeholder != $old$placeholder) {
+        if ($edit)
+            XtVaSetValues($edit, "placeholder", $placeholder ? $placeholder : "", NULL);
+        redraw = 1;
+    }
+
+    if ($linesHeight != $old$linesHeight) {
+        if ($entry_mode && $list) {
+            XtVaSetValues($list, "visibleRows", $linesHeight > 0 ? $linesHeight : 8, NULL);
+            comboedit_resize_popup($);
+        }
+        redraw = 1;
+    }
+
+    return redraw;
+}
+
+@proc get_values_hook
+{
+    int i;
+    for (i = 0; i < *num_args; i++) {
+        if (strcmp(args[i].name, "text") == 0 ||
+            strcmp(args[i].name, "label") == 0) {
+            *((char**)args[i].value) = (char*)comboedit_text($);
+        } else if (strcmp(args[i].name, "selected") == 0) {
+            *((int*)args[i].value) = $selected;
+        } else if (strcmp(args[i].name, "selectedKey") == 0) {
+            *((char**)args[i].value) = (char*)comboedit_selected_key($);
+        }
+    }
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>: arrow_click()
+
+@ACTIONS
+
+@ open or close the dropdown from the arrow area
+@proc arrow_click
+{
+    if ($entry_mode) {
+        close_popup($);
+        focus_edit($);
+    } else {
+        comboedit_open($, 0);
+    }
+}
+
+@ select an item by zero-based original index; params[0] is the index
+@proc select_index
+{
+    if (! num_params || ! params || ! params[0]) return;
+    int idx = atoi(params[0]);
+    if (! $items || idx < 0 || idx >= m_len($items)) return;
+    $selected = idx;
+    set_edit_text($, STR($items, idx));
+    comboedit_select_all_text($);
+    close_popup($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@ open the dropdown with the full item list
+@proc open_popup
+{
+    comboedit_open($, 0);
+}
+
+@ close the dropdown without changing the text
+@proc dismiss
+{
+    close_popup($);
+}
+
+@ focus the edit field
+@proc focus
+{
+    focus_edit($);
+}
+
+@ clear the edit text (Ctrl+U and the small x button)
+@proc clear
+{
+    if ($edit)
+        XtCallActionProc($edit, "clear", event, params,
+                         num_params ? *num_params : 0);
+    focus_edit($);
+}
+
+@UTILITIES
+
+@proc const char *comboedit_text($)
+{
+    const char *s = NULL;
+    if ($edit) XtVaGetValues($edit, XtNlabel, &s, NULL);
+    return s ? s : "";
+}
+
+@proc const char *comboedit_selected_key($)
+{
+    if ($keys && $selected >= 0 && $selected < m_len($keys))
+        return STR($keys, $selected);
+    return comboedit_text($);
+}
+
+@proc void set_edit_text($, const char *s)
+{
+    if ($edit) XtVaSetValues($edit, XtNlabel, s ? s : "", NULL);
+}
+
+@proc int comboedit_utf8_len(const char *s)
+{
+    int n = 0;
+    char *p = (char*)s;
+    if (! p) return 0;
+    while (utf8char(&p) != -1) n++;
+    return n;
+}
+
+@ select the whole edit text so the next typed character replaces it
+@proc void comboedit_select_all_text($)
+{
+    if (! $edit) return;
+    int n = comboedit_utf8_len(comboedit_text($));
+    char a[16], b[16];
+    snprintf(a, sizeof a, "0");
+    snprintf(b, sizeof b, "%d", n);
+    String params[2] = { a, b };
+    XtCallActionProc($edit, "select_range", NULL, params, 2);
+    $completion_active = False;
+    $typed_len = n;
+    $completion_prefix[0] = 0;
+}
+
+@ inline-complete the first item matching |typed|; the suffix is selected
+@proc void comboedit_complete($, const char *typed)
+{
+    if (! $items || ! $edit || ! typed || ! *typed) return;
+    int n = m_len($items);
+    int plen = comboedit_utf8_len(typed);
+    size_t blen = strlen(typed);
+    for (int i = 0; i < n; i++) {
+        const char *item = STR($items, i);
+        if (! item) continue;
+        if (strncasecmp(item, typed, blen) != 0) continue;
+        int ilen = comboedit_utf8_len(item);
+        if (ilen < plen) continue;
+        if (ilen == plen) {
+            /* Exact (case-insensitive) match: normalise the display text and
+             * make the lookup value the matching item. */
+            set_edit_text($, item);
+            $selected = i;
+            $completion_active = False;
+            $typed_len = plen;
+            return;
+        }
+        snprintf($completion_prefix, sizeof($completion_prefix), "%s", typed);
+        set_edit_text($, item);
+        char a[16], b[16];
+        snprintf(a, sizeof a, "%d", plen);
+        snprintf(b, sizeof b, "%d", ilen);
+        String params[2] = { a, b };
+        XtCallActionProc($edit, "select_range", NULL, params, 2);
+        $completion_active = True;
+        $typed_len = plen;
+        return;
+    }
+    $completion_active = False;
+    $typed_len = plen;
+}
+
+@proc void comboedit_after_text_change($, int allow_complete)
+{
+    const char *text = comboedit_text($);
+    int len = comboedit_utf8_len(text);
+    int cursor = 0;
+    if ($edit) XtVaGetValues($edit, "cursorPos", &cursor, NULL);
+    $selected = -1;
+    if ($entry_mode) comboedit_refilter($, text);
+    $completion_active = False;
+    if (allow_complete && len >= 2 && len > $typed_len && cursor == len)
+        comboedit_complete($, text);
+    else
+        $typed_len = len;
+    XtCallCallbackList($, $changed, NULL);
+}
+
+@proc void focus_edit($)
+{
+    Widget top = $;
+    while (top && !XtIsShell(top)) top = XtParent(top);
+    if (top && $edit) XtSetKeyboardFocus(top, $edit);
+}
+
+@proc void comboedit_theme_changed($)
+{
+    Pixel bg = theme_color_defined("input_bg") ? get_color("input_bg")
+             : $background_pixel;
+    Pixel border = theme_color_defined("input_border") ? get_color("input_border")
+                 : (theme_color_defined("control_border") ? get_color("control_border")
+                 : BlackPixelOfScreen(XtScreen($)));
+    XtVaSetValues($, XtNbackground, bg, XtNborderColor, border, NULL);
+    if (XtIsRealized($)) {
+        XClearWindow(XtDisplay($), XtWindow($));
+        comboedit_layout($);
+    }
+}
+
+@proc void comboedit_layout($)
+{
+    if ($layout_guard) return;
+    $layout_guard = 1;
+    int W = (int)$width;
+    int H = (int)$height;
+    int aw = $arrowWidth > 0 ? $arrowWidth : 22;
+    if (aw > W - 10) aw = W / 3;
+    if (aw < 8) aw = 8;
+    int ew = W - aw;
+    if (ew < 1) ew = 1;
+    if ($edit) XtConfigureWidget($edit, 0, 0, (Dimension)ew, (Dimension)H, 0);
+    $layout_guard = 0;
+}
+
+@proc void free_filter($)
+{
+    if ($filtered) { m_free($filtered); $filtered = 0; }
+    if ($filtered_ids) { m_free_strings($filtered_ids, 0); $filtered_ids = 0; }
+}
+
+@proc int prefix_match(const char *s, const char *prefix)
+{
+    if (! prefix || ! *prefix) return 1;
+    return strncasecmp(s ? s : "", prefix, strlen(prefix)) == 0;
+}
+
+@proc void comboedit_refilter($, const char *prefix)
+{
+    int n = $items ? m_len($items) : 0;
+    /* Drop the list's references before freeing the old MLS lists.  The
+     * allocator can hand the new lists the same addresses, and WListView's
+     * set_values compares pointers; clearing first makes the refill visible
+     * and avoids stale rowIds/selectedId. */
+    if ($list)
+        XtVaSetValues($list, "rows", 0, "rowIds", 0, "selected", -1, NULL);
+    free_filter($);
+    $filtered = m_create(10, sizeof(char*));
+    $filtered_ids = m_create(10, sizeof(char*));
+    for (int i = 0; i < n; i++) {
+        const char *s = STR($items, i);
+        if (! prefix_match(s, prefix)) continue;
+        char *p = (char*)s;
+        m_put($filtered, &p);
+        char idbuf[32];
+        snprintf(idbuf, sizeof idbuf, "%d", i);
+        char *id = strdup(idbuf);
+        m_put($filtered_ids, &id);
+    }
+    if ($list) {
+        int count = $filtered ? m_len($filtered) : 0;
+        int sel = count > 0 ? 0 : -1;
+        if ($selected >= 0 && $filtered_ids) {
+            for (int i = 0; i < count; i++) {
+                if (atoi(STR($filtered_ids, i)) == $selected) { sel = i; break; }
+            }
+        }
+        int visible = $linesHeight > 0 ? $linesHeight : 8;
+        if (visible > count) visible = count;
+        if (visible < 1) visible = 1;
+        XtVaSetValues($list, "rows", $filtered, "rowIds", $filtered_ids, NULL);
+        XtVaSetValues($list, "visibleRows", visible, "selected", sel, NULL);
+        comboedit_resize_popup($);
+    }
+}
+
+@proc void comboedit_position_popup($)
+{
+    if (! $shell) return;
+    Dimension ch = 0;
+    XtVaGetValues($, XtNheight, &ch, NULL);
+    int rx = 0, ry = 0;
+    Window child_win = None;
+    XTranslateCoordinates(XtDisplay($), XtWindow($),
+                          DefaultRootWindow(XtDisplay($)),
+                          0, (int)ch + 2, &rx, &ry, &child_win);
+    XtVaSetValues($shell, XtNx, (int)rx, XtNy, (int)ry, NULL);
+}
+
+@proc void comboedit_resize_popup($)
+{
+    if (! $shell || ! $list) return;
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    XtQueryGeometry($list, &req, &pref);
+    int h = (pref.request_mode & CWHeight) ? (int)pref.height : (int)$list->core.height;
+    if (h < 1) h = 1;
+    XtResizeWidget($shell, $width, (Dimension)h, 0);
+    comboedit_position_popup($);
+}
+
+@proc void free_catcher($)
+{
+    if ($catcher != None) {
+        Display *dpy = XtDisplay($);
+        XtUnregisterDrawable(dpy, $catcher);
+        XDestroyWindow(dpy, $catcher);
+        $catcher = None;
+    }
+}
+
+@proc void make_catcher($)
+{
+    Display *dpy = XtDisplay($);
+    free_catcher($);
+
+    Widget top = $;
+    while (top && !XtIsShell(top)) top = XtParent(top);
+
+    Position tx = 0, ty = 0;
+    int cw = WidthOfScreen(XtScreen($));
+    int ch = HeightOfScreen(XtScreen($));
+    if (top) {
+        XtTranslateCoords(top, 0, 0, &tx, &ty);
+        if ((int)top->core.width > 0) cw = (int)top->core.width;
+        if ((int)top->core.height > 0) ch = (int)top->core.height;
+    }
+
+    XSetWindowAttributes a;
+    memset(&a, 0, sizeof a);
+    a.override_redirect = True;
+    a.event_mask = ButtonPressMask | ButtonReleaseMask;
+    $catcher = XCreateWindow(dpy, DefaultRootWindow(dpy),
+                             (int)tx, (int)ty, (unsigned)cw, (unsigned)ch, 0,
+                             0, InputOnly, CopyFromParent,
+                             CWOverrideRedirect | CWEventMask, &a);
+    XMapRaised(dpy, $catcher);
+    XtRegisterDrawable(dpy, $catcher, $shell);
+}
+
+@proc catcher_event(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    if (ev->type != ButtonPress) return;
+    if ($catcher == None) return;
+    if (ev->xbutton.window == $catcher) close_popup($);
+}
+
+@proc void comboedit_open($, int use_filter)
+{
+    comboedit_open_prefix($, use_filter ? comboedit_text($) : "");
+}
+
+@proc void comboedit_open_prefix($, const char *prefix)
+{
+    if ($entry_mode) return;
+    if (! XtIsRealized($)) return;
+    if (! $items || m_len($items) < 1) return;
+
+    comboedit_refilter($, prefix);
+    if (! $filtered || m_len($filtered) < 1) return;
+
+    if ($shell) {
+        XtDestroyWidget($shell);
+        $shell = NULL;
+        $list = NULL;
+    }
+
+    $shell = XtCreatePopupShell("combo_edit_shell", overrideShellWidgetClass,
+                                $, NULL, 0);
+    XtAddEventHandler($shell, ButtonPressMask, False,
+                      (XtEventHandler) catcher_event, (XtPointer)$);
+
+    int visible = $linesHeight > 0 ? $linesHeight : 8;
+    if (visible > m_len($filtered)) visible = m_len($filtered);
+    if (visible < 1) visible = 1;
+
+    $list = XtVaCreateManagedWidget("combo_edit_list", wListViewWidgetClass, $shell,
+                                    "rows", $filtered,
+                                    "rowIds", $filtered_ids,
+                                    "selected", 0,
+                                    "columnCount", 1,
+                                    "showHeader", False,
+                                    "gridLines", False,
+                                    "alternateRows", False,
+                                    "allowHoriz", False,
+                                    "allowVert", True,
+                                    "visibleRows", visible,
+                                    "borderWidth", 0,
+                                    NULL);
+    XtAddCallback($list, "clicked", (XtCallbackProc) list_clicked_cb, (XtPointer)$);
+    XtAddCallback($list, "activate", (XtCallbackProc) list_activate_cb, (XtPointer)$);
+    XtAddEventHandler($list, KeyPressMask, False,
+                      (XtEventHandler) list_key_event, (XtPointer)$);
+
+    XtRealizeWidget($shell);
+    comboedit_resize_popup($);
+    /* Focus before mapping: focusing after the popup is mapped makes the
+     * application shell rise above the popup on some X servers. */
+    focus_edit($);
+    make_catcher($);
+    XtPopup($shell, XtGrabNone);
+    XRaiseWindow(XtDisplay($), XtWindow($shell));
+    $raise_timer = XtAppAddTimeOut(XtWidgetToApplicationContext($), 0,
+                                   (XtTimerCallbackProc) raise_popup_timeout,
+                                   (XtPointer)$);
+    $entry_mode = 1;
+}
+
+@proc void close_popup($)
+{
+    if (! $entry_mode) return;
+    free_catcher($);
+    if ($commit_timer) { XtRemoveTimeOut($commit_timer); $commit_timer = 0; }
+    if ($raise_timer) { XtRemoveTimeOut($raise_timer); $raise_timer = 0; }
+    if ($shell) {
+        XtPopdown($shell);
+        XtDestroyWidget($shell);
+        $shell = NULL;
+        $list = NULL;
+    }
+    free_filter($);
+    $entry_mode = 0;
+    $commit_pending = False;
+}
+
+@proc void comboedit_commit($, int use_list)
+{
+    int idx = -1;
+    if (use_list && $list)
+        XtVaGetValues($list, "selectedId", &idx, NULL);
+
+    if (idx < 0) {
+        const char *txt = comboedit_text($);
+        int n = $items ? m_len($items) : 0;
+        for (int i = 0; i < n; i++) {
+            if (strcasecmp(STR($items, i), txt) == 0) { idx = i; break; }
+        }
+    }
+
+    if (idx >= 0 && $items && idx < m_len($items)) {
+        $selected = idx;
+        set_edit_text($, STR($items, idx));
+        comboedit_select_all_text($);
+    } else {
+        $selected = -1;
+    }
+    $completion_active = False;
+    $typed_len = comboedit_utf8_len(comboedit_text($));
+    $completion_prefix[0] = 0;
+
+    $commit_pending = False;
+    $commit_timer = 0;
+    close_popup($);
+    focus_edit($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc void raise_popup_timeout(XtPointer client, XtIntervalId *id)
+{
+    (void)id;
+    comboedit_raise((Widget)client);
+}
+
+@proc void comboedit_raise($)
+{
+    $raise_timer = 0;
+    if ($entry_mode && $shell && XtIsRealized($shell))
+        XRaiseWindow(XtDisplay($), XtWindow($shell));
+}
+
+@proc void commit_timeout(XtPointer client, XtIntervalId *id)
+{
+    (void)id;
+    comboedit_commit((Widget)client, 1);
+}
+
+@proc void schedule_commit($)
+{
+    if ($commit_pending) return;
+    $commit_pending = True;
+    $commit_timer = XtAppAddTimeOut(XtWidgetToApplicationContext($), 0,
+                                    (XtTimerCallbackProc) commit_timeout,
+                                    (XtPointer)$);
+}
+
+@proc void edit_changed_cb(Widget w, $, void *class_data)
+{
+    (void)w; (void)class_data;
+    comboedit_after_text_change($, 1);
+}
+
+@proc void edit_button_event(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    (void)w; (void)ev; (void)cont;
+    $completion_active = False;
+}
+
+@proc void edit_key_event(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    (void)w;
+    if (ev->type != KeyPress) return;
+    KeySym ks = XLookupKeysym(&ev->xkey, 0);
+
+    if ((ev->xkey.state & ControlMask) && (ks == XK_u || ks == XK_U)) {
+        $completion_active = False;
+        XtCallActionProc($, "clear", ev, NULL, 0);
+        if (cont) *cont = False;
+        return;
+    }
+    if ((ev->xkey.state & ControlMask) && (ks == XK_a || ks == XK_A)) {
+        $completion_active = False;
+        /* let the select_all() translation run */
+    }
+    if (ks == XK_Left || ks == XK_Right || ks == XK_Home || ks == XK_End) {
+        $completion_active = False;
+        /* let the cursor/selection translation run */
+    }
+    if ((ks == XK_BackSpace || ks == XK_Delete) && $completion_active) {
+        /* Remove the inline completion but keep the typed prefix. */
+        set_edit_text($, $completion_prefix);
+        XtCallActionProc($edit, "move_end", ev, NULL, 0);
+        comboedit_after_text_change($, 0);
+        $completion_active = False;
+        if (cont) *cont = False;
+        return;
+    }
+    if (ks == XK_Return) {
+        $completion_active = False;
+        comboedit_commit($, $entry_mode ? 1 : 0);
+        if (cont) *cont = False;
+        return;
+    }
+    if (ks == XK_Escape) {
+        if ($completion_active) {
+            set_edit_text($, $completion_prefix);
+            XtCallActionProc($edit, "move_end", ev, NULL, 0);
+            comboedit_after_text_change($, 0);
+            $completion_active = False;
+        }
+        if ($entry_mode) close_popup($);
+        if (cont) *cont = False;
+        return;
+    }
+    if (ks == XK_Down) {
+        int was_completing = $completion_active;
+        $completion_active = False;
+        if (! $entry_mode) {
+            if (was_completing) comboedit_open_prefix($, $completion_prefix);
+            else comboedit_open($, 1);
+        } else if ($list) {
+            XtCallActionProc($list, "move_down", ev, NULL, 0);
+        }
+        if (cont) *cont = False;
+        return;
+    }
+    if (ks == XK_Up) {
+        int was_completing = $completion_active;
+        $completion_active = False;
+        if (! $entry_mode) {
+            if (was_completing) comboedit_open_prefix($, $completion_prefix);
+            else comboedit_open($, 1);
+            if ($list) XtCallActionProc($list, "move_end", ev, NULL, 0);
+        } else if ($list) {
+            XtCallActionProc($list, "move_up", ev, NULL, 0);
+        }
+        if (cont) *cont = False;
+        return;
+    }
+}
+
+@proc void list_clicked_cb(Widget w, $, void *class_data)
+{
+    (void)w; (void)class_data;
+    schedule_commit($);
+}
+
+@proc void list_activate_cb(Widget w, $, void *class_data)
+{
+    (void)w; (void)class_data;
+    schedule_commit($);
+}
+
+@proc void list_key_event(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    (void)w;
+    if (ev->type != KeyPress) return;
+    if (XLookupKeysym(&ev->xkey, 0) == XK_Escape) {
+        close_popup($);
+        focus_edit($);
+        if (cont) *cont = False;
+    }
+}
+
+@IMPORTS
+@incl <X11/Shell.h>
+@incl <X11/StringDefs.h>
+@incl <X11/Intrinsic.h>
+@incl <X11/keysym.h>
+@incl <X11/Xft/Xft.h>
+@incl <stdio.h>
+@incl <stdlib.h>
+@incl <string.h>
+@incl <strings.h>
+@incl "mls.h"
+@incl "theme.h"
+@incl "xtcw/WLineEdit.h"
+@incl "xtcw/WListView.h"

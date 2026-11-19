@@ -9,6 +9,8 @@
 #include <X11/Xft/Xft.h>
 #include <xtcw/WComboBox.h>
 #include <xtcw/WComboBoxP.h>
+#include <xtcw/WListView.h>
+#include <xtcw/WListViewP.h>
 #include <xtcw/register_wb.h>
 #include "mls.h"
 
@@ -18,6 +20,15 @@ static void on_combo(Widget w, XtPointer cd, XtPointer cb)
 {
     (void)w; (void)cd;
     fired = (int)(intptr_t)cb;
+}
+
+/* Process the zero-delay commit timeout scheduled by a popup click. */
+static void pump_widget(Widget w)
+{
+    XtAppContext app = XtWidgetToApplicationContext(w);
+    XSync(XtDisplay(w), False);
+    while (XtAppPending(app))
+        XtAppProcessEvent(app, XtIMAll);
 }
 
 int main(int argc, char **argv)
@@ -91,6 +102,7 @@ int main(int argc, char **argv)
     XtCallActionProc(combo, "notify", NULL, NULL, 0);
     WComboBoxWidget cw = (WComboBoxWidget)combo;
     assert(cw->wComboBox.shell != NULL);
+    assert(cw->wComboBox.list != NULL);
     Position sx = 0, sy = 0;
     Dimension sw = 0, sh = 0;
     XtVaGetValues(cw->wComboBox.shell, XtNx, &sx, XtNy, &sy,
@@ -101,29 +113,77 @@ int main(int argc, char **argv)
                           DefaultRootWindow(XtDisplay(combo)),
                           0, 0, &cx, &cy, &child);
     assert(sy >= cy + (int)combo->core.height);
-    WidgetList buttons = NULL;
-    Cardinal nbuttons = 0;
-    XtVaGetValues(cw->wComboBox.menu, XtNchildren, &buttons,
-                  XtNnumChildren, &nbuttons, NULL);
-    assert(nbuttons == 3);
-    XtCallActionProc(buttons[2], "notify", NULL, NULL, 0);
-    XtVaGetValues(combo, XtNlabel, &label, "selected", &selected, NULL);
-    assert(selected == 2);
-    assert(label && strcmp(label, "Dessert") == 0);
+
+    int rowCount = 0;
+    int listSelected = -1;
+    int visibleRows = 0;
+    XtVaGetValues(cw->wComboBox.list,
+                  "rowCount", &rowCount,
+                  "selected", &listSelected,
+                  "visibleRows", &visibleRows, NULL);
+    assert(rowCount == 3);
+    assert(listSelected == 2);
+    assert(visibleRows == 3);          /* fewer items than linesHeight */
+
+    /* A single mouse click on the first row commits and closes the popup. */
+    {
+        WListViewWidget lw = (WListViewWidget)cw->wComboBox.list;
+        XButtonEvent ev;
+        memset(&ev, 0, sizeof ev);
+        ev.type = ButtonPress;
+        ev.x = 5;
+        ev.y = lw->wListView.list_y + 1;
+        ev.time = 1000;
+        XtCallActionProc(cw->wComboBox.list, "click", (XEvent *)&ev, NULL, 0);
+        pump_widget(combo);
+    }
     assert(!cw->wComboBox.entry_mode);
+    XtVaGetValues(combo, XtNlabel, &label, "selected", &selected, NULL);
+    assert(selected == 0);
+    assert(label && strcmp(label, "Starter") == 0);
+    assert(fired == 0);
 
     /* activate toggles the popup: open, then close and commit the selection. */
     XtCallActionProc(combo, "activate", NULL, NULL, 0);
     assert(cw->wComboBox.entry_mode);
     XtCallActionProc(combo, "activate", NULL, NULL, 0);
     assert(!cw->wComboBox.entry_mode);
-    assert(fired == 2);
+    assert(fired == 0);
 
     /* Escape/dismiss closes an open popup. */
     XtCallActionProc(combo, "notify", NULL, NULL, 0);
     assert(cw->wComboBox.entry_mode);
     XtCallActionProc(combo, "dismiss", NULL, NULL, 0);
     assert(!cw->wComboBox.entry_mode);
+
+    /* Many items must use the scrollable list, not one widget per item.
+     * The popup height stays bounded by linesHeight. */
+    {
+        enum { BIG_N = 200 };
+        static char big_buf[BIG_N][16];
+        static char *big_str[BIG_N];
+        int big_items = m_create(10, sizeof(char *));
+        int i;
+        for (i = 0; i < BIG_N; i++) {
+            snprintf(big_buf[i], sizeof big_buf[i], "Item %d", i);
+            big_str[i] = big_buf[i];
+            m_put(big_items, &big_str[i]);
+        }
+        XtVaSetValues(combo, "items", big_items, NULL);
+        XtCallActionProc(combo, "notify", NULL, NULL, 0);
+        assert(cw->wComboBox.entry_mode);
+        XtVaGetValues(cw->wComboBox.list,
+                      "rowCount", &rowCount,
+                      "visibleRows", &visibleRows, NULL);
+        assert(rowCount == BIG_N);
+        assert(visibleRows == 8);
+        XtVaGetValues(cw->wComboBox.shell, XtNheight, &sh, NULL);
+        assert(sh > 0 && sh < 500);
+        XtCallActionProc(combo, "dismiss", NULL, NULL, 0);
+        assert(!cw->wComboBox.entry_mode);
+        XtVaSetValues(combo, "items", items, NULL);
+        m_free(big_items);
+    }
 
     XtDestroyWidget(top);
     XtDestroyApplicationContext(app);

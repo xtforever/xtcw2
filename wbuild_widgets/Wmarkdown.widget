@@ -1,0 +1,884 @@
+@ A read-only Markdown help-text viewer rendered with retex
+@class Wmarkdown (Wheel)
+
+@EXPORTS
+@proc void redraw_markdown($)
+{
+    if (!XtIsRealized($)) return;
+
+    if ($backend_ptr &&
+        ($cache_w != (int)$width || $cache_h != (int)$height))
+        $dirty = 1;
+
+    if ($dirty || !$backend_ptr) {
+        update_cache($);
+        $dirty = 0;
+    }
+
+    if ($pixmap && $backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->flush(be);
+        int copy_w = (int)$width;
+        int copy_h = (int)$height;
+        if (copy_w > 4000) copy_w = 4000;
+        if (copy_h > 4000) copy_h = 4000;
+        XCopyArea(XtDisplay($), $pixmap, XtWindow($), $gc[0],
+                  0, 0, copy_w, copy_h, 0, 0);
+    }
+}
+
+@CLASSVARS
+@var XtEnum compress_exposure = TRUE
+
+@PUBLIC
+@ Markdown source text (viewer subset: headings, paragraphs, lists, quotes,
+@ fenced code, rules, bold/italic/code spans and links).
+@var String text = <String> ""
+@ base font face
+@var String fontFace = "Sans"
+@ base font size in points
+@var int fontSize = 13
+@ face used for inline code and fenced code blocks
+@var String monoFontFace = "Mono"
+@ adopt the active theme's UI font (font_ui); explicit fontFace/fontSize
+@ changes after creation still win
+@var Boolean useThemeFont = TRUE
+@ 0=left, 1=center, 2=right, 3=justify (default: justify paragraphs)
+@var int alignment = 3
+@ padding around the text
+@var int topGap = 6
+@var int bottomGap = 6
+@var int leftGap = 8
+@var int rightGap = 8
+@ request the preferred height for the current width
+@var Boolean autoHeight = FALSE
+@ first visible line (0-based); scrolling is done through the actions below
+@var int scrollLine = 0
+
+@PRIVATE
+@var void *doc
+@var void *backend_ptr
+@var void *para_ptr
+@var Pixmap pixmap
+@var int cache_w
+@var int cache_h
+@var Bool dirty
+@var String text_mem
+@ Owned copies of the String resources (Xt borrows caller strings).
+@var char fontFace_buf[128]
+@var char monoFace_buf[128]
+@var int prefered_width
+@var int prefered_height
+@var int lines_total
+@ Flattened UTF-8 text (same byte coordinates as the retex layout).
+@var char *flat
+@var int flat_len
+@ Selection endpoints are UTF-8 byte boundaries; -1 = no selection.
+@var int sel_anchor
+@var int sel_caret
+@var char *sel_buf
+@var int sel_len
+@var Atom utf8_atom
+@var Atom clipboard_atom
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@proc initialize
+{
+    char *s = $text;
+    if (!s) s = "";
+
+    $text_mem = XtNewString(s);
+    $text = $text_mem;
+
+    $doc = NULL;
+    $backend_ptr = NULL;
+    $para_ptr = NULL;
+    $pixmap = 0;
+    $cache_w = 0;
+    $cache_h = 0;
+    $dirty = 1;
+    $prefered_width = 200;
+    $prefered_height = 100;
+    $lines_total = 0;
+    $flat = NULL;
+    $flat_len = 0;
+    $sel_anchor = -1;
+    $sel_caret = -1;
+    $sel_buf = NULL;
+    $sel_len = 0;
+    $utf8_atom = XInternAtom(XtDisplay($), "UTF8_STRING", False);
+    $clipboard_atom = XInternAtom(XtDisplay($), "CLIPBOARD", False);
+
+    if ($fontSize < 1) $fontSize = 13;
+    if ($useThemeFont)
+        apply_theme_font($);
+    copy_face($, &$fontFace, $fontFace_buf, sizeof($fontFace_buf), "Sans");
+    copy_face($, &$monoFontFace, $monoFace_buf, sizeof($monoFace_buf), "Mono");
+
+    theme_register($, wheel_colors_changed);
+    wheel_colors_changed($);
+
+    calculate_size($, 0, &$prefered_width, &$prefered_height);
+    if ($width == 0) $width = $prefered_width;
+    if ($height == 0) $height = $prefered_height;
+    $dirty = 1;
+}
+
+@proc destroy
+{
+    theme_unregister($);
+    if ($para_ptr) {
+        retex_paragraph_free((RetexParagraph*)$para_ptr);
+        $para_ptr = NULL;
+    }
+    if ($backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->destroy(be);
+        $backend_ptr = NULL;
+    }
+    if ($doc) {
+        markdown_free((MarkdownDoc*)$doc);
+        $doc = NULL;
+    }
+    free($flat);
+    free($sel_buf);
+    XtFree($text_mem);
+}
+
+@proc set_values
+{
+    int do_expose = 0;
+    int size_changed = 0;
+
+    if ($text != $old$text) {
+        XtFree($old$text_mem);
+        if ($text == 0) $text = "";
+        $text = $text_mem = XtNewString($text);
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($useThemeFont != $old$useThemeFont) {
+        if ($useThemeFont)
+            apply_theme_font($);
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($fontFace != $old$fontFace) {
+        copy_face($, &$fontFace, $fontFace_buf, sizeof($fontFace_buf), "Sans");
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($monoFontFace != $old$monoFontFace) {
+        copy_face($, &$monoFontFace, $monoFace_buf, sizeof($monoFace_buf), "Mono");
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($fontSize != $old$fontSize) {
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($alignment != $old$alignment) {
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($topGap != $old$topGap || $bottomGap != $old$bottomGap ||
+        $leftGap != $old$leftGap || $rightGap != $old$rightGap) {
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($scrollLine != $old$scrollLine) {
+        /* Clamped after layout; the old line count may be stale here. */
+        do_expose = 1;
+    }
+
+    if (do_expose) {
+        $dirty = 1;
+        if (XtIsRealized($)) update_cache($);
+    }
+
+    if (size_changed && $autoHeight) {
+        int w, h;
+        calculate_size($, (int)$width, &w, &h);
+        if (h != (int)$height)
+            XtVaSetValues($, XtNheight, (Dimension)h, NULL);
+    }
+
+    return do_expose;
+}
+
+@proc query_geometry
+{
+    int tw = (request->request_mode & CWWidth) ? request->width : (int)$width;
+    int w, h;
+    calculate_size($, tw, &w, &h);
+
+    reply->request_mode = CWWidth | CWHeight;
+    /* When the parent proposes a width, keep it and report the height the
+     * wrapped content actually needs for that width. */
+    reply->width = (request->request_mode & CWWidth) ? request->width : w;
+    reply->height = h;
+    if ((request->request_mode & CWHeight) && request->height > reply->height)
+        reply->height = request->height;
+
+    $prefered_width = reply->width;
+    $prefered_height = reply->height;
+
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+    $dirty = 1;
+}
+
+@proc resize
+{
+    if ($para_ptr) {
+        retex_paragraph_free((RetexParagraph*)$para_ptr);
+        $para_ptr = NULL;
+    }
+    if ($backend_ptr) {
+        Backend *be = (Backend*)$backend_ptr;
+        be->destroy(be);
+        $backend_ptr = NULL;
+        $pixmap = 0;
+        $cache_w = 0;
+        $cache_h = 0;
+    }
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc expose
+{
+    redraw_markdown($);
+}
+
+@proc accept_focus
+{
+    return True;
+}
+
+@ override the Wheel theme hook: fonts/colours and the pixmap cache change
+@proc void colors_changed
+{
+    if ($useThemeFont)
+        apply_theme_font($);
+    rebuild_doc($);
+    $dirty = 1;
+    #colors_changed($);
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>: select_start() SetFocus()
+@trans <Btn1Motion>: select_extend()
+@trans <Btn1Up>: select_end()
+@trans <Ctrl>a: select_all()
+@trans <Ctrl>c: copy_selection()
+@trans <Btn4Down>: scroll_up()
+@trans <Btn5Down>: scroll_down()
+@trans <Key>Up: scroll_up()
+@trans <Key>Down: scroll_down()
+@trans <Key>Prior: page_up()
+@trans <Key>Next: page_down()
+@trans <Key>Home: scroll_home()
+@trans <Key>End: scroll_end()
+
+@ACTIONS
+@ Read-only viewer commands.  scroll_up/down move one line, page_* one
+@ viewport, scroll_home/end jump to the ends.  set_scroll takes a 0-based
+@ line number; set_text replaces the Markdown source.
+@
+@ Selection: drag with the left mouse button, Ctrl+A selects everything,
+@ Ctrl+C copies to CLIPBOARD and PRIMARY.  set_selection takes code-point
+@ offsets (anchor, caret) like Wbravo; clear_selection drops the selection.
+@proc SetFocus
+{
+    Widget shell, parent;
+    shell = parent = $;
+    while (parent) {
+        if (XtIsShell(shell = parent)) break;
+        parent = XtParent(parent);
+    }
+    XtSetKeyboardFocus(shell, $);
+}
+
+@proc select_start
+{
+    int byte = byte_at_event($, event);
+    if (byte < 0) return;
+    $sel_anchor = byte;
+    $sel_caret = byte;
+    XtDisownSelection($, XA_PRIMARY, CurrentTime);
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc select_extend
+{
+    int byte = byte_at_event($, event);
+    if (byte < 0 || $sel_anchor < 0) return;
+    $sel_caret = byte;
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc select_end
+{
+    if ($sel_anchor >= 0 && $sel_caret >= 0 && $sel_anchor != $sel_caret)
+        own_selection($, XA_PRIMARY);
+}
+
+@proc select_all
+{
+    if (!$flat || $flat_len <= 0) {
+        $sel_anchor = $sel_caret = -1;
+    } else {
+        $sel_anchor = 0;
+        $sel_caret = $flat_len;
+    }
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc clear_selection
+{
+    $sel_anchor = $sel_caret = -1;
+    XtDisownSelection($, XA_PRIMARY, CurrentTime);
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc copy_selection
+{
+    int lo, hi;
+    if ($sel_anchor < 0 || $sel_caret < 0) return;
+    lo = $sel_anchor < $sel_caret ? $sel_anchor : $sel_caret;
+    hi = $sel_anchor < $sel_caret ? $sel_caret : $sel_anchor;
+    if (hi <= lo) return;
+    own_selection($, XA_PRIMARY);
+    own_selection($, $clipboard_atom);
+}
+
+@proc set_selection
+{
+    int a, b, len;
+    if (num_params && *num_params >= 2 && params[0] && params[1]) {
+        len = ($flat && $flat_len > 0) ? utf8_strlen($flat) : 0;
+        a = atoi(params[0]);
+        b = atoi(params[1]);
+        if (a < 0) a = 0;
+        if (a > len) a = len;
+        if (b < 0) b = 0;
+        if (b > len) b = len;
+        if ($flat) {
+            $sel_anchor = utf8_cp_index_to_byte($flat, a);
+            $sel_caret = utf8_cp_index_to_byte($flat, b);
+        } else {
+            $sel_anchor = $sel_caret = -1;
+        }
+        $dirty = 1;
+        if (XtIsRealized($)) redraw_markdown($);
+    }
+}
+
+@proc scroll_up
+{
+    scroll_by($, -1);
+}
+
+@proc scroll_down
+{
+    scroll_by($, 1);
+}
+
+@proc page_up
+{
+    scroll_by($, -visible_lines($));
+}
+
+@proc page_down
+{
+    scroll_by($, visible_lines($));
+}
+
+@proc scroll_home
+{
+    $scrollLine = 0;
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc scroll_end
+{
+    $scrollLine = $lines_total;
+    clamp_scroll($);
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc set_scroll
+{
+    if (num_params && *num_params >= 1 && params[0]) {
+        $scrollLine = atoi(params[0]);
+        clamp_scroll($);
+        $dirty = 1;
+        if (XtIsRealized($)) redraw_markdown($);
+    }
+}
+
+@proc set_text
+{
+    if (num_params && *num_params >= 1 && params[0])
+        XtVaSetValues($, XtNtext, params[0], NULL);
+}
+
+@UTILITIES
+
+@proc void copy_face($, char **res, char *buf, int cap, const char *fallback)
+{
+    const char *src = (*res && **res) ? *res : fallback;
+    if (src != buf) {
+        strncpy(buf, src, (size_t)cap - 1);
+        buf[cap - 1] = 0;
+    }
+    *res = buf;
+}
+
+@proc void apply_theme_font($)
+{
+    char face[128];
+    int px = 0;
+    const char *spec = theme_font_spec();
+
+    if (theme_font_parts(spec, face, sizeof(face), &px)) {
+        if (face[0]) {
+            strncpy($fontFace_buf, face, sizeof($fontFace_buf) - 1);
+            $fontFace_buf[sizeof($fontFace_buf) - 1] = 0;
+            $fontFace = $fontFace_buf;
+        }
+        if (px > 0)
+            $fontSize = px;
+    }
+}
+
+@proc void rebuild_doc($)
+{
+    MarkdownStyle st;
+    int natoms = 0;
+    const RAtom *atoms;
+
+    if ($doc) {
+        markdown_free((MarkdownDoc*)$doc);
+        $doc = NULL;
+    }
+
+    free($flat);
+    $flat = NULL;
+    $flat_len = 0;
+    $sel_anchor = $sel_caret = -1;
+    $sel_len = 0;
+
+    memset(&st, 0, sizeof(st));
+    st.font_face = ($fontFace && *$fontFace) ? $fontFace : "Sans";
+    st.font_size = $fontSize > 0 ? (double)$fontSize : 13.0;
+    st.mono_face = ($monoFontFace && *$monoFontFace) ? $monoFontFace : "Mono";
+    st.default_align = $alignment;
+    $doc = markdown_parse($text ? $text : "", &st);
+
+    if ($doc) {
+        atoms = markdown_atoms((MarkdownDoc*)$doc, &natoms);
+        $flat = (char*)malloc((size_t)natoms * 4 + 1);
+        if ($flat) {
+            int i;
+            char tmp[4];
+            for (i = 0; i < natoms; i++) {
+                uint32_t cp = (atoms[i].kind == RATOM_CHAR)
+                                  ? atoms[i].cp : 0xFFFC;
+                int k = utf8_encode_cp(cp, tmp);
+                if (k > 0) {
+                    memcpy($flat + $flat_len, tmp, (size_t)k);
+                    $flat_len += k;
+                }
+            }
+            $flat[$flat_len] = 0;
+        }
+    }
+    $dirty = 1;
+}
+
+@proc double scroll_offset_pt($)
+{
+    RetexLine l;
+    if ($para_ptr && $scrollLine > 0 &&
+        retex_paragraph_get_line((RetexParagraph*)$para_ptr, $scrollLine, &l))
+        return l.y;
+    return 0.0;
+}
+
+@proc int byte_at_event($, XEvent *ev)
+{
+    int mx, my;
+    double xpt, ypt;
+
+    if (!$para_ptr)
+        return -1;
+    if (ev->type == MotionNotify) {
+        mx = ev->xmotion.x;
+        my = ev->xmotion.y;
+    } else {
+        mx = ev->xbutton.x;
+        my = ev->xbutton.y;
+    }
+    mx -= $leftGap;
+    my -= $topGap;
+    xpt = px2pt($, (double)mx);
+    ypt = px2pt($, (double)my) + scroll_offset_pt($);
+    return retex_paragraph_get_offset_at((RetexParagraph*)$para_ptr, xpt, ypt);
+}
+
+@proc void fill_selection_text($)
+{
+    int lo, hi, len;
+    char *nb;
+
+    $sel_len = 0;
+    if ($sel_anchor < 0 || $sel_caret < 0 || !$flat)
+        return;
+    lo = $sel_anchor < $sel_caret ? $sel_anchor : $sel_caret;
+    hi = $sel_anchor < $sel_caret ? $sel_caret : $sel_anchor;
+    if (lo < 0) lo = 0;
+    if (hi > $flat_len) hi = $flat_len;
+    if (hi <= lo)
+        return;
+
+    len = hi - lo;
+    nb = (char*)realloc($sel_buf, (size_t)len + 1);
+    if (!nb)
+        return;
+    $sel_buf = nb;
+    memcpy($sel_buf, $flat + lo, (size_t)len);
+    $sel_buf[len] = 0;
+    $sel_len = len;
+}
+
+@proc void own_selection($, Atom selection)
+{
+    fill_selection_text($);
+    if ($sel_len > 0)
+        XtOwnSelection($, selection, CurrentTime, ConvertSelection,
+                       LoseSelection, NULL);
+}
+
+@proc Boolean ConvertSelection($, Atom *selection, Atom *target,
+                               Atom *type, XtPointer *value,
+                               unsigned long *length, int *format)
+{
+    if (*target == $utf8_atom) {
+        int l = $sel_len;
+        *type = $utf8_atom;
+        *format = 8;
+        *length = (unsigned long)l;
+        *value = XtMalloc(l > 0 ? l : 1);
+        if (l > 0 && $sel_buf)
+            memcpy(*value, $sel_buf, (size_t)l);
+        return True;
+    }
+    *type = None;
+    *value = NULL;
+    *length = 0;
+    *format = 0;
+    return False;
+}
+
+@proc void LoseSelection($, Atom *selection)
+{
+}
+
+@proc void apply_selection($)
+{
+    int lo, hi;
+
+    if (!$para_ptr)
+        return;
+    if ($sel_anchor < 0 || $sel_caret < 0 || $sel_anchor == $sel_caret) {
+        retex_paragraph_set_selection((RetexParagraph*)$para_ptr, -1, -1);
+        return;
+    }
+    lo = $sel_anchor < $sel_caret ? $sel_anchor : $sel_caret;
+    hi = $sel_anchor < $sel_caret ? $sel_caret : $sel_anchor;
+    if (lo < 0) lo = 0;
+    if (hi > $flat_len) hi = $flat_len;
+    if (hi <= lo) {
+        retex_paragraph_set_selection((RetexParagraph*)$para_ptr, -1, -1);
+        return;
+    }
+    retex_paragraph_set_selection((RetexParagraph*)$para_ptr, lo, hi - 1);
+}
+
+@proc double get_dpi($)
+{
+    Display *dpy = XtDisplay($);
+    char *s = XGetDefault(dpy, "Xft", "dpi");
+    if (s) {
+        double dpi = atof(s);
+        if (dpi < 1.0 || dpi > 1000.0) return 96.0;
+        return dpi;
+    }
+    return 96.0;
+}
+
+@proc double pt2px($, double pt) { return pt * get_dpi($) / 72.0; }
+@proc double px2pt($, double px) { return px * 72.0 / get_dpi($); }
+
+@proc uint32_t xftcolor_to_argb($, int index)
+{
+    XftColor *xc = &$xft_col[index];
+    uint32_t r = xc->color.red >> 8;
+    uint32_t g = xc->color.green >> 8;
+    uint32_t b = xc->color.blue >> 8;
+    uint32_t a = xc->color.alpha >> 8;
+    if (a == 0) a = 0xFF;
+    return (a << 24) | (r << 16) | (g << 8) | b;
+}
+
+@proc void calculate_size($, int tw, int *w, int *h)
+{
+    Display *dpy = XtDisplay($);
+    Window root = DefaultRootWindow(dpy);
+    Backend *be;
+    int natoms = 0, nfmts = 0;
+    const RAtom *atoms;
+    const RetexParaFormat *fmts;
+    RetexParaFormat *measure_fmts = NULL;
+    RetexParagraph *p;
+    double target_width_pt;
+    int i;
+
+    *w = 10;
+    *h = 10;
+
+    if (!$doc)
+        return;
+
+    be = backend_xpixmap_create(dpy, root, 10, 10);
+    if (!be)
+        return;
+
+    if (tw > 0) {
+        int adj = tw - ($leftGap + $rightGap);
+        if (adj < 10) adj = 10;
+        target_width_pt = px2pt($, (double)adj);
+    } else {
+        target_width_pt = 10000.0;
+    }
+
+    atoms = markdown_atoms((MarkdownDoc*)$doc, &natoms);
+    fmts = markdown_formats((MarkdownDoc*)$doc, &nfmts);
+
+    /* Natural width measurement needs no fill glue; JUSTIFY has none. */
+    if (nfmts > 0) {
+        measure_fmts = (RetexParaFormat*)malloc((size_t)nfmts *
+                                                sizeof(RetexParaFormat));
+        if (measure_fmts) {
+            memcpy(measure_fmts, fmts, (size_t)nfmts *
+                   sizeof(RetexParaFormat));
+            for (i = 0; i < nfmts; i++)
+                measure_fmts[i].align = RETEX_ALIGN_JUSTIFY;
+            fmts = measure_fmts;
+        }
+    }
+
+    p = retex_layout_styled_paras_compact(be, atoms, natoms, target_width_pt,
+                                          $fontFace, $fontSize, fmts, nfmts,
+                                          RETEX_ALIGN_JUSTIFY);
+    if (p) {
+        *w = (int)ceil(pt2px($, retex_paragraph_get_width(p))) +
+             $leftGap + $rightGap;
+        *h = (int)ceil(pt2px($, retex_paragraph_get_height(p))) +
+             $topGap + $bottomGap;
+        retex_paragraph_free(p);
+    }
+    free(measure_fmts);
+    be->destroy(be);
+}
+
+@proc void clamp_scroll($)
+{
+    int max_scroll = 0;
+
+    if ($lines_total > 0) {
+        max_scroll = $lines_total - visible_lines($);
+        if (max_scroll < 0)
+            max_scroll = 0;
+    }
+    if ($scrollLine < 0)
+        $scrollLine = 0;
+    if ($scrollLine > max_scroll)
+        $scrollLine = max_scroll;
+}
+
+@proc int visible_lines($)
+{
+    RetexLine l;
+    double line_px;
+    int vis;
+
+    if (!$para_ptr)
+        return 1;
+    if (!retex_paragraph_get_line((RetexParagraph*)$para_ptr, 0, &l))
+        return 1;
+    line_px = pt2px($, l.height);
+    if (line_px < 1.0) line_px = 1.0;
+    vis = (int)(((double)$height - $topGap - $bottomGap) / line_px);
+    return vis > 0 ? vis : 1;
+}
+
+@proc void scroll_by($, int delta)
+{
+    $scrollLine += delta;
+    clamp_scroll($);
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc void update_cache($)
+{
+    Backend *be;
+    RendererColors colors;
+    int w, h, natoms = 0, nfmts = 0, first;
+    const RAtom *atoms;
+    const RetexParaFormat *fmts;
+    double wpx;
+
+    if (!XtIsRealized($) || XtWindow($) == 0)
+        return;
+
+    w = $width > 4000 ? 4000 : ($width < 1 ? 1 : $width);
+    h = $height > 4000 ? 4000 : ($height < 1 ? 1 : $height);
+
+    if ($backend_ptr && ($cache_w != w || $cache_h != h)) {
+        Backend *old = (Backend*)$backend_ptr;
+        old->destroy(old);
+        $backend_ptr = NULL;
+        $pixmap = 0;
+    }
+    if (!$backend_ptr) {
+        $backend_ptr = backend_xpixmap_create(XtDisplay($), XtWindow($), w, h);
+        if (!$backend_ptr) return;
+        $pixmap = backend_xpixmap_get_pixmap((Backend*)$backend_ptr);
+        $cache_w = w;
+        $cache_h = h;
+    }
+
+    be = (Backend*)$backend_ptr;
+
+    be->set_clip(be, 0, 0, 0, 0, 0);
+    {
+        double dpi = be->get_dpi(be);
+        double wpt, hpt;
+        if (dpi < 1.0 || dpi > 1000.0) dpi = 96.0;
+        wpt = (double)w * 72.0 / dpi;
+        hpt = (double)h * 72.0 / dpi;
+        be->draw_rect(be, 0, 0, wpt, hpt,
+                      xftcolor_to_argb($, COLOR_BG_NORM));
+    }
+    be->flush(be);
+
+    if ($para_ptr) {
+        retex_paragraph_free((RetexParagraph*)$para_ptr);
+        $para_ptr = NULL;
+    }
+
+    $lines_total = 0;
+    if (!$doc) {
+        $scrollLine = 0;
+        $dirty = 0;
+        return;
+    }
+
+    wpx = (double)(w - ($leftGap + $rightGap));
+    if (wpx < 10.0) wpx = 10.0;
+
+    atoms = markdown_atoms((MarkdownDoc*)$doc, &natoms);
+    fmts = markdown_formats((MarkdownDoc*)$doc, &nfmts);
+    $para_ptr = retex_layout_styled_paras_compact(be, atoms, natoms,
+                                                  px2pt($, wpx),
+                                                  $fontFace, $fontSize,
+                                                  fmts, nfmts, $alignment);
+    if (!$para_ptr) {
+        $dirty = 0;
+        return;
+    }
+
+    $lines_total = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
+    clamp_scroll($);
+    first = $scrollLine;
+    if (first >= $lines_total)
+        first = $lines_total > 0 ? $lines_total - 1 : 0;
+
+    colors.text = xftcolor_to_argb($, COLOR_FG_NORM);
+    colors.bg = xftcolor_to_argb($, COLOR_BG_NORM);
+    colors.reverse_text = xftcolor_to_argb($, COLOR_BG_NORM);
+    colors.reverse_bg = xftcolor_to_argb($, COLOR_FG_NORM);
+    colors.sel_text = xftcolor_to_argb($, COLOR_FG_SEL);
+    colors.sel_bg = xftcolor_to_argb($, COLOR_BG_SEL);
+
+    apply_selection($);
+
+    retex_paragraph_render_range((RetexParagraph*)$para_ptr, be,
+                                 first, $lines_total - 1,
+                                 px2pt($, (double)$leftGap),
+                                 px2pt($, (double)$topGap),
+                                 &colors, 0);
+    be->flush(be);
+    $dirty = 0;
+}
+
+@IMPORTS
+@incl <X11/Xft/Xft.h>
+@incl <X11/Xatom.h>
+@incl <X11/Xmu/Converters.h>
+@incl <math.h>
+@incl <stdio.h>
+@incl <stdlib.h>
+@incl <string.h>
+@incl "converters.h"
+@incl "converters-xft.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "conststr.h"
+@incl "font.h"
+@incl "backend.h"
+@incl "backend_xpixmap.h"
+@incl "retex.h"
+@incl "markdown.h"
+@incl "utf8.h"
+@incl "utf32.h"
+@incl "theme.h"
+@incl "focus-group.h"
+@incl "apputil.h"

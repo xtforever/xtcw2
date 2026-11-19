@@ -85,6 +85,8 @@ libxtcw: core widgets retex
 	cp wbuild_widgets/iconeditor-draw.c build/source/ 2>/dev/null || true
 	cp wbuild_widgets/iconeditor-draw.h build/source/ 2>/dev/null || true
 	cp wbuild_widgets/snake-draw.c build/source/ 2>/dev/null || true
+	cp wbuild_widgets/markdown.c build/source/ 2>/dev/null || true
+	cp wbuild_widgets/markdown.h build/source/ 2>/dev/null || true
 	cp wbuild_widgets/tooltip.c build/source/ 2>/dev/null || true
 	cp wbuild_widgets/tooltip.h build/source/ 2>/dev/null || true
 	# Create makefile in build/source if it doesn't exist

@@ -27,7 +27,7 @@ function M.process_property(clean_k, v, widget_class)
         clean_k = 'alignment'
     elseif clean_k == 'model' then
         -- WListView takes a row model; the older lists take tableStrs.
-        if widget_class == 'WComboBox' then
+        if widget_class == 'WComboBox' or widget_class == 'WComboBoxEdit' then
             clean_k = 'items'
         else
             clean_k = (widget_class == 'WListView') and 'rows' or 'tableStrs'

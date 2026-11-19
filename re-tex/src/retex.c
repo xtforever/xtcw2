@@ -413,7 +413,22 @@ typedef struct {
     Scaled leading;
     Scaled trailing;
     double vspace;
+    /* Last line of a justified paragraph must not be stretched. */
+    Glue last_right_skip;
+    int align;
 } PlainCtx;
+
+static int para_segment_blank(const RAtom *atoms, int i, int j);
+
+/* Is the segment starting at `next` blank or past the end?  Used to detect the
+ * final line of a paragraph so justification does not stretch it. */
+static int styled_last_line(const RAtom *atoms, int natoms, int next) {
+    int m = next;
+    if (next >= natoms) return 1;
+    while (m < natoms && !(atoms[m].kind == RATOM_CHAR && atoms[m].cp == '\n'))
+        m++;
+    return para_segment_blank(atoms, next, m);
+}
 
 /* Start an hlist with the paragraph's left margin then the alignment glue. */
 static void plain_start_line(PlainCtx *ctx, int hlist) {
@@ -423,7 +438,8 @@ static void plain_start_line(PlainCtx *ctx, int hlist) {
 }
 
 static void plain_finish_line(Backend *be, PlainCtx *ctx, int hlist,
-                              int has_word, int start_byte, int end_byte) {
+                              int has_word, int start_byte, int end_byte,
+                              int last_line) {
     Node hbox;
     double h, d, w;
     RetexLine *ln;
@@ -445,7 +461,9 @@ static void plain_finish_line(Backend *be, PlainCtx *ctx, int hlist,
                                 FROM_DOUBLE(ctx->font_size), 0, ctx->face);
         node_create_rule(hlist, 0, sm.height, sm.depth, 0);
     }
-    node_create_glue(hlist, ctx->right_skip, 0);
+    node_create_glue(hlist,
+                     (last_line && ctx->align == RETEX_ALIGN_JUSTIFY)
+                         ? ctx->last_right_skip : ctx->right_skip, 0);
     if (ctx->trailing > 0)
         node_create_kern(hlist, ctx->trailing, 0);
     hbox = node_pack_hbox(hlist, ctx->target);
@@ -520,6 +538,8 @@ RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_p
     ctx.vbox_list = m_create(8, sizeof(Node));
     ctx.left_skip = left_skip;
     ctx.right_skip = right_skip;
+    ctx.last_right_skip = fil;
+    ctx.align = (int)align;
     ctx.target = target;
     ctx.font_size = font_size_pt;
     ctx.face = face;
@@ -587,7 +607,7 @@ RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_p
                         m_del(hlist, m_len(hlist) - 1);
                     }
                     plain_finish_line(be, &ctx, hlist, has_word,
-                                      line_start_byte, line_end_byte);
+                                      line_start_byte, line_end_byte, 0);
                     hlist = m_create(16, sizeof(Node));
                     node_create_glue(hlist, left_skip, 0);
                     cur_w = 0;
@@ -611,7 +631,8 @@ RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_p
             }
         }
 
-        plain_finish_line(be, &ctx, hlist, has_word, line_start_byte, line_end_sp);
+        plain_finish_line(be, &ctx, hlist, has_word, line_start_byte,
+                          line_end_sp, t1 >= nt);
 
         if (t1 >= nt) break;
         t0 = t1 + 1;
@@ -737,7 +758,8 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
                                           const char *font_face,
                                           double font_size_pt,
                                           const RetexParaFormat *fmts, int nfmts,
-                                          RetexAlign default_align) {
+                                          RetexAlign default_align,
+                                          int compact_blank) {
     const char *face;
     int face_handle;
     Scaled target, line_target;
@@ -776,6 +798,8 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
     ctx.vbox_list = m_create(8, sizeof(Node));
     ctx.left_skip = zero;
     ctx.right_skip = fil;
+    ctx.last_right_skip = fil;
+    ctx.align = RETEX_ALIGN_LEFT;
     ctx.target = target;
     ctx.font_size = font_size_pt;
     ctx.face = face;
@@ -816,6 +840,15 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
             pf = para_fmt_at(NULL, 0, 0, default_align);
         }
 
+        /* Compact mode: blank-line separators only delimit paragraphs; they
+         * do not occupy a visual line.  Paragraph spacing comes from
+         * space_before/space_after. */
+        if (blank && compact_blank) {
+            if (j >= natoms) break;
+            i = j + 1;
+            continue;
+        }
+
         l0 = pf.indent_left;
         l1 = pf.indent_left + pf.first_line;
         right_margin = pf.indent_right;
@@ -828,6 +861,7 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
         line_target = FROM_DOUBLE(width_pt - (para_first ? l1 : l0) - right_margin);
         para_align_glues((RetexAlign)pf.align, zero, fil,
                          &ctx.left_skip, &ctx.right_skip);
+        ctx.align = pf.align;
 
         hlist = m_create(16, sizeof(Node));
         plain_start_line(&ctx, hlist);
@@ -907,7 +941,7 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
                         m_del(hlist, m_len(hlist) - 1);
                     }
                     plain_finish_line(be, &ctx, hlist, has_word,
-                                      line_start, line_end);
+                                      line_start, line_end, 0);
                     /* Wrapped lines do not repeat the first-line indent. */
                     para_first = 0;
                     ctx.leading = FROM_DOUBLE(l0);
@@ -935,7 +969,8 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
             }
         }
 
-        plain_finish_line(be, &ctx, hlist, has_word, line_start, line_end_sp);
+        plain_finish_line(be, &ctx, hlist, has_word, line_start, line_end_sp,
+                          styled_last_line(atoms, natoms, j + 1));
         para_first = 0;
 
         if (j >= natoms) break;
@@ -995,7 +1030,7 @@ RetexParagraph* retex_layout_styled(Backend *be, const RAtom *atoms, int natoms,
     f.space_before = 0.0;
     f.space_after = 0.0;
     return styled_layout_impl(be, atoms, natoms, width_pt, font_face,
-                              font_size_pt, &f, 1, align);
+                              font_size_pt, &f, 1, align, 0);
 }
 
 RetexParagraph* retex_layout_styled_paras(Backend *be, const RAtom *atoms,
@@ -1005,7 +1040,18 @@ RetexParagraph* retex_layout_styled_paras(Backend *be, const RAtom *atoms,
                                           const RetexParaFormat *fmts, int nfmts,
                                           RetexAlign default_align) {
     return styled_layout_impl(be, atoms, natoms, width_pt, font_face,
-                              font_size_pt, fmts, nfmts, default_align);
+                              font_size_pt, fmts, nfmts, default_align, 0);
+}
+
+RetexParagraph* retex_layout_styled_paras_compact(Backend *be, const RAtom *atoms,
+                                                  int natoms, double width_pt,
+                                                  const char *font_face,
+                                                  double font_size_pt,
+                                                  const RetexParaFormat *fmts,
+                                                  int nfmts,
+                                                  RetexAlign default_align) {
+    return styled_layout_impl(be, atoms, natoms, width_pt, font_face,
+                              font_size_pt, fmts, nfmts, default_align, 1);
 }
 
 

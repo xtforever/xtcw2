@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "xt_bridge.h"
+#include "lifecycle.h"
 
 lua_State *L_GLOBAL = NULL;
 
@@ -53,6 +54,7 @@ void lua_bridge_register_bindings(void) {
     lua_register(L_GLOBAL, "xtapptimeout", xtapptimeout_lua);
     lua_register(L_GLOBAL, "xtgeometry", xtgeometry_lua);
     lua_register(L_GLOBAL, "xterror_count", xterror_count_lua);
+    lifecycle_lua_register(L_GLOBAL);
 }
 
 void lua_bridge_destroy(void) {

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Smoke test for the IconEditor demo: load the UI, draw a red diagonal via the
-# plug-in test hook, save an XPM and verify the file.
+# plug-in test hook, erase the top-left pixel, save an XPM and verify the file.
 set -u
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -40,8 +40,11 @@ elif ! grep -q '^/\* XPM \*/' "$OUT"; then
 elif ! grep -q 'c #FF0000' "$OUT"; then
     echo "FAIL - saved XPM does not contain the red test stroke"
     fail=1
+elif ! grep -Eq '^"[[:space:]]{32}",$' "$OUT"; then
+    echo "FAIL - erased top-left pixel is not transparent in the XPM"
+    fail=1
 else
-    echo "ok - saved XPM with the red test stroke"
+    echo "ok - saved XPM with the red test stroke and a transparent erased pixel"
 fi
 
 if [ "$fail" -eq 0 ]; then

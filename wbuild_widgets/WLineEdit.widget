@@ -2,8 +2,6 @@
 @ Single-line input with placeholder and optional clear button.
 
 @PUBLIC
-@ text shown when the field is empty
-@var String placeholder = <String> ""
 @ draw a small x button when the field has text
 @var Boolean showClear = True
 @ clear-button width
@@ -11,44 +9,8 @@
 
 @METHODS
 
-@proc expose
-{
-    #expose($, event, region);
-    draw_extras($);
-}
-
-@TRANSLATIONS
-@trans <Key>Right:     forward_char()
-@trans <Key>Left:      backward_char()
-@trans <Key>Delete:    remove_char()
-@trans <Key>BackSpace: backward_char() remove_char()
-@trans <Ctrl>x:        info()
-@trans <Ctrl>v:        insert_selection()
-@trans <Btn1Down>:     lineedit_click()
-@trans <Key>Return:    notify()
-@trans <Key>:          insert_char()
-
-@ACTIONS
-
-@proc clear
-{
-    XtVaSetValues($, XtNlabel, "", NULL);
-    XtCallCallbackList($, $callback, event);
-}
-
-@proc lineedit_click
-{
-    int x = event->xbutton.x;
-    if ($showClear && m_len($str_m) > 1 && x >= (int)$width - $clearWidth) {
-        clear($, event, NULL, NULL);
-        return;
-    }
-    XtCallActionProc($, "set_cursor", event, params, num_params ? *num_params : 0);
-}
-
-@UTILITIES
-
-@proc void draw_extras($)
+@ override Wedit's decoration hook: draw the clear button on top of the text
+@proc void draw_extras
 {
     if (!XtIsRealized($)) return;
     Display *dpy = XtDisplay($);
@@ -78,6 +40,46 @@
         XDrawLine(dpy, win, gc, cx - 4, cy - 4, cx + 4, cy + 4);
         XDrawLine(dpy, win, gc, cx - 4, cy + 4, cx + 4, cy - 4);
     }
+}
+
+@TRANSLATIONS
+@trans <Shift>Left:    select_left()
+@trans <Shift>Right:   select_right()
+@trans <Shift>Home:    select_home()
+@trans <Shift>End:     select_end()
+@trans <Key>Home:      move_home()
+@trans <Key>End:       move_end()
+@trans <Key>Right:     forward_char()
+@trans <Key>Left:      backward_char()
+@trans <Key>Delete:    remove_char()
+@trans <Key>BackSpace: backspace()
+@trans <Ctrl>a:        select_all()
+@trans <Ctrl>c:        copy_selection()
+@trans <Ctrl>x:        cut_selection()
+@trans <Ctrl>v:        insert_selection()
+@trans <Btn1Down>:     lineedit_click()
+@trans <Btn1Motion>:   extend_selection()
+@trans <Btn1Up>:       finish_selection()
+@trans <Key>Return:    notify()
+@trans <Key>:          insert_char()
+
+@ACTIONS
+
+@proc clear
+{
+    XtVaSetValues($, XtNlabel, "", NULL);
+    XtCallCallbackList($, $changed, event);
+    XtCallCallbackList($, $callback, event);
+}
+
+@proc lineedit_click
+{
+    int x = event->xbutton.x;
+    if ($showClear && m_len($str_m) > 1 && x >= (int)$width - $clearWidth) {
+        clear($, event, NULL, NULL);
+        return;
+    }
+    XtCallActionProc($, "set_cursor", event, params, num_params ? *num_params : 0);
 }
 
 @IMPORTS

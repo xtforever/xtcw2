@@ -20,7 +20,9 @@ static Widget lv;
 static XtAppContext app;
 static int notify_count = 0;
 static int activate_count = 0;
+static int clicked_count = 0;
 static int last_sel = -2;
+static int last_clicked = -2;
 static int g_rows = 0;
 static int header_col = -1;
 
@@ -48,6 +50,13 @@ static void on_activate(Widget w, XtPointer cd, XtPointer cb)
 {
     (void)w; (void)cd; (void)cb;
     activate_count++;
+}
+
+static void on_clicked(Widget w, XtPointer cd, XtPointer cb)
+{
+    (void)w; (void)cd;
+    clicked_count++;
+    last_clicked = (int)(intptr_t)cb;
 }
 
 static void on_header(Widget w, XtPointer cd, XtPointer cb)
@@ -111,6 +120,7 @@ int main(int argc, char **argv)
                                  "selected", -1,
                                  NULL);
     XtAddCallback(lv, "notify", on_notify, NULL);
+    XtAddCallback(lv, "clicked", on_clicked, NULL);
     XtAddCallback(lv, "activate", on_activate, NULL);
 
     set_int_array("columnWidths", widths, 3);
@@ -399,6 +409,21 @@ int main(int argc, char **argv)
         px = XGetPixel(img, 0, 0);
         XDestroyImage(img);
         assert(px == lww->wListView.col_px[0]);  /* C_BG */
+    }
+
+    /* A single row click fires |clicked| (before any double-click activate). */
+    {
+        XEvent ev;
+        int before = clicked_count;
+        memset(&ev, 0, sizeof ev);
+        ev.xbutton.x = 5;
+        ev.xbutton.y = lww->wListView.list_y + 1;
+        ev.xbutton.time = 5000;
+        XtCallActionProc(lv, "click", (XEvent *)&ev, NULL, 0);
+        pump();
+        assert(clicked_count == before + 1);
+        assert(last_clicked == 0);
+        assert(lww->wListView.selected == 0);
     }
 
     for (i = 0; i < n; i++) if (i != 0 && rows[i]) free(rows[i]);

@@ -18,6 +18,9 @@ int xtmanage_lua(lua_State *L);
 int xtunmanage_lua(lua_State *L);
 int xtdestroy_lua(lua_State *L);
 
+/* Free the Lua-created widget name registry at shutdown. */
+void xt_bridge_cleanup(void);
+
 int mls_create_lua(lua_State *L);
 int mls_put_string_lua(lua_State *L);
 int mls_clear_lua(lua_State *L);

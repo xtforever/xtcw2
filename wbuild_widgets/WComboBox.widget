@@ -1,5 +1,5 @@
 @class WComboBox (Wlabel)
-@ Read-only themed combo box with a WPopupMenu popup.
+@ Read-only themed combo box with a scrollable WListView popup.
 
 @PUBLIC
 @ MLS list of string items
@@ -15,10 +15,12 @@
 
 @PRIVATE
 @var Widget shell
-@var Widget menu
+@var Widget list
 @var Window catcher
 @var int entry_mode
 @var Boolean updating_label
+@var Boolean commit_pending
+@var XtIntervalId commit_timer
 @var Pixel focus_ring
 
 @METHODS
@@ -26,12 +28,14 @@
 @proc destroy
 {
     free_catcher($);
+    if ($commit_timer) { XtRemoveTimeOut($commit_timer); $commit_timer = 0; }
     if ($shell) {
         XtDestroyWidget($shell);
         $shell = NULL;
-        $menu = NULL;
+        $list = NULL;
     }
     $entry_mode = 0;
+    $commit_pending = False;
 
     if ($para_ptr) { retex_paragraph_free((RetexParagraph*)$para_ptr); $para_ptr = NULL; }
     if ($backend_ptr) {
@@ -46,10 +50,12 @@
 @proc initialize
 {
     $shell = NULL;
-    $menu = NULL;
+    $list = NULL;
     $catcher = None;
     $entry_mode = 0;
     $updating_label = False;
+    $commit_pending = False;
+    $commit_timer = 0;
     $useControlColors = True;
     if ($rightGap == 0) $rightGap = 18;
     $focus_ring = theme_color_defined("accent") ? get_color("accent") : $fg_norm;
@@ -118,6 +124,7 @@
     if ($selected > 0) $selected--;
     else if ($selected < 0) $selected = 0;
     update_label($);
+    sync_list_selection($);
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
 }
 
@@ -128,6 +135,7 @@
     if ($selected < 0) $selected = 0;
     else if ($selected < n - 1) $selected++;
     update_label($);
+    sync_list_selection($);
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
 }
 
@@ -136,6 +144,7 @@
     if (! $items || m_len($items) < 1) return;
     $selected = 0;
     update_label($);
+    sync_list_selection($);
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
 }
 
@@ -145,6 +154,7 @@
     if (n < 1) return;
     $selected = n - 1;
     update_label($);
+    sync_list_selection($);
     XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
 }
 
@@ -221,6 +231,14 @@
     $updating_label = False;
 }
 
+@ keep the popup list in sync when the combo's own key actions move the
+  selection while the popup is open
+@proc void sync_list_selection($)
+{
+    if ($entry_mode && $list)
+        XtVaSetValues($list, "selected", $selected, NULL);
+}
+
 @proc void free_catcher($)
 {
     if ($catcher != None) {
@@ -275,25 +293,36 @@
     if ($shell) {
         XtDestroyWidget($shell);
         $shell = NULL;
-        $menu = NULL;
+        $list = NULL;
     }
 
     $shell = XtCreatePopupShell("combo_shell", overrideShellWidgetClass,
                                 $, NULL, 0);
     XtAddEventHandler($shell, ButtonPressMask, False,
                       (XtEventHandler) catcher_event, (XtPointer)$);
-    $menu = XtVaCreateManagedWidget("combo_menu", wPopupMenuWidgetClass,
-                                    $shell, NULL);
 
     int n = m_len($items);
-    for (int i = 0; i < n; i++) {
-        Widget item = XtVaCreateManagedWidget("item", wbuttonWidgetClass, $menu,
-                                              XtNlabel, STR($items, i),
-                                              "user_data", i,
-                                              NULL);
-        XtAddCallback(item, "callback", (XtCallbackProc) item_selected_cb,
-                      (XtPointer)$);
-    }
+    int visible = $linesHeight > 0 ? $linesHeight : 8;
+    if (visible > n) visible = n;
+    if (visible < 1) visible = 1;
+
+    $list = XtVaCreateManagedWidget("combo_list", wListViewWidgetClass, $shell,
+                                    "rows", $items,
+                                    "selected", $selected,
+                                    "columnCount", 1,
+                                    "showHeader", False,
+                                    "gridLines", False,
+                                    "alternateRows", False,
+                                    "allowHoriz", False,
+                                    "allowVert", True,
+                                    "visibleRows", visible,
+                                    "borderWidth", 0,
+                                    NULL);
+    XtAddCallback($list, "notify", (XtCallbackProc) list_notify_cb, (XtPointer)$);
+    XtAddCallback($list, "clicked", (XtCallbackProc) list_clicked_cb, (XtPointer)$);
+    XtAddCallback($list, "activate", (XtCallbackProc) list_activate_cb, (XtPointer)$);
+    XtAddEventHandler($list, KeyPressMask, False,
+                      (XtEventHandler) list_key_event, (XtPointer)$);
 
     Dimension ch = 0;
     XtVaGetValues($, XtNheight, &ch, NULL);
@@ -307,16 +336,15 @@
     XtWidgetGeometry req, pref;
     memset(&req, 0, sizeof req);
     pref.request_mode = 0;
-    XtQueryGeometry($menu, &req, &pref);
-    int h = (pref.request_mode & CWHeight) ? (int)pref.height : (int)$menu->core.height;
+    XtQueryGeometry($list, &req, &pref);
+    int h = (pref.request_mode & CWHeight) ? (int)pref.height : (int)$list->core.height;
     if (h < 1) h = 1;
-    int max_h = $linesHeight * 30;
-    if (max_h > 0 && h > max_h) h = max_h;
 
     XtResizeWidget($shell, $width, (Dimension)h, 0);
     XtVaSetValues($shell, XtNx, (int)rx, XtNy, (int)ry, NULL);
     make_catcher($);
     XtPopup($shell, XtGrabNone);
+    XRaiseWindow(XtDisplay($), XtWindow($shell));
     $entry_mode = 1;
 }
 
@@ -324,31 +352,84 @@
 {
     if (! $entry_mode) return;
     free_catcher($);
+    if ($commit_timer) { XtRemoveTimeOut($commit_timer); $commit_timer = 0; }
     if ($shell) {
         XtPopdown($shell);
         XtDestroyWidget($shell);
         $shell = NULL;
-        $menu = NULL;
+        $list = NULL;
     }
     $entry_mode = 0;
+    $commit_pending = False;
 }
 
-@proc item_selected_cb(Widget w, $, void *class_data)
+@proc void commit_selected($)
 {
-    int idx = -1;
-    XtVaGetValues(w, "user_data", &idx, NULL);
-    if (idx >= 0 && idx < m_len($items)) {
+    if (! $entry_mode) return;
+    int idx = $selected;
+    $commit_pending = False;
+    $commit_timer = 0;
+    close_popup($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)idx);
+}
+
+@proc void commit_index($, int idx)
+{
+    int n = $items ? m_len($items) : 0;
+    if (idx < 0 || idx >= n) return;
+    $selected = idx;
+    update_label($);
+    if ($commit_pending) return;
+    $commit_pending = True;
+    $commit_timer = XtAppAddTimeOut(XtWidgetToApplicationContext($), 0,
+                                    (XtTimerCallbackProc) commit_timeout,
+                                    (XtPointer)$);
+}
+
+@proc void commit_timeout(XtPointer client, XtIntervalId *id)
+{
+    (void)id;
+    commit_selected((Widget)client);
+}
+
+@proc void list_notify_cb(Widget w, $, void *class_data)
+{
+    (void)w;
+    int idx = (int)(intptr_t)class_data;
+    int n = $items ? m_len($items) : 0;
+    if (idx >= 0 && idx < n) {
         $selected = idx;
         update_label($);
     }
-    close_popup($);
-    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$selected);
+}
+
+@proc void list_clicked_cb(Widget w, $, void *class_data)
+{
+    (void)w;
+    commit_index($, (int)(intptr_t)class_data);
+}
+
+@proc void list_activate_cb(Widget w, $, void *class_data)
+{
+    (void)w;
+    commit_index($, (int)(intptr_t)class_data);
+}
+
+@proc void list_key_event(Widget w, $, XEvent *ev, Boolean *cont)
+{
+    (void)w;
+    if (ev->type != KeyPress) return;
+    if (XLookupKeysym(&ev->xkey, 0) == XK_Escape) {
+        close_popup($);
+        if (cont) *cont = False;
+    }
 }
 
 @IMPORTS
 @incl <X11/Shell.h>
 @incl <X11/StringDefs.h>
 @incl <X11/Intrinsic.h>
+@incl <X11/keysym.h>
 @incl <X11/Xft/Xft.h>
 @incl <string.h>
 @incl <stdlib.h>
@@ -356,5 +437,4 @@
 @incl "retex.h"
 @incl "backend.h"
 @incl "theme.h"
-@incl "xtcw/WPopupMenu.h"
-@incl "xtcw/Wbutton.h"
+@incl "xtcw/WListView.h"

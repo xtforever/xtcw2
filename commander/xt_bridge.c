@@ -8,6 +8,7 @@
 #include <WcCreateP.h>
 #include "xtcw/KaroEd.h"
 #include "mls.h"
+#include "xt_error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +37,21 @@ static Widget find_widget_in_registry(const char *name) {
         }
     }
     return NULL;
+}
+
+/* Free the name copies and the registry list at shutdown.  The registry is a
+ * process-lifetime cache; widgets themselves are owned by Xt. */
+void xt_bridge_cleanup(void) {
+    if (!widget_registry) return;
+    for (int i = 0; i < m_len(widget_registry); i += 2) {
+        char **stored_name = (char**)mls(widget_registry, i);
+        if (stored_name && *stored_name) {
+            free(*stored_name);
+            *stored_name = NULL;
+        }
+    }
+    m_free(widget_registry);
+    widget_registry = 0;
 }
 
 const char *luastring(lua_State *L, int i) {
@@ -144,12 +160,13 @@ static void GetAllResourcesForChild(Widget parent, WidgetClass child_class, XtRe
             *res_list = (XtResourceList)XtRealloc((char*)*res_list,
                 (Cardinal)((*number + num_constraint) * sizeof(XtResource)));
             XtResourceList res = *res_list + *number;
+            XtResourceList src = constraint;
             for (Cardinal temp = num_constraint; temp != 0; temp--)
-                *res++ = *constraint++;
+                *res++ = *src++;
             *number += num_constraint;
         }
-        /* Do NOT free constraint — XtGetConstraintResourceList returns
-           a pointer into the class record, not an XtMalloc'd copy */
+        /* XtGetConstraintResourceList allocates a copy that the caller owns. */
+        if (constraint) XtFree((char*)constraint);
     }
 }
 
@@ -281,25 +298,26 @@ int xtcreate_lua(lua_State *L) {
     Widget w;
     ArgList args = NULL;
     Cardinal num_converted = 0;
-    int memory_count = 0;
-    if (arg_list && m_len(arg_list) > 0) {
+    int input_count = arg_list ? m_len(arg_list) : 0;
+    if (input_count > 0) {
         ArgList conv_args;
         Cardinal conv_num;
-        TypedArgListToArgListWithClass(parent, class, m_buf(arg_list), m_len(arg_list), &conv_args, &conv_num);
+        TypedArgListToArgListWithClass(parent, class, m_buf(arg_list), input_count, &conv_args, &conv_num);
         if (conv_num > 0) {
             args = conv_args;
             num_converted = conv_num;
-            memory_count = conv_num;
         } else if (conv_args) {
             XtFree((char*)conv_args);
         }
     }
     w = XtCreateWidget((char*)name, class, parent, args, num_converted);
     if (args) {
-        ArgList mem_args = args + memory_count;
-        for (Cardinal i = 0; i < memory_count; i++) {
-            if (mem_args[i].value != 0)
-                XtFree((char*)mem_args[i].value);
+        /* Converted strings/structs live in the second half of the array,
+         * starting at the original argument count. */
+        for (Cardinal i = 0; i < num_converted; i++) {
+            Arg *mem = &args[input_count + i];
+            if (mem->value != 0)
+                XtFree((char*)mem->value);
         }
         XtFree((char*)args);
     }
@@ -336,9 +354,18 @@ int xtsetvalue_lua(lua_State *L) {
     }
     ArgList args;
     Cardinal max_args;
+    int input_count = m_len(targ_list);
     Widget parent = XtParent(w);
-    TypedArgListToArgListWithClass(parent, XtClass(w), m_buf(targ_list), m_len(targ_list), &args, &max_args);
+    TypedArgListToArgListWithClass(parent, XtClass(w), m_buf(targ_list), input_count, &args, &max_args);
     XtSetValues(w, args, max_args);
+    if (args) {
+        for (Cardinal i = 0; i < max_args; i++) {
+            Arg *mem = &args[input_count + i];
+            if (mem->value != 0)
+                XtFree((char*)mem->value);
+        }
+        XtFree((char*)args);
+    }
 cleanup:
     m_free(targ_list);
     return 0;
@@ -370,6 +397,8 @@ int xtgetvalue_lua(lua_State *L) {
         if (val) lua_pushstring(L, val);
         else lua_pushnil(L);
     }
+    /* WcGetResourceType returns an XtNewString copy. */
+    XtFree(res_type);
     return 1;
 }
 
@@ -388,16 +417,26 @@ int xtaction_lua(lua_State *L) {
     int nargs = lua_gettop(L);
     int str = m_create(10, sizeof(char*));
     if (nargs < 2 || !(w = luaarg_to_widget(L, 1))) {
-        fprintf(stderr, "Syntax Error: xtaction(widget,action,args,...)\n");
-        goto fail;
+        m_free(str);
+        xt_error_set(XT_ERR_ARG, "xtaction(widget, action, args...)");
+        lua_pushinteger(L, xt_errno);
+        lua_pushstring(L, xt_errmsg);
+        return 2;
     }
     const char *action = luastring(L, 2);
     int i = 3;
     while ((i = app_arg_lua(L, i, nargs, str)));
+
+    /* errno-style: the action procs are void, so they report through the
+     * shared error state.  Clear it first so a previous error cannot leak
+     * into this call. */
+    xt_error_clear();
     XtCallActionProc(w, action, NULL, m_buf(str), m_len(str));
-fail:
     m_free(str);
-    return 0;
+
+    lua_pushinteger(L, xt_errno);
+    lua_pushstring(L, xt_errmsg);
+    return 2;
 }
 
 int xtmanage_lua(lua_State *L) {

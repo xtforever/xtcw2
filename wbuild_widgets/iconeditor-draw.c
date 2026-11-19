@@ -9,6 +9,7 @@
 #include "drawcanvas-draw.h"
 #include "iconeditor-draw.h"
 #include "wcreg2.h"
+#include "xt_error.h"
 #include <X11/Xft/Xft.h>
 #include <X11/keysym.h>
 #include <ctype.h>
@@ -41,11 +42,27 @@ static uint32_t *pix;
 static uint32_t cur_color = 0x000000;
 static int tool = TOOL_PENCIL;
 static int dragging;
+static int drag_button;          /* Button1 draws, Button3 erases */
+static int erasing;              /* write transparent pixels instead of cur_color */
 static int start_cx, start_cy, last_cx, last_cy, cur_cx, cur_cy;
 static Widget grid_w, preview_w, swatch_w;
 static GC paint_gc;
 static undo_frame undo[MAX_UNDO];
 static int undo_count;
+
+/* Bounding box of icon cells touched since the last repaint.  Only the cells
+ * inside it are redrawn, so setting a pixel does not repaint the whole
+ * canvas (which caused visible flicker on non-buffered/remote displays). */
+static int dmg_x0, dmg_y0, dmg_x1, dmg_y1;
+static int dmg_valid;
+
+/* Canvas geometry cached by the last draw callback, used to translate the
+ * icon damage box into widget coordinates. */
+static int grid_ww, grid_hh;
+static int preview_ww, preview_hh;
+
+static void damage_add(int x, int y);
+static void canvas_geometry(int ww, int hh, int *cell, int *ox, int *oy);
 
 static const char xpm_chars[] =
     ".+*#@%&$abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -123,8 +140,14 @@ static void push_undo(void)
 static void set_pixel(int x, int y, uint32_t rgb)
 {
     if (!pix || x < 0 || y < 0 || x >= iw || y >= ih) return;
-    /* 0 means transparent; opaque black is 0xFF000000. */
-    pix[(size_t)y * (size_t)iw + (size_t)x] = 0xFF000000u | (rgb & 0xFFFFFFu);
+    /* 0 means transparent; opaque black is 0xFF000000.  The right mouse
+     * button erases by writing the transparent sentinel. */
+    if (erasing)
+        pix[(size_t)y * (size_t)iw + (size_t)x] = 0;
+    else
+        pix[(size_t)y * (size_t)iw + (size_t)x] =
+            0xFF000000u | (rgb & 0xFFFFFFu);
+    damage_add(x, y);
 }
 
 static void raster_line(int x0, int y0, int x1, int y1, uint32_t rgb)
@@ -202,11 +225,11 @@ static void flood_fill(int x, int y, uint32_t rgb)
     int n = iw * ih;
     int *stack;
     int sp = 0;
-    uint32_t target;
+    uint32_t target, fill;
     if (!pix || x < 0 || y < 0 || x >= iw || y >= ih) return;
     target = pix[(size_t)y * (size_t)iw + (size_t)x];
-    rgb = 0xFF000000u | (rgb & 0xFFFFFFu);
-    if (target == rgb) return;
+    fill = erasing ? 0 : (0xFF000000u | (rgb & 0xFFFFFFu));
+    if (target == fill) return;
     stack = (int *)malloc((size_t)n * 4 * sizeof(int));
     if (!stack) return;
     stack[sp++] = y * iw + x;
@@ -214,7 +237,8 @@ static void flood_fill(int x, int y, uint32_t rgb)
         int idx = stack[--sp];
         int cx = idx % iw, cy = idx / iw;
         if (pix[idx] != target) continue;
-        pix[idx] = rgb;
+        pix[idx] = fill;
+        damage_add(cx, cy);
         if (cx > 0) stack[sp++] = idx - 1;
         if (cx + 1 < iw) stack[sp++] = idx + 1;
         if (cy > 0) stack[sp++] = idx - iw;
@@ -229,10 +253,73 @@ static void mark_dirty(Widget w)
     if (w) XtCallActionProc(w, "mark_dirty", NULL, NULL, 0);
 }
 
+/* Ask a DrawCanvas to repaint only the given widget rectangle. */
+static void mark_area(Widget w, int x, int y, int ww, int hh)
+{
+    String params[4];
+    char a[16], b[16], c[16], d[16];
+    if (!w || ww <= 0 || hh <= 0) return;
+    snprintf(a, sizeof a, "%d", x);
+    snprintf(b, sizeof b, "%d", y);
+    snprintf(c, sizeof c, "%d", ww);
+    snprintf(d, sizeof d, "%d", hh);
+    params[0] = a;
+    params[1] = b;
+    params[2] = c;
+    params[3] = d;
+    XtCallActionProc(w, "mark_dirty_area", NULL, params, 4);
+}
+
+static void damage_reset(void)
+{
+    dmg_valid = 0;
+}
+
+static void damage_add(int x, int y)
+{
+    if (x < 0 || y < 0 || x >= iw || y >= ih) return;
+    if (!dmg_valid) {
+        dmg_x0 = dmg_x1 = x;
+        dmg_y0 = dmg_y1 = y;
+        dmg_valid = 1;
+        return;
+    }
+    if (x < dmg_x0) dmg_x0 = x;
+    if (x > dmg_x1) dmg_x1 = x;
+    if (y < dmg_y0) dmg_y0 = y;
+    if (y > dmg_y1) dmg_y1 = y;
+}
+
+/* Map the icon-cell damage box to widget coordinates and mark it.  A small
+ * margin covers the grid lines and the one-pixel outline. */
+static void damage_widget(Widget w, int cell, int ox, int oy,
+                          int ww, int hh)
+{
+    int x, y, x2, y2;
+    if (!w || ww <= 0 || hh <= 0) {
+        mark_dirty(w);
+        return;
+    }
+    x = ox + dmg_x0 * cell - 2;
+    y = oy + dmg_y0 * cell - 2;
+    x2 = ox + (dmg_x1 + 1) * cell + 2;
+    y2 = oy + (dmg_y1 + 1) * cell + 2;
+    if (x < 0) x = 0;
+    if (y < 0) y = 0;
+    if (x2 > ww) x2 = ww;
+    if (y2 > hh) y2 = hh;
+    if (x2 <= x || y2 <= y) {
+        mark_dirty(w);
+        return;
+    }
+    mark_area(w, x, y, x2 - x, y2 - y);
+}
+
 static void repaint_only(void)
 {
     mark_dirty(grid_w);
     mark_dirty(preview_w);
+    damage_reset();
 }
 
 /* Pointer edits bump the DrawCanvas edit counter; the Lua UI polls it so the
@@ -244,14 +331,26 @@ static void document_changed(void)
         XtVaGetValues(grid_w, "changeCount", &n, NULL);
         XtVaSetValues(grid_w, "changeCount", n + 1, NULL);
     }
-    repaint_only();
+    if (dragging && tool != TOOL_PENCIL && tool != TOOL_FILL) {
+        /* The rubber-band overlay can span cells outside the committed
+         * pixels, so it needs a full repaint. */
+        mark_dirty(grid_w);
+        mark_dirty(preview_w);
+    } else if (dmg_valid) {
+        int cell, ox, oy;
+        canvas_geometry(grid_ww, grid_hh, &cell, &ox, &oy);
+        damage_widget(grid_w, cell, ox, oy, grid_ww, grid_hh);
+        canvas_geometry(preview_ww, preview_hh, &cell, &ox, &oy);
+        damage_widget(preview_w, cell, ox, oy, preview_ww, preview_hh);
+    } else {
+        repaint_only();
+    }
+    damage_reset();
 }
 
 /* --- geometry ----------------------------------------------------------- */
-static void grid_geometry(draw_canvas_t *c, int *cell, int *ox, int *oy)
+static void canvas_geometry(int ww, int hh, int *cell, int *ox, int *oy)
 {
-    int ww = c->win_width ? (int)c->win_width : 1;
-    int hh = c->win_height ? (int)c->win_height : 1;
     int margin = 8;
     int cw = (ww - 2 * margin) / (iw > 0 ? iw : 1);
     int ch = (hh - 2 * margin) / (ih > 0 ? ih : 1);
@@ -264,20 +363,18 @@ static void grid_geometry(draw_canvas_t *c, int *cell, int *ox, int *oy)
     if (*oy < 0) *oy = 0;
 }
 
+static void grid_geometry(draw_canvas_t *c, int *cell, int *ox, int *oy)
+{
+    int ww = c->win_width ? (int)c->win_width : 1;
+    int hh = c->win_height ? (int)c->win_height : 1;
+    canvas_geometry(ww, hh, cell, ox, oy);
+}
+
 static void preview_geometry(draw_canvas_t *c, int *scale, int *ox, int *oy)
 {
     int ww = c->win_width ? (int)c->win_width : 1;
     int hh = c->win_height ? (int)c->win_height : 1;
-    int margin = 8;
-    int cw = (ww - 2 * margin) / (iw > 0 ? iw : 1);
-    int ch = (hh - 2 * margin) / (ih > 0 ? ih : 1);
-    int s = cw < ch ? cw : ch;
-    if (s < 1) s = 1;
-    *scale = s;
-    *ox = (ww - s * iw) / 2;
-    *oy = (hh - s * ih) / 2;
-    if (*ox < 0) *ox = 0;
-    if (*oy < 0) *oy = 0;
+    canvas_geometry(ww, hh, scale, ox, oy);
 }
 
 static int map_cell(draw_canvas_t *c, int x, int y, int *cx, int *cy)
@@ -301,13 +398,14 @@ static GC ensure_gc(draw_canvas_t *c, Drawable d)
 }
 
 static void draw_checker(draw_canvas_t *c, Drawable d, GC gc,
-                         int cell, int ox, int oy, int w, int h)
+                         int cell, int ox, int oy,
+                         int x0, int y0, int x1, int y1)
 {
     Pixel light = color_pixel(c, 0xffffff);
     Pixel dark = color_pixel(c, 0xd0d0d0);
     int x, y;
-    for (y = 0; y < h; y++) {
-        for (x = 0; x < w; x++) {
+    for (y = y0; y <= y1; y++) {
+        for (x = x0; x <= x1; x++) {
             XSetForeground(c->dpy, gc, ((x + y) & 1) ? dark : light);
             XFillRectangle(c->dpy, d, gc, ox + x * cell, oy + y * cell,
                            (unsigned int)cell, (unsigned int)cell);
@@ -322,6 +420,8 @@ void iconeditor_draw_cb(Widget w, XtPointer user, XtPointer class)
     Drawable d;
     GC gc;
     int ww, hh, cell, ox, oy, x, y;
+    int cx0, cy0, cx1, cy1, dx, dy, dw, dh;
+    Boolean full;
 
     if (!c || !c->xdraw) return;
     grid_w = w;
@@ -329,15 +429,61 @@ void iconeditor_draw_cb(Widget w, XtPointer user, XtPointer class)
     d = XftDrawDrawable(c->xdraw);
     ww = c->win_width ? (int)c->win_width : 1;
     hh = c->win_height ? (int)c->win_height : 1;
+    grid_ww = ww;
+    grid_hh = hh;
     gc = ensure_gc(c, d);
-
-    XFillRectangle(c->dpy, d, c->gc[1], 0, 0,
-                   (unsigned int)ww, (unsigned int)hh);
     grid_geometry(c, &cell, &ox, &oy);
-    draw_checker(c, d, gc, cell, ox, oy, iw, ih);
 
-    for (y = 0; y < ih; y++) {
-        for (x = 0; x < iw; x++) {
+    full = c->damage_full || c->damage_w <= 0 || c->damage_h <= 0;
+    dx = full ? 0 : c->damage_x;
+    dy = full ? 0 : c->damage_y;
+    dw = full ? ww : c->damage_w;
+    dh = full ? hh : c->damage_h;
+    if (dx < 0) { dw += dx; dx = 0; }
+    if (dy < 0) { dh += dy; dy = 0; }
+    if (dx + dw > ww) dw = ww - dx;
+    if (dy + dh > hh) dh = hh - dy;
+    if (dw <= 0 || dh <= 0) {
+        full = True;
+        dx = dy = 0;
+        dw = ww;
+        dh = hh;
+    }
+
+    if (full) {
+        XFillRectangle(c->dpy, d, c->gc[1], 0, 0,
+                       (unsigned int)ww, (unsigned int)hh);
+        cx0 = 0; cy0 = 0;
+        cx1 = iw - 1; cy1 = ih - 1;
+        draw_checker(c, d, gc, cell, ox, oy, cx0, cy0, cx1, cy1);
+    } else {
+        XRectangle clip;
+        clip.x = (short)dx;
+        clip.y = (short)dy;
+        clip.width = (unsigned short)dw;
+        clip.height = (unsigned short)dh;
+        XSetClipRectangles(c->dpy, gc, 0, 0, &clip, 1, Unsorted);
+        XFillRectangle(c->dpy, d, c->gc[1], dx, dy,
+                       (unsigned int)dw, (unsigned int)dh);
+        cx0 = (dx - ox) / cell;
+        cy0 = (dy - oy) / cell;
+        cx1 = (dx + dw - 1 - ox) / cell;
+        cy1 = (dy + dh - 1 - oy) / cell;
+        if (cx0 < 0) cx0 = 0;
+        if (cy0 < 0) cy0 = 0;
+        if (cx1 >= iw) cx1 = iw - 1;
+        if (cy1 >= ih) cy1 = ih - 1;
+        if (cx0 > cx1 || cy0 > cy1) {
+            /* damage lies outside the icon grid */
+            cx0 = cy0 = 0;
+            cx1 = cy1 = -1;
+        }
+        if (cx0 <= cx1 && cy0 <= cy1)
+            draw_checker(c, d, gc, cell, ox, oy, cx0, cy0, cx1, cy1);
+    }
+
+    for (y = cy0; y <= cy1; y++) {
+        for (x = cx0; x <= cx1; x++) {
             uint32_t rgb = pix[(size_t)y * (size_t)iw + (size_t)x];
             if (!rgb) continue;
             XSetForeground(c->dpy, gc, color_pixel(c, rgb & 0xFFFFFFu));
@@ -348,16 +494,22 @@ void iconeditor_draw_cb(Widget w, XtPointer user, XtPointer class)
 
     if (cell >= 4) {
         XSetForeground(c->dpy, gc, color_pixel(c, 0x808080));
-        for (x = 0; x <= iw; x++)
+        for (x = cx0; x <= cx1 + 1; x++) {
+            if (x < 0 || x > iw) continue;
             XDrawLine(c->dpy, d, gc, ox + x * cell, oy,
                       ox + x * cell, oy + ih * cell);
-        for (y = 0; y <= ih; y++)
+        }
+        for (y = cy0; y <= cy1 + 1; y++) {
+            if (y < 0 || y > ih) continue;
             XDrawLine(c->dpy, d, gc, ox, oy + y * cell,
                       ox + iw * cell, oy + y * cell);
+        }
     }
     XSetForeground(c->dpy, gc, color_pixel(c, 0x000000));
     XDrawRectangle(c->dpy, d, gc, ox - 1, oy - 1,
                    (unsigned int)(iw * cell + 1), (unsigned int)(ih * cell + 1));
+    if (!full)
+        XSetClipMask(c->dpy, gc, None);
 
     if (dragging && tool != TOOL_PENCIL && tool != TOOL_FILL) {
         int x0 = ox + start_cx * cell, y0 = oy + start_cy * cell;
@@ -412,6 +564,8 @@ void iconeditor_preview_cb(Widget w, XtPointer user, XtPointer class)
     Drawable d;
     GC gc;
     int ww, hh, scale, ox, oy, x, y;
+    int cx0, cy0, cx1, cy1, dx, dy, dw, dh;
+    Boolean full;
 
     if (!c || !c->xdraw) return;
     preview_w = w;
@@ -419,15 +573,61 @@ void iconeditor_preview_cb(Widget w, XtPointer user, XtPointer class)
     d = XftDrawDrawable(c->xdraw);
     ww = c->win_width ? (int)c->win_width : 1;
     hh = c->win_height ? (int)c->win_height : 1;
+    preview_ww = ww;
+    preview_hh = hh;
     gc = ensure_gc(c, d);
-
-    XFillRectangle(c->dpy, d, c->gc[1], 0, 0,
-                   (unsigned int)ww, (unsigned int)hh);
     preview_geometry(c, &scale, &ox, &oy);
-    draw_checker(c, d, gc, scale, ox, oy, iw, ih);
 
-    for (y = 0; y < ih; y++) {
-        for (x = 0; x < iw; x++) {
+    full = c->damage_full || c->damage_w <= 0 || c->damage_h <= 0;
+    dx = full ? 0 : c->damage_x;
+    dy = full ? 0 : c->damage_y;
+    dw = full ? ww : c->damage_w;
+    dh = full ? hh : c->damage_h;
+    if (dx < 0) { dw += dx; dx = 0; }
+    if (dy < 0) { dh += dy; dy = 0; }
+    if (dx + dw > ww) dw = ww - dx;
+    if (dy + dh > hh) dh = hh - dy;
+    if (dw <= 0 || dh <= 0) {
+        full = True;
+        dx = dy = 0;
+        dw = ww;
+        dh = hh;
+    }
+
+    if (full) {
+        XFillRectangle(c->dpy, d, c->gc[1], 0, 0,
+                       (unsigned int)ww, (unsigned int)hh);
+        cx0 = 0; cy0 = 0;
+        cx1 = iw - 1; cy1 = ih - 1;
+        draw_checker(c, d, gc, scale, ox, oy, cx0, cy0, cx1, cy1);
+    } else {
+        XRectangle clip;
+        clip.x = (short)dx;
+        clip.y = (short)dy;
+        clip.width = (unsigned short)dw;
+        clip.height = (unsigned short)dh;
+        XSetClipRectangles(c->dpy, gc, 0, 0, &clip, 1, Unsorted);
+        XFillRectangle(c->dpy, d, c->gc[1], dx, dy,
+                       (unsigned int)dw, (unsigned int)dh);
+        cx0 = (dx - ox) / scale;
+        cy0 = (dy - oy) / scale;
+        cx1 = (dx + dw - 1 - ox) / scale;
+        cy1 = (dy + dh - 1 - oy) / scale;
+        if (cx0 < 0) cx0 = 0;
+        if (cy0 < 0) cy0 = 0;
+        if (cx1 >= iw) cx1 = iw - 1;
+        if (cy1 >= ih) cy1 = ih - 1;
+        if (cx0 > cx1 || cy0 > cy1) {
+            /* damage lies outside the icon grid */
+            cx0 = cy0 = 0;
+            cx1 = cy1 = -1;
+        }
+        if (cx0 <= cx1 && cy0 <= cy1)
+            draw_checker(c, d, gc, scale, ox, oy, cx0, cy0, cx1, cy1);
+    }
+
+    for (y = cy0; y <= cy1; y++) {
+        for (x = cx0; x <= cx1; x++) {
             uint32_t rgb = pix[(size_t)y * (size_t)iw + (size_t)x];
             if (!rgb) continue;
             XSetForeground(c->dpy, gc, color_pixel(c, rgb & 0xFFFFFFu));
@@ -438,6 +638,8 @@ void iconeditor_preview_cb(Widget w, XtPointer user, XtPointer class)
     XSetForeground(c->dpy, gc, color_pixel(c, 0x000000));
     XDrawRectangle(c->dpy, d, gc, ox - 1, oy - 1,
                    (unsigned int)(iw * scale + 1), (unsigned int)(ih * scale + 1));
+    if (!full)
+        XSetClipMask(c->dpy, gc, None);
 }
 
 /* --- mouse / keyboard --------------------------------------------------- */
@@ -454,15 +656,18 @@ void iconeditor_mouse_cb(Widget w, XtPointer user, XtPointer class)
     e = in->event;
 
     if (e->type == ButtonPress) {
-        if (e->xbutton.button != Button1) return;
+        int button = e->xbutton.button;
+        if (button != Button1 && button != Button3) return;
         if (!map_cell(c, e->xbutton.x, e->xbutton.y, &cx, &cy)) return;
+        erasing = (button == Button3);
+        drag_button = button;
+        push_undo();
         if (tool == TOOL_FILL) {
-            push_undo();
             flood_fill(cx, cy, cur_color);
             document_changed();
+            erasing = 0;
             return;
         }
-        push_undo();
         dragging = 1;
         start_cx = last_cx = cur_cx = cx;
         start_cy = last_cy = cur_cy = cy;
@@ -480,7 +685,7 @@ void iconeditor_mouse_cb(Widget w, XtPointer user, XtPointer class)
         }
         document_changed();
     } else if (e->type == ButtonRelease) {
-        if (!dragging || e->xbutton.button != Button1) return;
+        if (!dragging || e->xbutton.button != drag_button) return;
         if (map_cell(c, e->xbutton.x, e->xbutton.y, &cx, &cy)) {
             cur_cx = cx;
             cur_cy = cy;
@@ -491,8 +696,11 @@ void iconeditor_mouse_cb(Widget w, XtPointer user, XtPointer class)
             raster_rect(start_cx, start_cy, cur_cx, cur_cy, cur_color);
         else if (tool == TOOL_ELLIPSE)
             raster_ellipse(start_cx, start_cy, cur_cx, cur_cy, cur_color);
-        dragging = 0;
+        /* Keep dragging set for document_changed() so the rubber band of a
+         * shape tool is erased by a full repaint. */
         document_changed();
+        dragging = 0;
+        erasing = 0;
     }
     (void)w;
 }
@@ -523,6 +731,18 @@ static int hex_val(int c)
     return -1;
 }
 
+static int valid_hex_color(const char *s)
+{
+    int i, n;
+    if (!s) return 0;
+    if (*s == '#') s++;
+    n = (int)strlen(s);
+    if (n != 3 && n != 6) return 0;
+    for (i = 0; i < n; i++)
+        if (hex_val((unsigned char)s[i]) < 0) return 0;
+    return 1;
+}
+
 static uint32_t parse_xpm_color(const char *s)
 {
     int i, v;
@@ -549,7 +769,12 @@ static int save_xpm(const char *path)
     FILE *f;
     uint32_t pal[MAX_COLORS];
     int np = 0, x, y, i;
-    if (!path || !*path) return 0;
+    int failed = 0;
+
+    if (!path || !*path) {
+        xt_error_set(XT_ERR_PATH, "iconeditor_save: empty path");
+        return 0;
+    }
     ensure_pix();
     for (i = 0; i < iw * ih; i++) {
         uint32_t rgb = pix[i] & 0xFFFFFFu;
@@ -557,32 +782,45 @@ static int save_xpm(const char *path)
         if (!pix[i]) continue;
         for (j = 0; j < np; j++) if (pal[j] == rgb) { found = 1; break; }
         if (found) continue;
-        if (np >= MAX_COLORS || np >= (int)strlen(xpm_chars)) return 0;
+        if (np >= MAX_COLORS || np >= (int)strlen(xpm_chars)) {
+            xt_error_set(XT_ERR_COLORS,
+                         "iconeditor_save: too many colours for XPM");
+            return 0;
+        }
         pal[np++] = rgb;
     }
     f = fopen(path, "w");
-    if (!f) return 0;
-    fprintf(f, "/* XPM */\nstatic char *icon[] = {\n");
-    fprintf(f, "\"%d %d %d 1\",\n", iw, ih, np + 1);
-    fprintf(f, "\"  c None\",\n");
-    for (i = 0; i < np; i++)
-        fprintf(f, "\"%c c #%06X\",\n", xpm_chars[i],
-                (unsigned)(pal[i] & 0xffffff));
-    for (y = 0; y < ih; y++) {
-        fputc('"', f);
-        for (x = 0; x < iw; x++) {
+    if (!f) {
+        xt_error_set(XT_ERR_OPEN, "iconeditor_save: cannot open '%s'", path);
+        return 0;
+    }
+    if (fprintf(f, "/* XPM */\nstatic char *icon[] = {\n") < 0) failed = 1;
+    if (!failed && fprintf(f, "\"%d %d %d 1\",\n", iw, ih, np + 1) < 0)
+        failed = 1;
+    if (!failed && fprintf(f, "\"  c None\",\n") < 0) failed = 1;
+    for (i = 0; i < np && !failed; i++)
+        if (fprintf(f, "\"%c c #%06X\",\n", xpm_chars[i],
+                    (unsigned)(pal[i] & 0xffffff)) < 0) failed = 1;
+    for (y = 0; y < ih && !failed; y++) {
+        if (fputc('"', f) == EOF) failed = 1;
+        for (x = 0; x < iw && !failed; x++) {
             uint32_t rgb = pix[(size_t)y * (size_t)iw + (size_t)x] & 0xFFFFFFu;
             char ch = ' ';
             if (pix[(size_t)y * (size_t)iw + (size_t)x]) {
                 for (i = 0; i < np; i++) if (pal[i] == rgb) break;
                 if (i < np) ch = xpm_chars[i];
             }
-            fputc(ch, f);
+            if (fputc(ch, f) == EOF) failed = 1;
         }
-        fputs("\",\n", f);
+        if (!failed && fputs("\",\n", f) == EOF) failed = 1;
     }
-    fputs("};\n", f);
-    fclose(f);
+    if (!failed && fputs("};\n", f) == EOF) failed = 1;
+    if (fclose(f) != 0) failed = 1;
+    if (failed) {
+        xt_error_set(XT_ERR_WRITE,
+                     "iconeditor_save: write failed for '%s'", path);
+        return 0;
+    }
     return 1;
 }
 
@@ -598,9 +836,15 @@ static int load_xpm(const char *path)
     uint32_t *newpix = NULL;
     int i, x, y, ok = 0;
 
-    if (!path || !*path) return 0;
+    if (!path || !*path) {
+        xt_error_set(XT_ERR_PATH, "iconeditor_load: empty path");
+        return 0;
+    }
     f = fopen(path, "r");
-    if (!f) return 0;
+    if (!f) {
+        xt_error_set(XT_ERR_OPEN, "iconeditor_load: cannot open '%s'", path);
+        return 0;
+    }
     while (fgets(line, sizeof line, f)) {
         char *p = line;
         while ((p = strchr(p, '"')) != NULL) {
@@ -625,18 +869,29 @@ static int load_xpm(const char *path)
         }
     }
     fclose(f);
-    if (ns < 1 || sscanf(strings[0], "%d %d %d %d", &w, &h, &n, &cpp) != 4)
+    if (ns < 1 || sscanf(strings[0], "%d %d %d %d", &w, &h, &n, &cpp) != 4) {
+        xt_error_set(XT_ERR_FORMAT, "iconeditor_load: invalid XPM header");
         goto done;
+    }
     if (w < MIN_DIM || h < MIN_DIM || w > MAX_DIM || h > MAX_DIM ||
-        n < 1 || n > MAX_COLORS || cpp < 1 || cpp > 4)
+        n < 1 || n > MAX_COLORS || cpp < 1 || cpp > 4) {
+        xt_error_set(XT_ERR_FORMAT,
+                     "iconeditor_load: unsupported XPM dimensions/palette");
         goto done;
-    if (ns < 1 + n + h) goto done;
+    }
+    if (ns < 1 + n + h) {
+        xt_error_set(XT_ERR_FORMAT, "iconeditor_load: truncated XPM");
+        goto done;
+    }
 
     for (i = 0; i < n; i++) {
         const char *s = strings[1 + i];
         const char *cpos;
         memset(keys[i], 0, sizeof keys[i]);
-        if ((int)strlen(s) < cpp) goto done;
+        if ((int)strlen(s) < cpp) {
+            xt_error_set(XT_ERR_FORMAT, "iconeditor_load: bad colour key");
+            goto done;
+        }
         strncpy(keys[i], s, (size_t)cpp);
         cpos = strstr(s + cpp, " c ");
         if (!cpos || strncmp(cpos + 3, "None", 4) == 0)
@@ -645,7 +900,10 @@ static int load_xpm(const char *path)
             cols[i] = parse_xpm_color(cpos + 3) | 0xFF000000u;
     }
     newpix = (uint32_t *)calloc((size_t)w * (size_t)h, sizeof(uint32_t));
-    if (!newpix) goto done;
+    if (!newpix) {
+        xt_error_set(XT_ERR_MEMORY, "iconeditor_load: out of memory");
+        goto done;
+    }
     for (y = 0; y < h; y++) {
         const char *row = strings[1 + n + y];
         if ((int)strlen(row) < w * cpp) continue;
@@ -683,41 +941,73 @@ done:
 static void iconeditor_set_tool(Widget w, XEvent *e, String *p, Cardinal *n)
 {
     (void)w; (void)e;
-    if (*n < 1) return;
-    if (strcmp(p[0], "line") == 0) tool = TOOL_LINE;
+    if (*n < 1) {
+        xt_error_set(XT_ERR_ARG, "iconeditor_set_tool: missing tool");
+        return;
+    }
+    if (strcmp(p[0], "pencil") == 0) tool = TOOL_PENCIL;
+    else if (strcmp(p[0], "line") == 0) tool = TOOL_LINE;
     else if (strcmp(p[0], "rect") == 0) tool = TOOL_RECT;
     else if (strcmp(p[0], "ellipse") == 0 || strcmp(p[0], "circle") == 0)
         tool = TOOL_ELLIPSE;
     else if (strcmp(p[0], "fill") == 0) tool = TOOL_FILL;
-    else tool = TOOL_PENCIL;
+    else
+        xt_error_set(XT_ERR_ARG, "iconeditor_set_tool: unknown tool '%s'",
+                     p[0]);
 }
 
 static void iconeditor_set_color(Widget w, XEvent *e, String *p, Cardinal *n)
 {
     (void)w; (void)e;
-    if (*n < 1) return;
+    if (*n < 1) {
+        xt_error_set(XT_ERR_ARG, "iconeditor_set_color: missing colour");
+        return;
+    }
+    if (!valid_hex_color(p[0])) {
+        xt_error_set(XT_ERR_ARG,
+                     "iconeditor_set_color: invalid colour '%s'", p[0]);
+        return;
+    }
     cur_color = parse_xpm_color(p[0]);
     mark_dirty(swatch_w);
 }
 
 static void iconeditor_resize(Widget w, XEvent *e, String *p, Cardinal *n)
 {
-    int nw, nh;
+    char *end;
+    long nw, nh;
     (void)w; (void)e;
-    if (*n < 2) return;
-    nw = atoi(p[0]);
-    nh = atoi(p[1]);
-    if (nw < MIN_DIM) nw = MIN_DIM;
-    if (nh < MIN_DIM) nh = MIN_DIM;
-    if (nw > MAX_DIM) nw = MAX_DIM;
-    if (nh > MAX_DIM) nh = MAX_DIM;
+    if (*n < 2) {
+        xt_error_set(XT_ERR_ARG,
+                     "iconeditor_resize: width and height required");
+        return;
+    }
+    nw = strtol(p[0], &end, 10);
+    if (end == p[0] || *end) {
+        xt_error_set(XT_ERR_ARG, "iconeditor_resize: invalid width '%s'",
+                     p[0]);
+        return;
+    }
+    nh = strtol(p[1], &end, 10);
+    if (end == p[1] || *end) {
+        xt_error_set(XT_ERR_ARG, "iconeditor_resize: invalid height '%s'",
+                     p[1]);
+        return;
+    }
+    if (nw < MIN_DIM || nw > MAX_DIM || nh < MIN_DIM || nh > MAX_DIM) {
+        xt_error_set(XT_ERR_RANGE,
+                     "iconeditor_resize: size must be %d..%d",
+                     MIN_DIM, MAX_DIM);
+        return;
+    }
     if (nw == iw && nh == ih) return;
     free(pix);
-    iw = nw;
-    ih = nh;
+    iw = (int)nw;
+    ih = (int)nh;
     pix = (uint32_t *)calloc((size_t)iw * (size_t)ih, sizeof(uint32_t));
     free_undo();
     dragging = 0;
+    erasing = 0;
     repaint_only();
 }
 
@@ -728,13 +1018,17 @@ static void iconeditor_clear(Widget w, XEvent *e, String *p, Cardinal *n)
     push_undo();
     memset(pix, 0, (size_t)iw * (size_t)ih * sizeof(uint32_t));
     dragging = 0;
+    erasing = 0;
     repaint_only();
 }
 
 static void iconeditor_undo(Widget w, XEvent *e, String *p, Cardinal *n)
 {
     (void)w; (void)e; (void)p; (void)n;
-    if (undo_count <= 0) return;
+    if (undo_count <= 0) {
+        xt_error_set(XT_ERR_STATE, "iconeditor_undo: nothing to undo");
+        return;
+    }
     undo_count--;
     free(pix);
     pix = undo[undo_count].pix;
@@ -742,20 +1036,27 @@ static void iconeditor_undo(Widget w, XEvent *e, String *p, Cardinal *n)
     ih = undo[undo_count].h;
     undo[undo_count].pix = NULL;
     dragging = 0;
+    erasing = 0;
     repaint_only();
 }
 
 static void iconeditor_save(Widget w, XEvent *e, String *p, Cardinal *n)
 {
     (void)w; (void)e;
-    if (*n < 1) return;
+    if (*n < 1) {
+        xt_error_set(XT_ERR_ARG, "iconeditor_save: missing path");
+        return;
+    }
     save_xpm(p[0]);
 }
 
 static void iconeditor_load(Widget w, XEvent *e, String *p, Cardinal *n)
 {
     (void)w; (void)e;
-    if (*n < 1) return;
+    if (*n < 1) {
+        xt_error_set(XT_ERR_ARG, "iconeditor_load: missing path");
+        return;
+    }
     load_xpm(p[0]);
 }
 
@@ -766,7 +1067,21 @@ static void iconeditor_test_stroke(Widget w, XEvent *e, String *p, Cardinal *n)
     (void)w; (void)e; (void)p; (void)n;
     ensure_pix();
     push_undo();
+    erasing = 0;
     raster_line(0, 0, iw - 1, ih - 1, cur_color);
+    repaint_only();
+}
+
+/* Test hook used by the demo smoke test: erase the top-left cell without
+ * synthesising a Button3 event. */
+static void iconeditor_test_erase(Widget w, XEvent *e, String *p, Cardinal *n)
+{
+    (void)w; (void)e; (void)p; (void)n;
+    ensure_pix();
+    push_undo();
+    erasing = 1;
+    set_pixel(0, 0, cur_color);
+    erasing = 0;
     repaint_only();
 }
 
@@ -785,4 +1100,5 @@ void iconeditor_plugin_init(Widget top)
     RAC(top, iconeditor_save);
     RAC(top, iconeditor_load);
     RAC(top, iconeditor_test_stroke);
+    RAC(top, iconeditor_test_erase);
 }

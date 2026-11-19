@@ -15,7 +15,7 @@ OBJS += XCC.o long.o icon.o choosecol.o strarray.o StrToPmap.o
 OBJS += Pen.o str2color.o
 OBJS += font.o ctx.o table256-crc16.o timer.o
 OBJS += cp2.o slop4.o slopnet.o command-parser.o mrb.o
-OBJS += svar2.o var5.o opts.o
+OBJS += svar2.o var5.o opts.o xt_error.o
 
 LIB = libutils.a
 

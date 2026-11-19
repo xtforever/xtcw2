@@ -41,6 +41,15 @@ int main(int argc, char **argv)
     Widget b3 = XtVaCreateManagedWidget("b3", wbuttonWidgetClass, tb,
                                         XtNlabel, "Quit", NULL);
 
+    /* The toolbar must not squeeze children below their preferred height:
+     * toolbarHeight is a minimum. */
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    assert(XtQueryGeometry(b1, &req, &pref) == XtGeometryAlmost);
+    assert(pref.request_mode & CWHeight);
+    int need_h = (int)pref.height;
+
     XtRealizeWidget(top);
 
     int bx, by, bw, bh;
@@ -52,8 +61,27 @@ int main(int argc, char **argv)
     geom(b2, &x2, &y2, &w2, &h2);
     geom(b3, &x3, &y3, &w3, &h3);
 
-    assert(bh == 36);
-    assert(x1 == 4 && y1 == 4 && h1 == 28);
+    /* query_geometry advertises the height needed for the tallest child,
+     * even though the explicit toolbarHeight is smaller. */
+    {
+        XtWidgetGeometry treq, tpref;
+        memset(&treq, 0, sizeof treq);
+        tpref.request_mode = 0;
+        assert(XtQueryGeometry(tb, &treq, &tpref) == XtGeometryAlmost);
+        assert(tpref.request_mode & CWHeight);
+        assert((int)tpref.height == need_h + 8);
+    }
+
+    /* A parent that honours the request gives the toolbar that height and the
+     * children keep their preferred height instead of being squeezed. */
+    XtResizeWidget(tb, (Dimension)bw, (Dimension)(need_h + 8), 0);
+    geom(tb, &bx, &by, &bw, &bh);
+    geom(b1, &x1, &y1, &w1, &h1);
+    geom(b2, &x2, &y2, &w2, &h2);
+    geom(b3, &x3, &y3, &w3, &h3);
+
+    assert(bh == need_h + 8);
+    assert(x1 == 4 && y1 == 4 && h1 == need_h);
     assert(x2 == x1 + w1 + 8);
     assert(x3 == x2 + w2 + 8);
     assert(y2 == y1 && y3 == y1);

@@ -2418,3 +2418,544 @@ rows.
 **Files:** `wbuild_widgets/Wlabel.widget`, `wbuild_widgets/Wbutton.widget`,
 `demos/demo_iconeditor.lua`, `tests/baselines/test_wlabel.layout`,
 `tests/baselines/test_wlabel_selection.layout`
+
+## IconEditor repainted the whole canvas for every pixel
+
+**Symptom:** setting a pixel in the IconEditor (pencil drag, fill, undo)
+redrew the complete grid and preview.  On non-double-buffered or remote X
+connections the full-canvas repaint was visible as flicker, and every edit
+caused two paints: an Xt expose from the `changeCount` update plus the timer
+repaint.
+
+**Cause:** `DrawCanvas.set_values()` returned `True` for *every* resource
+change, so bumping the non-visual `changeCount` scheduled a full expose.
+The IconEditor plug-in also had no way to describe a partial update and
+always called `mark_dirty`, which repaints the whole widget.
+
+**Fix:** DrawCanvas now tracks a damage rectangle.  `mark_dirty_area(x,y,w,h)`
+accumulates a partial region and `paint1()` exposes it to the plug-in through
+`draw_canvas_t.damage_x/y/w/h` plus `damage_full` (set by expose, resize,
+`mark_dirty` and `redraw`).  `set_values()` only repaints for visual
+resources and returns `False` otherwise.  The IconEditor accumulates the
+touched icon cells in `set_pixel()`/`flood_fill()`, converts that box to
+widget coordinates for the grid and preview, and redraws only those cells
+(clipped, including grid lines and the outline).  Shape tools still request a
+full repaint while their rubber band is visible.
+
+**Files:** `wbuild_widgets/DrawCanvas.widget`, `wbuild_widgets/drawcanvas-draw.h`,
+`wbuild_widgets/iconeditor-draw.c`
+
+## File chooser "Hidden" label overlapped its check box
+
+**Symptom:** in the WfileSelector/WfileChooser dialog the check box was drawn
+inside the "H" of the "Hidden" label.
+
+**Cause:** `Wcheckbox.initialize` reserves space for the 14px box by setting
+`leftGap = 22`.  The chooser's uniform control-padding loop then overwrote
+`leftGap` with the button padding (6), so the label started inside the box.
+
+**Fix:** the padding loop still applies `rightGap`/`topGap`/`bottomGap` to the
+checkbox but leaves its `leftGap` alone.
+
+**Files:** `wbuild_widgets/WfileChooser.widget`
+
+## WToolBar squeezed buttons and removed their bottom label gap
+
+**Symptom:** toolbar buttons (New/Open/Save/Undo, Up/Home/…) had space above
+the label but almost none below it.
+
+**Cause:** `toolbar_layout()` forced every child to
+`toolbarHeight - 2 * toolbarPadding`, regardless of the child's preferred
+height.  With the 3px label padding the natural button height is ~37px, so a
+42px toolbar gave the buttons only 34px and the label lost its bottom gap.
+`query_geometry()` likewise reported the configured height, so the parent
+could not grow the toolbar.
+
+**Fix:** treat `toolbarHeight` as a minimum.  Both `query_geometry()` and
+`toolbar_layout()` now use `max(toolbarHeight, tallest_child_pref + 2 *
+toolbarPadding)`.  `tests/test_wtoolbar.c` checks the advertised height and
+that children keep their preferred height.
+
+**Files:** `wbuild_widgets/WToolBar.widget`, `tests/test_wtoolbar.c`
+
+## Window-manager close killed the client without cleanup
+
+**Symptom:** closing a `t1.sh` demo with the window-manager close button
+terminated the process without the normal shutdown path.  `m_destruct()` was
+never called and `WM_PROTOCOLS` was not set on the application shell, so a
+window manager fell back to killing the client.
+
+**Cause:** `commander_runner` never installed `WM_DELETE_WINDOW` or handled
+the corresponding `ClientMessage`.  Only the file-selector popup did.
+
+**Fix:** after realizing the top-level shell, `commander_runner` now sets
+`WM_DELETE_WINDOW` and installs a `ClientMessage` handler.  The handler calls
+an optional global Lua `on_close()`; returning `false` vetoes the close
+(e.g. to show an "unsaved changes" dialog), while a missing callback, `nil`
+or `true` allows it and sets the Xt exit flag so the normal teardown (widget
+destroy, `lua_close`, `theme_destroy`, `m_destruct`) runs.  The IconEditor
+demo implements `on_close()` by reusing its quit flow, and the tutorial
+documents the hook.
+
+**Files:** `commander/commander_runner.c`, `demos/demo_iconeditor.lua`,
+`commander/COMMANDER_RUNNER_TUTORIAL.md`
+
+## Shutdown leaks in the Lua/XT bridge
+
+**Symptom:** closing the IconEditor (or any LUI app) produced LeakSanitizer
+reports from `xtgetvalue_lua`, `register_widget`/`xtcreate_lua`,
+`xtsetvalue_lua`, `add_fontinfo` and `task_register_func`.
+
+**Cause:** several bridge paths allocated without a matching free:
+- `WcGetResourceType()` returns an `XtNewString` copy that
+  `xtgetvalue_lua()` never freed (one per `xtgetvalue`).
+- `register_widget()` `strdup()`s every Lua-created widget name into a
+  process-lifetime registry that was never released.
+- `xtsetvalue_lua()` freed the typed-arg list but not the converted `ArgList`
+  or its string/struct copies.  `xtcreate_lua()` used the success count as the
+  offset of the conversion-memory half instead of the original argument count.
+- `GetAllResourcesForChild()` leaked the `XtGetConstraintResourceList()`
+  copy (and the loop advanced the pointer before any free could happen).
+- The normal shutdown path never called `font_cache_flush()` or
+  `task_manager_cleanup()`.
+
+**Fix:** free the resource-type copy, add `xt_bridge_cleanup()` for the name
+registry, free converted args with the correct input-count offset in both
+create and set paths, free the constraint resource list from its saved base
+pointer, and call `xt_bridge_cleanup()`, `font_cache_flush()` and
+`task_manager_cleanup()` in the normal teardown.
+
+The remaining ASan report is fontconfig/Xft global state created by `FcInit`
+(`FcConfig`, `FcFontSet`/`FcValue` caches).  It is not owned by the
+application; calling `FcFini()` at shutdown asserts because Xft still holds
+cached patterns, and closing the display with `XtDestroyApplicationContext()`
+crashes in Xft's display-close hook.  Leave those third-party caches alone (or
+suppress them in LSAN) rather than forcing an unsafe teardown.
+
+**Files:** `commander/xt_bridge.c`, `commander/xt_bridge.h`,
+`commander/commander_runner.c`
+
+## Constant-string cache was never released at shutdown
+
+**Symptom:** `m_destruct()` printed
+`List N still allocated. Source: conststr_init() in m_tool.c` and a list from
+`vas_printf()` after closing a LUI app.
+
+**Cause:** widgets call `conststr_init()` lazily, but `commander_runner` never
+called `conststr_free()` in its teardown path.  The cache also kept
+`CS_ZERO` alive across a free/init cycle because `conststr_free()` did not
+reset it.
+
+**Fix:** call `conststr_free()` before `m_destruct()` (normal and bootstrap
+failure paths), and reset `CS_ZERO = -1` in both implementations of
+`conststr_free()` (`utils/m_tool.c` and `utils/conststr.c`).
+
+**Files:** `commander/commander_runner.c`, `utils/m_tool.c`,
+`utils/conststr.c`
+
+## AdmPanel port: optional bracket capture broke `$name` expansion
+
+**Symptom:** `vars.expand('auswahl.sh $kk', {kk='jens'})` returned the
+unexpanded string.  `$arr[0]` was also not parsed.
+
+**Cause:** the Lua pattern
+`^([%a_][%w_]*)(%[([%d]+)%])?()` did not match when the optional bracket
+group was absent.  Lua's capture/position handling inside an optional group
+made the whole match fail.
+
+**Fix:** match the identifier first, then check for a following `[` and parse
+the index with a separate pattern.  Arrays remain 0-based for legacy
+compatibility (`$arr[0]` reads Lua index 1).
+
+**Files:** `apps/admpanel/vars.lua`, `tests/test_launcher_vars.lua`
+
+## AdmPanel port: confirmation prompts with the `?` before the group
+
+**Symptom:** `Delete customer? (y/N)` and `(Y/n?)` were not detected as
+confirmation prompts; only `(Y/n)?` with a trailing question mark worked.
+
+**Cause:** the prompt pattern required `%?` immediately after the option
+group.
+
+**Fix:** allow an optional trailing `?`, allow `?` inside the group, and
+require a question mark somewhere in the line.  This covers
+`Continue (Y/n)?`, `(Y/n?)`, `Delete customer? (y/N)` and
+`( y / n ) ?`, while still rejecting `Continue (Y/n)` without any question
+mark.
+
+**Files:** `apps/admpanel/prompt.lua`, `tests/test_launcher_prompt.lua`
+
+## AdmPanel port: command preview caused an infinite Gridbox layout loop
+
+**Symptom:** the launcher window spun in `GridboxGeometryManager` and produced
+hundreds of megabytes of trace output when the script path/command preview
+was long.
+
+**Cause:** the command preview was a `Wlabel` with `autoHeight TRUE` inside a
+weighted Gridbox.  Long command text re-triggered height negotiation
+indefinitely.
+
+**Fix:** use a single-line `WLineEdit` (`showClear FALSE`) for the command
+preview.  Long commands scroll horizontally instead of wrapping and no longer
+feed the layout loop.
+
+**Files:** `apps/admpanel/ui.lua`, `tests/test_launcher_described.sh`
+
+## AdmPanel port: poll timer reaped the child before the pty was drained
+
+**Symptom:** the last line a script wrote just before exiting sometimes
+disappeared from the embedded log (`line2` in `tests/test_launcher_script.sh`).
+
+**Cause:** the 200 ms `waitpid(WNOHANG)` poll timer could reap the exited
+child and free/close the pty master before `read_cb` had drained the last
+bytes.  The exit event then arrived before the final output line.
+
+**Fix:** while the pty master is still open, `poll_cb` only re-arms; it lets
+`read_cb` drain output and observe EOF.  `waitpid` runs after EOF, when no
+unread output can remain.  `script_process_cleanup()` also terminates and
+frees any jobs still alive at shutdown.
+
+**Files:** `commander/script_process.c`, `commander/commander_runner.c`
+
+## AdmPanel port: CRLF output produced empty log rows
+
+**Symptom:** every normal pty line appeared with an extra blank row in the
+`WListView` log.
+
+**Cause:** the line splitter treated `\r` and `\n` as two independent
+separators, so `\r\n` produced one real line and one empty line.
+
+**Fix:** consume a following `\n` when the separator is `\r`.
+
+**Files:** `commander/script_process.c`
+
+## WComboBox popup explodes its item geometry with many items
+
+**Symptom:** clicking the `Kuerzel` drop-down in the AdmPanel launcher (a
+SQL-backed `WComboBox` with 779 rows in the test database) opened a popup
+whose item buttons were each `725x8404` pixels and whose `VBox` y positions
+wrapped around 65536. Layout took seconds, memory climbed, and a longer run
+took the desktop session down with the OOM killer. The previous interactive
+session died exactly this way.
+
+**Cause:** `WComboBox.open_popup()` creates one `Wbutton` per item inside a
+`WPopupMenu` (a `VBox`). The popup shell is capped to
+`linesHeight * 30` (240 px), but the menu widget keeps its full preferred
+height (all items). `VBox.do_layout()` therefore divides that huge height by
+the item count and gives every child a huge height; the `Dimension y`
+accumulator then wraps. There is no scrolling viewport, so the popup tries
+to materialize every item at once. `Wlabel.query_geometry()` also accepts any
+larger proposed height, so the bad size sticks.
+
+**Reproduction (safe):**
+```bash
+./apps/admpanel/run_guarded.sh apps/admpanel/examples/freigabe.lua
+# click the Kuerzel combo; or drive it headlessly:
+ADMPANEL_DROPDOWN_ITEMS=1000 ADMPANEL_DROPDOWN_MEM_MB=128 \
+  ./tests/test_launcher_dropdown_guard.sh
+```
+The guard caps memory and keeps `run.log`/`meta.txt`. Before the fix this
+reproduced the runaway (timeout/nonzero exit); after the fix the same command
+completes with a small bounded popup.
+
+**Fix:** `WComboBox.open_popup()` now creates a single scrollable
+`WListView` (`rows = items`, `visibleRows = min(linesHeight, item_count)`,
+`showHeader`/`gridLines`/`alternateRows` off, horizontal scrollbar off). The
+popup height comes from `WListView.query_geometry()` (visible rows times row
+height plus the scrollbar), so the number of items no longer affects the
+widget geometry or creates one X window per item.
+
+`WListView` gained a `clicked` callback for a single mouse click on a row.
+`WComboBox` uses `clicked` and `activate` to commit, but defers the commit
+through a zero-delay timeout; the list is therefore never destroyed inside
+its own event handler. `notify` updates the combo label live while the user
+navigates, and Escape still dismisses without committing.
+
+**Verification:** `tests/test_wcombobox.c` now covers single-click commit,
+popup placement, and a 200-item popup whose height stays bounded.
+`tests/test_launcher_dropdown_guard.sh` with
+`ADMPANEL_DROPDOWN_ITEMS=1000 ADMPANEL_DROPDOWN_MEM_MB=128` used to time out
+at the old geometry explosion; it now completes with a ~25 MB peak.
+
+**Status:** resolved.
+
+**Files:** `wbuild_widgets/WComboBox.widget`,
+`wbuild_widgets/WListView.widget`, `tests/test_wcombobox.c`,
+`tools/run_guarded.sh`, `apps/admpanel/run_guarded.sh`,
+`tests/test_launcher_dropdown_guard.sh`
+
+## WComboBoxEdit: opening the popup before realize crashed XTranslateCoords
+
+**Symptom:** calling `open_popup` from a Lua `--after` hook (before the
+harness window was realized) aborted with
+`X Error of failed request: BadWindow ... X_TranslateCoords`.
+
+**Cause:** `comboedit_open()` called `XTranslateCoordinates(XtWindow($), ...)`
+without checking that the composite had a window yet.
+
+**Fix:** return early from `comboedit_open()` unless `XtIsRealized($)` is true.
+The arrow click and Down key only happen after realize, so this only affects
+programmatic calls.
+
+**Files:** `wbuild_widgets/WComboBoxEdit.widget`
+
+## WComboBoxEdit: "▾" in a Wbutton rendered as tofu
+
+**Symptom:** the dropdown arrow button showed a hollow box instead of a
+triangle.
+
+**Cause:** the theme UI font used by `Wlabel`/`Wbutton` does not contain
+U+25BE in this environment.
+
+**Fix:** do not use a child `Wbutton` for the arrow. The right strip is part
+of the composite's own window; `expose` fills it with the button background,
+draws the separator and a small filled triangle, and the `<Btn1Down>` action
+`arrow_click` opens/closes the popup. This also removes one child widget per
+combo edit.
+
+**Files:** `wbuild_widgets/WComboBoxEdit.widget`
+
+## WComboBoxEdit: typing kept the old selected index
+
+**Symptom:** after choosing a lookup item and then editing the text, the
+widget still reported the previous `selected` index. AdmPanel therefore kept
+using the old SQL key instead of the typed value.
+
+**Cause:** `edit_changed_cb()` refiltered the popup but never cleared
+`selected`.
+
+**Fix:** every user edit sets `selected = -1`; clicking a row or pressing
+Return sets it again from the chosen item. The AdmPanel SQL lookup now uses
+the typed text (matching a key or display string when possible) while
+`selected` is -1.
+
+**Files:** `wbuild_widgets/WComboBoxEdit.widget`, `apps/admpanel/ui.lua`,
+`apps/admpanel/sql.lua`, `tests/test_wcomboedit.c`,
+`tests/test_launcher_sql_ui.lua`
+
+## WComboBoxEdit lookup returned the display field instead of the key
+
+**Symptom:** the `kunde-auswahl.lua` demo showed the display string
+(`jens (db1)`) in the edit field and it was easy to accidentally use that as
+the value instead of the configured `sql_key_field` (`jens`).
+
+**Fix:** `WComboBoxEdit` now has an optional `keys` list parallel to `items`
+and a `selectedKey` value. AdmPanel fills `keys` from the SQL map and reads
+`selectedKey` for the lookup value, so a selected item returns the key while
+the edit/list keep showing the display field. Free text still falls back to
+the typed value; a typed display string is resolved to its key first.
+
+**Files:** `wbuild_widgets/WComboBoxEdit.widget`, `apps/admpanel/ui.lua`,
+`apps/admpanel/sql.lua`, `tests/test_wcomboedit.c`,
+`tests/test_launcher_sql_ui.lua`
+
+## Wedit/WLineEdit/WComboBoxEdit: non-ASCII typing corrupted UTF-8
+
+**Symptom:** typing `ä`, `ö`, `ü` or other non-ASCII characters into an edit
+field produced invalid UTF-8. Cursor movement, glyph layout and filtering
+then behaved incorrectly, and the `WComboBoxEdit` prefix filter could miss
+matching items.
+
+**Cause:** `_XawLookupString()`/`XLookupString()` return Latin-1 for many
+keysyms (for example `a-diaeresis` arrives as the single byte `0xE4`).
+`Wedit.insert_char` inserted those bytes directly into a UTF-8 buffer.
+
+**Fix:** normalize the lookup result before inserting it: keep it when it is
+already valid UTF-8, otherwise encode the keysym's Unicode code point as
+UTF-8. If the lookup returns no bytes but a Unicode keysym (CJK text injected
+via XTEST), encode that keysym directly. This is the same strategy already
+used by `KaroEd`. Paste continues to use `XA_UTF8_STRING`, so no extra
+conversion is needed there.
+
+**Files:** `wbuild_widgets/Wedit.widget`, `tests/test_wcomboedit.c`
+
+## WLineEdit placeholder was a dangling XtRString pointer
+
+**Symptom:** clearing the new `WComboBoxEdit` (or any empty `WLineEdit`)
+aborted with an AddressSanitizer heap-use-after-free in `draw_extras()` at
+`strlen(placeholder)`.
+
+**Cause:** `placeholder` was a raw `XtRString` resource. Xt stores the pointer
+without copying the string. When the app set the placeholder from Lua, the
+Lua string was freed after the call and `draw_extras()` later read freed
+memory. The field never showed the placeholder while it held a selected
+value, so enabling the clear button exposed the bug.
+
+**Fix:** `Wedit` now owns a 256-byte placeholder copy (`placeholder_buf`).
+`initialize` and `set_values` copy the resource value into it and point
+`placeholder` at the buffer. The resource was moved from `WLineEdit` to
+`Wedit` so all edit widgets use the same ownership rule.
+
+**Files:** `wbuild_widgets/Wedit.widget`, `wbuild_widgets/WLineEdit.widget`,
+`apps/admpanel/ui.lua`
+
+## WListView selectedId stayed -1 for a list created with selected/rowIds
+
+**Symptom:** in `WComboBoxEdit`, typing `aa` and pressing Down highlighted
+`aamit` in the popup, but pressing Enter did not select it or put it in the
+edit field.
+
+**Cause:** `WComboBoxEdit.comboedit_commit()` reads the list's `selectedId`.
+A freshly created `WListView` was given `selected = 0` and `rowIds`, but Xt
+applies those resources before `initialize()` and does not call `set_values`
+for them. `selectedId` therefore kept its default `-1`. Enter fell back to an
+exact text match for `aa`, found none, and left the field unchanged.
+
+A second issue was that `comboedit_refilter()` freed and recreated the MLS
+lists; if the allocator reused the same addresses, `WListView`'s pointer
+comparison could miss the change and keep stale row ids.
+
+**Fix:** `WListView` now recomputes `selectedId` in `get_values_hook()` (and
+once in `initialize()`), so reads are always current. `comboedit_refilter()`
+clears the list's `rows`, `rowIds` and `selected` before freeing/refilling the
+lists, so a refill is always observed even when the addresses are reused.
+
+**Files:** `wbuild_widgets/WListView.widget`,
+`wbuild_widgets/WComboBoxEdit.widget`, `tests/test_wcomboedit.c`
+
+## Wedit selection state survived programmatic text changes
+
+**Symptom:** clearing or replacing the text programmatically while a
+selection existed aborted with a fatal MLS out-of-bounds error from
+`px_char()` in `Wedit.widget`.
+
+**Cause:** `copy_str()` rebuilt the glyph list but left `has_selection`,
+`sel_start`/`sel_end` and `crsr_pos` pointing at the old text. `draw_selection`
+then asked for a glyph index that no longer existed.
+
+**Fix:** `copy_str()` now clears the selection, resets the cursor and the
+horizontal view. `delete_selection()` also clamps `left_char_offset` after the
+text shrinks.
+
+## Wedit Backspace/Delete did not rebuild the glyph list
+
+**Symptom:** deleting a single character left the rendered text stale.
+
+**Cause:** `remove_char_at_cursor()` removed bytes from `str_m` but did not
+call `str_to_glyphlist()`.
+
+**Fix:** it now rebuilds the glyph list and clamps `left_char_offset`.
+`pos_from_x()` also guards the empty-glyph-list case.
+
+**Files:** `wbuild_widgets/Wedit.widget`, `tests/test_wcomboedit.c`
+
+## Inline completion saw the old cursor position
+
+**Symptom:** after typing the second character the edit text was not completed
+and no suffix was selected.
+
+**Cause:** `insert_char_at_cursor()` fired the `changed` callback before
+`insert_char()` advanced the cursor. `WComboBoxEdit` only completes when the
+cursor is at the end of the text, so the callback saw `cursor == len - 1` and
+skipped completion.
+
+**Fix:** `insert_char_at_cursor()` no longer notifies; `insert_char()` and
+`RequestSelection()` notify after advancing the cursor. Inline completion now
+sees the final cursor position.
+
+**Files:** `wbuild_widgets/Wedit.widget`,
+`wbuild_widgets/WComboBoxEdit.widget`, `tests/test_wcomboedit.c`
+
+## Wedit get_values_hook crashed on an empty text buffer
+
+**Symptom:** clearing the lookup field and typing `bn` aborted with
+`ERROR: mls.c ... Index(-1) out of Bounds` from `get_values_hook()` in
+`Wedit.widget`.
+
+**Cause:** `get_values_hook()` assumed `$str_m` always contains at least the
+sentinel character. In this state the buffer was empty (`m_len($str_m) == 0`),
+so `CHAR($label_m, l-1)` indexed `-1`.
+
+**Fix:** `get_values_hook()` now returns an empty string when the buffer is
+empty. `ensure_str_sentinel()` restores the sentinel before inserting or
+deleting text, and `draw_cursor()` guards an empty glyph list.
+
+**Files:** `wbuild_widgets/Wedit.widget`,
+`wbuild_widgets/WComboBoxEdit.widget`, `tests/test_wcomboedit.c`
+
+## WComboBoxEdit popup stayed small and misplaced after filtering
+
+**Symptom:** after trying several prefixes, typing `s` and pressing Down showed
+a one-row list that overlapped the input field.
+
+**Cause:** `comboedit_refilter()` updated `rows`/`rowIds`/`selected` but not
+`visibleRows`. The popup therefore kept the height from the first filter
+(which may have had only one match). The shell position was only set when the
+popup opened, so it could also be stale after layout changes.
+
+**Fix:** `comboedit_refilter()` now sets
+`visibleRows = min(linesHeight, filtered_count)`. `comboedit_resize_popup()`
+re-anchors the shell below the current field geometry, and `resize`/
+`change_managed` re-anchor an open popup.
+
+**Files:** `wbuild_widgets/WComboBoxEdit.widget`, `tests/test_wcomboedit.c`
+
+## Wedit select-all before realize caused BadDrawable
+
+**Symptom:** starting a launcher with an `input` field aborted with
+`X Error of failed request: BadDrawable` in `X_PolyFillRectangle`.
+
+**Cause:** `post_build()` selected the initial input text immediately after
+`lui.run()`. At that moment the edit had no pixmap yet, so `select_all()` ->
+`paint()` used `$pix.data == 0`.
+
+**Fix:** `paint()` and `draw_cursor()` now return early unless the widget is
+realized and has a pixmap. The selection state is still stored and is drawn
+on the first expose.
+
+**Files:** `wbuild_widgets/Wedit.widget`, `apps/admpanel/ui.lua`
+
+## WLineEdit clear button disappeared after a repaint
+
+**Symptom:** starting `apps/admpanel/run.sh examples/freigabe.lua` showed the
+selected SQL lookup value with the small clear `x` at the right edge. Clicking
+the first character (or any action that repainted the edit) removed the `x`,
+even though the field still had text.
+
+**Cause:** `WLineEdit` drew its clear button (and the empty-field placeholder)
+only from its `expose` override, directly on the X window. Every text action
+calls `Wedit.paint()`, which copies the text pixmap over the window and never
+called the decoration code again. The button therefore survived only until the
+next paint.
+
+**Fix:** `Wedit` now has an overridable `draw_extras()` method and calls it at
+the end of `paint()`, after the pixmap copy and cursor. `WLineEdit` implements
+the hook instead of wrapping `expose`, so the clear button and placeholder are
+repainted on every update.
+
+**Files:** `wbuild_widgets/Wedit.widget`,
+`wbuild_widgets/WLineEdit.widget`, `tests/test_wcomboedit.c`
+
+## Wmarkdown probe showed a blank window until commander_runner was relinked
+
+**Symptom:** `tools/widget_shot.sh '(Wmarkdown ...)'` and `run_widget.sh`
+produced an empty themed background. `xwininfo -tree` showed the probe host
+without a child window, even though the widget test and `libxtcw` were current.
+
+**Cause:** `commander_runner` keeps a statically linked `register_wb.o` from
+`libxtcw`. `make widgets` generated and registered the new `Wmarkdown` class,
+and `make tests` rebuilt `libxtcw`, but the runner binary was not relinked, so
+`xtcreate("Wmarkdown", ...)` silently created nothing.
+
+**Fix:** relink the runner after adding a widget: `make -C commander
+commander_runner` (or `make commander`). The probe then creates the window.
+When a new widget renders blank only in LUI/`widget_shot` but passes its C
+test, check `stat build/lib/libxtcw.a commander/commander_runner` first.
+
+**Files:** `makefile`, `commander/makefile`, `wbuild_widgets/Wmarkdown.widget`
+
+## retex stretched the last line of a justified paragraph
+
+**Symptom:** `Wmarkdown` with `alignment = 3` (justify) stretched the final
+line of every paragraph across the full width, leaving huge inter-word gaps.
+
+**Cause:** `plain_finish_line()` always appended `ctx->right_skip`; for
+`RETEX_ALIGN_JUSTIFY` that is a zero-width glue, so `node_pack_hbox()` spread
+the leftover width over the normal inter-word glues on every line, including
+the paragraph's last line.
+
+**Fix:** the styled layout detects the last line of a paragraph
+(`styled_last_line()`) and `plain_finish_line()` appends a `fil` right-skip for
+that line. Only the last line is left-aligned; preceding lines stay justified.
+
+**Files:** `re-tex/src/retex.c`, `tests/test_retex_styled.c`

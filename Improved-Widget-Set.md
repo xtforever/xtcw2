@@ -46,12 +46,12 @@ This is a living document. It is derived from:
 | Status bar | `WStatusBar` (new) | Message + permanent right widgets; cookbook integration done |
 | Dialogs | `WDialog` (new); `MessageBox`, `WfileChooser`, `WfileSelector` (legacy/partial) | Themed modal + message/input helpers (`gui.alert/confirm/prompt`); focus trap pending |
 | Model | `lui/wmodel.lua` (`WModel`/`ProxyModel`) | Columns, rows, stable ids, sort and filter proxy; C-side flags/delegates pending |
-| Selection | `WComboBox` (new) | Read-only items, selected index and themed popup; editable/completion later |
+| Selection | `WComboBox`, `WComboBoxEdit` (new) | Read-only items plus an editable text field with a prefix-filtered `WListView` popup |
 | Choice | `WRadioGroup` (new) | Vertical radio group with click/keyboard selection |
 | Feedback | `WProgressBar` (new); `Gauge`, `VSlider`, `HSlider`, `EqFader` | Determinate progress; indeterminate animation and tooltips pending |
 | Layout | `WFormLayout` (new) | Two-column label/field form layout |
 | Buttons | `Wbutton`, `Wcheckbox`, `WToggleSwitch`, `WpixBtn` | `Wbutton`/`WToggleSwitch` good; checkbox indicator implemented; icon button legacy |
-| Text input | `WLineEdit` (new), `Wedit`, `WeditMV`, `Wpassword`, `KaroEd`, `Wbravo`, `Wretex` | `WLineEdit` adds placeholder/clear; `KaroEd`/`Wbravo` strong; validation/completion pending |
+| Text input | `WLineEdit` (new), `Wedit`, `WeditMV`, `Wpassword`, `KaroEd`, `Wbravo`, `Wretex` | `WLineEdit` adds placeholder/clear/selection/clipboard; `KaroEd`/`Wbravo` strong; validation/completion pending |
 | Lists | `WListView`, `table-view`, `WTreeView`, legacy `Wlist*`/`Wls*` | `WListView`/table/tree are the future; legacy lists frozen |
 | Tabs/scroll | `WtabWidget`, `Wviewport`, `WSplitter`, `WPaned` | Modern after recent fixes; splitter/paned need consolidation |
 | Data/domain | `WListView`, `table-view`, `WTreeView`, `DrawCanvas`, `Canvas`, `IconSVG`, `Board`, `Dartboard` | Table/tree are first slices; no shared `WModel` yet |
@@ -186,14 +186,47 @@ style-guide roles, keyboard handling and tests.
 
 5. **WComboBox** — `NEW` (replaces `Wcombo`)
    - Read-only and editable modes; item model; keyboard type-ahead; completion.
-   - Popup list uses `WPopupMenu`; no Xaw popup shell.
+   - Popup list uses a scrollable `WListView`; no Xaw popup shell.
    - Status: first read-only slice implemented — MLS `items`, `selected`,
      `placeholder`, themed popup below the trigger, outside-click catcher,
      dropdown arrow, `refresh`/`select_index` actions, click/focus acquisition,
      Up/Down/Home/End selection, Return/space popup toggle and Escape dismiss.
-     The cookbook editor category uses it. Editable mode, completion and
-     keyboard type-ahead remain.
+     The cookbook editor category uses it. Editable mode is provided by the
+     new `WComboBoxEdit` (see below); completion remains.
    - Acceptance: category selection in cookbook; no widget-name fallback; theme switch.
+
+   **WComboBoxEdit** — editable variant (`combo-edit` in LUI)
+   - A `WLineEdit` child plus a drawn dropdown arrow; the popup is the same
+     scrollable `WListView`.
+   - Typing filters the displayed list by the typed prefix (case-insensitive)
+     while the popup is open; Down opens the list already filtered; Return
+     commits the highlighted item or the free text; `changed` fires on edits.
+   - UTF-8 input is normalized before insertion: Latin-1 keysyms (umlauts)
+     and Unicode keysyms (CJK via XTEST) both end up as valid UTF-8.
+   - A small x button appears when the field has text; `Ctrl+U` (or the
+     `clear` action) clears it. Clearing fires `changed` and refilters an open
+     popup to the full list.
+   - The edit field supports mouse-drag and Shift+arrow selection, `Ctrl+A`,
+     `Ctrl+C`/`Ctrl+X`/`Ctrl+V` (CLIPBOARD with PRIMARY fallback), Home/End,
+     and deletes/replaces the selection when typing or pressing Backspace.
+   - Inline completion: after the second typed character the first matching
+     item is filled in and its suffix is selected. Typing replaces the selected
+     suffix; Right/End accepts it, Backspace/Delete/Escape remove it and keep
+     the typed prefix.
+   - The popup height follows the filtered item count and stays anchored below
+     the field when the filter or the layout changes.
+   - After choosing an item, or when the app sets `select_index`, the whole
+     value is selected. The first typed character therefore replaces it.
+   - `keys` is an optional parallel string list. `selectedKey` returns
+     `keys[selected]` for a chosen item, or the edit text for free text. This
+     is what AdmPanel uses for SQL lookups, so the value is the key field
+     while the field still displays the display field.
+   - LUI: `(combo-edit :id "cust" :text "" :placeholder "Type…"
+     :on-change "LUA(on_cust_chosen)")`; set `items` with
+     `gui.set_string_list(id, "items", {...})` (or a `:model` handle).
+     `:changed "LUA(...)"` fires on every edit; the callback value is the
+     selected original index, or -1 for free text.
+   - Status: implemented and covered by `tests/test_wcomboedit.c`.
 
 6. **WSpinBox** — `IMPROVE`
    - Visible `-`/`+` buttons, repeat, wrap, step, min/max, `%d`/`%g` format.

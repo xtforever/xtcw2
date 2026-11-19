@@ -312,6 +312,91 @@ static void test_paragraph_spacing(void)
     printf("test_paragraph_spacing passed\n");
 }
 
+static void test_compact_blank_lines(void)
+{
+    const char *s = "a\n\nb";
+    RAtom atoms[8];
+    RetexParaFormat f[2];
+    RetexParagraph *pc, *pn;
+    RetexLine lines[4];
+    double gap;
+    int i;
+
+    for (i = 0; s[i]; i++)
+        atoms[i] = mkchar((uint32_t)(unsigned char)s[i], g_sans, 0, 16.0f);
+
+    memset(f, 0, sizeof(f));
+    f[0].space_after = 10.0;
+    f[1].space_before = 2.0;
+
+    pc = retex_layout_styled_paras_compact(g_be, atoms, i, 300.0, "Sans", 16.0,
+                                           f, 2, RETEX_ALIGN_LEFT);
+    assert(pc != NULL);
+    /* The blank separator does not occupy a visual line. */
+    assert(retex_paragraph_get_line_count(pc) == 2);
+    assert(retex_paragraph_get_lines(pc, lines, 4) == 2);
+    gap = lines[1].y - (lines[0].y + lines[0].height);
+    assert(gap >= 9.0);
+
+    pn = retex_layout_styled_paras(g_be, atoms, i, 300.0, "Sans", 16.0,
+                                   f, 2, RETEX_ALIGN_LEFT);
+    assert(pn != NULL);
+    /* The classic layout keeps the blank line. */
+    assert(retex_paragraph_get_line_count(pn) == 3);
+
+    retex_paragraph_free(pc);
+    retex_paragraph_free(pn);
+    printf("test_compact_blank_lines passed\n");
+}
+
+static void test_justify_last_line_not_stretched(void)
+{
+    const char *s = "alpha beta gamma delta epsilon zeta eta theta iota "
+                    "kappa lambda mu nu xi omicron pi rho sigma tau";
+    RAtom atoms[128];
+    RetexParaFormat f[1];
+    RetexParagraph *pj, *pl;
+    RetexLine lj, ll;
+    double xj0, xj1, xl0, xl1, y, h;
+    int i, n;
+
+    n = (int)strlen(s);
+    assert(n < (int)(sizeof(atoms) / sizeof(atoms[0])));
+    for (i = 0; i < n; i++)
+        atoms[i] = mkchar((uint32_t)(unsigned char)s[i], g_sans, 0, 16.0f);
+
+    memset(f, 0, sizeof(f));
+    f[0].align = RETEX_ALIGN_JUSTIFY;
+    pj = retex_layout_styled_paras(g_be, atoms, n, 100.0, "Sans", 16.0,
+                                   f, 1, RETEX_ALIGN_JUSTIFY);
+    assert(pj != NULL);
+
+    f[0].align = RETEX_ALIGN_LEFT;
+    pl = retex_layout_styled_paras(g_be, atoms, n, 100.0, "Sans", 16.0,
+                                   f, 1, RETEX_ALIGN_LEFT);
+    assert(pl != NULL);
+
+    assert(retex_paragraph_get_line_count(pj) ==
+           retex_paragraph_get_line_count(pl));
+    assert(retex_paragraph_get_line_count(pj) > 1);
+    assert(retex_paragraph_get_line(pj,
+           retex_paragraph_get_line_count(pj) - 1, &lj));
+    assert(retex_paragraph_get_line(pl,
+           retex_paragraph_get_line_count(pl) - 1, &ll));
+
+    /* The last line must use the same word positions as LEFT alignment. */
+    assert(retex_paragraph_get_caret_pos(pj, lj.start_byte, &xj0, &y, &h));
+    assert(retex_paragraph_get_caret_pos(pj, lj.end_byte, &xj1, &y, &h));
+    assert(retex_paragraph_get_caret_pos(pl, ll.start_byte, &xl0, &y, &h));
+    assert(retex_paragraph_get_caret_pos(pl, ll.end_byte, &xl1, &y, &h));
+    assert(fabs(xj0 - xl0) < 0.5);
+    assert(fabs(xj1 - xl1) < 0.5);
+
+    retex_paragraph_free(pj);
+    retex_paragraph_free(pl);
+    printf("test_justify_last_line_not_stretched passed\n");
+}
+
 int main(void)
 {
     m_init();
@@ -330,6 +415,8 @@ int main(void)
     test_paragraph_alignment_and_indent();
     test_first_line_indent();
     test_paragraph_spacing();
+    test_compact_blank_lines();
+    test_justify_last_line_not_stretched();
 
     g_be->destroy(g_be);
     conststr_free();

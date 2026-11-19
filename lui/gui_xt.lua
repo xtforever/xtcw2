@@ -260,6 +260,8 @@ local function build_dialog(opts)
         kw(':okLabel'), opts.ok_label or 'OK',
         kw(':cancelLabel'), opts.cancel_label or 'Cancel',
         kw(':showCancel'), opts.show_cancel ~= false,
+        kw(':auxLabel'), opts.aux_label or '',
+        kw(':showAux'), opts.show_aux == true,
     }
     local function prop(key, value)
         if value == nil then return end
@@ -326,6 +328,23 @@ function M.confirm(msg, opts)
     }
     local result = run_dialog(id)
     return result == 1
+end
+
+-- Three-button dialog: returns 1 = OK, 0 = Cancel, 2 = Aux.
+function M.choice(msg, opts)
+    opts = opts or {}
+    local id = build_dialog{
+        title = opts.title or 'Confirm',
+        message = msg,
+        message_type = opts.message_type or 4,
+        icon = opts.icon,
+        details = opts.details,
+        ok_label = opts.ok_label,
+        cancel_label = opts.cancel_label,
+        aux_label = opts.aux_label,
+        show_aux = opts.show_aux,
+    }
+    return run_dialog(id)
 end
 
 function M.prompt(title, msg, default, opts)

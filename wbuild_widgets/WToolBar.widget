@@ -111,6 +111,12 @@
         if (w > 2 * $toolbarPadding) w += $itemGap;
         w += cw;
     }
+    /* toolbarHeight is a minimum: never squeeze children below their
+     * preferred height, or their labels lose the bottom gap. */
+    {
+        int need = max_child_height($) + 2 * $toolbarPadding;
+        if (h < need) h = need;
+    }
     if (w < 1) w = 1;
     if (h < 1) h = 1;
 
@@ -151,6 +157,33 @@
     }
 }
 
+@proc int child_pref_height($, Widget child)
+{
+    XtWidgetGeometry req, pref;
+    memset(&req, 0, sizeof req);
+    pref.request_mode = 0;
+    if (XtQueryGeometry(child, &req, &pref) == XtGeometryAlmost &&
+        (pref.request_mode & CWHeight))
+        return (int)pref.height;
+    return (int)child->core.height;
+}
+
+@proc int max_child_height($)
+{
+    int maxh = 0;
+    WidgetList children = NULL;
+    Cardinal num_children = 0;
+    XtVaGetValues($, XtNchildren, &children, XtNnumChildren, &num_children, NULL);
+
+    for (Cardinal i = 0; i < num_children; i++) {
+        Widget child = children ? children[i] : NULL;
+        if (!child || !XtIsManaged(child)) continue;
+        int ch = child_pref_height($, child);
+        if (ch > maxh) maxh = ch;
+    }
+    return maxh;
+}
+
 @proc void toolbar_layout($)
 {
     if ($layout_guard) return;
@@ -160,6 +193,10 @@
     int gap = $itemGap;
     int h = $toolbarHeight;
     if (h < 1) h = (int)$height;
+    {
+        int need = max_child_height($) + 2 * pad;
+        if (h < need) h = need;
+    }
     int inner_h = h - 2 * pad;
     if (inner_h < 1) inner_h = 1;
 

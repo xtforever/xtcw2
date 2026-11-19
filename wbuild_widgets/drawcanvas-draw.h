@@ -21,6 +21,13 @@ typedef struct draw_canvas_st {
 
   void *priv_data;
 
+  /* Area the next paint callback has to repaint, in widget coordinates.
+   * damage_full is set for expose/resize/explicit redraws; otherwise only the
+   * damage rectangle was touched since the last paint and the callback may
+   * repaint that part alone (the drawable keeps its old content). */
+  int damage_x, damage_y, damage_w, damage_h;
+  Boolean damage_full;
+
 } draw_canvas_t;
 
 /* Input event passed to key/mouse callbacks. The struct lives on the stack in

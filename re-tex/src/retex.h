@@ -100,6 +100,20 @@ RetexParagraph* retex_layout_styled_paras(Backend *be, const RAtom *atoms,
                                           RetexAlign default_align);
 
 /**
+ * @brief Like retex_layout_styled_paras(), but blank lines do not take a
+ * visual line: they only delimit paragraphs.  Use this for formats such as
+ * Markdown where paragraph spacing is expressed via space_before/after.
+ */
+RetexParagraph* retex_layout_styled_paras_compact(Backend *be,
+                                                  const RAtom *atoms, int natoms,
+                                                  double width_pt,
+                                                  const char *font_face,
+                                                  double font_size_pt,
+                                                  const RetexParaFormat *fmts,
+                                                  int nfmts,
+                                                  RetexAlign default_align);
+
+/**
  * @brief Paragraph model used by the styled layout.
  *
  * Returns the number of paragraphs (maximal runs of non-blank lines), at

@@ -37,13 +37,15 @@ end
 
 local function do_save(path)
     if not path or path == "" then return false end
-    if canvas then xtaction(canvas, "iconeditor_save", path) end
-    local f = io.open(path, "rb")
-    if not f then
-        set_status("Save failed: " .. path)
+    if not canvas then
+        set_status("Save failed: no canvas")
         return false
     end
-    f:close()
+    local rc, msg = xtaction(canvas, "iconeditor_save", path)
+    if rc ~= 0 then
+        set_status("Save failed: " .. (msg ~= "" and msg or ("error " .. rc)))
+        return false
+    end
     save_path = path
     dirty = false
     set_status("Saved " .. path)
@@ -98,7 +100,15 @@ end
 function on_open_selected()
     local path = gui.get("fs", "selectedPath") or ""
     if path == "" then return end
-    if canvas then xtaction(canvas, "iconeditor_load", path) end
+    if not canvas then
+        set_status("Open failed: no canvas")
+        return
+    end
+    local rc, msg = xtaction(canvas, "iconeditor_load", path)
+    if rc ~= 0 then
+        set_status("Open failed: " .. (msg ~= "" and msg or ("error " .. rc)))
+        return
+    end
     local w, h = xpm_size(path)
     if w and h then
         gui.set("sp_w", "value", w)
@@ -126,37 +136,44 @@ function on_save_result(ok)
     ok = tonumber(ok) or tonumber(gui.get("save_dlg", "result")) or 0
     if ok == 1 then
         local path = gui.get("save_dlg", "inputValue") or ""
-        if do_save(path) and pending_quit then xtappexitflag() end
+        if do_save(path) and pending_quit then graceful_shutdown() end
     end
     pending_quit = false
 end
 
 function cb_quit()
     if not dirty then
-        xtappexitflag()
+        graceful_shutdown()
         return
     end
     gui.set("quit_dlg", "open", true)
 end
 
+-- Window-manager close button: reuse the unsaved-changes quit flow.
+-- Returning false vetoes the close until the dialog decides.
+window_close_register(function()
+    cb_quit()
+    return false
+end)
+
 function on_quit_result(ok)
     ok = tonumber(ok) or tonumber(gui.get("quit_dlg", "result")) or 0
     if ok == 1 then
         if save_path ~= "" then
-            if do_save(save_path) then xtappexitflag() end
+            if do_save(save_path) then graceful_shutdown() end
         else
             pending_quit = true
             cb_save_as()
         end
     elseif ok == 0 then
-        xtappexitflag()
+        graceful_shutdown()
     else
         set_status("Quit cancelled")
     end
 end
 
 function cb_about()
-    set_status("IconEditor — draw an icon, preview it, save as XPM")
+    set_status("IconEditor — left-drag draws, right-click erases, save as XPM")
 end
 
 local ui = [[
@@ -261,7 +278,7 @@ local ui = [[
                   :weightx 1 :fill 3 :callback "LUA(on_resize)"))
       ))
 
-    (status-bar :id "status" :slot "status" :message "Ready — draw with the selected tool"
+    (status-bar :id "status" :slot "status" :message "Ready — left-drag draws, right-click erases"
                 :itemGap 8 :barPadding 6)
   )
 
@@ -290,7 +307,7 @@ if canvas then
     xtaction(canvas, "iconeditor_set_tool", "pencil")
 end
 on_color("000000")
-set_status("Ready — draw with the selected tool")
+set_status("Ready — left-drag draws, right-click erases")
 
 local last_change = 0
 local function poll_canvas()
@@ -310,8 +327,9 @@ if smoke and smoke ~= "" then
         if canvas then
             xtaction(canvas, "iconeditor_set_color", "#ff0000")
             xtaction(canvas, "iconeditor_test_stroke")
+            xtaction(canvas, "iconeditor_test_erase")
         end
         do_save(smoke)
-        xtappexitflag()
+        graceful_shutdown()
     end)
 end

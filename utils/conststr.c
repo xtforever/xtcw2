@@ -20,6 +20,7 @@ void  conststr_free(void)
 {
   m_free_list( CONSTSTR_DATA);
   CONSTSTR_DATA=0;
+  CS_ZERO = -1;
 }
 
 void conststr_init(void)

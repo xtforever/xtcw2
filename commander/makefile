@@ -36,8 +36,10 @@ LUA_MULTIARCH ?= $(shell gcc -dumpmachine)
 LUA_PC_DIR ?= $(CURDIR)/../build/lua5.3/usr/lib/$(LUA_MULTIARCH)/pkgconfig
 LUA_CFLAGS=$(shell pkg-config --cflags lua5.3 2>/dev/null || PKG_CONFIG_PATH=$(LUA_PC_DIR) pkg-config --cflags lua5.3 2>/dev/null)
 LUA_LIBS=$(shell pkg-config --libs lua5.3 2>/dev/null || PKG_CONFIG_PATH=$(LUA_PC_DIR) pkg-config --libs lua5.3 2>/dev/null)
+MYSQL_CFLAGS=$(shell pkg-config --cflags mysqlclient 2>/dev/null || echo -I/usr/include/mysql)
+MYSQL_LIBS=$(shell pkg-config --libs mysqlclient 2>/dev/null || echo -lmysqlclient)
 XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil -ldl -lcairo
-CFLAGS += $(LUA_CFLAGS) -I../LuaRunner
+CFLAGS += $(LUA_CFLAGS) $(MYSQL_CFLAGS) -I../LuaRunner
 
 T=commander_runner
 D=mls.o ctx.o m_tool.o
@@ -52,8 +54,8 @@ ${T}: ${D}
 # Depend on the toolkit archives so a rebuilt widget library forces a relink.
 COMMANDER_LIBS=$(libdir)/libxtcw.a $(libdir)/libwcl.a $(libdir)/libutils.a $(libdir)/libretex.a $(libdir)/libplainc.a $(libdir)/libutf32.a $(libdir)/libutf8.a
 
-commander_runner: commander_runner.o task_manager.o lua_task_bindings.o lua_bridge.o xt_bridge.o file_ops.o ../LuaRunner/luaxt.o ../LuaRunner/luaxt_wrap.o $(COMMANDER_LIBS)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(LOADLIBES) $(LUA_LIBS) $(XORGLIB) -lpthread
+commander_runner: commander_runner.o task_manager.o lua_task_bindings.o lua_bridge.o xt_bridge.o lifecycle.o file_ops.o script_process.o db_mysql.o ../LuaRunner/luaxt.o ../LuaRunner/luaxt_wrap.o $(COMMANDER_LIBS)
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(LOADLIBES) $(LUA_LIBS) $(MYSQL_LIBS) $(XORGLIB) -lpthread
 
 clean:
 	-${RM} *.o ${T}

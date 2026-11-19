@@ -285,9 +285,15 @@
     int bi;
     btns[0] = $up_btn; btns[1] = $home_btn; btns[2] = $hidden_toggle;
     btns[3] = $refresh_btn; btns[4] = $cancel_btn; btns[5] = $ok_btn;
-    for (bi = 0; bi < 6; bi++)
-      XtVaSetValues(btns[bi], "leftGap", pad, "rightGap", pad,
+    for (bi = 0; bi < 6; bi++) {
+      XtVaSetValues(btns[bi], "rightGap", pad,
                     "topGap", vpad, "bottomGap", vpad, NULL);
+      /* Wcheckbox draws its 14px box at x=4 and reserves the label space with
+       * leftGap=22.  Overriding it with the button padding puts the label on
+       * top of the check box. */
+      if (btns[bi] != $hidden_toggle)
+        XtVaSetValues(btns[bi], "leftGap", pad, NULL);
+    }
   }
 
   /* Initial list configuration: weighted Name column, fixed others. */

@@ -34,6 +34,13 @@
 @var int pixmap_w
 @var int pixmap_h
 @var Boolean dirty
+@ damage rectangle accumulated by mark_dirty_area()
+@var int dmg_x
+@var int dmg_y
+@var int dmg_w
+@var int dmg_h
+@ whole canvas must be repainted (expose, resize, explicit redraw)
+@var Boolean dmg_full
 
 @def BG   = $canv.xcol
 @def FG   = ($canv.xcol+1)
@@ -44,6 +51,7 @@
 @proc expose
 {
     XTFUNC();
+    $dmg_full = True;
     paint1($);
 }
 
@@ -61,6 +69,11 @@
 	$pixmap_w = 0;
 	$pixmap_h = 0;
 	$dirty = True;
+	$dmg_x = 0;
+	$dmg_y = 0;
+	$dmg_w = 0;
+	$dmg_h = 0;
+	$dmg_full = True;
 	init_colors($);
 	DRAW=0;
 }
@@ -102,6 +115,7 @@
 	XTFUNC();
     $canv.win_width  = $width;
     $canv.win_height = $height;
+    $dmg_full = True;
     if( XtIsRealized($) ) {
         create_buffer($);
         paint1($);
@@ -140,12 +154,15 @@
     create_buffer($);
     if( $takeFocus ) schedule_focus($);
     $dirty = True;
+    $dmg_full = True;
     paint1($);
     start_timer($);
 }
 
 @proc set_values
 {
+    Boolean redraw = False;
+
     if( $updateInterval != $old$updateInterval ) {
         stop_timer($);
         if( XtIsRealized($) && $updateInterval > 0 ) start_timer($);
@@ -153,17 +170,24 @@
     if( $doubleBuffer != $old$doubleBuffer ) {
         if( XtIsRealized($) ) {
             create_buffer($);
-            paint1($);
+            redraw = True;
         }
     }
-    if( $xftFont != $old$xftFont || $foreground != $old$foreground ) {
+    if( $xftFont != $old$xftFont || $foreground != $old$foreground ||
+        $background_pixel != $old$background_pixel ) {
         init_colors($);
         $canv.xfont = $xftFont;
-        if( XtIsRealized($) ) paint1($);
+        redraw = True;
     }
     if( $takeFocus && ! $old$takeFocus && XtIsRealized($) )
         schedule_focus($);
-	return True; /* yes we want a redraw */
+    if( redraw && XtIsRealized($) ) {
+        $dmg_full = True;
+        paint1($);
+    }
+    /* Non-visual resources (e.g. changeCount) must not force a full redraw;
+     * plugins mark their own damage with mark_dirty/mark_dirty_area. */
+    return False;
 }
 
 @proc accept_focus
@@ -174,13 +198,40 @@
 @UTILITIES
 @proc paint1($)
 {
+    int dx, dy, dw, dh;
+    Boolean full;
+
     XTFUNC();
     if( ! XtIsRealized($) ) return;
     if( $doubleBuffer ) create_buffer($);
+
+    full = $dmg_full;
+    dx = full ? 0 : $dmg_x;
+    dy = full ? 0 : $dmg_y;
+    dw = full ? (int)$width : $dmg_w;
+    dh = full ? (int)$height : $dmg_h;
+    if( dx < 0 ) { dw += dx; dx = 0; }
+    if( dy < 0 ) { dh += dy; dy = 0; }
+    if( dx + dw > (int)$width ) dw = (int)$width - dx;
+    if( dy + dh > (int)$height ) dh = (int)$height - dy;
+    if( dw <= 0 || dh <= 0 ) {
+        full = True;
+        dx = dy = 0;
+        dw = (int)$width;
+        dh = (int)$height;
+    }
+
+    $canv.damage_full = full;
+    $canv.damage_x = dx;
+    $canv.damage_y = dy;
+    $canv.damage_w = dw;
+    $canv.damage_h = dh;
     XtCallCallbackList( $, $callback, (XtPointer) & $canv );
+    $dmg_full = False;
+    $dmg_x = $dmg_y = $dmg_w = $dmg_h = 0;
     if( $doubleBuffer && $pixmap ) {
         XCopyArea( $canv.dpy, $pixmap, XtWindow($), $canv.gc[0],
-                   0, 0, (unsigned)$width, (unsigned)$height, 0, 0 );
+                   dx, dy, (unsigned)dw, (unsigned)dh, dx, dy );
     }
     XFlush( $canv.dpy );
 }
@@ -283,16 +334,52 @@
 @trans <Btn1Down>: mouse()
 @trans <Btn1Motion>: mouse()
 @trans <Btn1Up>: mouse()
+@trans <Btn3Down>: mouse()
+@trans <Btn3Motion>: mouse()
+@trans <Btn3Up>: mouse()
 
 @ACTIONS
 @proc mark_dirty
 {
     $dirty = True;
+    $dmg_full = True;
+}
+
+@proc mark_dirty_area
+{
+    int x, y, w, h;
+
+    if( *num_params < 4 ) return;
+    x = atoi(params[0]);
+    y = atoi(params[1]);
+    w = atoi(params[2]);
+    h = atoi(params[3]);
+    if( w <= 0 || h <= 0 ) return;
+    $dirty = True;
+    if( $dmg_full ) return;
+    if( $dmg_w <= 0 || $dmg_h <= 0 ) {
+        $dmg_x = x;
+        $dmg_y = y;
+        $dmg_w = w;
+        $dmg_h = h;
+    } else {
+        int x1 = $dmg_x + $dmg_w;
+        int y1 = $dmg_y + $dmg_h;
+        int nx1 = x + w;
+        int ny1 = y + h;
+        if( x < $dmg_x ) $dmg_x = x;
+        if( y < $dmg_y ) $dmg_y = y;
+        if( nx1 > x1 ) x1 = nx1;
+        if( ny1 > y1 ) y1 = ny1;
+        $dmg_w = x1 - $dmg_x;
+        $dmg_h = y1 - $dmg_y;
+    }
 }
 
 @proc redraw
 {
     $dirty = False;
+    $dmg_full = True;
     paint1($);
 }
 
@@ -329,6 +416,7 @@
 @IMPORTS
 @incl <assert.h>
 @incl <stdint.h>
+@incl <stdlib.h>
 @incl <X11/Intrinsic.h>
 @incl <X11/Xmu/Converters.h>
 @incl <X11/Xft/Xft.h>

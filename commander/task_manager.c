@@ -20,7 +20,7 @@ typedef struct {
     task_func_t func;
 } task_reg_t;
 
-static int status_pipe[2];
+static int status_pipe[2] = { -1, -1 };
 static int jobs_list = -1;
 static int func_registry = -1;
 static XtAppContext xt_app;
@@ -68,8 +68,14 @@ void task_manager_cleanup(void) {
         m_free(jobs_list);
         jobs_list = -1;
     }
-    close(status_pipe[0]);
-    close(status_pipe[1]);
+    if (status_pipe[0] >= 0) {
+        close(status_pipe[0]);
+        status_pipe[0] = -1;
+    }
+    if (status_pipe[1] >= 0) {
+        close(status_pipe[1]);
+        status_pipe[1] = -1;
+    }
 }
 
 int task_spawn(void *(*func)(task_thread_args_t*), void *arg) {
