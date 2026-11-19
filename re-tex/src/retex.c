@@ -1486,6 +1486,17 @@ int retex_paragraph_get_offset_at(RetexParagraph *para, double x, double y) {
     return ln->end_byte;
 }
 
+void retex_set_features(const char *features)
+{
+    shaping_set_features(features);
+}
+
+void retex_set_language(const char *lang)
+{
+    shaping_set_language(lang);
+    hyphen_set_language(lang);
+}
+
 void retex_paragraph_render_range(RetexParagraph *para, Backend *be,
                                   int first_line, int last_line,
                                   double x, double y,

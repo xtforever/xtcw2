@@ -29,6 +29,8 @@ typedef struct {
     double width;
     double height;
     double depth;
+    double x_scale;     /* microtype advance expansion, 1.0 = normal */
+    uint32_t cp;        /* first code point of the cluster */
     ShapingFont *font;
     int source_start;   /* byte offset in the original UTF-8 text */
     int source_end;
@@ -39,6 +41,9 @@ int shaping_init(void);
 
 /* Optional language tag for HarfBuzz (e.g. "de", "en"). */
 void shaping_set_language(const char *lang);
+
+/* Optional HarfBuzz feature string, e.g. "liga=0, smcp=1". */
+void shaping_set_features(const char *features);
 
 /* Get a cached font.  Returns a borrowed pointer; do not free. */
 ShapingFont *shaping_font_get(const char *family, int style, double size);

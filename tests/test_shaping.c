@@ -49,6 +49,23 @@ int main(void)
     assert(clusters[n - 1].source_end == 4);
 
     shaping_clusters_free(clusters, n);
+
+    /* Feature API: disabling ligatures must not reduce the glyph count. */
+    {
+        int n_liga = 0, n_noliga = 0, i2;
+        ShapedCluster *a = shaping_shape_text(font, "fi", 2, 0, &n_liga);
+        int ga = 0, gb = 0;
+        for (i2 = 0; i2 < n_liga; i2++) ga += a[i2].nglyphs;
+        shaping_clusters_free(a, n_liga);
+
+        shaping_set_features("liga=0");
+        a = shaping_shape_text(font, "fi", 2, 0, &n_noliga);
+        for (i2 = 0; i2 < n_noliga; i2++) gb += a[i2].nglyphs;
+        shaping_clusters_free(a, n_noliga);
+        shaping_set_features(NULL);
+        assert(gb >= ga);
+    }
+
     printf("test_shaping passed\n");
     return 0;
 }

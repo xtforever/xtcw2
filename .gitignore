@@ -113,3 +113,6 @@ LuaRunner/nanosvg/src/nanosvg_impl.c
 # AdmPanel LUI app source (not legacy build output)
 !apps/admpanel/
 !apps/admpanel/**
+
+# re-tex per-object dependency files
+re-tex/src/*.d

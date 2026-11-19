@@ -367,7 +367,7 @@ static void test_justify_last_line_not_stretched(void)
 
     memset(f, 0, sizeof(f));
     f[0].align = RETEX_ALIGN_JUSTIFY;
-    pj = retex_layout_styled_paras(g_be, atoms, n, 100.0, "Sans", 16.0,
+    pj = retex_layout_styled_paras(g_be, atoms, n, 150.0, "Sans", 16.0,
                                    f, 1, RETEX_ALIGN_JUSTIFY);
     assert(pj != NULL);
     assert(retex_paragraph_get_line_count(pj) > 1);
@@ -378,7 +378,7 @@ static void test_justify_last_line_not_stretched(void)
     assert(retex_paragraph_get_caret_pos(pj, lj.start_byte, &xj0, &y, &h));
     assert(retex_paragraph_get_caret_pos(pj, lj.end_byte, &xj1, &y, &h));
     assert(xj0 >= 0.0);
-    assert(xj1 < 90.0);
+    assert(xj1 < 140.0);
 
     retex_paragraph_free(pj);
     printf("test_justify_last_line_not_stretched passed\n");

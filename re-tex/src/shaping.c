@@ -22,6 +22,7 @@
 #include <cairo-ft.h>
 
 #include "shaping.h"
+#include "utf8.h"
 #include "node.h"
 #include "scaled.h"
 #include "mls.h"
@@ -43,6 +44,8 @@ static int ft_ready;
 static int fc_ready;
 static ShapingFont *font_cache;
 static hb_language_t shape_language;
+static hb_feature_t *shape_features;
+static unsigned int shape_nfeatures;
 
 static int shaping_ensure_init(void)
 {
@@ -70,6 +73,42 @@ void shaping_set_language(const char *lang)
         shape_language = hb_language_from_string(lang, -1);
     else
         shape_language = NULL;
+}
+
+void shaping_set_features(const char *features)
+{
+    char *copy, *tok, *save = NULL;
+    hb_feature_t *list = NULL;
+    unsigned int n = 0, cap = 0;
+
+    free(shape_features);
+    shape_features = NULL;
+    shape_nfeatures = 0;
+    if (!features || !*features)
+        return;
+
+    copy = strdup(features);
+    if (!copy)
+        return;
+    for (tok = strtok_r(copy, ", ", &save); tok;
+         tok = strtok_r(NULL, ", ", &save)) {
+        hb_feature_t f;
+        if (!hb_feature_from_string(tok, -1, &f))
+            continue;
+        if (n == cap) {
+            unsigned int nc = cap ? cap * 2 : 4;
+            hb_feature_t *nl = (hb_feature_t *)realloc(list,
+                                                       nc * sizeof(*nl));
+            if (!nl)
+                break;
+            list = nl;
+            cap = nc;
+        }
+        list[n++] = f;
+    }
+    free(copy);
+    shape_features = list;
+    shape_nfeatures = n;
 }
 
 static int same_size(double a, double b)
@@ -238,7 +277,7 @@ ShapedCluster *shaping_shape_text(ShapingFont *font, const char *text, int len,
     hb_buffer_guess_segment_properties(buf);
     if (shape_language)
         hb_buffer_set_language(buf, shape_language);
-    hb_shape(font->hb, buf, NULL, 0);
+    hb_shape(font->hb, buf, shape_features, shape_nfeatures);
     info = hb_buffer_get_glyph_infos(buf, &count);
     pos = hb_buffer_get_glyph_positions(buf, &count);
     if (!info || !pos || count == 0) {
@@ -262,6 +301,13 @@ ShapedCluster *shaping_shape_text(ShapingFont *font, const char *text, int len,
         if (!c.glyphs)
             break;
         c.font = font;
+        c.x_scale = 1.0;
+        c.cp = 0;
+        {
+            const char *cp = text + cluster;
+            if (cluster >= 0 && cluster < len)
+                utf8_decode_cp(&cp, &c.cp);
+        }
         c.source_start = base_offset + cluster;
         c.source_end = (i < count) ? base_offset + (int)info[i].cluster
                                    : base_offset + len;
@@ -327,7 +373,7 @@ int shaping_append_run(int node_list, ShapingFont *font, const char *text,
             break;
         *c = clusters[i];
         clusters[i].glyphs = NULL;
-        node_create_char(node_list, 0, FROM_DOUBLE(c->width),
+        node_create_char(node_list, (int)c->cp, FROM_DOUBLE(c->width),
                          FROM_DOUBLE(c->height), FROM_DOUBLE(c->depth),
                          size, style, face_handle, reverse_mode);
         cn = (Node *)mls(node_list, m_len(node_list) - 1);
@@ -370,9 +416,9 @@ void shaping_draw_cluster(void *cairo_cr, ShapingFont *font, double x, double y,
     for (i = 0; i < cluster->nglyphs; i++) {
         const ShapedGlyph *g = &cluster->glyphs[i];
         glyphs[i].index = (unsigned long)g->glyph_id;
-        glyphs[i].x = cx + g->x_offset;
+        glyphs[i].x = cx + g->x_offset * cluster->x_scale;
         glyphs[i].y = y - g->y_offset;
-        cx += g->x_advance;
+        cx += g->x_advance * cluster->x_scale;
     }
 
     cairo_save(cr);
@@ -400,6 +446,9 @@ void shaping_shutdown(void)
         f = next;
     }
     font_cache = NULL;
+    free(shape_features);
+    shape_features = NULL;
+    shape_nfeatures = 0;
     if (ft_ready) {
         FT_Done_FreeType(ft_lib);
         ft_ready = 0;

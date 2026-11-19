@@ -3018,3 +3018,21 @@ were not prerequisites, so `make tests` did not relink.
 `$(libdir)/libretex.a` and `$(libdir)/libxtcw.a`.
 
 **Files:** `tests/Makefile`
+
+## Shaped text crashed after ShapedCluster grew new fields
+
+**Symptom:** Wmarkdown/Wbravo segfaulted during the first expose after
+`ShapedCluster` gained `x_scale` and `cp`.  GDB showed
+`shaping_draw_cluster()` receiving `font = 0x3ff0000000000000` (the bit
+pattern of `1.0`).
+
+**Cause:** `re-tex/src/makefile` had no header dependencies.  Only the files
+whose `.c` changed were rebuilt; `renderer.o`/`backend_*.o` kept the old
+`ShapedCluster` layout and read `x_scale` where the new struct stores `font`.
+Classic C ABI mismatch.
+
+**Fix:** the re-tex makefile now uses `-MMD -MP`, includes the generated
+`.d` files, and makes every object depend on the library headers.  Header
+changes trigger a full re-tex rebuild.
+
+**Files:** `re-tex/src/makefile`

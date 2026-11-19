@@ -1,8 +1,10 @@
 #include "linebreak.h"
 #include "builder.h"
+#include "shaping.h"
 #include "mls.h"
 #include "m_tool.h"
 #include <stdio.h>
+#include <math.h>
 
 int line_break(int node_list, Scaled width, Glue left_skip, Glue right_skip, Scaled hang_indent, int hang_after) {
     int lines = m_create(5, sizeof(Node)); // List of HBox Nodes
@@ -184,7 +186,9 @@ static void kp_move_node(Node *dst, Node *src)
         src->list = 0;
 }
 
-static void kp_move_hyphen_list(int line_nodes, Node *penalty)
+static void scale_word_box(Node *n, double s);
+
+static void kp_move_hyphen_list(int line_nodes, Node *penalty, double scale)
 {
     int hl, p;
     Node *hn;
@@ -195,18 +199,136 @@ static void kp_move_hyphen_list(int line_nodes, Node *penalty)
     m_foreach(hl, p, hn) {
         Node copy;
         kp_move_node(&copy, hn);
+        if (scale != 1.0)
+            scale_word_box(&copy, scale);
         m_put(line_nodes, &copy);
     }
     node_list_free(hl);
     penalty->list = 0;
 }
 
+static Node *first_char_node(Node *n)
+{
+    int p;
+    Node *cn;
+    if (!n) return NULL;
+    if (n->type == NODE_CHAR)
+        return n->shaped_hidden ? NULL : n;
+    if (n->type == NODE_HBOX || n->type == NODE_VBOX) {
+        m_foreach(n->list, p, cn) {
+            Node *r = first_char_node(cn);
+            if (r) return r;
+        }
+    }
+    return NULL;
+}
+
+static Node *last_char_node(Node *n)
+{
+    int p;
+    Node *cn, *last = NULL;
+    if (!n) return NULL;
+    if (n->type == NODE_CHAR)
+        return n->shaped_hidden ? NULL : n;
+    if (n->type == NODE_HBOX || n->type == NODE_VBOX) {
+        m_foreach(n->list, p, cn) {
+            Node *r = last_char_node(cn);
+            if (r) last = r;
+        }
+    }
+    return last;
+}
+
+static double protrusion_left_factor(uint32_t cp)
+{
+    switch (cp) {
+        case '(': case '[': case '{':
+        case 0x00AB: case 0x201C: case 0x2018:
+            return 0.5;
+        default:
+            return 0.0;
+    }
+}
+
+static double protrusion_right_factor(uint32_t cp)
+{
+    switch (cp) {
+        case ',': case '.': case ';': case ':': case '!': case '?':
+        case ')': case ']': case '}':
+        case 0x00BB: case 0x201D: case 0x2019:
+        case '-': case 0x2013: case 0x2014:
+            return 0.5;
+        default:
+            return 0.0;
+    }
+}
+
+static double line_protrusion_left(int node_list, KpItem *items,
+                                   int start, int end)
+{
+    int i;
+    for (i = start; i < end; i++) {
+        if (items[i].type == 0) {
+            Node *n = (Node *)mls(node_list, items[i].node_index);
+            Node *c = first_char_node(n);
+            if (c)
+                return protrusion_left_factor((uint32_t)c->data) *
+                       TO_DOUBLE(c->width);
+            break;
+        }
+    }
+    return 0.0;
+}
+
+static double line_protrusion_right(int node_list, KpItem *items,
+                                    int start, int end)
+{
+    int i;
+    for (i = end - 1; i >= start; i--) {
+        if (items[i].type == 0) {
+            Node *n = (Node *)mls(node_list, items[i].node_index);
+            Node *c = last_char_node(n);
+            if (c)
+                return protrusion_right_factor((uint32_t)c->data) *
+                       TO_DOUBLE(c->width);
+            break;
+        }
+    }
+    return 0.0;
+}
+
+static void scale_word_box(Node *n, double s)
+{
+    int p;
+    Node *cn;
+    if (!n || s == 1.0) return;
+    if (n->type == NODE_CHAR) {
+        if (n->shaped) {
+            ShapedCluster *c = (ShapedCluster *)n->shaped;
+            c->x_scale *= s;
+            c->width *= s;
+            n->width = FROM_DOUBLE(c->width);
+        } else {
+            n->width = FROM_DOUBLE(TO_DOUBLE(n->width) * s);
+        }
+        return;
+    }
+    if (n->type == NODE_HBOX || n->type == NODE_VBOX) {
+        double w = 0.0;
+        m_foreach(n->list, p, cn) {
+            scale_word_box(cn, s);
+            w += TO_DOUBLE(cn->width);
+        }
+        n->width = FROM_DOUBLE(w);
+    }
+}
+
 int line_break_kp(int node_list, const LineBreakParams *params)
 {
     int n, i, j, nb, *bp = NULL, *prev = NULL;
-    double *best = NULL;
+    double *best = NULL, *line_scale = NULL;
     KpItem *items = NULL;
-    Scaled *pw = NULL, *pst = NULL, *psh = NULL;
+    Scaled *pw = NULL, *pst = NULL, *psh = NULL, *pg = NULL, *pgl = NULL;
     int lines = m_create(5, sizeof(Node));
     int last_forced = 0;
     Glue parfill;
@@ -222,7 +344,9 @@ int line_break_kp(int node_list, const LineBreakParams *params)
     pw = (Scaled *)calloc((size_t)n + 1, sizeof(Scaled));
     pst = (Scaled *)calloc((size_t)n + 1, sizeof(Scaled));
     psh = (Scaled *)calloc((size_t)n + 1, sizeof(Scaled));
-    if (!items || !pw || !pst || !psh)
+    pg = (Scaled *)calloc((size_t)n + 1, sizeof(Scaled));
+    pgl = (Scaled *)calloc((size_t)n + 1, sizeof(Scaled));
+    if (!items || !pw || !pst || !psh || !pg || !pgl)
         goto done;
 
     for (i = 0; i < n; i++) {
@@ -248,6 +372,8 @@ int line_break_kp(int node_list, const LineBreakParams *params)
         pw[i + 1] = scaled_add(pw[i], it->width);
         pst[i + 1] = scaled_add(pst[i], it->stretch);
         psh[i + 1] = scaled_add(psh[i], it->shrink);
+        pg[i + 1] = scaled_add(pg[i], (it->type == 0) ? it->width : 0);
+        pgl[i + 1] = scaled_add(pgl[i], (it->type == 1) ? it->width : 0);
     }
 
     bp = (int *)calloc((size_t)n + 2, sizeof(int));
@@ -262,11 +388,13 @@ int line_break_kp(int node_list, const LineBreakParams *params)
     bp[nb++] = n;
 
     best = (double *)malloc((size_t)nb * sizeof(double));
+    line_scale = (double *)malloc((size_t)nb * sizeof(double));
     prev = (int *)malloc((size_t)nb * sizeof(int));
-    if (!best || !prev)
+    if (!best || !line_scale || !prev)
         goto done;
     for (i = 0; i < nb; i++) {
         best[i] = 1e300;
+        line_scale[i] = 1.0;
         prev[i] = -1;
     }
     best[0] = 0.0;
@@ -284,9 +412,9 @@ int line_break_kp(int node_list, const LineBreakParams *params)
         }
 
         for (i = last_forced; i < j; i++) {
-            int start, end, first_line;
+            int start, end, first_line, ragged;
             Scaled natural, stretch, shrink, indent, target, emerg;
-            double badness, dem;
+            double badness, dem, scale = 1.0;
             int feasible;
 
             if (best[i] >= 1e299)
@@ -296,18 +424,6 @@ int line_break_kp(int node_list, const LineBreakParams *params)
             if (start >= end)
                 continue;
 
-            natural = scaled_sub(pw[end], pw[start]);
-            if (is_penalty && items[bj].hyphen_width > 0)
-                natural = scaled_add(natural, items[bj].hyphen_width);
-            stretch = scaled_sub(pst[end], pst[start]);
-            shrink = scaled_sub(psh[end], psh[start]);
-            /* Ragged/centred lines have effectively infinite stretch on one
-             * side.  Treating them as such makes the breaker prefer full
-             * lines instead of leaving a single short word. */
-            if (params->right_skip.stretch_order == ORDER_FIL ||
-                params->left_skip.stretch_order == ORDER_FIL)
-                stretch = FROM_INT(1000000);
-
             first_line = (i == 0);
             indent = first_line ? params->first_indent : params->rest_indent;
             if (indent < 0) indent = 0;
@@ -315,6 +431,35 @@ int line_break_kp(int node_list, const LineBreakParams *params)
             target = scaled_sub(target, params->right_indent);
             target = scaled_sub(target, params->left_skip.width);
             target = scaled_sub(target, params->right_skip.width);
+
+            ragged = (params->right_skip.stretch_order == ORDER_FIL ||
+                      params->left_skip.stretch_order == ORDER_FIL);
+            {
+                Scaled glyph_w = scaled_sub(pg[end], pg[start]);
+                Scaled space_w = scaled_sub(pgl[end], pgl[start]);
+                double p_left = line_protrusion_left(node_list, items,
+                                                     start, end);
+                double p_right = is_penalty ? 0.0 :
+                    line_protrusion_right(node_list, items, start, end);
+
+                if (!ragged && glyph_w > 0) {
+                    double desired = (TO_DOUBLE(target) -
+                                      TO_DOUBLE(space_w)) /
+                                     TO_DOUBLE(glyph_w);
+                    if (desired < 0.98) desired = 0.98;
+                    if (desired > 1.02) desired = 1.02;
+                    scale = desired;
+                }
+                target = scaled_add(target, FROM_DOUBLE(p_left + p_right));
+                natural = scaled_add(FROM_DOUBLE(TO_DOUBLE(glyph_w) * scale),
+                                     space_w);
+                if (is_penalty && items[bj].hyphen_width > 0)
+                    natural = scaled_add(natural, items[bj].hyphen_width);
+            }
+            stretch = scaled_sub(pst[end], pst[start]);
+            shrink = scaled_sub(psh[end], psh[start]);
+            if (ragged)
+                stretch = FROM_INT(1000000);
 
             emerg = params->emergencystretch;
             badness = kp_badness(natural, target, stretch, shrink, emerg,
@@ -330,10 +475,12 @@ int line_break_kp(int node_list, const LineBreakParams *params)
                 if (!feasible)
                     dem += 1e9;
             }
+            dem += 5000.0 * (scale - 1.0) * (scale - 1.0);
             dem += best[i];
             if (dem < best[j]) {
                 best[j] = dem;
                 prev[j] = i;
+                line_scale[j] = scale;
             }
         }
 
@@ -359,6 +506,12 @@ int line_break_kp(int node_list, const LineBreakParams *params)
             int t, line_nodes;
             Node *last_pen = NULL;
             Glue right_skip = params->right_skip;
+            double scale = line_scale[bj];
+            double p_left = line_protrusion_left(node_list, items, start, end);
+            double p_right = (bp[bj] < n && items[bp[bj]].type == 2) ? 0.0 :
+                line_protrusion_right(node_list, items, start, end);
+            Scaled hbox_target = scaled_add(params->width,
+                                            FROM_DOUBLE(p_right));
 
             line_nodes = m_create(10, sizeof(Node));
             node_create_glue(line_nodes, params->left_skip, 0);
@@ -368,17 +521,20 @@ int line_break_kp(int node_list, const LineBreakParams *params)
                 if (indent > 0)
                     node_create_kern(line_nodes, indent, 0);
             }
+            if (p_left > 0)
+                node_create_kern(line_nodes, FROM_DOUBLE(-p_left), 0);
             for (t = start; t < end; t++) {
                 Node *src = (Node *)mls(node_list, items[t].node_index);
                 Node copy;
                 if (src->type == NODE_PENALTY)
                     continue;
                 kp_move_node(&copy, src);
+                scale_word_box(&copy, scale);
                 m_put(line_nodes, &copy);
             }
             if (bp[bj] < n && items[bp[bj]].type == 2) {
                 last_pen = (Node *)mls(node_list, items[bp[bj]].node_index);
-                kp_move_hyphen_list(line_nodes, last_pen);
+                kp_move_hyphen_list(line_nodes, last_pen, scale);
             }
 
             if (bp[bj] == n && params->left_skip.stretch_order != ORDER_FIL) {
@@ -388,7 +544,7 @@ int line_break_kp(int node_list, const LineBreakParams *params)
             }
             node_create_glue(line_nodes, right_skip, 0);
             {
-                Node hbox = node_pack_hbox(line_nodes, params->width);
+                Node hbox = node_pack_hbox(line_nodes, hbox_target);
                 m_put(lines, &hbox);
             }
         }
@@ -400,8 +556,11 @@ done:
     free(pw);
     free(pst);
     free(psh);
+    free(pg);
+    free(pgl);
     free(bp);
     free(best);
+    free(line_scale);
     free(prev);
     return lines;
 }
