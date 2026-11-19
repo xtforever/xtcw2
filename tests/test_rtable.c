@@ -204,7 +204,16 @@ static void test_look_edits(void)
     assert(rtable_get(t, 0, &a) && a.look.face == 7);
     assert(rtable_get(t, 3, &a) && a.look.face == 7);
 
+    rtable_snapshot(t);
+    rtable_set_features(t, 0, 4, conststr_lookup_c("liga=0,clig=0"));
+    assert(rtable_get(t, 0, &a) &&
+           a.look.features == conststr_lookup_c("liga=0,clig=0"));
+    assert(rtable_get(t, 3, &a) &&
+           a.look.features == conststr_lookup_c("liga=0,clig=0"));
+
     /* undo unwinds each look edit */
+    assert(rtable_undo(t) == 1);
+    assert(rtable_get(t, 0, &a) && a.look.features == 0);
     assert(rtable_undo(t) == 1);
     assert(rtable_get(t, 0, &a) && a.look.face == 0);
     assert(rtable_undo(t) == 1);
@@ -219,6 +228,7 @@ static void test_look_edits(void)
 int main(void)
 {
     m_init();
+    conststr_init();
     test_load_query();
     test_insert_look_preserved();
     test_object_atom();

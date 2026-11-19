@@ -47,6 +47,15 @@ static hb_language_t shape_language;
 static hb_feature_t *shape_features;
 static unsigned int shape_nfeatures;
 
+typedef struct FeatureCache {
+    char *key;
+    hb_feature_t *features;
+    unsigned int nfeatures;
+    struct FeatureCache *next;
+} FeatureCache;
+
+static FeatureCache *feature_cache;
+
 static int shaping_ensure_init(void)
 {
     if (!fc_ready) {
@@ -73,6 +82,57 @@ void shaping_set_language(const char *lang)
         shape_language = hb_language_from_string(lang, -1);
     else
         shape_language = NULL;
+}
+
+static hb_feature_t *parse_features(const char *features, unsigned int *out_n)
+{
+    FeatureCache *fc;
+    char *copy, *tok, *save = NULL;
+    hb_feature_t *list = NULL;
+    unsigned int n = 0, cap = 0;
+
+    *out_n = 0;
+    if (!features || !*features)
+        return NULL;
+
+    for (fc = feature_cache; fc; fc = fc->next) {
+        if (strcmp(fc->key, features) == 0) {
+            *out_n = fc->nfeatures;
+            return fc->features;
+        }
+    }
+
+    copy = strdup(features);
+    if (!copy)
+        return NULL;
+    for (tok = strtok_r(copy, ", ", &save); tok;
+         tok = strtok_r(NULL, ", ", &save)) {
+        hb_feature_t f;
+        if (!hb_feature_from_string(tok, -1, &f))
+            continue;
+        if (n == cap) {
+            unsigned int nc = cap ? cap * 2 : 4;
+            hb_feature_t *nl = (hb_feature_t *)realloc(list,
+                                                       nc * sizeof(*nl));
+            if (!nl)
+                break;
+            list = nl;
+            cap = nc;
+        }
+        list[n++] = f;
+    }
+    free(copy);
+
+    fc = (FeatureCache *)calloc(1, sizeof(*fc));
+    if (fc) {
+        fc->key = strdup(features);
+        fc->features = list;
+        fc->nfeatures = n;
+        fc->next = feature_cache;
+        feature_cache = fc;
+    }
+    *out_n = n;
+    return list;
 }
 
 void shaping_set_features(const char *features)
@@ -256,9 +316,13 @@ static void cluster_init_metrics(ShapedCluster *c, ShapingFont *font)
     c->depth = d;
 }
 
-ShapedCluster *shaping_shape_text(ShapingFont *font, const char *text, int len,
-                                  int base_offset, int *out_nclusters)
+ShapedCluster *shaping_shape_text_ex(ShapingFont *font, const char *text,
+                                     int len, int base_offset,
+                                     const char *features,
+                                     int *out_nclusters)
 {
+    hb_feature_t *feats = NULL;
+    unsigned int nfeats = 0;
     hb_buffer_t *buf;
     hb_glyph_info_t *info;
     hb_glyph_position_t *pos;
@@ -277,7 +341,13 @@ ShapedCluster *shaping_shape_text(ShapingFont *font, const char *text, int len,
     hb_buffer_guess_segment_properties(buf);
     if (shape_language)
         hb_buffer_set_language(buf, shape_language);
-    hb_shape(font->hb, buf, shape_features, shape_nfeatures);
+    if (features && *features)
+        feats = parse_features(features, &nfeats);
+    else {
+        feats = shape_features;
+        nfeats = shape_nfeatures;
+    }
+    hb_shape(font->hb, buf, feats, nfeats);
     info = hb_buffer_get_glyph_infos(buf, &count);
     pos = hb_buffer_get_glyph_positions(buf, &count);
     if (!info || !pos || count == 0) {
@@ -352,16 +422,25 @@ void shaping_cluster_free(ShapedCluster *cluster)
     free(cluster);
 }
 
-int shaping_append_run(int node_list, ShapingFont *font, const char *text,
-                       int len, int base_offset, float size, int style,
-                       int face_handle, int reverse_mode, double *out_width)
+ShapedCluster *shaping_shape_text(ShapingFont *font, const char *text, int len,
+                                  int base_offset, int *out_nclusters)
+{
+    return shaping_shape_text_ex(font, text, len, base_offset, NULL,
+                                 out_nclusters);
+}
+
+int shaping_append_run_ex(int node_list, ShapingFont *font, const char *text,
+                          int len, int base_offset, float size, int style,
+                          int face_handle, int reverse_mode,
+                          const char *features, double *out_width)
 {
     ShapedCluster *clusters;
     int nclusters = 0, i;
 
     if (!font || !text || len <= 0)
         return 0;
-    clusters = shaping_shape_text(font, text, len, base_offset, &nclusters);
+    clusters = shaping_shape_text_ex(font, text, len, base_offset, features,
+                                     &nclusters);
     if (!clusters || nclusters <= 0) {
         shaping_clusters_free(clusters, nclusters);
         return 0;
@@ -385,6 +464,15 @@ int shaping_append_run(int node_list, ShapingFont *font, const char *text,
     }
     shaping_clusters_free(clusters, nclusters);
     return 1;
+}
+
+int shaping_append_run(int node_list, ShapingFont *font, const char *text,
+                       int len, int base_offset, float size, int style,
+                       int face_handle, int reverse_mode, double *out_width)
+{
+    return shaping_append_run_ex(node_list, font, text, len, base_offset,
+                                 size, style, face_handle, reverse_mode,
+                                 NULL, out_width);
 }
 
 void shaping_clusters_free(ShapedCluster *clusters, int nclusters)
@@ -452,6 +540,17 @@ void shaping_shutdown(void)
     free(shape_features);
     shape_features = NULL;
     shape_nfeatures = 0;
+    {
+        FeatureCache *fc = feature_cache;
+        while (fc) {
+            FeatureCache *next = fc->next;
+            free(fc->key);
+            free(fc->features);
+            free(fc);
+            fc = next;
+        }
+        feature_cache = NULL;
+    }
     if (ft_ready) {
         FT_Done_FreeType(ft_lib);
         ft_ready = 0;

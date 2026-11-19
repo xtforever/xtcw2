@@ -135,7 +135,7 @@ static int skip_lead(const uint32_t *c, int s, int e, int max)
 
 static void inline_put(Block *b, const uint32_t *c, int s, int e,
                        RLook base, int mono_face, double mono_size,
-                       int extra_style, int depth)
+                       int mono_features, int extra_style, int depth)
 {
     int i = s;
     int bold = 0, italic = 0, code = 0;
@@ -198,7 +198,7 @@ static void inline_put(Block *b, const uint32_t *c, int s, int e,
                     url++;
                 if (url < e) {
                     inline_put(b, c, lb + 1, close, base, mono_face,
-                               mono_size,
+                               mono_size, mono_features,
                                extra_style | (bold ? 1 : 0) | (italic ? 2 : 0),
                                depth + 1);
                     i = url + 1;
@@ -212,6 +212,7 @@ static void inline_put(Block *b, const uint32_t *c, int s, int e,
             if (code) {
                 lk.face = mono_face;
                 lk.size = (float)mono_size;
+                lk.features = mono_features;
             }
             lk.style |= extra_style | (bold ? 1 : 0) | (italic ? 2 : 0);
             block_put(b, ch, lk);
@@ -297,7 +298,7 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
     int in_fence = 0;
     int fence_ch = 0, fence_len = 0;
     RLook base, code_look;
-    int mono_face;
+    int mono_face, mono_features;
     double mono_size;
 
     if (!style) {
@@ -353,11 +354,14 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
     base.face = conststr_lookup_c(st->font_face);
     base.style = 0;
     base.size = (float)st->font_size;
+    base.features = 0;
     mono_face = conststr_lookup_c(st->mono_face);
+    mono_features = conststr_lookup_c("liga=0,clig=0");
     mono_size = st->font_size * 0.95;
     code_look = base;
     code_look.face = mono_face;
     code_look.size = (float)mono_size;
+    code_look.features = mono_features;
 
     while (i <= n) {
         int j = i;
@@ -447,7 +451,7 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
                 hlook = base;
                 hlook.size = (float)(st->font_size * scale[level - 1]);
                 inline_put(&cur, cps, p, ce, hlook, mono_face, mono_size,
-                           1, 0);
+                           mono_features, 1, 0);
                 doc_close_block(d, &cur, base);
                 kind = K_NONE;
                 goto next_line;
@@ -496,7 +500,8 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
             } else {
                 block_put(&cur, ' ', base);
             }
-            inline_put(&cur, cps, p, e, base, mono_face, mono_size, 0, 0);
+            inline_put(&cur, cps, p, e, base, mono_face, mono_size,
+                       mono_features, 0, 0);
             goto next_line;
         }
 
@@ -520,7 +525,8 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
                 block_put(&cur, 0x2022, base);
                 block_put(&cur, ' ', base);
                 block_put(&cur, ' ', base);
-                inline_put(&cur, cps, p, e, base, mono_face, mono_size, 0, 0);
+                inline_put(&cur, cps, p, e, base, mono_face, mono_size,
+                       mono_features, 0, 0);
                 goto next_line;
             }
         }
@@ -550,7 +556,7 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
                         p++;
                     block_put(&cur, ' ', base);
                     inline_put(&cur, cps, p, e, base, mono_face, mono_size,
-                               0, 0);
+                               mono_features, 0, 0);
                     goto next_line;
                 }
             }
@@ -571,7 +577,8 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
                 cur.fmt = fmt_default(st);
                 kind = K_PARA;
             }
-            inline_put(&cur, cps, ts, te, base, mono_face, mono_size, 0, 0);
+            inline_put(&cur, cps, ts, te, base, mono_face, mono_size,
+                       mono_features, 0, 0);
             cur_hard = hard;
         }
 

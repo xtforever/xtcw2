@@ -3051,3 +3051,20 @@ The caller loop relied on that NUL terminator.
 at the end, and bound the output scan to `word_size + 31`.
 
 **Files:** `re-tex/src/hyphen.c`
+
+## Per-run features exposed uninitialised RLook fields
+
+**Symptom:** after adding `RLook.features`, Wbravo layout crashed with
+`mls.c ... Index(...) out of Bounds` while shaping text.  The invalid handle
+was read by `m_str()` in `append_shaped_run()`.
+
+**Cause:** several places built an `RLook` field-by-field and never set the
+new `features` field.  `get_look()` (Wbravo), the test helper `mkchar()`, and
+the Markdown parser's base look all left it as stack garbage.
+
+**Fix:** initialise `features = 0` in `get_look()`, `mkchar()`, and the
+Markdown base look.  `RLook` static initializers zero it automatically.
+Wbravo state snapshots now also store the feature string (format version 2).
+
+**Files:** `wbuild_widgets/Wbravo.widget`, `wbuild_widgets/markdown.c`,
+`tests/test_retex_styled.c`, `utils/rtable.c`

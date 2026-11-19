@@ -602,6 +602,7 @@ static void style_fn(RAtom *a, void *ctx)
 }
 static void face_fn(RAtom *a, void *ctx) { a->look.face = *(int *)ctx; }
 static void size_fn(RAtom *a, void *ctx) { a->look.size = *(float *)ctx; }
+static void features_fn(RAtom *a, void *ctx) { a->look.features = *(int *)ctx; }
 
 int rtable_apply_style(RTable *t, int pos, int n, int set_bits, int clear_bits)
 {
@@ -619,6 +620,11 @@ int rtable_set_face(RTable *t, int pos, int n, int face)
 int rtable_set_size(RTable *t, int pos, int n, float size)
 {
     return rtable_modify_looks(t, pos, n, size_fn, &size);
+}
+
+int rtable_set_features(RTable *t, int pos, int n, int features)
+{
+    return rtable_modify_looks(t, pos, n, features_fn, &features);
 }
 
 /* ---- undo / redo ------------------------------------------------------- */
@@ -758,6 +764,7 @@ static void sb_atom(SerBuf *b, const RAtom *a)
     sb_i32(b, a->look.style);
     sb_f32(b, a->look.size);
     sb_str(b, m_str(a->look.face));
+    sb_str(b, m_str(a->look.features));
     sb_str(b, m_str(a->payload));
 }
 
@@ -881,22 +888,27 @@ static char *db_str(DesBuf *d)
 
 static int db_atom(DesBuf *d, RAtom *a)
 {
-    char *face, *payload;
+    char *face, *features, *payload;
 
     a->kind = (int)db_u32(d);
     a->cp = db_u32(d);
     a->look.style = db_i32(d);
     a->look.size = db_f32(d);
     face = db_str(d);
+    features = db_str(d);
     payload = db_str(d);
     if (!d->ok) {
         free(face);
+        free(features);
         free(payload);
         return -1;
     }
     a->look.face = (face && face[0]) ? conststr_lookup_c(face) : 0;
+    a->look.features = (features && features[0])
+                           ? conststr_lookup_c(features) : 0;
     a->payload = (payload && payload[0]) ? conststr_lookup_c(payload) : 0;
     free(face);
+    free(features);
     free(payload);
     if (!atom_valid(a)) {
         d->ok = 0;

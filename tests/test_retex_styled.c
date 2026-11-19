@@ -23,6 +23,7 @@ static RAtom mkchar(uint32_t cp, int face, int style, float size)
     a.look.face = face;
     a.look.style = style;
     a.look.size = size;
+    a.look.features = 0;
     a.payload = 0;
     return a;
 }

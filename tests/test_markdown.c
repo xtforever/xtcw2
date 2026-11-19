@@ -149,6 +149,8 @@ int main(void)
     i = text_index("code");
     assert(i >= 0);
     assert(atoms[i].look.face == conststr_lookup_c("Mono"));
+    assert(atoms[i].look.features ==
+           conststr_lookup_c("liga=0,clig=0"));
     assert(fmts[1].align == RETEX_ALIGN_JUSTIFY);
 
     /* Link label is shown, URL is not. */
@@ -178,6 +180,8 @@ int main(void)
     i = text_index("int main");
     assert(i >= 0);
     assert(atoms[i].look.face == conststr_lookup_c("Mono"));
+    assert(atoms[i].look.features ==
+           conststr_lookup_c("liga=0,clig=0"));
 
     /* Paragraph indexing agrees with retex. */
     para_count = retex_paragraphs(atoms, natoms, starts, 32);

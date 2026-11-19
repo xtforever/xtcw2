@@ -28,9 +28,10 @@
  */
 
 typedef struct {
-    int face;    /* conststr handle for the font face (0 = default face) */
-    int style;   /* bitmask: 1=bold, 2=italic, 4=smallcaps (Node.font_style) */
-    float size;  /* font size in points (0 = default size) */
+    int face;     /* conststr handle for the font face (0 = default face) */
+    int style;    /* bitmask: 1=bold, 2=italic, 4=smallcaps (Node.font_style) */
+    float size;   /* font size in points (0 = default size) */
+    int features; /* conststr handle for HarfBuzz features (0 = global default) */
 } RLook;
 
 enum {
@@ -87,6 +88,8 @@ RAtom *rtable_to_array(RTable *t, int *n);
 int rtable_apply_style(RTable *t, int pos, int n, int set_bits, int clear_bits);
 int rtable_set_face(RTable *t, int pos, int n, int face);
 int rtable_set_size(RTable *t, int pos, int n, float size);
+/* Set the HarfBuzz feature string (conststr handle) over [pos, pos+n). */
+int rtable_set_features(RTable *t, int pos, int n, int features);
 
 /* Flatten the document code points (objects become U+FFFC) into u32mls, an MLS
  * list of uint32_t.  Returns the number of code points written. */

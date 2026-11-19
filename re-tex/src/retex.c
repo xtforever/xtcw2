@@ -56,19 +56,23 @@ static CharMetricsScaled internal_measure_char(void *ctx, int c, Scaled font_siz
 static int append_shaped_run(int wnodes, const char *utf8, int len,
                              int base_offset, const char *face,
                              int face_handle, int style, double size,
-                             int reverse_mode, Scaled *out_width)
+                             int reverse_mode, int features_handle,
+                             Scaled *out_width)
 {
     ShapingFont *sf;
     double width = 0.0;
+    const char *features = NULL;
 
     if (!utf8 || len <= 0 || !face)
         return 0;
     sf = shaping_font_get(face, style, size);
     if (!sf)
         return 0;
-    if (!shaping_append_run(wnodes, sf, utf8, len, base_offset,
-                            (float)size, style, face_handle, reverse_mode,
-                            &width))
+    if (features_handle > 0)
+        features = m_str(features_handle);
+    if (!shaping_append_run_ex(wnodes, sf, utf8, len, base_offset,
+                               (float)size, style, face_handle, reverse_mode,
+                               features, &width))
         return 0;
     *out_width = scaled_add(*out_width, FROM_DOUBLE(width));
     return 1;
@@ -658,7 +662,8 @@ static void append_fallback_run(int wnodes, const char *utf8, int len,
  * when Knuth-Plass actually breaks at this penalty. */
 static void append_hyphen_penalty(int para_nodes, Backend *be,
                                   const char *face, int face_handle, int style,
-                                  double size, int reverse_mode)
+                                  double size, int reverse_mode,
+                                  int features_handle)
 {
     int hnodes = m_create(2, sizeof(Node));
     Scaled hw = 0;
@@ -666,7 +671,7 @@ static void append_hyphen_penalty(int para_nodes, Backend *be,
     int list;
 
     if (!append_shaped_run(hnodes, "-", 1, 0, face, face_handle, style,
-                           size, reverse_mode, &hw)) {
+                           size, reverse_mode, features_handle, &hw)) {
         CharMetricsScaled m = internal_measure_char(be, '-', FROM_DOUBLE(size),
                                                     style, face);
         node_create_char(hnodes, '-', m.width, m.height, m.depth,
@@ -746,7 +751,7 @@ static void append_plain_hyphenated_word(int para_nodes, Backend *be,
         wnodes = m_create(8, sizeof(Node));
         if (!append_shaped_run(wnodes, wbuf + start, b - start,
                                base_offset + start, face, face_handle, 0,
-                               size, reverse_mode, &ww)) {
+                               size, reverse_mode, 0, &ww)) {
             append_fallback_run(wnodes, wbuf + start, b - start,
                                 base_offset + start, be, face, face_handle,
                                 0, size, reverse_mode, &ww);
@@ -754,7 +759,7 @@ static void append_plain_hyphenated_word(int para_nodes, Backend *be,
         wbox = node_pack_hbox(wnodes, 0);
         append_word_box_split(para_nodes, &wbox, max_width);
         append_hyphen_penalty(para_nodes, be, face, face_handle, 0, size,
-                              reverse_mode);
+                              reverse_mode, 0);
         start = b;
     }
 
@@ -764,7 +769,7 @@ static void append_plain_hyphenated_word(int para_nodes, Backend *be,
         Node wbox;
         if (!append_shaped_run(wnodes, wbuf + start, wlen - start,
                                base_offset + start, face, face_handle, 0,
-                               size, reverse_mode, &ww)) {
+                               size, reverse_mode, 0, &ww)) {
             append_fallback_run(wnodes, wbuf + start, wlen - start,
                                 base_offset + start, be, face, face_handle,
                                 0, size, reverse_mode, &ww);
@@ -797,6 +802,7 @@ static void append_styled_word(int wnodes, const RAtom *atoms, int start, int en
             const char *fc = (a->look.face > 0) ? m_str(a->look.face)
                                                 : default_face;
             int style = a->look.style;
+            int features = a->look.features;
             double sz = atom_size(a, font_size_pt);
             char *wbuf;
             int wlen = 0, t;
@@ -807,7 +813,8 @@ static void append_styled_word(int wnodes, const RAtom *atoms, int start, int en
                                              : default_face_handle;
                 double bsz = atom_size(b, font_size_pt);
                 if (b->kind != RATOM_CHAR || bfh != fh ||
-                    b->look.style != style || fabs(bsz - sz) > 0.01)
+                    b->look.style != style || b->look.features != features ||
+                    fabs(bsz - sz) > 0.01)
                     break;
                 q++;
             }
@@ -826,7 +833,7 @@ static void append_styled_word(int wnodes, const RAtom *atoms, int start, int en
             }
 
             if (!wbuf || !append_shaped_run(wnodes, wbuf, wlen, boff[p],
-                                            fc, fh, style, sz, 0,
+                                            fc, fh, style, sz, 0, features,
                                             out_width)) {
                 for (t = p; t < q; t++) {
                     CharMetricsScaled m = internal_measure_char(be,
@@ -940,7 +947,8 @@ static void append_styled_hyphenated_word(int para_nodes, const RAtom *atoms,
         fh = (a->look.face > 0) ? a->look.face : default_face_handle;
         fc = (a->look.face > 0) ? m_str(a->look.face) : default_face;
         sz = atom_size(a, font_size_pt);
-        append_hyphen_penalty(para_nodes, be, fc, fh, a->look.style, sz, 0);
+        append_hyphen_penalty(para_nodes, be, fc, fh, a->look.style, sz, 0,
+                              a->look.features);
         start_atom = atom_mid;
     }
 

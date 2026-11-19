@@ -54,6 +54,12 @@ ShapingFont *shaping_font_get(const char *family, int style, double size);
 ShapedCluster *shaping_shape_text(ShapingFont *font, const char *text, int len,
                                   int base_offset, int *out_nclusters);
 
+/* Same, with a per-run HarfBuzz feature string (NULL = global features). */
+ShapedCluster *shaping_shape_text_ex(ShapingFont *font, const char *text,
+                                     int len, int base_offset,
+                                     const char *features,
+                                     int *out_nclusters);
+
 void shaping_clusters_free(ShapedCluster *clusters, int nclusters);
 
 /* Append shaped clusters as re-tex NODE_CHAR nodes to node_list.  Each cluster
@@ -62,6 +68,12 @@ void shaping_clusters_free(ShapedCluster *clusters, int nclusters);
 int shaping_append_run(int node_list, ShapingFont *font, const char *text,
                        int len, int base_offset, float size, int style,
                        int face_handle, int reverse_mode, double *out_width);
+
+/* Same, with a per-run HarfBuzz feature string. */
+int shaping_append_run_ex(int node_list, ShapingFont *font, const char *text,
+                          int len, int base_offset, float size, int style,
+                          int face_handle, int reverse_mode,
+                          const char *features, double *out_width);
 
 /* Free a single cluster moved out of a shaping result. */
 void shaping_cluster_free(ShapedCluster *cluster);

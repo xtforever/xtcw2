@@ -127,6 +127,7 @@
      * collected later.  Keep our own copy for relayout/open_font. */
     $fontFace_mem = strdup($fontFace ? $fontFace : "Sans");
     $fontFace = $fontFace_mem;
+    $look.features = 0;
 
     $utf8_atom = XInternAtom(dpy, "UTF8_STRING", False);
 
@@ -361,6 +362,7 @@
     out->face = $fontFace ? conststr_lookup_c($fontFace) : 0;
     out->style = 0;
     out->size = (float)$fontSize;
+    out->features = 0;
 }
 
 @ paragraph formatting helpers
@@ -1280,7 +1282,7 @@
     if (!f) return 0;
 
     ok &= st_wr(f, "WBRAVOST", 8) == 0;
-    ok &= st_wr_u32(f, 1) == 0;          /* format version */
+    ok &= st_wr_u32(f, 2) == 0;          /* format version */
     ok &= st_wr_u32(f, 0) == 0;          /* reserved */
 
     /* widget resources / current editing state */
@@ -1295,6 +1297,7 @@
     ok &= st_wr_i32(f, $caret_cp) == 0;
     ok &= st_wr_i32(f, $anchor_cp) == 0;
     ok &= st_wr_str(f, m_str($look.face)) == 0;
+    ok &= st_wr_str(f, m_str($look.features)) == 0;
     ok &= st_wr_i32(f, $look.style) == 0;
     ok &= st_wr_f32(f, $look.size) == 0;
 
@@ -1352,7 +1355,8 @@
     FILE *f;
     int ok = 1, version = 0, i, j;
     char magic[8];
-    char *face = NULL, *look_face = NULL, *saved_text = NULL;
+    char *face = NULL, *look_face = NULL, *look_features = NULL;
+    char *saved_text = NULL;
     int fontSize = 0, align = 0, tg = 0, bg = 0, lg = 0, rg = 0;
     int scroll = 0, caret = 0, anchor = 0, look_style = 0;
     float look_size = 0.0f;
@@ -1370,7 +1374,7 @@
     if (st_rd(f, magic, 8) != 0 || memcmp(magic, "WBRAVOST", 8) != 0)
         goto fail;
     version = st_rd_i32(f, &ok);
-    if (!ok || version != 1) goto fail;
+    if (!ok || version != 2) goto fail;
     (void)st_rd_u32(f, &ok);            /* reserved */
 
     face = st_rd_str(f, &ok);
@@ -1384,6 +1388,7 @@
     caret = st_rd_i32(f, &ok);
     anchor = st_rd_i32(f, &ok);
     look_face = st_rd_str(f, &ok);
+    look_features = st_rd_str(f, &ok);
     look_style = st_rd_i32(f, &ok);
     look_size = st_rd_f32(f, &ok);
     saved_text = st_rd_str(f, &ok);
@@ -1520,6 +1525,8 @@
     face = NULL;
 
     $look.face = (look_face && *look_face) ? conststr_lookup_c(look_face) : 0;
+    $look.features = (look_features && *look_features)
+                         ? conststr_lookup_c(look_features) : 0;
     $look.style = look_style;
     $look.size = look_size;
 
@@ -1535,6 +1542,7 @@
     }
 
     free(look_face);
+    free(look_features);
     free(saved_text);
     $dirty = 1;
     if (XtIsRealized($)) redraw($);
@@ -1544,6 +1552,7 @@ fail:
     if (f) fclose(f);
     free(face);
     free(look_face);
+    free(look_features);
     free(saved_text);
     free(pf);
     free(blob);

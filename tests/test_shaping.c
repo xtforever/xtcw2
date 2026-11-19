@@ -66,6 +66,18 @@ int main(void)
         assert(gb >= ga);
     }
 
+    /* Per-run feature string must behave like the global feature API. */
+    {
+        int n1 = 0, n2 = 0, i2, g1 = 0, g2 = 0;
+        ShapedCluster *a = shaping_shape_text_ex(font, "fi", 2, 0, NULL, &n1);
+        for (i2 = 0; i2 < n1; i2++) g1 += a[i2].nglyphs;
+        shaping_clusters_free(a, n1);
+        a = shaping_shape_text_ex(font, "fi", 2, 0, "liga=0", &n2);
+        for (i2 = 0; i2 < n2; i2++) g2 += a[i2].nglyphs;
+        shaping_clusters_free(a, n2);
+        assert(g2 >= g1);
+    }
+
     printf("test_shaping passed\n");
     return 0;
 }
