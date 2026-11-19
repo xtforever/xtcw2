@@ -1,8 +1,18 @@
 #include "renderer.h"
+#include "shaping.h"
 #include <cairo.h>
 #include "mls.h"
 #include "m_tool.h"
 #include <stdio.h>
+
+static int node_selected(Node *n, int sel_start, int sel_end) {
+    int s, e;
+    if (!n || sel_start < 0 || sel_end < 0 || n->source_offset < 0)
+        return 0;
+    s = n->source_offset;
+    e = s + (n->byte_len > 0 ? n->byte_len : 1) - 1;
+    return s <= sel_end && e >= sel_start;
+}
 
 static const RendererColors default_colors = {
     .text = 0xFF000000,
@@ -23,7 +33,9 @@ static void renderer_render_backgrounds(Backend *backend, Node *n, double x, dou
         case NODE_CHAR:
         case NODE_GLUE: {
             int use_reverse = reverse_mode || n->reverse_mode;
-            if (sel_start != -1 && n->source_offset >= sel_start && n->source_offset <= sel_end) {
+            if (n->type == NODE_CHAR && n->shaped_hidden)
+                break;
+            if (node_selected(n, sel_start, sel_end)) {
                 backend->draw_highlight(backend, x, y - TO_DOUBLE(n->height), use_w, total_h, colors->sel_bg);
             } else if (use_reverse) {
                 backend->draw_highlight(backend, x, y - TO_DOUBLE(n->height), use_w, total_h, colors->reverse_bg);
@@ -56,7 +68,9 @@ static void renderer_render_backgrounds(Backend *backend, Node *n, double x, dou
                 
                 uint32_t current_color = 0;
                 int use_reverse = reverse_mode || cn->reverse_mode;
-                if (sel_start != -1 && cn->source_offset >= sel_start && cn->source_offset <= sel_end) {
+                if (cn->type == NODE_PENALTY || (cn->type == NODE_CHAR && cn->shaped_hidden))
+                    continue;
+                if (node_selected(cn, sel_start, sel_end)) {
                     current_color = colors->sel_bg;
                 } else if (use_reverse) {
                     current_color = colors->reverse_bg;
@@ -114,12 +128,20 @@ static void renderer_render_text(Backend *backend, Node *n, double x, double y, 
     switch (n->type) {
         case NODE_CHAR: {
             int use_reverse = reverse_mode || n->reverse_mode;
-            if (sel_start != -1 && n->source_offset >= sel_start && n->source_offset <= sel_end) {
+            if (n->shaped_hidden)
+                break;
+            if (node_selected(n, sel_start, sel_end)) {
                 backend->set_color(backend, colors->sel_text);
             } else if (use_reverse) {
                 backend->set_color(backend, colors->reverse_text);
             } else {
                 backend->set_color(backend, colors->text);
+            }
+
+            if (n->shaped) {
+                ShapedCluster *c = (ShapedCluster *)n->shaped;
+                backend->draw_cluster(backend, x, y, c->font, c);
+                break;
             }
 
             if (n->font_face_handle > 0) {

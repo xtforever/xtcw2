@@ -112,6 +112,13 @@ static void xpixmap_draw_char(Backend *self, double x, double y, int c) {
     cairo_show_text(bp->cr, str);
 }
 
+static void xpixmap_draw_cluster(Backend *self, double x, double y,
+                                 ShapingFont *font, const ShapedCluster *cluster) {
+    BackendXPixmap *bp = (BackendXPixmap*)self;
+    if (!bp->cr) return;
+    shaping_draw_cluster(bp->cr, font, x, y, cluster);
+}
+
 static void xpixmap_draw_svg(Backend *self, double x, double y, double w, double h, const char *filename) {
     BackendXPixmap *bp = (BackendXPixmap*)self;
     if (!bp->cr) return;
@@ -222,6 +229,7 @@ Backend* backend_xpixmap_create(Display *dpy, Window parent, int width, int heig
     bp->base.draw_rect = xpixmap_draw_rect;
     bp->base.set_color = xpixmap_set_color;
     bp->base.draw_char = xpixmap_draw_char;
+    bp->base.draw_cluster = xpixmap_draw_cluster;
     bp->base.draw_svg = xpixmap_draw_svg;
     bp->base.set_font_size = xpixmap_set_font_size;
     bp->base.set_font_face = xpixmap_set_font_face;

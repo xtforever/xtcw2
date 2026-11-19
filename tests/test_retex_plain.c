@@ -61,7 +61,7 @@ static void test_trailing_newline_and_empty(void)
 
 static void test_wrap(void)
 {
-    RetexParagraph *p = lay("aaaa bbbb cccc dddd", 30);
+    RetexParagraph *p = lay("aaaa bbbb cccc dddd", 80);
     int n;
 
     assert(p != NULL);

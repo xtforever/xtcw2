@@ -46,6 +46,8 @@ typedef struct {
     int source_offset; // Byte offset in original string
     int byte_len; // Length in bytes of the source text for this node (0 if n/a)
     int reverse_mode; // 1 = fill char box with foreground color, draw char in white
+    void *shaped;      // ShapedCluster* for shaped NODE_CHAR clusters
+    int shaped_hidden; // 1 = absorbed by a ligature/mark cluster; draw nothing
 } Node;
 
 // Node construction
@@ -53,6 +55,8 @@ void node_create_char(int list_handle, int char_code, Scaled w, Scaled h, Scaled
 void node_create_hbox(int list_handle, int child_list);
 void node_create_vbox(int list_handle, int child_list);
 void node_create_glue(int list_handle, Glue spec, int reverse_mode);
+void node_create_penalty(int list_handle, int penalty, Scaled hyphen_width,
+                         int hyphen_list, int reverse_mode);
 void node_create_kern(int list_handle, Scaled amount, int reverse_mode);
 void node_create_rule(int list_handle, Scaled w, Scaled h, Scaled d, int reverse_mode);
 void node_create_svg(int list_handle, const char *filename, Scaled w, Scaled h, int reverse_mode);

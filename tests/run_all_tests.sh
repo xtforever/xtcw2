@@ -181,6 +181,12 @@ echo "22b. test_rtable (rich atom piece table)"
 echo "22c. test_markdown (Markdown subset parser)"
 "$ROOT/tests/test_markdown"
 
+echo "22d. test_shaping (HarfBuzz/FreeType shaping)"
+"$ROOT/tests/test_shaping"
+
+echo "22e. test_hyphen (optional libhyphen integration)"
+"$ROOT/tests/test_hyphen"
+
 echo "23. test_tokenize_plain"
 "$ROOT/tests/test_tokenize_plain"
 

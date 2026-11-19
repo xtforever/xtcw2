@@ -102,6 +102,13 @@ static void cairo_draw_char(Backend *self, double x, double y, int c) {
     cairo_fill(bc->cr);
 }
 
+static void cairo_draw_cluster(Backend *self, double x, double y,
+                               ShapingFont *font, const ShapedCluster *cluster) {
+    BackendCairo *bc = (BackendCairo*)self;
+    if (!bc->cr) return;
+    shaping_draw_cluster(bc->cr, font, x, y, cluster);
+}
+
 static void cairo_draw_svg(Backend *self, double x, double y, double w, double h, const char *filename) {
     BackendCairo *bc = (BackendCairo*)self;
     if (!bc->cr) return;
@@ -176,6 +183,7 @@ Backend* backend_cairo_create(const char* filename, int width, int height) {
     bc->base.draw_rect = cairo_draw_rect;
     bc->base.set_color = cairo_set_color;
     bc->base.draw_char = cairo_draw_char;
+    bc->base.draw_cluster = cairo_draw_cluster;
     bc->base.draw_svg = cairo_draw_svg;
     bc->base.set_font_size = backend_cairo_set_font_size;
     bc->base.set_font_face = backend_cairo_set_font_face;

@@ -16,4 +16,23 @@
  */
 int line_break(int node_list, Scaled width, Glue left_skip, Glue right_skip, Scaled hang_indent, int hang_after);
 
+typedef struct {
+    Scaled width;
+    Glue left_skip;
+    Glue right_skip;
+    Scaled first_indent;
+    Scaled rest_indent;
+    Scaled right_indent;
+    int tolerance;          /* TeX-like badness tolerance, e.g. 200 */
+    Scaled emergencystretch;
+    int hyphen_penalty;     /* penalty for an automatic hyphen, e.g. 50 */
+} LineBreakParams;
+
+/**
+ * Knuth-Plass style paragraph breaking over boxes, glue and penalty nodes.
+ * Returns a list of HBox line nodes (ownership of nested word boxes moves to
+ * the returned lines).  The input node list may be freed afterwards.
+ */
+int line_break_kp(int node_list, const LineBreakParams *params);
+
 #endif // LINEBREAK_H

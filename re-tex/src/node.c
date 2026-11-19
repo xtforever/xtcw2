@@ -1,4 +1,5 @@
 #include "node.h"
+#include "shaping.h"
 #include "mls.h"
 #include "m_tool.h"
 #include <stdio.h>
@@ -50,6 +51,19 @@ void node_create_rule(int list_handle, Scaled w, Scaled h, Scaled d, int reverse
     n.width = w;
     n.height = h;
     n.depth = d;
+    n.vertical_scale = 1.0f;
+    n.reverse_mode = reverse_mode;
+    m_put(list_handle, &n);
+}
+
+void node_create_penalty(int list_handle, int penalty, Scaled hyphen_width,
+                         int hyphen_list, int reverse_mode) {
+    Node n = {0};
+    n.source_offset = -1;
+    n.type = NODE_PENALTY;
+    n.data = penalty;
+    n.width = hyphen_width;
+    n.list = hyphen_list;
     n.vertical_scale = 1.0f;
     n.reverse_mode = reverse_mode;
     m_put(list_handle, &n);
@@ -192,6 +206,8 @@ Node node_pack_hbox(int child_list, Scaled target_width) {
             total_width = scaled_add(total_width, child->width);
             total_stretch[child->glue_spec.stretch_order] += child->glue_spec.stretch;
             total_shrink[child->glue_spec.shrink_order] += child->glue_spec.shrink;
+        } else if (child->type == NODE_PENALTY) {
+            /* Breakpoints have no width inside a packed line. */
         }
     }
     
@@ -259,8 +275,13 @@ void node_free_tree(int node_handle) {
 
     if (n->type == NODE_HBOX || n->type == NODE_VBOX) {
         node_list_free(n->list);
+    } else if (n->type == NODE_PENALTY) {
+        if (n->list) node_list_free(n->list);
     } else if (n->type == NODE_SVG) {
         m_free(n->data);
+    } else if (n->type == NODE_CHAR && n->shaped) {
+        shaping_cluster_free((ShapedCluster*)n->shaped);
+        n->shaped = NULL;
     }
     
     m_free(node_handle);
@@ -272,8 +293,13 @@ void node_list_free(int list_handle) {
     m_foreach(list_handle, p, n) {
         if (n->type == NODE_HBOX || n->type == NODE_VBOX) {
             node_list_free(n->list);
+        } else if (n->type == NODE_PENALTY) {
+            if (n->list) node_list_free(n->list);
         } else if (n->type == NODE_SVG) {
             m_free(n->data);
+        } else if (n->type == NODE_CHAR && n->shaped) {
+            shaping_cluster_free((ShapedCluster*)n->shaped);
+            n->shaped = NULL;
         }
     }
     m_free(list_handle);

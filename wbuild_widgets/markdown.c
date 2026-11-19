@@ -256,7 +256,7 @@ static RetexParaFormat fmt_quote(const MarkdownStyle *st)
 {
     RetexParaFormat f;
     memset(&f, 0, sizeof(f));
-    f.align = st->default_align;
+    f.align = RETEX_ALIGN_LEFT;
     f.indent_left = 18.0;
     f.space_after = 6.0;
     return f;

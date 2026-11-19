@@ -76,7 +76,7 @@ static void test_rich_caret_and_hit(void)
 static void test_rich_wrap(void)
 {
     RetexParagraph *p =
-        retex_layout(g_be, "aaaa bbbb cccc dddd", 30.0, "Sans", 16.0, RETEX_ALIGN_LEFT);
+        retex_layout(g_be, "aaaa bbbb cccc dddd", 80.0, "Sans", 16.0, RETEX_ALIGN_LEFT);
     assert(p != NULL);
     assert(retex_paragraph_get_line_count(p) > 1); /* wrapped into several lines */
     retex_paragraph_free(p);

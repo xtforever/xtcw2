@@ -8,10 +8,12 @@ export incdir      ?= $(prefix)/include
 export CC          ?= gcc
 
 CAIRO_CFLAGS  = $(shell pkg-config --cflags cairo cairo-xlib)
+TEXT_CFLAGS   = $(shell pkg-config --cflags harfbuzz freetype2 fontconfig)
+TEXT_LIBS     = $(shell pkg-config --libs harfbuzz freetype2 fontconfig)
 X11_CFLAGS    = -I/usr/include/freetype2 -I/usr/local/include/freetype2
 NANOSVG_CFLAGS = -I$(CURDIR)/LuaRunner/nanosvg/src
 
-CFLAGS += -Wall -D_GNU_SOURCE -I$(CURDIR)/utils -I$(incdir) -I$(incdir)/xtcw $(CAIRO_CFLAGS) $(X11_CFLAGS) $(NANOSVG_CFLAGS)
+CFLAGS += -Wall -D_GNU_SOURCE -I$(CURDIR)/utils -I$(incdir) -I$(incdir)/xtcw $(CAIRO_CFLAGS) $(TEXT_CFLAGS) $(X11_CFLAGS) $(NANOSVG_CFLAGS)
 
 ifeq ($(debug_enable),1)
 CFLAGS += -g -DMLS_DEBUG -O0
@@ -20,7 +22,7 @@ CFLAGS += -O3
 endif
 
 export CFLAGS
-export LDFLAGS += -L$(libdir) $(shell pkg-config --libs cairo cairo-xlib) -lXaw -lXmu -lXft -lfontconfig -lXrender -lXpm -lXext -lX11 -lXt -lm
+export LDFLAGS += -L$(libdir) $(shell pkg-config --libs cairo cairo-xlib) $(TEXT_LIBS) -lXaw -lXmu -lXft -lXrender -lXpm -lXext -lX11 -lXt -lm
 
 .PHONY: all nanosvg plainc wcl core retex widgets commander tests clean distclean run_tests build_tools libxtcw utf8 utf32
 

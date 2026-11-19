@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "scaled.h"
+#include "shaping.h"
 
 typedef struct Backend Backend;
 
@@ -47,6 +48,16 @@ struct Backend {
      * @param c Character code
      */
     void (*draw_char)(Backend *self, double x, double y, int c);
+
+    /**
+     * @brief Draw a shaped glyph cluster at the baseline.
+     * @param x X coordinate (baseline, points)
+     * @param y Y coordinate (baseline, points)
+     * @param font Shaping font used for the cluster
+     * @param cluster Shaped glyph cluster
+     */
+    void (*draw_cluster)(Backend *self, double x, double y,
+                         ShapingFont *font, const ShapedCluster *cluster);
 
     /**
      * @brief Draw an SVG image.

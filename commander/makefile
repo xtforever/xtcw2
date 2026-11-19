@@ -38,7 +38,7 @@ LUA_CFLAGS=$(shell pkg-config --cflags lua5.3 2>/dev/null || PKG_CONFIG_PATH=$(L
 LUA_LIBS=$(shell pkg-config --libs lua5.3 2>/dev/null || PKG_CONFIG_PATH=$(LUA_PC_DIR) pkg-config --libs lua5.3 2>/dev/null)
 MYSQL_CFLAGS=$(shell pkg-config --cflags mysqlclient 2>/dev/null || echo -I/usr/include/mysql)
 MYSQL_LIBS=$(shell pkg-config --libs mysqlclient 2>/dev/null || echo -lmysqlclient)
-XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil -ldl -lcairo
+XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm -lutil -ldl -lcairo $(shell pkg-config --libs harfbuzz freetype2 fontconfig)
 CFLAGS += $(LUA_CFLAGS) $(MYSQL_CFLAGS) -I../LuaRunner
 
 T=commander_runner

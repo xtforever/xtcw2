@@ -2,6 +2,8 @@
 #include "token.h"
 #include "math_node.h"
 #include "linebreak.h"
+#include "shaping.h"
+#include "utf8.h"
 #include "mls.h"
 #include "m_tool.h"
 
@@ -243,20 +245,59 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
     while (idx < len) {
         Token *t = (Token*)mls(token_list, idx);
         if (t->type == TOK_CHAR) {
+            int run_start = idx;
+            int run_end = idx;
+            int blen = 0;
+            char *buf = (char *)malloc((size_t)(len - idx) * 4 + 1);
             Scaled cur_size = get_current_size(&fs);
-            CharMetricsScaled m;
-            if (measure_func) {
-                m = measure_func(measure_ctx, t->char_code, cur_size, fs.style, fs.face);
-            } else {
-                m.width = scaled_mul(cur_size, FROM_INT(6)/10);
-                m.height = scaled_mul(cur_size, FROM_INT(7)/10);
-                m.depth = scaled_mul(cur_size, FROM_INT(2)/10);
+
+            while (run_end < len) {
+                Token *ct = (Token *)mls(token_list, run_end);
+                if (ct->type != TOK_CHAR)
+                    break;
+                if (buf) {
+                    char tmp[4];
+                    int k = utf8_encode_cp((uint32_t)ct->char_code, tmp);
+                    if (k > 0) {
+                        memcpy(buf + blen, tmp, (size_t)k);
+                        blen += k;
+                    }
+                }
+                run_end++;
             }
-            node_create_char(nodes, t->char_code, m.width, m.height, m.depth, 
-                                     (float)TO_DOUBLE(cur_size), fs.style, face_handle, fs.reverse_mode);
-            Node *cn = (Node*)mls(nodes, m_len(nodes) - 1);
-            cn->source_offset = t->source_offset;
-            cn->byte_len = t->byte_len;
+            if (buf && blen > 0) {
+                Token *first = (Token *)mls(token_list, run_start);
+                ShapingFont *sf = shaping_font_get(fs.face, fs.style,
+                                                   TO_DOUBLE(cur_size));
+                double shaped_width = 0.0;
+                if (sf && shaping_append_run(nodes, sf, buf, blen,
+                                             first->source_offset,
+                                             (float)TO_DOUBLE(cur_size),
+                                             fs.style, face_handle,
+                                             fs.reverse_mode,
+                                             &shaped_width)) {
+                    free(buf);
+                    idx = run_end;
+                    continue;
+                }
+            }
+            free(buf);
+
+            {
+                CharMetricsScaled m;
+                if (measure_func) {
+                    m = measure_func(measure_ctx, t->char_code, cur_size, fs.style, fs.face);
+                } else {
+                    m.width = scaled_mul(cur_size, FROM_INT(6)/10);
+                    m.height = scaled_mul(cur_size, FROM_INT(7)/10);
+                    m.depth = scaled_mul(cur_size, FROM_INT(2)/10);
+                }
+                node_create_char(nodes, t->char_code, m.width, m.height, m.depth,
+                                         (float)TO_DOUBLE(cur_size), fs.style, face_handle, fs.reverse_mode);
+                Node *cn = (Node*)mls(nodes, m_len(nodes) - 1);
+                cn->source_offset = t->source_offset;
+                cn->byte_len = t->byte_len;
+            }
         } else if (t->type == TOK_SPACE) {
             node_create_glue(nodes, space_glue, fs.reverse_mode);
             Node *gn = (Node*)mls(nodes, m_len(nodes) - 1);

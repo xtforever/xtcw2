@@ -2959,3 +2959,62 @@ the paragraph's last line.
 that line. Only the last line is left-aligned; preceding lines stay justified.
 
 **Files:** `re-tex/src/retex.c`, `tests/test_retex_styled.c`
+
+## Knuth-Plass last line was stretched because of an index mix-up
+
+**Symptom:** justified paragraphs still stretched their final line, and
+left-aligned paragraphs could leave a single short word on a line.
+
+**Cause:** `line_break_kp()` stores breakpoints as indices into `bp[]`, but
+the line builder compared the **breakpoint index** with the item count
+(`bj == n`).  The parfill glue was therefore never added.  The same mix-up
+meant the discretionary hyphen list of the last breakpoint was never moved
+into the line.
+
+**Fix:** compare `bp[bj]` with `n` and look up the penalty item via
+`bp[bj]`.  Ragged/centred lines also get effectively infinite stretch so
+the breaker prefers full lines instead of a one-word line.
+
+**Files:** `re-tex/src/linebreak.c`
+
+## Caret and hit-testing broke after paragraphs gained nested word boxes
+
+**Symptom:** after Knuth-Plass, clicking in Wbravo/Wmarkdown jumped to the
+wrong byte, and caret positions landed at the end of a word.
+
+**Cause:** `retex_paragraph_get_caret_pos()` and
+`retex_paragraph_get_offset_at()` only inspected the direct children of a
+line HBox.  Knuth-Plass wraps each word in its own HBox, so the character
+nodes were one level deeper.  Space glue source ranges were also ignored.
+
+**Fix:** both functions now recurse into nested HBoxes and treat glue source
+ranges as text positions.  `collect_line_range()` also includes glue so a
+line ending in a space keeps its real end byte.
+
+**Files:** `re-tex/src/retex.c`
+
+## Plain-layout blank lines disappeared after the Knuth-Plass switch
+
+**Symptom:** `retex_layout_plain()` collapsed a blank line between two hard
+breaks, and `test_retex_plain` saw fewer lines than before.
+
+**Cause:** the new paragraph path only emitted a line when it had at least
+one word.  Blank segments produced an empty item list and were dropped.
+
+**Fix:** blank segments now emit an empty line with the font's height and a
+hidden source anchor, so line count and caret mapping stay correct.
+
+**Files:** `re-tex/src/retex.c`, `tests/test_retex_plain.c`
+
+## Tests silently used stale toolkit libraries
+
+**Symptom:** after changing `libretex`/`libxtcw`, a test binary kept running
+the old layout code until its `.c` file was touched.
+
+**Cause:** the generic test rule only depended on `%.c`; the toolkit archives
+were not prerequisites, so `make tests` did not relink.
+
+**Fix:** `tests/Makefile` now makes every test target depend on
+`$(libdir)/libretex.a` and `$(libdir)/libxtcw.a`.
+
+**Files:** `tests/Makefile`
