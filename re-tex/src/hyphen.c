@@ -151,17 +151,19 @@ int *hyphen_breaks(const char *word, int len, int *out_count)
     if (!hyphen_dict || !hyphenate || !word || len <= 1)
         return NULL;
 
-    hyphens = (char *)calloc((size_t)len + 5, 1);
-    hyphenated = (char *)calloc((size_t)len + 5, 1);
+    hyphens = (char *)calloc((size_t)len + 32, 1);
+    hyphenated = (char *)calloc((size_t)len + 32, 1);
     if (!hyphens || !hyphenated) {
         free(hyphens);
         free(hyphenated);
         return NULL;
     }
 
+    hyphenated[len + 31] = 0;
+    hyphens[len + 31] = 0;
     if (hyphenate(hyphen_dict, word, len, hyphens, hyphenated,
                   &rep, &pos, &cut) == 0) {
-        for (i = 0; hyphenated[i]; i++) {
+        for (i = 0; i < len + 31 && hyphenated[i]; i++) {
             if (hyphenated[i] == '=') {
                 if (src > 0 && src < len) {
                     if (n == cap) {

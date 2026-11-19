@@ -384,6 +384,25 @@ static void test_justify_last_line_not_stretched(void)
     printf("test_justify_last_line_not_stretched passed\n");
 }
 
+static void test_emergency_break(void)
+{
+    const char *s = "https://example.com/a/very/long/unbreakable/path";
+    RAtom atoms[128];
+    RetexParagraph *p;
+    int i, n;
+
+    n = (int)strlen(s);
+    assert(n < (int)(sizeof(atoms) / sizeof(atoms[0])));
+    for (i = 0; i < n; i++)
+        atoms[i] = mkchar((uint32_t)(unsigned char)s[i], g_sans, 0, 16.0f);
+    p = retex_layout_styled(g_be, atoms, n, 80.0, "Sans", 16.0,
+                            RETEX_ALIGN_LEFT);
+    assert(p != NULL);
+    assert(retex_paragraph_get_line_count(p) > 1);
+    retex_paragraph_free(p);
+    printf("test_emergency_break passed\n");
+}
+
 int main(void)
 {
     m_init();
@@ -404,6 +423,7 @@ int main(void)
     test_paragraph_spacing();
     test_compact_blank_lines();
     test_justify_last_line_not_stretched();
+    test_emergency_break();
 
     g_be->destroy(g_be);
     conststr_free();

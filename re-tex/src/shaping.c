@@ -412,18 +412,21 @@ void shaping_draw_cluster(void *cairo_cr, ShapingFont *font, double x, double y,
                                      sizeof(cairo_glyph_t));
     if (!glyphs)
         return;
-    cx = x;
+    cx = 0.0;
     for (i = 0; i < cluster->nglyphs; i++) {
         const ShapedGlyph *g = &cluster->glyphs[i];
         glyphs[i].index = (unsigned long)g->glyph_id;
-        glyphs[i].x = cx + g->x_offset * cluster->x_scale;
+        glyphs[i].x = cx + g->x_offset;
         glyphs[i].y = y - g->y_offset;
-        cx += g->x_advance * cluster->x_scale;
+        cx += g->x_advance;
     }
 
     cairo_save(cr);
     cairo_set_font_face(cr, font->cairo_face);
     cairo_set_font_size(cr, font->size);
+    cairo_translate(cr, x, 0.0);
+    if (cluster->x_scale != 1.0)
+        cairo_scale(cr, cluster->x_scale, 1.0);
     cairo_show_glyphs(cr, glyphs, cluster->nglyphs);
     cairo_restore(cr);
     free(glyphs);

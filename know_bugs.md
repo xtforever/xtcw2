@@ -3036,3 +3036,18 @@ Classic C ABI mismatch.
 changes trigger a full re-tex rebuild.
 
 **Files:** `re-tex/src/makefile`
+
+## libhyphen overran the small word buffer for long URLs
+
+**Symptom:** laying out a long URL in a narrow column caused
+`free(): invalid next size` / heap corruption.  Valgrind pointed at
+`hyphen_breaks()` reading one byte past a `word_size + 5` allocation.
+
+**Cause:** `hnj_hyphen_hyphenate2()` is allowed to grow `hyphenated_word`
+and may not NUL-terminate exactly at `word_size + 5` for unusual words.
+The caller loop relied on that NUL terminator.
+
+**Fix:** allocate `word_size + 32` bytes for both arrays, force a terminator
+at the end, and bound the output scan to `word_size + 31`.
+
+**Files:** `re-tex/src/hyphen.c`

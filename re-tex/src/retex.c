@@ -435,7 +435,7 @@ static void append_plain_hyphenated_word(int para_nodes, Backend *be,
                                          const char *wbuf, int wlen,
                                          int base_offset, const char *face,
                                          int face_handle, double size,
-                                         int reverse_mode);
+                                         int reverse_mode, Scaled max_width);
 
 RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_pt,
                                    const char *font_face, double font_size_pt,
@@ -526,7 +526,8 @@ RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_p
                     wbuf[wlen] = 0;
                     append_plain_hyphenated_word(para_nodes, be, wbuf, wlen,
                                                  word_start_byte, face,
-                                                 face_handle, font_size_pt, 0);
+                                                 face_handle, font_size_pt, 0,
+                                                 target);
                     has_word = 1;
                 }
                 free(wbuf);
@@ -678,12 +679,59 @@ static void append_hyphen_penalty(int para_nodes, Backend *be,
     node_create_penalty(para_nodes, 200, hbox.width, list, reverse_mode);
 }
 
+/* Put a word box into the paragraph, splitting it at cluster boundaries when
+ * it is wider than the available measure.  This is the emergency break for
+ * long URLs/identifiers and for words without a hyphenation dictionary. */
+static void append_word_box_split(int para_nodes, Node *wbox, Scaled max_width)
+{
+    int list, chunk, p;
+    Node *cn;
+    Scaled chunk_w = 0;
+
+    if (!wbox || wbox->type != NODE_HBOX || max_width <= 0 ||
+        wbox->width <= max_width) {
+        if (wbox) m_put(para_nodes, wbox);
+        return;
+    }
+
+    list = wbox->list;
+    chunk = m_create(8, sizeof(Node));
+    m_foreach(list, p, cn) {
+        Scaled cw = cn->width;
+        if (chunk_w > 0 && scaled_add(chunk_w, cw) > max_width) {
+            Node hbox = node_pack_hbox(chunk, 0);
+            m_put(para_nodes, &hbox);
+            node_create_penalty(para_nodes, 1000, 0, 0, 0);
+            chunk = m_create(8, sizeof(Node));
+            chunk_w = 0;
+        }
+        {
+            Node copy = *cn;
+            if (cn->type == NODE_HBOX || cn->type == NODE_VBOX)
+                cn->list = 0;
+            else if (cn->type == NODE_CHAR)
+                cn->shaped = NULL;
+            else if (cn->type == NODE_SVG)
+                cn->data = 0;
+            m_put(chunk, &copy);
+            chunk_w = scaled_add(chunk_w, cw);
+        }
+    }
+    if (m_len(chunk) > 0) {
+        Node hbox = node_pack_hbox(chunk, 0);
+        m_put(para_nodes, &hbox);
+    } else {
+        m_free(chunk);
+    }
+    node_list_free(list);
+}
+
 /* Plain word with optional automatic hyphenation. */
 static void append_plain_hyphenated_word(int para_nodes, Backend *be,
                                          const char *wbuf, int wlen,
                                          int base_offset, const char *face,
                                          int face_handle, double size,
-                                         int reverse_mode)
+                                         int reverse_mode, Scaled max_width)
 {
     int count = 0, i, start = 0;
     int *breaks = hyphen_breaks(wbuf, wlen, &count);
@@ -704,7 +752,7 @@ static void append_plain_hyphenated_word(int para_nodes, Backend *be,
                                 0, size, reverse_mode, &ww);
         }
         wbox = node_pack_hbox(wnodes, 0);
-        m_put(para_nodes, &wbox);
+        append_word_box_split(para_nodes, &wbox, max_width);
         append_hyphen_penalty(para_nodes, be, face, face_handle, 0, size,
                               reverse_mode);
         start = b;
@@ -722,7 +770,7 @@ static void append_plain_hyphenated_word(int para_nodes, Backend *be,
                                 0, size, reverse_mode, &ww);
         }
         wbox = node_pack_hbox(wnodes, 0);
-        m_put(para_nodes, &wbox);
+        append_word_box_split(para_nodes, &wbox, max_width);
     }
     free(breaks);
 }
@@ -807,6 +855,13 @@ static void append_styled_word(int wnodes, const RAtom *atoms, int start, int en
     }
 }
 
+static void append_styled_word_box(int para_nodes, int wnodes,
+                                  Scaled max_width)
+{
+    Node wbox = node_pack_hbox(wnodes, 0);
+    append_word_box_split(para_nodes, &wbox, max_width);
+}
+
 /* Styled word with optional automatic hyphenation.  Hyphenation points are
  * byte offsets in the word's UTF-8 representation; they are mapped back to
  * atom boundaries via boff. */
@@ -814,7 +869,8 @@ static void append_styled_hyphenated_word(int para_nodes, const RAtom *atoms,
                                           int start, int end, const int *boff,
                                           double font_size_pt,
                                           const char *default_face,
-                                          int default_face_handle, Backend *be)
+                                          int default_face_handle, Backend *be,
+                                          Scaled max_width)
 {
     int wlen, i, pos = 0, count = 0, start_atom = start;
     char *wbuf;
@@ -828,11 +884,9 @@ static void append_styled_hyphenated_word(int para_nodes, const RAtom *atoms,
     if (has_object || has_cr || end <= start) {
         int wnodes = m_create(8, sizeof(Node));
         Scaled ww = 0;
-        Node wbox;
         append_styled_word(wnodes, atoms, start, end, boff, font_size_pt,
                            default_face, default_face_handle, be, &ww);
-        wbox = node_pack_hbox(wnodes, 0);
-        m_put(para_nodes, &wbox);
+        append_styled_word_box(para_nodes, wnodes, max_width);
         return;
     }
 
@@ -841,11 +895,9 @@ static void append_styled_hyphenated_word(int para_nodes, const RAtom *atoms,
     if (!wbuf) {
         int wnodes = m_create(8, sizeof(Node));
         Scaled ww = 0;
-        Node wbox;
         append_styled_word(wnodes, atoms, start, end, boff, font_size_pt,
                            default_face, default_face_handle, be, &ww);
-        wbox = node_pack_hbox(wnodes, 0);
-        m_put(para_nodes, &wbox);
+        append_styled_word_box(para_nodes, wnodes, max_width);
         return;
     }
     for (i = start; i < end; i++) {
@@ -864,7 +916,6 @@ static void append_styled_hyphenated_word(int para_nodes, const RAtom *atoms,
         int b = breaks[i];
         int target_byte, atom_mid, wnodes;
         Scaled ww = 0;
-        Node wbox;
         const RAtom *a;
         int fh;
         const char *fc;
@@ -883,8 +934,7 @@ static void append_styled_hyphenated_word(int para_nodes, const RAtom *atoms,
         append_styled_word(wnodes, atoms, start_atom, atom_mid, boff,
                            font_size_pt, default_face, default_face_handle,
                            be, &ww);
-        wbox = node_pack_hbox(wnodes, 0);
-        m_put(para_nodes, &wbox);
+        append_styled_word_box(para_nodes, wnodes, max_width);
 
         a = &atoms[atom_mid - 1];
         fh = (a->look.face > 0) ? a->look.face : default_face_handle;
@@ -901,7 +951,7 @@ static void append_styled_hyphenated_word(int para_nodes, const RAtom *atoms,
         append_styled_word(wnodes, atoms, start_atom, end, boff, font_size_pt,
                            default_face, default_face_handle, be, &ww);
         wbox = node_pack_hbox(wnodes, 0);
-        m_put(para_nodes, &wbox);
+        append_word_box_split(para_nodes, &wbox, max_width);
     }
     free(breaks);
     free(wbuf);
@@ -1153,7 +1203,7 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
                         append_styled_hyphenated_word(para_nodes, atoms,
                                                       word_start_k, k, boff,
                                                       font_size_pt, face,
-                                                      face_handle, be);
+                                                      face_handle, be, target);
                     }
                 }
 
