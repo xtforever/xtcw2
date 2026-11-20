@@ -25,6 +25,11 @@ function M.process_property(clean_k, v, widget_class)
         clean_k = 'callback'
     elseif clean_k == 'align' then
         clean_k = 'alignment'
+    elseif clean_k == 'features' then
+        clean_k = 'fontFeatures'
+    elseif clean_k == 'smallCaps' or clean_k == 'smallcaps' or clean_k == 'small-caps' then
+        clean_k = 'fontFeatures'
+        v = v and 'smcp=1' or ''
     elseif clean_k == 'model' then
         -- WListView takes a row model; the older lists take tableStrs.
         if widget_class == 'WComboBox' or widget_class == 'WComboBoxEdit' then

@@ -31,6 +31,8 @@
 @ UTF-8 document text
 @var String text = <String> ""
 @var String fontFace = "Sans"
+@ HarfBuzz feature string for new text, e.g. "smcp=1" for small caps
+@var String fontFeatures = ""
 @var int fontSize = 13
 @ 0=left, 1=center, 2=right, 3=justify
 @var int alignment = 0
@@ -54,6 +56,7 @@
 @var String text_mem
 @ Owned copy of $fontFace when the font name came from a loaded state file.
 @var char *fontFace_mem
+@var char *fontFeatures_mem
 @var int caret_cp
 @var int anchor_cp
 @var int scroll_line
@@ -127,7 +130,10 @@
      * collected later.  Keep our own copy for relayout/open_font. */
     $fontFace_mem = strdup($fontFace ? $fontFace : "Sans");
     $fontFace = $fontFace_mem;
-    $look.features = 0;
+    $fontFeatures_mem = strdup($fontFeatures ? $fontFeatures : "");
+    $fontFeatures = $fontFeatures_mem;
+    $look.features = ($fontFeatures && *$fontFeatures)
+                         ? conststr_lookup_c($fontFeatures) : 0;
 
     $utf8_atom = XInternAtom(dpy, "UTF8_STRING", False);
 
@@ -161,6 +167,7 @@
     free($para_fmt);
     free($old_para_start);
     free($fontFace_mem);
+    free($fontFeatures_mem);
 
     free_colors($);
     XtFree($text_mem);
@@ -188,6 +195,15 @@
             for (i = 0; i < $para_n; i++)
                 ((RetexParaFormat*)$para_fmt)[i].align = $alignment;
         }
+        $dirty = 1;
+        redraw_flag = 1;
+    }
+    if ($fontFeatures != $old$fontFeatures) {
+        free($fontFeatures_mem);
+        $fontFeatures_mem = strdup($fontFeatures ? $fontFeatures : "");
+        $fontFeatures = $fontFeatures_mem;
+        $look.features = ($fontFeatures && *$fontFeatures)
+                             ? conststr_lookup_c($fontFeatures) : 0;
         $dirty = 1;
         redraw_flag = 1;
     }
@@ -362,7 +378,8 @@
     out->face = $fontFace ? conststr_lookup_c($fontFace) : 0;
     out->style = 0;
     out->size = (float)$fontSize;
-    out->features = 0;
+    out->features = ($fontFeatures && *$fontFeatures)
+                        ? conststr_lookup_c($fontFeatures) : 0;
 }
 
 @ paragraph formatting helpers
@@ -678,6 +695,24 @@
         sync_look($);
     } else {
         $look.face = face;
+    }
+}
+
+@ Change the HarfBuzz feature string of the selection, or of the pending look.
+@proc void apply_features($, int features)
+{
+    int lo, hi;
+    if ($caret_cp != $anchor_cp) {
+        lo = $caret_cp < $anchor_cp ? $caret_cp : $anchor_cp;
+        hi = $caret_cp < $anchor_cp ? $anchor_cp : $caret_cp;
+        edit_begin($);
+        rtable_set_features((RTable*)$ptable, lo, hi - lo, features);
+        $dirty = 1;
+        ensure_visible($);
+        redraw($);
+        sync_look($);
+    } else {
+        $look.features = features;
     }
 }
 
@@ -1627,6 +1662,14 @@ fail:
 {
     if (num_params && *num_params >= 1 && params[0])
         apply_size($, (float)atof(params[0]));
+}
+
+@proc set_features
+{
+    if (num_params && *num_params >= 1 && params[0]) {
+        int fh = (*params[0]) ? conststr_lookup_c(params[0]) : 0;
+        apply_features($, fh);
+    }
 }
 
 @ paragraph actions

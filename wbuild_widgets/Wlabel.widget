@@ -68,6 +68,8 @@
 @var Boolean useSmallFont = FALSE
 @ freetype font name
 @var String fontFace = "Sans"
+@ HarfBuzz feature string, e.g. "smcp=1" for small caps
+@var String fontFeatures = ""
 @ default size
 @var int fontSize = 13
 @ default vertical padding around the re-tex line box (labels and buttons)
@@ -98,6 +100,7 @@
 @var String label_mem
 @ Owned storage for the theme UI font face (Xt borrows String resources).
 @var char fontFace_buf[128]
+@var char fontFeatures_buf[256]
 @var double layout_x_offset_pt
 @var double layout_y_offset_pt
 @var int last_state
@@ -120,6 +123,13 @@
   $label = $label_mem;
 
   wlabel_apply_theme_font($);
+  if ($fontFeatures && *$fontFeatures) {
+      strncpy($fontFeatures_buf, $fontFeatures, sizeof($fontFeatures_buf) - 1);
+      $fontFeatures_buf[sizeof($fontFeatures_buf) - 1] = 0;
+      $fontFeatures = $fontFeatures_buf;
+  } else {
+      $fontFeatures = "";
+  }
   theme_register($, wheel_colors_changed);
   /* Widgets created after theme_apply() (e.g. a lazily opened dialog) must
    * still start with the active theme's colours. */
@@ -188,6 +198,18 @@
         size_changed = 1;
     }
     if ($fontSize != $old$fontSize) {
+        redraw_flag = 1;
+        size_changed = 1;
+    }
+    if ($fontFeatures != $old$fontFeatures) {
+        if ($fontFeatures && *$fontFeatures) {
+            strncpy($fontFeatures_buf, $fontFeatures,
+                    sizeof($fontFeatures_buf) - 1);
+            $fontFeatures_buf[sizeof($fontFeatures_buf) - 1] = 0;
+            $fontFeatures = $fontFeatures_buf;
+        } else {
+            $fontFeatures = "";
+        }
         redraw_flag = 1;
         size_changed = 1;
     }
@@ -428,7 +450,8 @@
      * internally via left/right fil glues.  No horizontal offset needed:
      * the paragraph fills the full inner width, and retex positions the
      * text within it. */
-    $para_ptr = retex_layout(be, $label, retex_layout_pt, $fontFace, $fontSize, $alignment);
+    $para_ptr = retex_layout_ex(be, $label, retex_layout_pt, $fontFace,
+                                $fontSize, $alignment, $fontFeatures);
     if (!$para_ptr) {
         be->flush(be);
         return;
@@ -566,7 +589,9 @@
        Measure with RETEX_ALIGN_JUSTIFY: LEFT/CENTER/RIGHT alignment adds
        infinite fill glue which would make the measured width equal to the
        target width instead of the natural content width. */
-    void *para = retex_layout(be, $label, target_width_pt, $fontFace, $fontSize, RETEX_ALIGN_JUSTIFY);
+    void *para = retex_layout_ex(be, $label, target_width_pt, $fontFace,
+                                 $fontSize, RETEX_ALIGN_JUSTIFY,
+                                 $fontFeatures);
     if (para) {
         *w = (int)ceil(pt2px($, retex_paragraph_get_width(para))) + ($leftGap + $rightGap);
         *h = (int)ceil(pt2px($, retex_paragraph_get_height(para))) + ($topGap + $bottomGap);

@@ -354,9 +354,12 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
     base.face = conststr_lookup_c(st->font_face);
     base.style = 0;
     base.size = (float)st->font_size;
-    base.features = 0;
+    base.features = (st->features && *st->features)
+                        ? conststr_lookup_c(st->features) : 0;
     mono_face = conststr_lookup_c(st->mono_face);
-    mono_features = conststr_lookup_c("liga=0,clig=0");
+    mono_features = (st->code_features && *st->code_features)
+                        ? conststr_lookup_c(st->code_features)
+                        : conststr_lookup_c("liga=0,clig=0");
     mono_size = st->font_size * 0.95;
     code_look = base;
     code_look.face = mono_face;
@@ -450,6 +453,10 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
                 kind = K_HEADING;
                 hlook = base;
                 hlook.size = (float)(st->font_size * scale[level - 1]);
+                hlook.features = (st->heading_features &&
+                                  *st->heading_features)
+                                     ? conststr_lookup_c(st->heading_features)
+                                     : base.features;
                 inline_put(&cur, cps, p, ce, hlook, mono_face, mono_size,
                            mono_features, 1, 0);
                 doc_close_block(d, &cur, base);

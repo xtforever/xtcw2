@@ -41,6 +41,11 @@ typedef struct {
  */
 RetexParagraph* retex_layout(Backend *be, const char *text, double width_pt, const char *font_face, double font_size_pt, RetexAlign align);
 
+/* Like retex_layout(), with a per-widget HarfBuzz feature string. */
+RetexParagraph* retex_layout_ex(Backend *be, const char *text, double width_pt,
+                                const char *font_face, double font_size_pt,
+                                RetexAlign align, const char *features);
+
 /**
  * @brief Plain-text layout: literal UTF-8, hard newlines, no TeX syntax.
  *

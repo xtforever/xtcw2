@@ -3068,3 +3068,21 @@ Wbravo state snapshots now also store the feature string (format version 2).
 
 **Files:** `wbuild_widgets/Wbravo.widget`, `wbuild_widgets/markdown.c`,
 `tests/test_retex_styled.c`, `utils/rtable.c`
+
+## retex_layout_ex had no prototype and shifted call arguments
+
+**Symptom:** after exposing `fontFeatures`, Wlabel/Wretex segfaulted during
+initial layout.  GDB showed `retex_layout_ex(..., font_size_pt=0.6,
+align=13, features=0x3)` — every argument after the face was shifted.
+
+**Cause:** the new `retex_layout_ex()` declaration was added to the source
+header in a patch that did not match the actual one-line `retex_layout()`
+declaration.  Wlabel.c/Wretex.c therefore saw an implicit declaration and
+passed the arguments with the old six-argument convention.
+
+**Fix:** declare `retex_layout_ex()` in `re-tex/src/retex.h`, rebuild/install
+the header, and rebuild the widgets.  The same header-dependency rule in
+`re-tex/src/makefile` prevents a stale `retex.o`/widget mismatch.
+
+**Files:** `re-tex/src/retex.h`, `wbuild_widgets/Wlabel.widget`,
+`wbuild_widgets/Wretex.widget`

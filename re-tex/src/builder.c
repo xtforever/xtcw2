@@ -224,7 +224,9 @@ static Scaled parse_length(int token_list, int *p_idx, Scaled em_size) {
     return result;
 }
 
-int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Scaled font_size_base, const char *font_face_base, int face_handle_base) {
+int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx,
+                Scaled font_size_base, const char *font_face_base,
+                int face_handle_base, const char *features) {
     int nodes = m_create(10, sizeof(Node));
     int idx = 0;
     int len = m_len(token_list);
@@ -270,12 +272,12 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 ShapingFont *sf = shaping_font_get(fs.face, fs.style,
                                                    TO_DOUBLE(cur_size));
                 double shaped_width = 0.0;
-                if (sf && shaping_append_run(nodes, sf, buf, blen,
-                                             first->source_offset,
-                                             (float)TO_DOUBLE(cur_size),
-                                             fs.style, face_handle,
-                                             fs.reverse_mode,
-                                             &shaped_width)) {
+                if (sf && shaping_append_run_ex(nodes, sf, buf, blen,
+                                                first->source_offset,
+                                                (float)TO_DOUBLE(cur_size),
+                                                fs.style, face_handle,
+                                                fs.reverse_mode, features,
+                                                &shaped_width)) {
                     free(buf);
                     idx = run_end;
                     continue;
@@ -415,7 +417,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 idx++;
                 if (idx < len && ((Token*)mls(token_list, idx))->type == TOK_GROUP_BEGIN) {
                     int sub_tokens = extract_group(token_list, &idx);
-                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle);
+                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle, features);
                     Node hbox = node_pack_hbox(sub_hlist, 0); 
                     m_put(nodes, &hbox);
                     m_free(sub_tokens);
@@ -427,7 +429,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 idx++;
                 if (idx < len && ((Token*)mls(token_list, idx))->type == TOK_GROUP_BEGIN) {
                     int sub_tokens = extract_group(token_list, &idx);
-                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle);
+                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle, features);
                     Node hbox = node_pack_hbox(sub_hlist, 0);
                     hbox.shift = shift;
                     m_put(nodes, &hbox);
@@ -438,7 +440,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 idx++;
                 if (idx < len && ((Token*)mls(token_list, idx))->type == TOK_GROUP_BEGIN) {
                     int sub_tokens = extract_group(token_list, &idx);
-                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle);
+                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, font_size_base, fs.face, face_handle, features);
                     Node hbox = node_pack_hbox(sub_hlist, 0);
                     // Center relative to the axis (approx 0.25 font size above baseline)
                     Scaled axis_height = get_current_size(&fs) / 4;
@@ -453,7 +455,7 @@ int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Sca
                 idx++;
                 if (idx < len && ((Token*)mls(token_list, idx))->type == TOK_GROUP_BEGIN) {
                     int sub_tokens = extract_group(token_list, &idx);
-                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, get_current_size(&fs), fs.face, face_handle);
+                    int sub_hlist = build_hlist(sub_tokens, measure_func, measure_ctx, get_current_size(&fs), fs.face, face_handle, features);
                     Glue zero = glue_zero();
                     int lines = line_break(sub_hlist, w, zero, zero, 0, 0);
                     int vbox_h = node_list_to_vbox(lines, TO_DOUBLE(get_current_size(&fs)));

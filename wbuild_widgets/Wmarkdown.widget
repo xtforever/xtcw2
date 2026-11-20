@@ -40,6 +40,12 @@
 @var int fontSize = 13
 @ face used for inline code and fenced code blocks
 @var String monoFontFace = "Mono"
+@ HarfBuzz feature string for body text, e.g. "smcp=1" for small caps
+@var String fontFeatures = ""
+@ HarfBuzz feature string for headings (empty = inherit fontFeatures)
+@var String headingFeatures = ""
+@ HarfBuzz feature string for code spans/blocks (empty = liga=0,clig=0)
+@var String codeFeatures = ""
 @ adopt the active theme's UI font (font_ui); explicit fontFace/fontSize
 @ changes after creation still win
 @var Boolean useThemeFont = TRUE
@@ -67,6 +73,9 @@
 @ Owned copies of the String resources (Xt borrows caller strings).
 @var char fontFace_buf[128]
 @var char monoFace_buf[128]
+@var char fontFeatures_buf[256]
+@var char headingFeatures_buf[256]
+@var char codeFeatures_buf[256]
 @var int prefered_width
 @var int prefered_height
 @var int lines_total
@@ -122,6 +131,12 @@
         apply_theme_font($);
     copy_face($, &$fontFace, $fontFace_buf, sizeof($fontFace_buf), "Sans");
     copy_face($, &$monoFontFace, $monoFace_buf, sizeof($monoFace_buf), "Mono");
+    copy_face($, &$fontFeatures, $fontFeatures_buf,
+              sizeof($fontFeatures_buf), "");
+    copy_face($, &$headingFeatures, $headingFeatures_buf,
+              sizeof($headingFeatures_buf), "");
+    copy_face($, &$codeFeatures, $codeFeatures_buf,
+              sizeof($codeFeatures_buf), "");
 
     theme_register($, wheel_colors_changed);
     wheel_colors_changed($);
@@ -184,6 +199,30 @@
 
     if ($monoFontFace != $old$monoFontFace) {
         copy_face($, &$monoFontFace, $monoFace_buf, sizeof($monoFace_buf), "Mono");
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($fontFeatures != $old$fontFeatures) {
+        copy_face($, &$fontFeatures, $fontFeatures_buf,
+                  sizeof($fontFeatures_buf), "");
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($headingFeatures != $old$headingFeatures) {
+        copy_face($, &$headingFeatures, $headingFeatures_buf,
+                  sizeof($headingFeatures_buf), "");
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
+    if ($codeFeatures != $old$codeFeatures) {
+        copy_face($, &$codeFeatures, $codeFeatures_buf,
+                  sizeof($codeFeatures_buf), "");
         rebuild_doc($);
         do_expose = 1;
         size_changed = 1;
@@ -507,6 +546,9 @@
     st.font_face = ($fontFace && *$fontFace) ? $fontFace : "Sans";
     st.font_size = $fontSize > 0 ? (double)$fontSize : 13.0;
     st.mono_face = ($monoFontFace && *$monoFontFace) ? $monoFontFace : "Mono";
+    st.features = $fontFeatures;
+    st.heading_features = $headingFeatures;
+    st.code_features = $codeFeatures;
     st.default_align = $alignment;
     $doc = markdown_parse($text ? $text : "", &st);
 

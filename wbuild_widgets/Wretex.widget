@@ -30,6 +30,8 @@
 @var String text = <String> ""
 @ freetype font name
 @var String fontFace = "Sans"
+@ HarfBuzz feature string, e.g. "smcp=1" for small caps
+@var String fontFeatures = ""
 @ font size in points
 @var int fontSize = 13
 @var int topGap = 4
@@ -48,6 +50,7 @@
 @var int prefered_height
 @var Bool dirty
 @var String text_mem
+@var char fontFeatures_buf[256]
 
 @METHODS
 
@@ -64,6 +67,15 @@
     if (!s || !*s) s = $name;
     $text_mem = XtNewString(s);
     $text = $text_mem;
+
+    if ($fontFeatures && *$fontFeatures) {
+        strncpy($fontFeatures_buf, $fontFeatures,
+                sizeof($fontFeatures_buf) - 1);
+        $fontFeatures_buf[sizeof($fontFeatures_buf) - 1] = 0;
+        $fontFeatures = $fontFeatures_buf;
+    } else {
+        $fontFeatures = "";
+    }
 
     $backend_ptr = NULL;
     $para_ptr = NULL;
@@ -108,6 +120,19 @@
     }
 
     if ($fontFace != $old$fontFace || $fontSize != $old$fontSize) {
+        redraw_flag = 1;
+        size_changed = 1;
+    }
+
+    if ($fontFeatures != $old$fontFeatures) {
+        if ($fontFeatures && *$fontFeatures) {
+            strncpy($fontFeatures_buf, $fontFeatures,
+                    sizeof($fontFeatures_buf) - 1);
+            $fontFeatures_buf[sizeof($fontFeatures_buf) - 1] = 0;
+            $fontFeatures = $fontFeatures_buf;
+        } else {
+            $fontFeatures = "";
+        }
         redraw_flag = 1;
         size_changed = 1;
     }
@@ -221,7 +246,8 @@
     if (inner_w_px < 10) inner_w_px = 10;
     double layout_width_pt = px2pt($, inner_w_px);
 
-    $para_ptr = retex_layout(be, $text, layout_width_pt, $fontFace, $fontSize, $alignment);
+    $para_ptr = retex_layout_ex(be, $text, layout_width_pt, $fontFace,
+                                $fontSize, $alignment, $fontFeatures);
     if (!$para_ptr) return;
 
     /* Clear background */
@@ -305,7 +331,8 @@
     if (adj_tw < 10) adj_tw = 10;
     double target_width_pt = px2pt($, adj_tw);
 
-    void *para = retex_layout(be, $text, target_width_pt, $fontFace, $fontSize, $alignment);
+    void *para = retex_layout_ex(be, $text, target_width_pt, $fontFace,
+                                 $fontSize, $alignment, $fontFeatures);
     if (para) {
         *w = (int)ceil(pt2px($, retex_paragraph_get_width(para))) + ($leftGap + $rightGap);
         *h = (int)ceil(pt2px($, retex_paragraph_get_height(para))) + ($topGap + $bottomGap);

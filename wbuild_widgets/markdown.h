@@ -32,6 +32,9 @@ typedef struct {
     const char *font_face;   /* base face, e.g. "Sans" */
     double font_size;        /* base size in points */
     const char *mono_face;   /* code face, e.g. "Mono" */
+    const char *features;        /* body HarfBuzz features (NULL = none) */
+    const char *heading_features;/* heading features (NULL = body) */
+    const char *code_features;   /* code features (NULL = liga=0,clig=0) */
     int default_align;       /* RetexAlign used for ordinary paragraphs */
 } MarkdownStyle;
 

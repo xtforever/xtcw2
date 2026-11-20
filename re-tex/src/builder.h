@@ -17,6 +17,8 @@ typedef CharMetricsScaled (*MeasureFunc)(void *ctx, int char_code, Scaled font_s
  * @param face_handle_base Base font face handle.
  * @return Handle to a memc list of Nodes.
  */
-int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx, Scaled font_size_base, const char *font_face_base, int face_handle_base);
+int build_hlist(int token_list, MeasureFunc measure_func, void *measure_ctx,
+                Scaled font_size_base, const char *font_face_base,
+                int face_handle_base, const char *features);
 
 #endif // BUILDER_H

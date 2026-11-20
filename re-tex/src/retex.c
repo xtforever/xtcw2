@@ -194,7 +194,9 @@ static void retrace_line_metadata(RetexParagraph *para) {
     para->nlines = n;
 }
 
-RetexParagraph* retex_layout(Backend *be, const char *text, double width_pt, const char *font_face, double font_size_pt, RetexAlign align) {
+RetexParagraph* retex_layout_ex(Backend *be, const char *text, double width_pt,
+                                const char *font_face, double font_size_pt,
+                                RetexAlign align, const char *features) {
     if (!text) return NULL;
     RetexParagraph *para = malloc(sizeof(RetexParagraph));
     if (!para) return NULL;
@@ -250,7 +252,9 @@ RetexParagraph* retex_layout(Backend *be, const char *text, double width_pt, con
             }
             
             if (m_len(current_para_tokens) > 0) {
-                int hlist = build_hlist(current_para_tokens, internal_measure_char, be, FROM_DOUBLE(font_size_pt), face, face_handle);
+                int hlist = build_hlist(current_para_tokens, internal_measure_char,
+                                        be, FROM_DOUBLE(font_size_pt), face,
+                                        face_handle, features);
                 
                 Scaled hang_indent = 0;
                 int hang_after = 1;
@@ -440,6 +444,13 @@ static void append_plain_hyphenated_word(int para_nodes, Backend *be,
                                          int base_offset, const char *face,
                                          int face_handle, double size,
                                          int reverse_mode, Scaled max_width);
+
+RetexParagraph* retex_layout(Backend *be, const char *text, double width_pt,
+                             const char *font_face, double font_size_pt,
+                             RetexAlign align) {
+    return retex_layout_ex(be, text, width_pt, font_face, font_size_pt, align,
+                           NULL);
+}
 
 RetexParagraph* retex_layout_plain(Backend *be, const char *text, double width_pt,
                                    const char *font_face, double font_size_pt,
