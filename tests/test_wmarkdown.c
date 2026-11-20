@@ -10,6 +10,7 @@
 #include <X11/StringDefs.h>
 #include <X11/IntrinsicP.h>
 #include <X11/Xft/Xft.h>
+#include <X11/Xatom.h>
 
 #include "Wmarkdown.h"
 #include "WmarkdownP.h"
@@ -36,6 +37,49 @@ static void act(const char *name, String *params, Cardinal n)
 {
     XtCallActionProc(md, (String)name, NULL, params, n);
     pump();
+}
+
+typedef struct {
+    int done;
+    Atom type;
+    int format;
+    unsigned long len;
+    unsigned char *data;
+} SelResult;
+
+static void sel_cb(Widget w, XtPointer client, Atom *selection, Atom *type,
+                   XtPointer value, unsigned long *length, int *format)
+{
+    SelResult *r = (SelResult *)client;
+    size_t bytes;
+    (void)w;
+    (void)selection;
+    r->done = 1;
+    r->type = *type;
+    r->format = *format;
+    r->len = *length;
+    r->data = NULL;
+    if (value && *length > 0 && *format > 0) {
+        bytes = (size_t)*length * (size_t)(*format / 8);
+        r->data = (unsigned char *)malloc(bytes);
+        if (r->data)
+            memcpy(r->data, value, bytes);
+    }
+    if (value)
+        XtFree(value);
+}
+
+static int get_selection(Atom target, SelResult *r)
+{
+    Atom clip = XInternAtom(XtDisplay(md), "CLIPBOARD", False);
+    int i;
+    memset(r, 0, sizeof(*r));
+    XtGetSelectionValue(md, clip, target, sel_cb, r, CurrentTime);
+    for (i = 0; i < 100 && !r->done; i++) {
+        usleep(10000);
+        pump();
+    }
+    return r->done;
 }
 
 int main(int argc, char **argv)
@@ -108,6 +152,29 @@ int main(int argc, char **argv)
         act("copy_selection", NULL, 0);
         assert(m->wmarkdown.sel_len == 4);
         assert(strncmp(m->wmarkdown.sel_buf, "This", 4) == 0);
+
+        /* The CLIPBOARD selection must actually serve the text and a
+         * TARGETS list (clipboard managers ask for TARGETS first). */
+        {
+            Atom utf8 = XInternAtom(XtDisplay(md), "UTF8_STRING", False);
+            Atom targets = XInternAtom(XtDisplay(md), "TARGETS", False);
+            SelResult sr;
+            int found = 0;
+            unsigned long k;
+
+            assert(get_selection(utf8, &sr));
+            assert(sr.len >= 4 && sr.data != NULL);
+            assert(memcmp(sr.data, "This", 4) == 0);
+            free(sr.data);
+
+            assert(get_selection(targets, &sr));
+            assert(sr.type == XA_ATOM && sr.format == 32 && sr.data != NULL);
+            for (k = 0; k < sr.len; k++)
+                if (((Atom *)sr.data)[k] == utf8)
+                    found = 1;
+            assert(found);
+            free(sr.data);
+        }
 
         act("select_all", NULL, 0);
         assert(m->wmarkdown.sel_anchor == 0);

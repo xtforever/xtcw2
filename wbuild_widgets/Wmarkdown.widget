@@ -103,6 +103,10 @@
 @var int sel_len
 @var Atom utf8_atom
 @var Atom clipboard_atom
+@var Atom targets_atom
+@var Atom text_atom
+@var Atom timestamp_atom
+@var Time sel_time
 
 @METHODS
 
@@ -145,6 +149,10 @@
     $sel_len = 0;
     $utf8_atom = XInternAtom(XtDisplay($), "UTF8_STRING", False);
     $clipboard_atom = XInternAtom(XtDisplay($), "CLIPBOARD", False);
+    $targets_atom = XInternAtom(XtDisplay($), "TARGETS", False);
+    $text_atom = XInternAtom(XtDisplay($), "TEXT", False);
+    $timestamp_atom = XInternAtom(XtDisplay($), "TIMESTAMP", False);
+    $sel_time = CurrentTime;
 
     if ($fontSize < 1) $fontSize = 13;
     if ($useThemeFont)
@@ -443,8 +451,11 @@
 
 @proc select_end
 {
-    if ($sel_anchor >= 0 && $sel_caret >= 0 && $sel_anchor != $sel_caret)
-        own_selection($, XA_PRIMARY);
+    if ($sel_anchor >= 0 && $sel_caret >= 0 && $sel_anchor != $sel_caret) {
+        Time t = XtLastTimestampProcessed(XtDisplay($));
+        if (!t) t = CurrentTime;
+        own_selection($, XA_PRIMARY, t);
+    }
 }
 
 @proc select_all
@@ -470,12 +481,15 @@
 @proc copy_selection
 {
     int lo, hi;
+    Time t;
     if ($sel_anchor < 0 || $sel_caret < 0) return;
     lo = $sel_anchor < $sel_caret ? $sel_anchor : $sel_caret;
     hi = $sel_anchor < $sel_caret ? $sel_caret : $sel_anchor;
     if (hi <= lo) return;
-    own_selection($, XA_PRIMARY);
-    own_selection($, $clipboard_atom);
+    t = XtLastTimestampProcessed(XtDisplay($));
+    if (!t) t = CurrentTime;
+    own_selection($, XA_PRIMARY, t);
+    own_selection($, $clipboard_atom, t);
 }
 
 @proc set_selection
@@ -728,21 +742,47 @@
     $sel_len = len;
 }
 
-@proc void own_selection($, Atom selection)
+@proc void own_selection($, Atom selection, Time t)
 {
     fill_selection_text($);
-    if ($sel_len > 0)
-        XtOwnSelection($, selection, CurrentTime, ConvertSelection,
+    if ($sel_len > 0) {
+        $sel_time = t;
+        XtOwnSelection($, selection, t, ConvertSelection,
                        LoseSelection, NULL);
+    }
 }
 
 @proc Boolean ConvertSelection($, Atom *selection, Atom *target,
                                Atom *type, XtPointer *value,
                                unsigned long *length, int *format)
 {
-    if (*target == $utf8_atom) {
+    if (*target == $targets_atom) {
+        Atom *targets = (Atom *)XtMalloc(5 * sizeof(Atom));
+        int n = 0;
+        targets[n++] = $targets_atom;
+        targets[n++] = $utf8_atom;
+        targets[n++] = XA_STRING;
+        targets[n++] = $text_atom;
+        targets[n++] = $timestamp_atom;
+        *type = XA_ATOM;
+        *format = 32;
+        *length = (unsigned long)n;
+        *value = (XtPointer)targets;
+        return True;
+    }
+    if (*target == $timestamp_atom) {
+        long *ts = (long *)XtMalloc(sizeof(long));
+        *ts = (long)$sel_time;
+        *type = XA_INTEGER;
+        *format = 32;
+        *length = 1;
+        *value = (XtPointer)ts;
+        return True;
+    }
+    if (*target == $utf8_atom || *target == XA_STRING ||
+        *target == $text_atom) {
         int l = $sel_len;
-        *type = $utf8_atom;
+        *type = *target;
         *format = 8;
         *length = (unsigned long)l;
         *value = XtMalloc(l > 0 ? l : 1);

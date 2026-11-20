@@ -3395,3 +3395,21 @@ with the mono look; unmatched runs are emitted literally.  Added a regression
 check to `test_markdown` (literal ``` plus a matched `monospan`).
 
 **Files:** `wbuild_widgets/markdown.c`, `tests/test_markdown.c`
+
+## Ctrl+C left the clipboard empty
+
+**Symptom:** after selecting text in Wmarkdown and pressing Ctrl+C, nothing
+reached the clipboard in some desktop environments.
+
+**Cause:** `copy_selection()` called `XtOwnSelection()` with `CurrentTime`
+and `ConvertSelection()` only answered `UTF8_STRING`.  Clipboard managers ask
+for `TARGETS` first; getting no reply, they treated the selection as empty.
+`CurrentTime` can also be rejected when a newer timestamp has already been
+processed.
+
+**Fix:** own the selection with `XtLastTimestampProcessed()` (falling back to
+`CurrentTime`) and answer `TARGETS`, `UTF8_STRING`, `STRING`, `TEXT` and
+`TIMESTAMP`.  `test_wmarkdown` now reads the CLIPBOARD selection back and
+checks both the UTF-8 text and the advertised TARGETS list.
+
+**Files:** `wbuild_widgets/Wmarkdown.widget`, `tests/test_wmarkdown.c`
