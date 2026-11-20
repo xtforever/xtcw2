@@ -120,6 +120,11 @@ LuaRunner/nanosvg/src/nanosvg_impl.c
 # re-tex per-object dependency files
 re-tex/src/*.d
 
+*.bak
+*.orig
+*.rej
+*.swp
+
 # --- compiled build artifacts (never commit/push) ---
 *.so
 *.so.*
