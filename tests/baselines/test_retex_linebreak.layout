@@ -3,3 +3,16 @@
 [2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 3276800, height 655360, x 0, y 0, color 00000000, content 3
 [2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 5242880, height 655360, x 0, y 0, color 00000000, content 
 [2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 5242880, height 655360, x 0, y 0, color 00000000, content 
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content a
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content b
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content c
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content d
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content e
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content f
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content g
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content h
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content i
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content j
+[2]node_create_char: LAYOUT handle MASKED, class NODE_CHAR, name , width 655360, height 655360, x 0, y 0, color 00000000, content k
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 6553600, height 655360, x 0, y 0, color 00000000, content 
+[2]node_pack_hbox: LAYOUT handle MASKED, class PACK_HBOX, name , width 6553600, height 655360, x 0, y 0, color 00000000, content 

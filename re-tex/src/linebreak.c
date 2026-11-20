@@ -4,6 +4,7 @@
 #include "mls.h"
 #include "m_tool.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 int line_break(int node_list, Scaled width, Glue left_skip, Glue right_skip, Scaled hang_indent, int hang_after) {
@@ -458,7 +459,9 @@ int line_break_kp(int node_list, const LineBreakParams *params)
             }
             stretch = scaled_sub(pst[end], pst[start]);
             shrink = scaled_sub(psh[end], psh[start]);
-            if (ragged)
+            /* TeX's \parfillskip: the final line of a paragraph may be
+             * short, so it must not be penalised for missing stretch. */
+            if (end == n || ragged)
                 stretch = FROM_INT(1000000);
 
             emerg = params->emergencystretch;

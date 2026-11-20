@@ -3352,3 +3352,29 @@ hb-ft (and a matching line height), so the exact glyph widths changed by a few
 
 **Files:** `wbuild_widgets/{VBox,HBox,Gauge,ScrolledCanvas,Woptc,IconSVG}.widget`,
 `tests/baselines/*.layout`
+
+## Justified paragraphs could start with a one-word first line
+
+**Symptom:** `demos/demo_markdown.lua` rendered the final paragraph as
+`Select ... text` on the first line (a huge gap) followed by the rest on the
+second line.  The same happened for any justified paragraph whose text is only
+slightly longer than one line.
+
+**Cause:** `line_break_kp()` applied normal badness to the final line.  When
+the last line was short, the DP preferred a tiny first line plus a nearly full
+last line, because both paths cost roughly the same `1e10` infeasible-line
+penalty.  TeX's `\parfillskip` (infinite stretch for the last line) was missing
+from the DP.
+
+**Fix:** in the candidate loop, `end == n` now uses infinite stretch, so a
+short final line is free and the earlier lines are optimised normally.  Added
+a regression case to `test_retex_linebreak` (11 words, 100pt measure: the first
+line must be about 100pt).
+
+`test_wlistmulti` also passed a string for the `ArrayInt` `columnWidths`
+resource.  Xt does not convert explicit string arguments for non-string
+resources, so the field held a truncated string pointer and `m_len()` crashed
+once the layout changed.  The test now builds a valid MLS handle.
+
+**Files:** `re-tex/src/linebreak.c`, `tests/test_retex_linebreak.c`,
+`tests/baselines/test_retex_linebreak.layout`, `tests/test_wlistmulti.c`

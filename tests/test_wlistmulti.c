@@ -28,9 +28,18 @@ int main(int argc, char **argv) {
     m_put(list_data, &row1);
     m_put(list_data, &row2);
 
+    /* Xt does not convert an explicit string argument for a non-string
+     * resource (the converter only runs for defaults).  Build the ArrayInt
+     * handle explicitly so the resource contains a valid MLS handle. */
+    int column_widths = m_create(3, sizeof(int));
+    int cw = 100;
+    m_put(column_widths, &cw);
+    m_put(column_widths, &cw);
+    m_put(column_widths, &cw);
+
     Widget list = XtVaCreateManagedWidget("list", wlistMultiWidgetClass, top,
                                           "tableStrs", list_data,
-                                          "columnWidths", "100,100,100",
+                                          "columnWidths", column_widths,
                                           "retexCells", True,
                                           "height", 100,
                                           "width", 300,
@@ -50,6 +59,8 @@ int main(int argc, char **argv) {
     }
 
     XtDestroyWidget(top);
+    m_free(column_widths);
+    m_free(list_data);
     XtDestroyApplicationContext(app);
     conststr_free();
     m_destruct();
