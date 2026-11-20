@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "xt_bridge.h"
 #include "lifecycle.h"
+#include "mls.h"
 
 lua_State *L_GLOBAL = NULL;
 
@@ -24,6 +25,11 @@ int lua_bridge_load_script(const char *filename) {
         fprintf(stderr, "Error running script: %s\n", lua_tostring(L_GLOBAL, -1));
         return 1;
     }
+    return 0;
+}
+
+static int l_set_trace_level_lua(lua_State *L) {
+    trace_level = (int)luaL_checkinteger(L, 1);
     return 0;
 }
 
@@ -52,6 +58,7 @@ void lua_bridge_register_bindings(void) {
     lua_register(L_GLOBAL, "mls_get_string", mls_get_string_lua);
     lua_register(L_GLOBAL, "xtappexitflag", l_xtappexitflag_lua);
     lua_register(L_GLOBAL, "xtapptimeout", xtapptimeout_lua);
+    lua_register(L_GLOBAL, "set_trace_level", l_set_trace_level_lua);
     lua_register(L_GLOBAL, "xtgeometry", xtgeometry_lua);
     lua_register(L_GLOBAL, "xterror_count", xterror_count_lua);
     lifecycle_lua_register(L_GLOBAL);

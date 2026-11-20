@@ -5,7 +5,6 @@
 @proc void redraw_markdown($)
 {
     if (!XtIsRealized($)) return;
-
     if ($backend_ptr &&
         ($cache_w != (int)$width || $cache_h != (int)$height))
         $dirty = 1;
@@ -51,11 +50,20 @@
 @var Boolean useThemeFont = TRUE
 @ 0=left, 1=center, 2=right, 3=justify (default: justify paragraphs)
 @var int alignment = 3
+@ treat single newlines as hard line breaks (poetry, logs, plain text)
+@var Boolean preserveLineBreaks = FALSE
+@ geometry proposals are accepted inside this range without a reflow
+@var int minWidth = 1
+@var int minHeight = 1
+@var int maxWidth = 4000
+@var int maxHeight = 4000
+@ minimum milliseconds between expose-driven redraws
+@var int exposeInterval = 200
 @ padding around the text
-@var int topGap = 6
-@var int bottomGap = 6
-@var int leftGap = 8
-@var int rightGap = 8
+@var Distance topGap = <String> "4.5pt"
+@var Distance bottomGap = <String> "4.5pt"
+@var Distance leftGap = <String> "6pt"
+@var Distance rightGap = <String> "6pt"
 @ request the preferred height for the current width
 @var Boolean autoHeight = FALSE
 @ first visible line (0-based); scrolling is done through the actions below
@@ -69,6 +77,12 @@
 @var int cache_w
 @var int cache_h
 @var Bool dirty
+@var Bool layout_dirty
+@var int layout_w
+@var Bool render_pending
+@var XtIntervalId expose_timer
+@var long long last_expose_ms
+@var long long last_render_ms
 @var String text_mem
 @ Owned copies of the String resources (Xt borrows caller strings).
 @var char fontFace_buf[128]
@@ -114,6 +128,12 @@
     $cache_w = 0;
     $cache_h = 0;
     $dirty = 1;
+    $layout_dirty = 1;
+    $layout_w = 0;
+    $render_pending = FALSE;
+    $expose_timer = 0;
+    $last_expose_ms = 0;
+    $last_render_ms = 0;
     $prefered_width = 200;
     $prefered_height = 100;
     $lines_total = 0;
@@ -150,6 +170,10 @@
 @proc destroy
 {
     theme_unregister($);
+    if ($expose_timer) {
+        XtRemoveTimeOut($expose_timer);
+        $expose_timer = 0;
+    }
     if ($para_ptr) {
         retex_paragraph_free((RetexParagraph*)$para_ptr);
         $para_ptr = NULL;
@@ -173,10 +197,15 @@
     int do_expose = 0;
     int size_changed = 0;
 
-    if ($text != $old$text) {
+    /* Compare contents as well as pointers: a caller (e.g. LUI gui.set)
+     * may reuse the same address for a different string after the old
+     * text_mem was freed. */
+    if ($text != $old$text ||
+        !$text_mem ||
+        strcmp($text ? $text : "", $text_mem) != 0) {
+        char *new_text = XtNewString($text ? $text : "");
         XtFree($old$text_mem);
-        if ($text == 0) $text = "";
-        $text = $text_mem = XtNewString($text);
+        $text = $text_mem = new_text;
         rebuild_doc($);
         do_expose = 1;
         size_changed = 1;
@@ -240,6 +269,12 @@
         size_changed = 1;
     }
 
+    if ($preserveLineBreaks != $old$preserveLineBreaks) {
+        rebuild_doc($);
+        do_expose = 1;
+        size_changed = 1;
+    }
+
     if ($topGap != $old$topGap || $bottomGap != $old$bottomGap ||
         $leftGap != $old$leftGap || $rightGap != $old$rightGap) {
         do_expose = 1;
@@ -253,7 +288,13 @@
 
     if (do_expose) {
         $dirty = 1;
-        if (XtIsRealized($)) update_cache($);
+        /* update_cache() only fills the pixmap; text/resource changes also
+         * have to copy it to the window, otherwise the old frame stays
+         * visible until the next expose. */
+        if (XtIsRealized($))
+            redraw_markdown($);
+        else if (!XtIsRealized($) && $doc && $width > 0)
+            layout_only($, (int)$width);
     }
 
     if (size_changed && $autoHeight) {
@@ -268,21 +309,41 @@
 
 @proc query_geometry
 {
-    int tw = (request->request_mode & CWWidth) ? request->width : (int)$width;
     int w, h;
-    calculate_size($, tw, &w, &h);
+    int reqw = (request->request_mode & CWWidth) ? (int)request->width : (int)$width;
+    int reqh = (request->request_mode & CWHeight) ? (int)request->height : (int)$height;
 
+    if (!(request->request_mode & CWWidth) &&
+        !(request->request_mode & CWHeight)) {
+        /* Initial preferred size query. */
+        calculate_size($, 0, &w, &h);
+        reply->request_mode = CWWidth | CWHeight;
+        reply->width = w;
+        reply->height = h;
+        $prefered_width = w;
+        $prefered_height = h;
+        return XtGeometryAlmost;
+    }
+
+    if (reqw < $minWidth) reqw = $minWidth;
+    if (reqw > $maxWidth) reqw = $maxWidth;
+    if (reqh < $minHeight) reqh = $minHeight;
+    if (reqh > $maxHeight) reqh = $maxHeight;
+
+    /* autoHeight: a width proposal also needs the content height. */
+    if ($autoHeight && (request->request_mode & CWWidth) &&
+        !(request->request_mode & CWHeight)) {
+        calculate_size($, reqw, &w, &h);
+        reqh = h;
+    }
+
+    /* Accept the proposed size as-is (within min/max).  The actual layout is
+     * deferred to the expose timer, so animated resizes stay fluid. */
     reply->request_mode = CWWidth | CWHeight;
-    /* When the parent proposes a width, keep it and report the height the
-     * wrapped content actually needs for that width. */
-    reply->width = (request->request_mode & CWWidth) ? request->width : w;
-    reply->height = h;
-    if ((request->request_mode & CWHeight) && request->height > reply->height)
-        reply->height = request->height;
-
-    $prefered_width = reply->width;
-    $prefered_height = reply->height;
-
+    reply->width = reqw;
+    reply->height = reqh;
+    $prefered_width = reqw;
+    $prefered_height = reqh;
     return XtGeometryAlmost;
 }
 
@@ -296,25 +357,19 @@
 
 @proc resize
 {
-    if ($para_ptr) {
-        retex_paragraph_free((RetexParagraph*)$para_ptr);
-        $para_ptr = NULL;
-    }
-    if ($backend_ptr) {
-        Backend *be = (Backend*)$backend_ptr;
-        be->destroy(be);
-        $backend_ptr = NULL;
-        $pixmap = 0;
-        $cache_w = 0;
-        $cache_h = 0;
-    }
+    if ((int)$width != $layout_w)
+        $layout_dirty = 1;
     $dirty = 1;
-    if (XtIsRealized($)) redraw_markdown($);
+    $last_expose_ms = now_ms($);
+    $render_pending = TRUE;
+    schedule_render($);
 }
 
 @proc expose
 {
-    redraw_markdown($);
+    $last_expose_ms = now_ms($);
+    $render_pending = TRUE;
+    schedule_render($);
 }
 
 @proc accept_focus
@@ -492,8 +547,9 @@
 
 @proc set_text
 {
-    if (num_params && *num_params >= 1 && params[0])
-        XtVaSetValues($, XtNtext, params[0], NULL);
+    if (num_params && *num_params >= 1 && params[0]) {
+            XtVaSetValues($, XtNtext, params[0], NULL);
+    }
 }
 
 @UTILITIES
@@ -549,6 +605,7 @@
     st.features = $fontFeatures;
     st.heading_features = $headingFeatures;
     st.code_features = $codeFeatures;
+    st.preserve_line_breaks = $preserveLineBreaks;
     st.default_align = $alignment;
     $doc = markdown_parse($text ? $text : "", &st);
 
@@ -571,6 +628,49 @@
         }
     }
     $dirty = 1;
+    $layout_dirty = 1;
+}
+
+@proc long long now_ms($)
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (long long)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+
+@proc void schedule_render($)
+{
+    if ($expose_timer) return;
+    int delay = $exposeInterval > 0 ? $exposeInterval : 1;
+    $expose_timer = XtAppAddTimeOut(XtWidgetToApplicationContext($), delay,
+                                    render_timeout, (XtPointer)$);
+}
+
+@proc void render_timeout(XtPointer client, XtIntervalId *id)
+{
+    Widget self = (Widget)client;
+    long long now = now_ms($);
+    long long interval = $exposeInterval > 0 ? $exposeInterval : 1;
+    long long wait = 0;
+
+    $expose_timer = 0;
+    if (now - $last_expose_ms < interval)
+        wait = interval - (now - $last_expose_ms);
+    if (now - $last_render_ms < interval) {
+        long long wr = interval - (now - $last_render_ms);
+        if (wr > wait) wait = wr;
+    }
+    if (wait > 0) {
+        $expose_timer = XtAppAddTimeOut(XtWidgetToApplicationContext($), wait,
+                                        render_timeout, self);
+        return;
+    }
+    if ($render_pending) {
+        $render_pending = FALSE;
+        $last_render_ms = now;
+        if (XtIsRealized(self))
+            redraw_markdown(self);
+    }
 }
 
 @proc double scroll_offset_pt($)
@@ -598,8 +698,8 @@
     }
     mx -= $leftGap;
     my -= $topGap;
-    xpt = px2pt($, (double)mx);
-    ypt = px2pt($, (double)my) + scroll_offset_pt($);
+    xpt = converters_px2pt($, (double)mx);
+    ypt = converters_px2pt($, (double)my) + scroll_offset_pt($);
     return retex_paragraph_get_offset_at((RetexParagraph*)$para_ptr, xpt, ypt);
 }
 
@@ -682,20 +782,6 @@
     retex_paragraph_set_selection((RetexParagraph*)$para_ptr, lo, hi - 1);
 }
 
-@proc double get_dpi($)
-{
-    Display *dpy = XtDisplay($);
-    char *s = XGetDefault(dpy, "Xft", "dpi");
-    if (s) {
-        double dpi = atof(s);
-        if (dpi < 1.0 || dpi > 1000.0) return 96.0;
-        return dpi;
-    }
-    return 96.0;
-}
-
-@proc double pt2px($, double pt) { return pt * get_dpi($) / 72.0; }
-@proc double px2pt($, double px) { return px * 72.0 / get_dpi($); }
 
 @proc uint32_t xftcolor_to_argb($, int index)
 {
@@ -734,7 +820,7 @@
     if (tw > 0) {
         int adj = tw - ($leftGap + $rightGap);
         if (adj < 10) adj = 10;
-        target_width_pt = px2pt($, (double)adj);
+        target_width_pt = converters_px2pt($, (double)adj);
     } else {
         target_width_pt = 10000.0;
     }
@@ -759,9 +845,9 @@
                                           $fontFace, $fontSize, fmts, nfmts,
                                           RETEX_ALIGN_JUSTIFY);
     if (p) {
-        *w = (int)ceil(pt2px($, retex_paragraph_get_width(p))) +
+        *w = (int)ceil(converters_pt2px($, retex_paragraph_get_width(p))) +
              $leftGap + $rightGap;
-        *h = (int)ceil(pt2px($, retex_paragraph_get_height(p))) +
+        *h = (int)ceil(converters_pt2px($, retex_paragraph_get_height(p))) +
              $topGap + $bottomGap;
         retex_paragraph_free(p);
     }
@@ -794,7 +880,7 @@
         return 1;
     if (!retex_paragraph_get_line((RetexParagraph*)$para_ptr, 0, &l))
         return 1;
-    line_px = pt2px($, l.height);
+    line_px = converters_pt2px($, l.height);
     if (line_px < 1.0) line_px = 1.0;
     vis = (int)(((double)$height - $topGap - $bottomGap) / line_px);
     return vis > 0 ? vis : 1;
@@ -806,6 +892,46 @@
     clamp_scroll($);
     $dirty = 1;
     if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc void layout_only($, int width_px)
+{
+    Display *dpy = XtDisplay($);
+    Window root = DefaultRootWindow(dpy);
+    Backend *be;
+    int natoms = 0, nfmts = 0;
+    const RAtom *atoms;
+    const RetexParaFormat *fmts;
+    double wpx;
+
+    if (width_px < 1)
+        return;
+    if ($para_ptr) {
+        retex_paragraph_free((RetexParagraph*)$para_ptr);
+        $para_ptr = NULL;
+    }
+    $lines_total = 0;
+    $layout_dirty = 0;
+    $layout_w = width_px;
+    if (!$doc)
+        return;
+
+    be = backend_xpixmap_create(dpy, root, 10, 10);
+    if (!be)
+        return;
+    wpx = (double)(width_px - ($leftGap + $rightGap));
+    if (wpx < 10.0)
+        wpx = 10.0;
+    atoms = markdown_atoms((MarkdownDoc*)$doc, &natoms);
+    fmts = markdown_formats((MarkdownDoc*)$doc, &nfmts);
+    $para_ptr = retex_layout_styled_paras_compact(be, atoms, natoms,
+                                                  converters_px2pt($, wpx),
+                                                  $fontFace, $fontSize,
+                                                  fmts, nfmts, $alignment);
+    if ($para_ptr)
+        $lines_total = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
+    be->destroy(be);
+    clamp_scroll($);
 }
 
 @proc void update_cache($)
@@ -851,33 +977,42 @@
     }
     be->flush(be);
 
-    if ($para_ptr) {
-        retex_paragraph_free((RetexParagraph*)$para_ptr);
-        $para_ptr = NULL;
-    }
-
-    $lines_total = 0;
     if (!$doc) {
+        if ($para_ptr) {
+            retex_paragraph_free((RetexParagraph*)$para_ptr);
+            $para_ptr = NULL;
+        }
+        $lines_total = 0;
+        $layout_dirty = 0;
         $scrollLine = 0;
         $dirty = 0;
         return;
     }
 
-    wpx = (double)(w - ($leftGap + $rightGap));
-    if (wpx < 10.0) wpx = 10.0;
+    if ($layout_dirty || !$para_ptr) {
+        if ($para_ptr) {
+            retex_paragraph_free((RetexParagraph*)$para_ptr);
+            $para_ptr = NULL;
+        }
+        wpx = (double)(w - ($leftGap + $rightGap));
+        if (wpx < 10.0) wpx = 10.0;
 
-    atoms = markdown_atoms((MarkdownDoc*)$doc, &natoms);
-    fmts = markdown_formats((MarkdownDoc*)$doc, &nfmts);
-    $para_ptr = retex_layout_styled_paras_compact(be, atoms, natoms,
-                                                  px2pt($, wpx),
-                                                  $fontFace, $fontSize,
-                                                  fmts, nfmts, $alignment);
-    if (!$para_ptr) {
-        $dirty = 0;
-        return;
+        atoms = markdown_atoms((MarkdownDoc*)$doc, &natoms);
+        fmts = markdown_formats((MarkdownDoc*)$doc, &nfmts);
+        $para_ptr = retex_layout_styled_paras_compact(be, atoms, natoms,
+                                                      converters_px2pt($, wpx),
+                                                      $fontFace, $fontSize,
+                                                      fmts, nfmts, $alignment);
+        if (!$para_ptr) {
+            $lines_total = 0;
+            $layout_dirty = 0;
+            $dirty = 0;
+            return;
+        }
+        $lines_total = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
+        $layout_w = w;
+        $layout_dirty = 0;
     }
-
-    $lines_total = retex_paragraph_get_line_count((RetexParagraph*)$para_ptr);
     clamp_scroll($);
     first = $scrollLine;
     if (first >= $lines_total)
@@ -894,8 +1029,8 @@
 
     retex_paragraph_render_range((RetexParagraph*)$para_ptr, be,
                                  first, $lines_total - 1,
-                                 px2pt($, (double)$leftGap),
-                                 px2pt($, (double)$topGap),
+                                 converters_px2pt($, (double)$leftGap),
+                                 converters_px2pt($, (double)$topGap),
                                  &colors, 0);
     be->flush(be);
     $dirty = 0;
@@ -906,6 +1041,7 @@
 @incl <X11/Xatom.h>
 @incl <X11/Xmu/Converters.h>
 @incl <math.h>
+@incl <time.h>
 @incl <stdio.h>
 @incl <stdlib.h>
 @incl <string.h>

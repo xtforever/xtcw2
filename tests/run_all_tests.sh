@@ -202,6 +202,9 @@ echo "25b. test_retex_rich_lines (rich TeX layout line metadata + caret)"
 echo "25c. test_retex_styled (styled atom layout: fonts/styles/sizes)"
 "$ROOT/tests/test_retex_styled"
 
+echo "25d. test_distance (pt/mm/in to pixels + theme metric units)"
+"$ROOT/tests/test_distance"
+
 echo "26. test_wbravo (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wbravo"
 

@@ -987,6 +987,13 @@ static int para_segment_blank(const RAtom *atoms, int i, int j) {
     return 1;
 }
 
+/* A paragraph made of a single rule object: render it as a full-measure
+ * horizontal line instead of a zero-width inline placeholder. */
+static int para_is_rule(const RAtom *atoms, int i, int j) {
+    return (j - i == 1 && atoms[i].kind == RATOM_OBJECT &&
+            atoms[i].cp == ROBJ_RULE);
+}
+
 static void para_align_glues(RetexAlign align, Glue zero, Glue fil,
                              Glue *left_skip, Glue *right_skip) {
     switch (align) {
@@ -1170,7 +1177,6 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
 
             {
                 Glue lskip, rskip;
-                int para_nodes = m_create(16, sizeof(Node));
                 LineBreakParams lbp;
                 int lines, lp;
                 Node *lnode;
@@ -1178,52 +1184,80 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
                 para_align_glues((RetexAlign)pf.align, zero, fil,
                                  &lskip, &rskip);
 
-                k = i;
-                while (k < j) {
-                    const RAtom *a = &atoms[k];
-                    if (a->kind == RATOM_CHAR && a->cp == '\r') { k++; continue; }
-                    if (a->kind == RATOM_CHAR &&
-                        (a->cp == ' ' || a->cp == '\t')) {
-                        double sz = atom_size(a, font_size_pt);
-                        const char *fc = (a->look.face > 0) ? m_str(a->look.face)
-                                                            : face;
-                        CharMetricsScaled sm = internal_measure_char(be, ' ',
-                                                FROM_DOUBLE(sz),
-                                                a->look.style, fc);
-                        Glue sg = glue_create(sm.width,
-                                              scaled_div(sm.width, FROM_INT(2)),
-                                              ORDER_NORMAL,
-                                              scaled_div(sm.width, FROM_INT(3)),
-                                              ORDER_NORMAL);
-                        Node *g;
-                        node_create_glue(para_nodes, sg, 0);
-                        g = (Node *)mls(para_nodes, m_len(para_nodes) - 1);
-                        g->source_offset = boff[k];
-                        g->byte_len = boff[k + 1] - boff[k];
-                        k++;
-                        continue;
+                if (para_is_rule(atoms, i, j)) {
+                    Scaled indent = FROM_DOUBLE(para_first ? l1 : l0);
+                    Scaled rule_w = target;
+                    int line_nodes = m_create(4, sizeof(Node));
+                    /* The natural-width measurement uses 10000pt as an
+                     * "infinite" sentinel; a rule is width-flexible and must
+                     * not force the preferred width to that value. */
+                    if (rule_w >= FROM_INT(10000)) {
+                        rule_w = 0;
+                    } else {
+                        rule_w = scaled_sub(rule_w, indent);
+                        rule_w = scaled_sub(rule_w,
+                                            FROM_DOUBLE(right_margin));
+                        if (rule_w < 0)
+                            rule_w = 0;
                     }
-
+                    node_create_glue(line_nodes, lskip, 0);
+                    if (indent > 0)
+                        node_create_kern(line_nodes, indent, 0);
+                    node_create_rule(line_nodes, rule_w, FROM_DOUBLE(0.8),
+                                     0, 0);
+                    node_create_glue(line_nodes, rskip, 0);
                     {
-                        int word_start_k = k;
-
-                        while (k < j) {
-                            const RAtom *c = &atoms[k];
-                            if (c->kind == RATOM_CHAR && c->cp == '\r') {
-                                k++;
-                                continue;
-                            }
-                            if (c->kind == RATOM_CHAR &&
-                                (c->cp == ' ' || c->cp == '\t' ||
-                                 c->cp == '\n'))
-                                break;
-                            k++;
-                        }
-                        append_styled_hyphenated_word(para_nodes, atoms,
-                                                      word_start_k, k, boff,
-                                                      font_size_pt, face,
-                                                      face_handle, be, target);
+                        Node hbox = node_pack_hbox(line_nodes, target);
+                        m_put(all_lines, &hbox);
                     }
+                } else {
+                    int para_nodes = m_create(16, sizeof(Node));
+                    k = i;
+                    while (k < j) {
+                        const RAtom *a = &atoms[k];
+                        if (a->kind == RATOM_CHAR && a->cp == '\r') { k++; continue; }
+                        if (a->kind == RATOM_CHAR &&
+                            (a->cp == ' ' || a->cp == '\t')) {
+                            double sz = atom_size(a, font_size_pt);
+                            const char *fc = (a->look.face > 0) ? m_str(a->look.face)
+                                                                : face;
+                            CharMetricsScaled sm = internal_measure_char(be, ' ',
+                                                    FROM_DOUBLE(sz),
+                                                    a->look.style, fc);
+                            Glue sg = glue_create(sm.width,
+                                                  scaled_div(sm.width, FROM_INT(2)),
+                                                  ORDER_NORMAL,
+                                                  scaled_div(sm.width, FROM_INT(3)),
+                                                  ORDER_NORMAL);
+                            Node *g;
+                            node_create_glue(para_nodes, sg, 0);
+                            g = (Node *)mls(para_nodes, m_len(para_nodes) - 1);
+                            g->source_offset = boff[k];
+                            g->byte_len = boff[k + 1] - boff[k];
+                            k++;
+                            continue;
+                        }
+
+                        {
+                            int word_start_k = k;
+
+                            while (k < j) {
+                                const RAtom *c = &atoms[k];
+                                if (c->kind == RATOM_CHAR && c->cp == '\r') {
+                                    k++;
+                                    continue;
+                                }
+                                if (c->kind == RATOM_CHAR &&
+                                    (c->cp == ' ' || c->cp == '\t' ||
+                                     c->cp == '\n'))
+                                    break;
+                                k++;
+                            }
+                            append_styled_hyphenated_word(para_nodes, atoms,
+                                                          word_start_k, k, boff,
+                                                          font_size_pt, face,
+                                                          face_handle, be, target);
+                        }
                 }
 
                 memset(&lbp, 0, sizeof(lbp));
@@ -1242,6 +1276,7 @@ static RetexParagraph* styled_layout_impl(Backend *be, const RAtom *atoms,
                 }
                 m_free(lines);
                 node_list_free(para_nodes);
+                }
             }
 
             para_first = 0;

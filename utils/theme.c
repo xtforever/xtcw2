@@ -10,6 +10,7 @@
 #include "theme.h"
 #include "mls.h"
 #include "XCC.h"
+#include "converters.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -423,6 +424,26 @@ int theme_metric(const char *name, int def)
     if (theme_int_defined(name) && theme_get_int(name, &v))
         return v;
     return def;
+}
+
+/* Like theme_metric(), but physical values may be written with a unit
+ * ("10.5pt", "3mm", ...).  Plain integers keep their legacy meaning of
+ * pixels; a string value is converted through the XtRDistance logic. */
+int theme_metric_distance(const char *name, const char *def_spec)
+{
+    struct theme_value *v = active_lookup(name);
+    int px = 0;
+
+    if (v) {
+        if (!v->is_color && !v->is_str)
+            return v->ival;
+        if (v->is_str && v->sval &&
+            converters_distance_from_display(dpy, v->sval, &px))
+            return px;
+    }
+    if (def_spec && converters_distance_from_display(dpy, def_spec, &px))
+        return px;
+    return 0;
 }
 
 /* --- widget registration ------------------------------------------------ */

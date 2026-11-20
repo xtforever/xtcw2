@@ -34,10 +34,10 @@
 @var String fontFeatures = ""
 @ font size in points
 @var int fontSize = 13
-@var int topGap = 4
-@var int bottomGap = 4
-@var int leftGap = 4
-@var int rightGap = 4
+@var Distance topGap = <String> "3pt"
+@var Distance bottomGap = <String> "3pt"
+@var Distance leftGap = <String> "3pt"
+@var Distance rightGap = <String> "3pt"
 @var Boolean autoHeight = TRUE
 @ 0=left, 1=center, 2=right, 3=justify
 @var int alignment = 0
@@ -244,19 +244,19 @@
 
     int inner_w_px = (int)$width - ($leftGap + $rightGap);
     if (inner_w_px < 10) inner_w_px = 10;
-    double layout_width_pt = px2pt($, inner_w_px);
+    double layout_width_pt = converters_px2pt($, inner_w_px);
 
     $para_ptr = retex_layout_ex(be, $text, layout_width_pt, $fontFace,
                                 $fontSize, $alignment, $fontFeatures);
     if (!$para_ptr) return;
 
     /* Clear background */
-    be->draw_rect(be, 0, 0, px2pt($, $width), px2pt($, $height), xftcolor_to_argb($, COLOR_BG_NORM));
+    be->draw_rect(be, 0, 0, converters_px2pt($, $width), converters_px2pt($, $height), xftcolor_to_argb($, COLOR_BG_NORM));
 
     double text_h_pt = retex_paragraph_get_height($para_ptr);
     double text_w_pt = retex_paragraph_get_width($para_ptr);
 
-    double inner_h_pt = px2pt($, (double)$height - ($topGap + $bottomGap));
+    double inner_h_pt = converters_px2pt($, (double)$height - ($topGap + $bottomGap));
     if (inner_h_pt < 0) inner_h_pt = 0;
 
     double v_centering_offset_pt = (inner_h_pt - text_h_pt) / 2.0;
@@ -264,15 +264,15 @@
 
     double h_offset_pt = 0;
     if ($alignment == 1) { /* center */
-        h_offset_pt = (px2pt($, inner_w_px) - text_w_pt) / 2.0;
+        h_offset_pt = (converters_px2pt($, inner_w_px) - text_w_pt) / 2.0;
         if (h_offset_pt < 0) h_offset_pt = 0;
     } else if ($alignment == 2) { /* right */
-        h_offset_pt = px2pt($, inner_w_px) - text_w_pt;
+        h_offset_pt = converters_px2pt($, inner_w_px) - text_w_pt;
         if (h_offset_pt < 0) h_offset_pt = 0;
     }
 
-    double x_pt = px2pt($, (double)$leftGap) + h_offset_pt;
-    double y_pt = px2pt($, (double)$topGap) + v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
+    double x_pt = converters_px2pt($, (double)$leftGap) + h_offset_pt;
+    double y_pt = converters_px2pt($, (double)$topGap) + v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
 
     RendererColors colors = {
         .text = xftcolor_to_argb($, COLOR_FG_NORM),
@@ -297,27 +297,6 @@
     return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
-@proc double get_dpi($)
-{
-    Display *dpy = XtDisplay($);
-    char *s = XGetDefault(dpy, "Xft", "dpi");
-    if (s) {
-        double dpi = atof(s);
-        if (dpi < 1.0 || dpi > 1000.0) return 96.0;
-        return dpi;
-    }
-    return 96.0;
-}
-
-@proc double pt2px($, double pt)
-{
-    return pt * get_dpi($) / 72.0;
-}
-
-@proc double px2pt($, double px)
-{
-    return px * 72.0 / get_dpi($);
-}
 
 @proc calculate_size($, int tw, int *w, int *h)
 {
@@ -329,13 +308,13 @@
 
     int adj_tw = (tw > 0) ? (tw - ($leftGap + $rightGap)) : 400;
     if (adj_tw < 10) adj_tw = 10;
-    double target_width_pt = px2pt($, adj_tw);
+    double target_width_pt = converters_px2pt($, adj_tw);
 
     void *para = retex_layout_ex(be, $text, target_width_pt, $fontFace,
                                  $fontSize, $alignment, $fontFeatures);
     if (para) {
-        *w = (int)ceil(pt2px($, retex_paragraph_get_width(para))) + ($leftGap + $rightGap);
-        *h = (int)ceil(pt2px($, retex_paragraph_get_height(para))) + ($topGap + $bottomGap);
+        *w = (int)ceil(converters_pt2px($, retex_paragraph_get_width(para))) + ($leftGap + $rightGap);
+        *h = (int)ceil(converters_pt2px($, retex_paragraph_get_height(para))) + ($topGap + $bottomGap);
         retex_paragraph_free(para);
     } else {
         *w = 10; *h = 10;

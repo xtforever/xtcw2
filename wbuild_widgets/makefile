@@ -31,8 +31,9 @@ WIDGET_H:=${ALL_WIDGETS:%.widget=$(BINC)/%.h}
 
 ALL: all-widgets $(BINC)/register_wb.h
 
-$(BINC)/%.h: %.widget
-	wb_search=./ $(WBWRAP) $^ $(WBUILD) $(WFLAGS)
+# Regenerate when the widget spec or the wbuild generator itself changes.
+$(BINC)/%.h: %.widget $(WBUILD)
+	wb_search=./ $(WBWRAP) $< $(WBUILD) $(WFLAGS)
 
 $(BINC)/register_wb.h: $(WIDGET_H)
 	./register-widgets.sh $(BINC) $(BSRC) $(LUI_REGISTRY)

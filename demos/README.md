@@ -55,6 +55,7 @@ cd commander
 | `demo_bravo.lua` | Wbravo — piece-table plain-text editor rendered with re-tex (undo/redo, clipboard) |
 | `demo_rich_bravo.lua` | Wbravo rich text — styles, paragraph formatting, plain UTF-8 text import/export and full-state snapshots (burger menu; Ctrl+B/I/R) |
 | `demo_markdown.lua` | Wmarkdown — read-only Markdown help viewer (headings, justified paragraphs, lists, quotes, code, bold/italic/links) |
+| `demo_nibelungen.lua` | Wmarkdown — paged Nibelungenlied viewer for `nb.txt` (preserved verse lines, EB Garamond, Previous/Next) |
 | `demo_listview.lua` | WListView — themed multi-column list with header, scrollbars, icons, alternate rows and keyboard navigation |
 | `demo_filechooser.lua` | File chooser — WfileSelector/WfileChooser over WListView, imports a picked text file into Wbravo |
 | `demo_login.lua` | Login dialog — password fields, toggles, feedback |

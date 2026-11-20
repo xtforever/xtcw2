@@ -27,6 +27,8 @@ function M.process_property(clean_k, v, widget_class)
         clean_k = 'alignment'
     elseif clean_k == 'features' then
         clean_k = 'fontFeatures'
+    elseif clean_k == 'preserve-lines' or clean_k == 'preserveLines' then
+        clean_k = 'preserveLineBreaks'
     elseif clean_k == 'smallCaps' or clean_k == 'smallcaps' or clean_k == 'small-caps' then
         clean_k = 'fontFeatures'
         v = v and 'smcp=1' or ''

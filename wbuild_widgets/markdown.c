@@ -82,6 +82,18 @@ static int block_put(Block *b, uint32_t cp, RLook look)
     return 1;
 }
 
+static int block_put_object(Block *b, uint32_t type, RLook look)
+{
+    if (!grow((void **)&b->a, &b->cap, b->n + 1, sizeof(RAtom)))
+        return 0;
+    b->a[b->n].kind = RATOM_OBJECT;
+    b->a[b->n].cp = type;
+    b->a[b->n].look = look;
+    b->a[b->n].payload = 0;
+    b->n++;
+    return 1;
+}
+
 static void block_reset(Block *b)
 {
     b->n = 0;
@@ -477,12 +489,10 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
                     ok = 0;
             }
             if (ok && count >= 3) {
-                int r;
                 doc_close_block(d, &cur, base);
                 cur.fmt = fmt_rule(st);
                 kind = K_RULE;
-                for (r = 0; r < 72; r++)
-                    block_put(&cur, '-', base);
+                block_put_object(&cur, ROBJ_RULE, base);
                 doc_close_block(d, &cur, base);
                 kind = K_NONE;
                 goto next_line;
@@ -505,7 +515,7 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
                 cur.fmt = fmt_quote(st);
                 kind = K_QUOTE;
             } else {
-                block_put(&cur, ' ', base);
+                block_put(&cur, st->preserve_line_breaks ? '\n' : ' ', base);
             }
             inline_put(&cur, cps, p, e, base, mono_face, mono_size,
                        mono_features, 0, 0);
@@ -578,7 +588,8 @@ MarkdownDoc *markdown_parse(const char *utf8, const MarkdownStyle *style)
             while (te > ts && is_space(cps[te - 1]))
                 te--;
             if (kind == K_PARA || kind == K_QUOTE || kind == K_LIST) {
-                block_put(&cur, cur_hard ? '\n' : ' ', base);
+                block_put(&cur, (cur_hard || st->preserve_line_breaks)
+                                    ? '\n' : ' ', base);
             } else {
                 doc_close_block(d, &cur, base);
                 cur.fmt = fmt_default(st);

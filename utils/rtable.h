@@ -41,7 +41,8 @@ enum {
 
 enum {
     ROBJ_SVG = 1,     /* payload = conststr handle of the .svg filename */
-    ROBJ_MATH = 2     /* payload = conststr handle of the math source       */
+    ROBJ_MATH = 2,    /* payload = conststr handle of the math source       */
+    ROBJ_RULE = 3     /* horizontal rule; spans the paragraph measure       */
 };
 
 typedef struct {

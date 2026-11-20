@@ -35,6 +35,7 @@ typedef struct {
     const char *features;        /* body HarfBuzz features (NULL = none) */
     const char *heading_features;/* heading features (NULL = body) */
     const char *code_features;   /* code features (NULL = liga=0,clig=0) */
+    int preserve_line_breaks;    /* treat single newlines as hard breaks */
     int default_align;       /* RetexAlign used for ordinary paragraphs */
 } MarkdownStyle;
 

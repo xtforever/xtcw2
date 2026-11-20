@@ -12,9 +12,9 @@
 @ selected tab index
 @var int selected = 0
 @ height of the tab strip in pixels
-@var Dimension tabHeight = 26
+@var Distance tabHeight = <String> "19.5pt"
 @ extra vertical gap between the tab label and the selected underline
-@var int lineGap = 4
+@var Distance lineGap = <String> "3pt"
 @ thickness of the frame border
 @var Dimension borderThickness = 4
 @ frame background and border colour (sentinel, resolved from the theme)
@@ -52,7 +52,7 @@
 
 @proc class_initialize
 {
-    converters_xft_init();
+    converters_init();
 
     /* Register the constraint resource manually (wbuild's @constraints segfaults) */
     static XtResource resources[] = {
@@ -348,7 +348,7 @@
     XftFont *font = $tabFont_theme ? $tabFont_theme : $tabFont;
     if (!font) return;
     int need = font->ascent + font->descent + $lineGap + 2 /*underline*/ + 4 /*padding*/;
-    if ((int)$tabHeight < need) $tabHeight = (Dimension)need;
+    if ((int)$tabHeight < need) $tabHeight = need;
 }
 
 @proc void content_pref($, int *pw, int *ph)
@@ -387,7 +387,7 @@
      * kept when it is taller (the viewport then scrolls); the width is the
      * clip width, so a taller page does not force a horizontal scrollbar. */
     if ($cur_page) {
-        Dimension bar = 14;
+        int bar = converters_distance_px($, "10.5pt");
         if ($viewport) XtVaGetValues($viewport, XtNbarSize, &bar, NULL);
 
         XtWidgetGeometry intended, preferred;
@@ -535,6 +535,7 @@
 @incl "theme.h"
 @incl "WtabWidget_types.h"
 @incl "converters-xft.h"
+@incl "converters.h"
 @incl "xutil.h"
 @incl "mls.h"
 @incl "xtcw/Wviewport.h"

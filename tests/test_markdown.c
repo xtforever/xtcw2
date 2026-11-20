@@ -125,7 +125,9 @@ int main(void)
         "\n"
         "```\n"
         "int main(void) { return 0; }\n"
-        "```\n");
+        "```\n"
+        "\n"
+        "---\n");
 
     assert(atoms != NULL);
     assert(natoms > 0);
@@ -186,6 +188,21 @@ int main(void)
     /* Paragraph indexing agrees with retex. */
     para_count = retex_paragraphs(atoms, natoms, starts, 32);
     assert(para_count == nfmts);
+
+    /* A horizontal rule is one rule object, not a run of dashes. */
+    {
+        int rules = 0, dashes = 0;
+        for (i = 0; i < natoms; i++) {
+            if (atoms[i].kind == RATOM_OBJECT && atoms[i].cp == ROBJ_RULE)
+                rules++;
+            if (atoms[i].kind == RATOM_CHAR && atoms[i].cp == '-')
+                dashes++;
+        }
+        assert(rules == 1);
+        assert(dashes == 0);
+        assert(fmts[nfmts - 1].space_before > 0.0);
+        assert(fmts[nfmts - 1].space_after > 0.0);
+    }
 
     /* Inline markers must not leak into the visible text. */
     assert(!contains_text("**"));

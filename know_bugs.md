@@ -3086,3 +3086,251 @@ the header, and rebuild the widgets.  The same header-dependency rule in
 
 **Files:** `re-tex/src/retex.h`, `wbuild_widgets/Wlabel.widget`,
 `wbuild_widgets/Wretex.widget`
+
+## Wmarkdown kept the old layout after programmatic text replacement
+
+**Symptom:** the paged `demo_nibelungen.lua` updated its page header but the
+viewer still showed the previous page.  The text resource changed, yet the
+paragraph was not re-laid out.
+
+**Cause:** two independent issues:
+1. `rebuild_doc()` set `$dirty` but not `$layout_dirty`, so the cached
+   `RetexParagraph` was reused with the new document atoms.
+2. `set_values()` compared only the `text` pointer.  A caller such as LUI's
+   `gui.set` can reuse the same address after the old `text_mem` was freed,
+   which made the change invisible.
+
+**Fix:** `rebuild_doc()` sets `$layout_dirty = 1`; `set_values()` compares
+the string contents (`strcmp`) as well as the pointer and copies the new
+string before freeing the old one.  Scrolling now only re-renders the cached
+layout, which also makes large documents responsive.
+
+**Files:** `wbuild_widgets/Wmarkdown.widget`,
+`demos/demo_nibelungen.lua`
+
+## Resizing Wmarkdown re-laid out the whole page on every geometry query
+
+**Symptom:** dragging the window of the paged Nibelungenlied demo made the
+current page appear to be redrawn continuously.  With 1200-line pages each
+redraw took seconds, so resizing felt like a loop.
+
+**Cause:** `query_geometry()` called `calculate_size()`, which lays out the
+entire document, for every geometry proposal.  Immediately afterwards the
+`resize` method laid the same page out again.  A drag generates many geometry
+proposals, so the page was laid out twice per event.
+
+**Fix:** when `autoHeight` is off, accept a proposed width+height directly
+(`XtGeometryYes`) and let `resize()` perform the single real layout.  Only
+initial/preferred-size queries (and `autoHeight` widgets) run
+`calculate_size()`.
+
+**Files:** `wbuild_widgets/Wmarkdown.widget`
+
+## Animated window resize queued one full layout per ConfigureNotify
+
+**Symptom:** while dragging the window, the Nibelungenlied page was laid out
+again and again for every intermediate size, so the viewer appeared to redraw
+the page continuously.
+
+**Cause:** `resize()` freed the backend and called `redraw_markdown()`
+synchronously for every ConfigureNotify.  A 1200-line page takes seconds to
+lay out, so the event queue backed up with resize events.
+
+**Fix:** resize is now debounced with `XtAppAddTimeOut(..., 180ms, ...)`.
+Every new resize restarts the timer; only the final size is laid out.
+`redraw_markdown()` skips work while `resize_pending` is set.  The timer is
+scheduled even before the widget is realized (the callback checks realization
+itself), because the first ConfigureNotify can arrive during realize; guarding
+the timer with `XtIsRealized()` left `resize_pending` stuck forever.
+
+**Files:** `wbuild_widgets/Wmarkdown.widget`, `tests/test_wmarkdown.c`
+
+## Shaping font cache never hit and produced inconsistent advances
+
+**Symptom:** the Nibelungenlied page was letter-spaced/ghosted and took
+seconds to lay out.  Shaping "DAS" at 15pt returned advances 17.91/16.22/10.22
+instead of 10.73/9.73/6.14.  The same word rendered normally in a standalone
+shaper.
+
+**Cause:** `shaping_font_get()` stored fontconfig's **matched** family in
+`ShapingFont.family` (e.g. "EB Garamond 12"), but `font_lookup()` compared it
+with the **requested** family ("EB Garamond").  The cache therefore never hit:
+every word created a new FT_Face/HarfBuzz font.  Depending on the fontconfig
+match, different words got different advances, and layout was extremely slow.
+
+**Fix:** cache by the requested family string.  The matched face is still used
+to load the file, but it is no longer the cache key.  Page text now shapes
+consistently and layout is much faster.
+
+**Files:** `re-tex/src/shaping.c`
+
+## Nibelungenlied demo was slow because of the ASan/-O0 build
+
+**Symptom:** the demo stayed blank for more than five seconds even after the
+font-cache fix.
+
+**Cause:** the default build uses `debug_enable=1` (`-O0`, `-DMLS_DEBUG`,
+`-fsanitize=address`).  ASan plus unoptimised shaping made startup and the
+50-line page layout several times slower.
+
+**Fix / usage:** build the demo release-style:
+
+```bash
+make debug_enable=0 libxtcw commander
+./run_lui.sh demos/demo_nibelungen.lua
+```
+
+The demo also embeds the first page text at widget creation and pre-lays it out
+before the window is realised, so the first page is ready when the window maps.
+The debug/ASan build still works but remains noticeably slower.
+
+**Files:** `demos/demo_nibelungen.lua`, `wbuild_widgets/Wmarkdown.widget`
+
+## Wmarkdown now coalesces expose events instead of caching geometry
+
+**Symptom:** animated window resizes produced a burst of ConfigureNotify and
+Expose events; the old resize debounce still tied rendering to geometry
+requests and could keep delaying the final frame.
+
+**Design:** geometry is no longer cached or reflowed in `query_geometry()`.
+Every proposed size within `minWidth/minHeight .. maxWidth/maxHeight` is
+accepted directly.  `resize()` only marks the layout dirty and records
+activity.  The actual work happens from `expose()`.
+
+**Expose timer:** `expose()` and `resize()` set `last_expose_ms` and
+`render_pending`, then ensure one `XtAppAddTimeOut` timer is running.
+Additional expose events do not restart the timer; the callback checks:
+
+- at least `exposeInterval` ms since the last expose, and
+- at least `exposeInterval` ms since the last render.
+
+If either is too recent it reschedules for the remaining time.  When both are
+satisfied and `render_pending` is set, it clears the flag and redraws once at
+the current size.  `exposeInterval` is a public resource (default 200 ms).
+
+This keeps resizing fluid: dozens of resize/expose events collapse into one
+final render.
+
+**Files:** `wbuild_widgets/Wmarkdown.widget`
+
+## Shaped text gained phantom spaces after drawing at non-72 DPI
+
+**Symptom:** `./run_lui.sh demos/demo_nibelungen.lua` on a 120-dpi display
+showed words split apart at hyphenation fragments (`Nibelungens t rophe`,
+`Durst en`, `eingefl ocht en`); the same page looked correct in a 96-dpi Xvfb.
+A Wlabel header could also look letter-spaced.  The gaps appeared after the
+first render and grew worse after a window resize.
+
+**Cause:** `shaping_font_get()` created the HarfBuzz font with
+`hb_ft_font_create_referenced(ft)` and shared that `FT_Face` with the cairo
+font face (`cairo_ft_font_face_create_for_ft_face(ft, 0)`).  cairo resets the
+FT char size for the target DPI while drawing, so after a 120-dpi draw the FT
+face was 13.33 px/em while HarfBuzz still expected the 8 pt size.  hb-ft reads
+glyph advances through the FT face, so the next layout pass returned advances
+`120/72` times too wide for some glyphs.  Because the cache key matched, the
+same corrupted font object was reused.
+
+**Fix:** build the HarfBuzz font from an `hb_face_t` with the OpenType font
+functions instead of hb-ft:
+
+```c
+hb_face_t *hb_face = hb_ft_face_create_referenced(ft);
+hb = hb_font_create(hb_face);
+hb_face_destroy(hb_face);
+hb_ot_font_set_funcs(hb);
+hb_font_set_scale(hb, size * 64, size * 64);
+```
+
+The OpenType funcs read `hmtx`/`GPOS` directly and no longer depend on the
+FT face's current pixel size, so cairo can freely change it for rendering.
+
+**Files:** `re-tex/src/shaping.c`
+
+## Wmarkdown horizontal rules were a fixed run of dashes
+
+**Symptom:** a Markdown `---` line rendered as 72 literal `-` characters, so
+the "rule" was a dashed line of arbitrary length that did not follow the
+widget width or the text margins.
+
+**Fix:** the Markdown parser now emits a single `RATOM_OBJECT` atom with the
+new object type `ROBJ_RULE` instead of a run of dashes.  The styled retex
+layout recognises a paragraph consisting of that atom and emits one
+`NODE_RULE` spanning the paragraph measure (width minus the paragraph
+indents), with the usual `space_before`/`space_after` from `fmt_rule()`.
+`ROBJ_RULE` is declared in `utils/rtable.h`.
+
+**Files:** `utils/rtable.h`, `wbuild_widgets/markdown.c`, `re-tex/src/retex.c`
+
+## Pixel magic numbers were not DPI-aware
+
+**Symptom:** scrollbar thickness, tab heights and text gaps were fixed pixel
+values (e.g. `barSize = 14`, `tabHeight = 26`, Wmarkdown `leftGap = 8`).  On a
+120/144-dpi display they became physically thinner while the text kept its
+point size, so scrollbars and padding looked cramped.
+
+**Fix:** the physical widget/theme metrics now use the existing `Distance`
+converter (`utils/converters.c`) with string defaults such as `"10.5pt"` or
+`"3mm"`.  `Distance` is an `int`, so programmatic integer values keep working;
+the string default is converted at widget creation through `converters_init()`.
+
+Changed resources:
+
+- `Wviewport.barSize`, `WListView.barSize`: `"10.5pt"` (14 px at 96 dpi)
+- `WtabWidget.tabHeight`/`lineGap`: `"19.5pt"`/`"3pt"`
+- `Wmarkdown` gaps: `"4.5pt"`/`"6pt"`
+- `Wlabel` gaps: `"2.25pt"`/`"0pt"`
+- `Wbravo`/`Wretex` gaps: `"3pt"`
+
+Theme metrics now support units too: `theme_metric_distance()` accepts
+`"10.5pt"`/`"3mm"`/... and `themes.hdf` uses those for `bar_size`,
+`list_row_height`, `list_header_height`, `table_row_height`,
+`table_header_height`, `list_cell_pad_x/y` and `icon_size`.  Plain integer
+theme values still mean pixels.
+
+The `XtRDistance` converter itself was hardened:
+
+- decimal values (`10.5pt`) are accepted (previously `strtol` stopped at `.`)
+- `in` is supported in addition to `pt`/`mm`/`cm`/`px`
+- results are rounded instead of truncated (19.5 pt at 120 dpi is 33 px, not 32)
+- the destination-size check no longer writes `sizeof(int)` into a shorter
+  field; use `Distance` (int), never `Dimension`, for converted resources
+
+The duplicated `get_dpi()/pt2px()/px2pt()` helpers in `Wlabel`, `Wretex`,
+`Wmarkdown` and `Wbravo` were replaced by `converters_dpi()`,
+`converters_pt2px()` and `converters_px2pt()`.
+
+Remaining follow-up: theme metrics that are not in the list above (e.g.
+`control_height`, `control_padding`, `tree_indent`) are still plain pixel
+integers and should be migrated the same way.
+
+**Files:** `utils/converters.c`, `utils/converters.h`, `utils/theme.c`,
+`utils/theme.h`, `themes.hdf`, `cookbook/themes/cookbook.hdf`, the widget files
+above, `tests/test_distance.c`
+
+## `Distance` is part of the generated public headers
+
+Private headers such as `WlabelP.h` use the `Distance` typedef for resource
+fields.  Previously every consumer (subclasses and tests) had to include
+`converters.h` before the private header, which was easy to forget and broke
+external code that only included `WlabelP.h`.
+
+`wbuild` now emits a guarded typedef in every generated public header:
+
+```c
+#ifndef XTCW_DISTANCE_DEFINED
+#define XTCW_DISTANCE_DEFINED
+typedef int Distance;
+#endif
+```
+
+`utils/converters.h` uses the same guard.  Wheel-based widgets get the typedef
+through `Wheel.h`; non-Wheel widgets that also declare `Distance` resources
+(`Wviewport`, `WListView`, `WtabWidget`, `VBox`, `HBox`, `Gauge`,
+`ScrolledCanvas`, `IconSVG`, ...) get it from their own public header.  The
+per-widget `@incl "converters.h"` workarounds and the test include patches were
+removed again.
+
+The widget makefile now also depends on the `wbuild` binary, so changing the
+generator regenerates the headers instead of leaving stale ones behind.
+
+**Files:** `wbuild/generateh.c`, `utils/converters.h`, `wbuild_widgets/makefile`

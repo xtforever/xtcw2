@@ -55,9 +55,9 @@ local ui = [[
            :gridx 0 :gridy 0 :weightx 1 :weighty 0 :fill 3)
     (Wmarkdown :id "help"
                :gridx 0 :gridy 1 :weightx 1 :weighty 1 :fill 3
-               :fontSize 15
+               :fontSize 8
                :useThemeFont 0
-               :fontFace "TeX Gyre Pagella"
+               :fontFace "Noto Serif"
                :alignment 3
                :text "Loading help...")))
 ]]

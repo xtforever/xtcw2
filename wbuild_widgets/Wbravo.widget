@@ -36,10 +36,10 @@
 @var int fontSize = 13
 @ 0=left, 1=center, 2=right, 3=justify
 @var int alignment = 0
-@var int topGap = 4
-@var int bottomGap = 4
-@var int leftGap = 4
-@var int rightGap = 4
+@var Distance topGap = <String> "3pt"
+@var Distance bottomGap = <String> "3pt"
+@var Distance leftGap = <String> "3pt"
+@var Distance rightGap = <String> "3pt"
 
 @PRIVATE
 @def COL_BG = 0
@@ -306,20 +306,6 @@
     return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
-@proc double get_dpi($)
-{
-    Display *dpy = XtDisplay($);
-    char *s = XGetDefault(dpy, "Xft", "dpi");
-    if (s) {
-        double dpi = atof(s);
-        if (dpi < 1.0 || dpi > 1000.0) return 96.0;
-        return dpi;
-    }
-    return 96.0;
-}
-
-@proc double pt2px($, double pt) { return pt * get_dpi($) / 72.0; }
-@proc double px2pt($, double px) { return px * 72.0 / get_dpi($); }
 
 @proc int make_utf8($)
 {
@@ -798,7 +784,7 @@
     if (!$para_fmt || $para_n < 1) para_init($);
     atoms = rtable_to_array((RTable*)$ptable, &natoms);
     $para_ptr = retex_layout_styled_paras((Backend*)$backend_ptr, atoms, natoms,
-                                          px2pt($, wpx), $fontFace, $fontSize,
+                                          converters_px2pt($, wpx), $fontFace, $fontSize,
                                           $para_fmt, $para_n,
                                           (RetexAlign)$alignment);
     free(atoms);
@@ -841,9 +827,9 @@
         y0 = l0.y;
 
     be->draw_rect(be,
-                  px2pt($, (double)$leftGap) + cx,
-                  px2pt($, (double)$topGap) + (cy - y0),
-                  px2pt($, 2.0), ch,
+                  converters_px2pt($, (double)$leftGap) + cx,
+                  converters_px2pt($, (double)$topGap) + (cy - y0),
+                  converters_px2pt($, 2.0), ch,
                   xftcolor_to_argb($, COL_FG));
 }
 
@@ -875,7 +861,7 @@
     relayout($);
     be = (Backend*)$backend_ptr;
 
-    be->draw_rect(be, 0, 0, px2pt($, (double)w), px2pt($, (double)h),
+    be->draw_rect(be, 0, 0, converters_px2pt($, (double)w), converters_px2pt($, (double)h),
                   xftcolor_to_argb($, COL_BG));
 
     colors.text = xftcolor_to_argb($, COL_FG);
@@ -895,8 +881,8 @@
     if (nl > 0)
         retex_paragraph_render_range((RetexParagraph*)$para_ptr, be,
                                      first, nl - 1,
-                                     px2pt($, (double)$leftGap),
-                                     px2pt($, (double)$topGap),
+                                     converters_px2pt($, (double)$leftGap),
+                                     converters_px2pt($, (double)$topGap),
                                      &colors, 0);
 
     draw_caret_in_cache($, be);
@@ -923,7 +909,7 @@
     double line_px;
 
     if (retex_paragraph_get_line((RetexParagraph*)$para_ptr, 0, &l))
-        line_px = pt2px($, l.height);
+        line_px = converters_pt2px($, l.height);
     else
         line_px = 1.0;
     visible = (int)(((double)$height - $topGap - $bottomGap) / (line_px > 1.0 ? line_px : 1.0));
@@ -1961,8 +1947,8 @@ fail:
     sync_layout($);
     int mx = event->xbutton.x - $leftGap;
     int my = event->xbutton.y - $topGap;
-    double xpt = px2pt($, (double)mx);
-    double ypt = px2pt($, (double)my) + scroll_offset_pt($);
+    double xpt = converters_px2pt($, (double)mx);
+    double ypt = converters_px2pt($, (double)my) + scroll_offset_pt($);
     int byte;
 
     if (!$para_ptr) return;
@@ -1977,8 +1963,8 @@ fail:
     sync_layout($);
     int mx = event->xbutton.x - $leftGap;
     int my = event->xbutton.y - $topGap;
-    double xpt = px2pt($, (double)mx);
-    double ypt = px2pt($, (double)my) + scroll_offset_pt($);
+    double xpt = converters_px2pt($, (double)mx);
+    double ypt = converters_px2pt($, (double)my) + scroll_offset_pt($);
     int byte;
 
     if (!$para_ptr) return;

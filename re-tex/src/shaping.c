@@ -17,6 +17,7 @@
 
 #include <hb.h>
 #include <hb-ft.h>
+#include <hb-ot.h>
 
 #include <cairo.h>
 #include <cairo-ft.h>
@@ -253,12 +254,24 @@ ShapingFont *shaping_font_get(const char *family, int style, double size)
         goto fail;
     FT_Set_Char_Size(ft, 0, (FT_F26Dot6)(size * 64.0), 0, 0);
 
-    hb = hb_ft_font_create_referenced(ft);
-    if (!hb)
-        goto fail;
-    hb_font_set_scale(hb, (int)(size * 64.0), (int)(size * 64.0));
-    /* Prefer real OpenType kerning/ligatures when the font has them. */
-    hb_font_set_ppem(hb, 0, 0);
+    /* Use the OpenType tables directly instead of hb-ft's font funcs.
+     * The FT_Face is shared with the cairo font face, and cairo resets the
+     * FT char size for the target DPI while drawing.  hb-ft reads advances
+     * through the FT face, so after a draw at e.g. 120 dpi the next shaping
+     * pass returned advances 120/72 times too wide and words broke apart. */
+    {
+        hb_face_t *hb_face = hb_ft_face_create_referenced(ft);
+        if (!hb_face)
+            goto fail;
+        hb = hb_font_create(hb_face);
+        hb_face_destroy(hb_face);
+        if (!hb)
+            goto fail;
+        hb_ot_font_set_funcs(hb);
+        hb_font_set_scale(hb, (int)(size * 64.0), (int)(size * 64.0));
+        /* Prefer real OpenType kerning/ligatures when the font has them. */
+        hb_font_set_ppem(hb, 0, 0);
+    }
 
     cairo_face = cairo_ft_font_face_create_for_ft_face(ft, 0);
     if (!cairo_face || cairo_font_face_status(cairo_face) != CAIRO_STATUS_SUCCESS)
@@ -272,7 +285,10 @@ ShapingFont *shaping_font_get(const char *family, int style, double size)
     f->cairo_face = cairo_face;
     f->size = size;
     f->style = style;
-    f->family = strdup(matched ? matched : family);
+    /* Cache key must be the requested family; fontconfig's matched family
+     * ("DejaVu Sans" for "Sans", "EB Garamond 12" for "EB Garamond") would
+     * never match the lookup key and would create a new FT face per word. */
+    f->family = strdup(family);
     f->path = path;
     f->index = index;
     f->next = font_cache;

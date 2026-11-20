@@ -24,8 +24,8 @@
 @var Boolean useBottom = True
 @ always show the bars, even when the content fits
 @var Boolean forceBars = False
-@ scrollbar thickness in pixels
-@var Dimension barSize = 14
+@ scrollbar thickness (Distance: "10.5pt", "3mm", ...)
+@var Distance barSize = <String> "10.5pt"
 
 @PRIVATE
 @var Widget clip
@@ -41,6 +41,11 @@
 @var int pref_h
 
 @METHODS
+
+@proc class_initialize
+{
+    converters_init();
+}
 
 @proc initialize
 {
@@ -382,5 +387,6 @@
 @incl "mls.h"
 @incl "xutil.h"
 @incl "theme.h"
+@incl "converters.h"
 @incl "xtcw/VSlider.h"
 @incl "xtcw/HSlider.h"

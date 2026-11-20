@@ -27,7 +27,7 @@
 
    Number: see strtol() function
 
-   Unit:  "pt", "mm", "cm", "px"
+   Unit:  "pt", "mm", "cm", "in", "px"
 
    Valid Numbers:
    -30
@@ -62,6 +62,148 @@
      XGetGeometry( dpy,DefaultRootWindow(dpy), ... )
 */
 
+/* Round a double to the nearest int (half away from zero). */
+static int dist_round(double v)
+{
+    return (int)(v >= 0.0 ? v + 0.5 : v - 0.5);
+}
+
+double converters_dpi_from_display(Display *dpy)
+{
+    char *s;
+    long dpi;
+
+    if (!dpy)
+        return 96.0;
+    s = XGetDefault(dpy, "Xft", "dpi");
+    if (!s)
+        return 96.0;
+    dpi = strtol(s, NULL, 0);
+    if (dpi < 1 || dpi > 100000)
+        return 96.0;
+    return (double)dpi;
+}
+
+double converters_dpi(Widget w)
+{
+    return converters_dpi_from_display(w ? XtDisplay(w) : NULL);
+}
+
+double converters_pt2px(Widget w, double pt)
+{
+    return pt * converters_dpi(w) / 72.0;
+}
+
+double converters_px2pt(Widget w, double px)
+{
+    return px * 72.0 / converters_dpi(w);
+}
+
+/* Parse a "Distance" specification ("10.5pt", "3mm", "1in", "20px" or a
+ * bare pixel count) into whole pixels.  Returns 1 on success. */
+int converters_distance_from_display(Display *dpy, const char *str, int *out)
+{
+    double num, px, dpi;
+    char *endptr;
+    int type = 0;
+    int cnt;
+    int len;
+    unsigned width = 1024;
+
+    if (!str || !out)
+        return 0;
+    len = (int)strlen(str);
+    if (len <= 0)
+        return 0;
+
+    if (len > 2) {
+        if (toupper((unsigned char)str[len - 2]) == 'P' &&
+            toupper((unsigned char)str[len - 1]) == 'T')
+            type = 1;
+        else if (toupper((unsigned char)str[len - 2]) == 'C' &&
+                 toupper((unsigned char)str[len - 1]) == 'M')
+            type = 2;
+        else if (toupper((unsigned char)str[len - 2]) == 'M' &&
+                 toupper((unsigned char)str[len - 1]) == 'M')
+            type = 3;
+        else if (toupper((unsigned char)str[len - 2]) == 'P' &&
+                 toupper((unsigned char)str[len - 1]) == 'X')
+            type = 4;
+        else if (toupper((unsigned char)str[len - 2]) == 'I' &&
+                 toupper((unsigned char)str[len - 1]) == 'N')
+            type = 5;
+    }
+
+    /* Integer-looking values keep strtol's base-0 syntax (0x.., 0..);
+       decimal values are accepted for physical units (e.g. 10.5pt). */
+    if (strchr(str, '.'))
+        num = strtod(str, &endptr);
+    else
+        num = (double)strtol(str, &endptr, 0);
+    cnt = (int)(endptr - str);
+
+    switch (type) {
+    case 0:
+        if (*endptr != 0 && *endptr != ' ')
+            return 0;
+        break;
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+        if (cnt != len - 2)
+            return 0;
+        break;
+    default:
+        return 0;
+    }
+
+    dpi = converters_dpi_from_display(dpy);
+    switch (type) {
+    case 0:
+        px = num;
+        break;
+    case 1:
+        px = num * dpi / 72.0;
+        break;
+    case 2:
+        px = num * dpi * 100.0 / 254.0;
+        break;
+    case 3:
+        px = num * dpi * 10.0 / 254.0;
+        break;
+    case 4:
+        if (dpy) {
+            Window root;
+            int x, y;
+            unsigned height, borderw, depth;
+            XGetGeometry(dpy, DefaultRootWindow(dpy), &root,
+                         &x, &y, &width, &height, &borderw, &depth);
+            if (width == 0)
+                width = 1024;
+        }
+        px = num * width / 10000.0;
+        break;
+    case 5:
+        px = num * dpi;
+        break;
+    default:
+        return 0;
+    }
+
+    *out = dist_round(px);
+    return 1;
+}
+
+int converters_distance_px(Widget w, const char *spec)
+{
+    int v = 0;
+    if (!converters_distance_from_display(w ? XtDisplay(w) : NULL, spec, &v))
+        return 0;
+    return v;
+}
+
 /* ARGSUSED */
 static  Boolean
 _CvtStringToDistance(dpy, args, num_args, fromVal, toVal, data)
@@ -72,100 +214,24 @@ _CvtStringToDistance(dpy, args, num_args, fromVal, toVal, data)
     XrmValuePtr toVal;
     XtPointer   *data ;
 {
-    String      str = (String)fromVal->addr ;
-    static int  cvtval;
-    static int  dpi = 0;
-    static unsigned width = 0;
-    int cnt;
-    char *endptr;
-    int type = 0;
-    int len = strlen(str);
+    int px;
 
-    /*
-      Get Default Settings for DPI
-     */
-    if( dpi <= 0 ) {
-	char *s=XGetDefault( dpy, "Xft", "dpi" );
-	if( !s ) dpi = 96;
-	else {
-	    dpi = strtol(s,0,0);
-	    if( dpi < 1 || dpi > 100000 ) dpi = 96;
-	}
-
-	Window root;
-	int x,y; unsigned height,borderw,depth;
-	XGetGeometry( dpy,
-		      DefaultRootWindow(dpy),
-		      &root,
-		      &x,&y,&width,&height,&borderw,&depth );
-	if( width == 0 ) width = 1024;
+    if (!converters_distance_from_display(dpy, (String)fromVal->addr, &px)) {
+        XtStringConversionWarning(fromVal->addr, XtRDistance);
+        return False;
     }
 
-
-    if( len <= 0 ) {
-    error:
-	XtStringConversionWarning(fromVal->addr, XtRDistance);
-	return False ;
+    if (toVal->addr) {
+        if (toVal->size < sizeof(int))
+            return False;
+        *((int *)toVal->addr) = px;
+    } else {
+        static int static_val;
+        static_val = px;
+        toVal->addr = (XPointer)&static_val;
     }
-
-    // printf( "DistanceConvert: FROM: %s\n", str );
-
-    /* decide which unit to convert from */
-    if( len > 2 ) {
-	if( toupper(str[len-2]) == 'P' && toupper(str[len-1]) == 'T' ) type = 1;
-	else
-	if( toupper(str[len-2]) == 'C' && toupper(str[len-1]) == 'M' ) type = 2;
-	else
-    	if( toupper(str[len-2]) == 'M' && toupper(str[len-1]) == 'M' ) type = 3;
-    	else
-	if( toupper(str[len-2]) == 'P' && toupper(str[len-1]) == 'X' ) type = 4;
-    }
-
-    cvtval = strtol(str,&endptr,0);
-    cnt = endptr - str;
-
-    switch( type ) {
-    case 0:
-	if( *endptr != 0 && *endptr != 32 ) goto error;
-	break;
-    case 1:
-	if( cnt != len-2 ) goto error;
-	cvtval *= dpi;
-	cvtval /= 72;
-	break;
-    case 2:
-	if( cnt != len-2 ) goto error;
-	cvtval *= dpi * 100;
-	cvtval/= 254;
-	break;
-    case 3:
-	if( cnt != len-2 ) goto error;
-	cvtval *= dpi * 10;
-	cvtval /= 254;
-	break;
-    case 4:
-	if( cnt != len-2 ) goto error;
-	cvtval *= width;
-	cvtval /= 10000;
-	break;
-
-    default:
-	goto error;
-    }
-
-
-   toVal->size = sizeof(int) ;
-   if( toVal->addr )
-       {
-	   if( toVal->size < sizeof(int) )
-	       return False ;
-	   else
-	       *((int *)toVal->addr) = cvtval;
-       }
-   else
-       toVal->addr = (XPointer) &cvtval;
-
-   return True ;
+    toVal->size = sizeof(int);
+    return True;
 }
 
 #define done(type, value)			\

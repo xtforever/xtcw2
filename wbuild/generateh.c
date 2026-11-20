@@ -312,6 +312,13 @@ void public_header(FILE *f, Class c, char *prefix, char *guard)
 	fprintf(f, "#ifndef %s\n", guard);
 	fprintf(f, "#define %s\n", guard);
 	public_include(f, c, prefix, "");
+	/* Distance is a typedef rather than an X11 type.  Every public header
+	 * defines it so private headers (and their consumers) do not need to
+	 * include converters.h just to see the resource field type. */
+	fputs("#ifndef XTCW_DISTANCE_DEFINED\n"
+	      "#define XTCW_DISTANCE_DEFINED\n"
+	      "typedef int Distance;\n"
+	      "#endif\n", f);
 	fputs("_XFUNCPROTOBEGIN\n", f);
 	declare_exports(f, c);
 	define_resource_symbols(f, c);

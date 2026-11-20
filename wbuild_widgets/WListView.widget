@@ -57,7 +57,7 @@
 @var int fontSize = 13
 @var Boolean allowHoriz = True
 @var Boolean allowVert = True
-@var Dimension barSize = 14
+@var Distance barSize = <String> "10.5pt"
 @ optional hover tooltip text
 @var String tooltip = <String> ""
 @ enable dragging column separators in the header
@@ -713,10 +713,10 @@
   /* Style guide: UI font + list metrics from the theme.  Use constant
    * defaults (matching the resource defaults) so a partial theme resets to
    * the documented metric instead of keeping the previous theme's value. */
-  $barSize = (Dimension)theme_metric("bar_size", 14);
-  $cellPaddingX = theme_metric("list_cell_pad_x", 6);
-  $cellPaddingY = theme_metric("list_cell_pad_y", 4);
-  $iconSize = theme_metric("icon_size", 16);
+  $barSize = theme_metric_distance("bar_size", "10.5pt");
+  $cellPaddingX = theme_metric_distance("list_cell_pad_x", "6pt");
+  $cellPaddingY = theme_metric_distance("list_cell_pad_y", "3pt");
+  $iconSize = theme_metric_distance("icon_size", "12pt");
   {
     char face[128];
     int px = 0;
@@ -751,14 +751,14 @@
    * font or a higher-DPI theme still gets enough room.  An explicit
    * rowHeight/headerHeight resource always wins. */
   int derived_h = (f ? f->height : 16) + 2 * $cellPaddingY;
-  int min_row_h = theme_metric("table_row_height", -1);
-  if (min_row_h < 0) min_row_h = theme_metric("list_row_height", -1);
+  int min_row_h = theme_metric_distance("table_row_height", "-1");
+  if (min_row_h < 0) min_row_h = theme_metric_distance("list_row_height", "-1");
   int row_h = ($rowHeight > 0) ? $rowHeight : derived_h;
   if ($rowHeight <= 0 && min_row_h > row_h) row_h = min_row_h;
   $row_h = row_h;
   if ($row_h < 4) $row_h = 4;
-  int min_header_h = theme_metric("table_header_height", -1);
-  if (min_header_h < 0) min_header_h = theme_metric("list_header_height", -1);
+  int min_header_h = theme_metric_distance("table_header_height", "-1");
+  if (min_header_h < 0) min_header_h = theme_metric_distance("list_header_height", "-1");
   int header_h = ($headerHeight > 0) ? $headerHeight : derived_h;
   if ($headerHeight <= 0 && min_header_h > header_h) header_h = min_header_h;
   $header_h = $showHeader ? header_h : 0;

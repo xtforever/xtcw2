@@ -86,6 +86,9 @@ int theme_font_parts(const char *spec, char *face, int face_size, int *px);
 
 /* Integer theme value, or |def| when the name is undefined. */
 int theme_metric(const char *name, int def);
+/* Physical metric; accepts "10.5pt"/"3mm"/... theme strings and returns
+ * pixels.  Plain integer theme values are treated as pixels. */
+int theme_metric_distance(const char *name, const char *def_spec);
 
 /* --- widget registration ------------------------------------------------ */
 

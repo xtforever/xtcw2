@@ -73,10 +73,10 @@
 @ default size
 @var int fontSize = 13
 @ default vertical padding around the re-tex line box (labels and buttons)
-@var int topGap = 3
-@var int bottomGap = 3
-@var int leftGap = 0
-@var int rightGap = 0
+@var Distance topGap = <String> "2.25pt"
+@var Distance bottomGap = <String> "2.25pt"
+@var Distance leftGap = <String> "0pt"
+@var Distance rightGap = <String> "0pt"
 @var Boolean autoHeight = FALSE
 @var Boolean autoWidth = FALSE
 @var int cornerRoundPercent = 0
@@ -346,8 +346,8 @@
 {
     int x = event->xbutton.x;
     int y = event->xbutton.y;
-    double x_pt = px2pt($, x) - $layout_x_offset_pt;
-    double y_pt = px2pt($, y) - $layout_y_offset_pt;
+    double x_pt = converters_px2pt($, x) - $layout_x_offset_pt;
+    double y_pt = converters_px2pt($, y) - $layout_y_offset_pt;
     
     TRACE(2, "clicked: x=%d, y=%d, x_pt=%.2f, y_pt=%.2f, layout_x_off=%.2f, layout_y_off=%.2f", 
           x, y, x_pt, y_pt, $layout_x_offset_pt, $layout_y_offset_pt);
@@ -370,8 +370,8 @@
 {
     int x = event->xmotion.x;
     int y = event->xmotion.y;
-    double x_pt = px2pt($, x) - $layout_x_offset_pt;
-    double y_pt = px2pt($, y) - $layout_y_offset_pt;
+    double x_pt = converters_px2pt($, x) - $layout_x_offset_pt;
+    double y_pt = converters_px2pt($, y) - $layout_y_offset_pt;
     
     TRACE(2, "drag: x=%d, y=%d", x, y);
 
@@ -430,7 +430,7 @@
 
     int inner_w_px = cw - ($leftGap + $rightGap);
     if (inner_w_px < 10) inner_w_px = 10;
-    double layout_width_pt = px2pt($, inner_w_px);
+    double layout_width_pt = converters_px2pt($, inner_w_px);
 
     /* Clear background using backend's actual DPI for guaranteed full-pixmap coverage.
      * Reset clip and flush immediately so the pixmap is always filled even if layout fails. */
@@ -444,7 +444,7 @@
     }
     be->flush(be);
 
-    double retex_layout_pt = px2pt($, inner_w_px);
+    double retex_layout_pt = converters_px2pt($, inner_w_px);
 
     /* retex handles per-line alignment (CENTER, RIGHT, LEFT, JUSTIFY)
      * internally via left/right fil glues.  No horizontal offset needed:
@@ -463,7 +463,7 @@
     /* Centre in the full widget height.  topGap/bottomGap are part of the
      * natural size; subtracting them here top-aligned text in explicit-height
      * buttons and made the glyph bottoms look cut off. */
-    double inner_h_pt = px2pt($, (double)ch);
+    double inner_h_pt = converters_px2pt($, (double)ch);
     if (inner_h_pt < 0) inner_h_pt = 0;
 
     double v_centering_offset_pt = (inner_h_pt - text_h_pt) / 2.0;
@@ -472,7 +472,7 @@
     /* re-tex renderer expects y to be the baseline of the first line (in points).
      * Horizontal positioning: paragraph starts at leftGap, fills to width-rightGap.
      * Vertical positioning: paragraph is vertically centered via v_centering_offset. */
-    double x_pt = px2pt($, (double)$leftGap);
+    double x_pt = converters_px2pt($, (double)$leftGap);
     double y_pt = v_centering_offset_pt + retex_paragraph_get_first_line_height($para_ptr);
 
     $layout_x_offset_pt = x_pt;
@@ -542,27 +542,6 @@
     return (a << 24) | (r << 16) | (g << 8) | b;
 }
 
-@proc double get_dpi($)
-{
-    Display *dpy = XtDisplay($);
-    char *s = XGetDefault(dpy, "Xft", "dpi");
-    if (s) {
-        double dpi = atof(s);
-        if (dpi < 1.0 || dpi > 1000.0) return 96.0;
-        return dpi;
-    }
-    return 96.0;
-}
-
-@proc double pt2px($, double pt)
-{
-    return pt * get_dpi($) / 72.0;
-}
-
-@proc double px2pt($, double px)
-{
-    return px * 72.0 / get_dpi($);
-}
 
 @proc calculate_size($, int tw, int *w, int *h)
 {
@@ -580,7 +559,7 @@
     if (tw > 0) {
         int adj_tw = (int)(tw - ($leftGap + $rightGap));
         if (adj_tw < 10) adj_tw = 10;
-        target_width_pt = px2pt($, adj_tw);
+        target_width_pt = converters_px2pt($, adj_tw);
     } else {
         target_width_pt = 10000.0;
     }
@@ -593,8 +572,8 @@
                                  $fontSize, RETEX_ALIGN_JUSTIFY,
                                  $fontFeatures);
     if (para) {
-        *w = (int)ceil(pt2px($, retex_paragraph_get_width(para))) + ($leftGap + $rightGap);
-        *h = (int)ceil(pt2px($, retex_paragraph_get_height(para))) + ($topGap + $bottomGap);
+        *w = (int)ceil(converters_pt2px($, retex_paragraph_get_width(para))) + ($leftGap + $rightGap);
+        *h = (int)ceil(converters_pt2px($, retex_paragraph_get_height(para))) + ($topGap + $bottomGap);
         retex_paragraph_free(para);
     } else {
         *w = 10; *h = 10;

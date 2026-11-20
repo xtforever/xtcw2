@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <unistd.h>
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
 #include <X11/IntrinsicP.h>
@@ -21,6 +22,14 @@ static void pump(void)
     XSync(XtDisplay(md), False);
     while (XtAppPending(app))
         XtAppProcessEvent(app, XtIMAll);
+}
+
+/* Wmarkdown coalesces resize events with a short Xt timer.  Give it time to
+ * fire before checking the resulting layout. */
+static void settle(void)
+{
+    usleep(250000);
+    pump();
 }
 
 static void act(const char *name, String *params, Cardinal n)
@@ -74,7 +83,7 @@ int main(int argc, char **argv)
                                  XtNfontSize, 13,
                                  NULL);
     XtRealizeWidget(toplevel);
-    pump();
+    settle();
 
     m = (WmarkdownWidget)md;
     assert(m->wmarkdown.doc != NULL);
@@ -152,7 +161,7 @@ int main(int argc, char **argv)
 
     /* Resizing rebuilds the pixmap cache and relayouts. */
     XtResizeWidget(md, 300, 180, 0);
-    pump();
+    settle();
     assert(m->wmarkdown.cache_w == 300);
     assert(m->wmarkdown.cache_h == 180);
     assert(m->wmarkdown.lines_total > 0);
