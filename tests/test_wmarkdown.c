@@ -14,6 +14,8 @@
 
 #include "Wmarkdown.h"
 #include "WmarkdownP.h"
+#include "converters.h"
+#include "retex.h"
 
 static Widget md;
 static XtAppContext app;
@@ -208,6 +210,31 @@ int main(int argc, char **argv)
         assert(m->wmarkdown.sel_caret > m->wmarkdown.sel_anchor);
         act("copy_selection", NULL, 0);
         assert(m->wmarkdown.sel_len > 0);
+        act("clear_selection", NULL, 0);
+    }
+
+    /* Hit-test y must match the rendered line position.  The renderer
+     * subtracts lines[0].y, so clicking the second visual line must select
+     * the second line, not the first one. */
+    {
+        RetexLine l0, l1;
+        XEvent ev;
+        int y;
+        assert(retex_paragraph_get_line((RetexParagraph*)m->wmarkdown.para_ptr,
+                                        0, &l0));
+        assert(retex_paragraph_get_line((RetexParagraph*)m->wmarkdown.para_ptr,
+                                        1, &l1));
+        assert(l1.start_byte >= 0 && l1.end_byte > l1.start_byte);
+        y = m->wmarkdown.topGap +
+            (int)converters_pt2px(md, l1.y - l0.y) + 2;
+        memset(&ev, 0, sizeof(ev));
+        ev.type = ButtonPress;
+        ev.xbutton.x = m->wmarkdown.leftGap + 2;
+        ev.xbutton.y = y;
+        XtCallActionProc(md, (String)"select_start", &ev, NULL, 0);
+        pump();
+        assert(m->wmarkdown.sel_anchor >= l1.start_byte);
+        assert(m->wmarkdown.sel_anchor <= l1.end_byte);
         act("clear_selection", NULL, 0);
     }
 

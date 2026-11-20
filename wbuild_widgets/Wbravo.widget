@@ -741,7 +741,9 @@
 @proc double scroll_offset_pt($)
 {
     RetexLine l;
-    if ($para_ptr && $scroll_line > 0 &&
+    /* The renderer subtracts lines[first_line].y, so the hit-test must use
+     * the same unnormalised coordinate system even for line 0. */
+    if ($para_ptr &&
         retex_paragraph_get_line((RetexParagraph*)$para_ptr, $scroll_line, &l))
         return l.y;
     return 0.0;

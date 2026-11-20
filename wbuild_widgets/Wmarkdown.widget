@@ -690,7 +690,10 @@
 @proc double scroll_offset_pt($)
 {
     RetexLine l;
-    if ($para_ptr && $scrollLine > 0 &&
+    /* Return the first visible line's y even for line 0: the renderer
+     * subtracts lines[first_line].y from every line, so the hit-test must
+     * use the same unnormalised coordinate system. */
+    if ($para_ptr &&
         retex_paragraph_get_line((RetexParagraph*)$para_ptr, $scrollLine, &l))
         return l.y;
     return 0.0;

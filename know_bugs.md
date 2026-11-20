@@ -3413,3 +3413,24 @@ processed.
 checks both the UTF-8 text and the advertised TARGETS list.
 
 **Files:** `wbuild_widgets/Wmarkdown.widget`, `tests/test_wmarkdown.c`
+
+## Selection highlight one line above the mouse pointer
+
+**Symptom:** clicking/dragging in Wmarkdown highlighted the line above the
+pointer, e.g. selecting the paragraph under the "Wmarkdown" heading highlighted
+the heading itself.
+
+**Cause:** `retex_paragraph_render_range()` normalises every line by
+`lines[first_line].y`, but `scroll_offset_pt()` returned 0 when
+`scroll_line == 0`.  The hit-test therefore compared the mouse y against the
+unnormalised line metadata, which includes the first paragraph's
+`space_before`.  At the top of the document that shifted the hit by exactly one
+line.
+
+**Fix:** `scroll_offset_pt()` now returns `lines[scroll_line].y` for line 0 as
+well.  The same fix was applied to Wbravo's cursor/selection hit-test.  Added a
+regression check to `test_wmarkdown` that clicks the second visual line and
+asserts the selection lands in that line's byte range.
+
+**Files:** `wbuild_widgets/Wmarkdown.widget`, `wbuild_widgets/Wbravo.widget`,
+`tests/test_wmarkdown.c`
