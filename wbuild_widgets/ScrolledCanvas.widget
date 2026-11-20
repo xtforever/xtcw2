@@ -21,6 +21,11 @@
 
 
 
+@proc class_initialize
+{
+    converters_init();
+}
+
 @proc realize
 {
     XTFUNC();

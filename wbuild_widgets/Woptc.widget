@@ -41,6 +41,11 @@ var compress_motion = True
 
 
 @METHODS
+@proc class_initialize
+{
+    converters_init();
+}
+
 @proc initialize
 {
   XGCValues     values = {

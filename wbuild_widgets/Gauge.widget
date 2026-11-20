@@ -35,6 +35,11 @@
 
 @METHODS
 
+@proc class_initialize
+{
+    converters_init();
+}
+
 @proc initialize
 {
     if( !mv_is_initialized() ) {

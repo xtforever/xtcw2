@@ -23,6 +23,11 @@
 @var  XImage2 img_buf
 
 @METHODS
+@proc class_initialize
+{
+    converters_init();
+}
+
 @proc expose
 {
     XTFUNC();

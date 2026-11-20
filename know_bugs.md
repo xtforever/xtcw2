@@ -3334,3 +3334,21 @@ The widget makefile now also depends on the `wbuild` binary, so changing the
 generator regenerates the headers instead of leaving stale ones behind.
 
 **Files:** `wbuild/generateh.c`, `utils/converters.h`, `wbuild_widgets/makefile`
+
+### Distance resources need converters_init() in every declaring class
+
+Adding `Distance` defaults such as `"2mm"` to `VBox`, `HBox`, `Gauge`,
+`ScrolledCanvas`, `Woptc` and `IconSVG` exposed a second gap: those widgets had
+no `class_initialize` calling `converters_init()`.  Xt therefore warned
+`No type converter registered for 'String' to 'Distance' conversion` and left
+the value at 0 (e.g. VBox `vgap`).  All six widgets now call
+`converters_init()` from `class_initialize`, matching `Wlabel`, `Wviewport`,
+`WListView`, `WtabWidget` and the other converted widgets.
+
+The `test_wlabel*` and `test_wlistmulti` layout baselines were regenerated: the
+hb-ot shaper reports advances with slightly different 1/64-pt rounding than
+hb-ft (and a matching line height), so the exact glyph widths changed by a few
+1/65536-pt units.  Structure and line breaks are unchanged.
+
+**Files:** `wbuild_widgets/{VBox,HBox,Gauge,ScrolledCanvas,Woptc,IconSVG}.widget`,
+`tests/baselines/*.layout`

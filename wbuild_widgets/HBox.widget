@@ -23,6 +23,11 @@
 @def DB = 0
 
 @METHODS
+@proc class_initialize
+{
+    converters_init();
+}
+
 @proc initialize
 {
         if( ! $width ) $width=10;
