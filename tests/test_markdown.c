@@ -208,6 +208,28 @@ int main(void)
     assert(!contains_text("**"));
     assert(!contains_text("```"));
 
+    /* An unmatched backtick run is literal text, while a matched run is an
+     * inline code span with its delimiters removed. */
+    {
+        const RAtom *save_atoms = atoms;
+        int save_natoms = natoms;
+        MarkdownDoc *d2 = markdown_parse(
+            "- Fenced code blocks with ``` or ~~~\n"
+            "\n"
+            "A `monospan` here.\n", NULL);
+        assert(d2 != NULL);
+        atoms = markdown_atoms(d2, &natoms);
+        assert(contains_text("```"));
+        assert(contains_text("~~~"));
+        i = text_index("monospan");
+        assert(i >= 0);
+        assert(atoms[i].look.face == conststr_lookup_c("Mono"));
+        assert(!contains_text("`monospan`"));
+        atoms = save_atoms;
+        natoms = save_natoms;
+        markdown_free(d2);
+    }
+
     printf("test_markdown passed\n");
     return 0;
 }

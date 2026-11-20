@@ -150,7 +150,7 @@ static void inline_put(Block *b, const uint32_t *c, int s, int e,
                        int mono_features, int extra_style, int depth)
 {
     int i = s;
-    int bold = 0, italic = 0, code = 0;
+    int bold = 0, italic = 0;
 
     if (depth > 4)
         depth = 4;
@@ -167,12 +167,44 @@ static void inline_put(Block *b, const uint32_t *c, int s, int e,
         }
 
         if (ch == '`') {
-            code = !code;
-            i++;
+            int run = 1, close = -1, k;
+            RLook lk = base;
+
+            while (i + run < e && c[i + run] == '`')
+                run++;
+            /* A code span is opened only by a matching run of the same
+             * length.  Unmatched backticks are literal text. */
+            for (k = i + run; k < e; ) {
+                if (c[k] == '`') {
+                    int r = 1;
+                    while (k + r < e && c[k + r] == '`')
+                        r++;
+                    if (r == run) {
+                        close = k;
+                        break;
+                    }
+                    k += r;
+                } else {
+                    k++;
+                }
+            }
+            lk.style |= extra_style | (bold ? 1 : 0) | (italic ? 2 : 0);
+            if (close >= 0) {
+                lk.face = mono_face;
+                lk.size = (float)mono_size;
+                lk.features = mono_features;
+                for (k = i + run; k < close; k++)
+                    block_put(b, c[k], lk);
+                i = close + run;
+            } else {
+                for (k = 0; k < run; k++)
+                    block_put(b, '`', lk);
+                i += run;
+            }
             continue;
         }
 
-        if (!code && (ch == '*' || ch == '_')) {
+        if (ch == '*' || ch == '_') {
             int doubled = (i + 1 < e && c[i + 1] == ch);
             int active = doubled ? bold : italic;
             int boundary;
@@ -198,8 +230,8 @@ static void inline_put(Block *b, const uint32_t *c, int s, int e,
             }
         }
 
-        if (!code && (ch == '[' ||
-                      (ch == '!' && i + 1 < e && c[i + 1] == '['))) {
+        if (ch == '[' ||
+            (ch == '!' && i + 1 < e && c[i + 1] == '[')) {
             int lb = (ch == '[') ? i : i + 1;
             int close = lb + 1;
             while (close < e && c[close] != ']')
@@ -221,11 +253,6 @@ static void inline_put(Block *b, const uint32_t *c, int s, int e,
 
         {
             RLook lk = base;
-            if (code) {
-                lk.face = mono_face;
-                lk.size = (float)mono_size;
-                lk.features = mono_features;
-            }
             lk.style |= extra_style | (bold ? 1 : 0) | (italic ? 2 : 0);
             block_put(b, ch, lk);
         }

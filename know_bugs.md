@@ -3378,3 +3378,20 @@ once the layout changed.  The test now builds a valid MLS handle.
 
 **Files:** `re-tex/src/linebreak.c`, `tests/test_retex_linebreak.c`,
 `tests/baselines/test_retex_linebreak.layout`, `tests/test_wlistmulti.c`
+
+## Unmatched backtick runs disappeared from inline text
+
+**Symptom:** the demo line `- Fenced code blocks with ``` or ~~~` rendered as
+`Fenced code blocks with    or ~~~`; the three backticks were missing.
+
+**Cause:** `inline_put()` toggled an `int code` flag on every backtick and
+dropped the delimiter characters.  A run of three backticks toggled the flag
+three times, so all three were consumed and the rest of the line was styled as
+code.
+
+**Fix:** a backtick run of length N now opens a code span only if a matching
+run of length N exists later on the same line.  The span content is emitted
+with the mono look; unmatched runs are emitted literally.  Added a regression
+check to `test_markdown` (literal ``` plus a matched `monospan`).
+
+**Files:** `wbuild_widgets/markdown.c`, `tests/test_markdown.c`
