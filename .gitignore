@@ -4,6 +4,7 @@
 *.3
 nohup.out
 *.tex
+!wbuild/wbuildmac.tex
 cwri
 Wheel.c
 Wlabel.c
@@ -96,6 +97,8 @@ input_test/input_test
 .sisyphus/
 *.pdf
 *.png
+!tests/hit_test.png
+!tests/math_test.png
 *.a
 experimental/lua/
 experimental/swig/
