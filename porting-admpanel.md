@@ -1,12 +1,14 @@
 # Porting plan: `experimental/AdmPnl` → LUI launcher
 
-> Status: revised planning draft  
+> Status: **implemented** — Phases 1–6 complete and tested; Phase 7 partly complete (docs, examples and run wrappers done; item-list dialog, SQL refresh and `init` execution still open).  
+> Last verified: 2026-11-21 — pure-Lua, headless Xvfb and real-DB launcher tests pass.  
 > Source analyzed: `experimental/AdmPnl` (legacy), `experimental/adminpanel` (older sibling)  
 > Target: LUI + `commander_runner`  
 > Target app location: `apps/admpanel/`  
-> Note: the user-facing name is “AdmPanel”; the actual legacy directory is `experimental/AdmPnl`.
+> Note: the user-facing name is “AdmPanel”; the actual legacy directory is `experimental/AdmPnl`.  
+> Normative syntax: see §14. It records what the code actually accepts and wins over earlier planning text.
 
-This document incorporates the review decisions from §2. Keep adding thoughts under **Notes / decisions** at the end.
+This document incorporates the review decisions from §2. Keep adding thoughts under **Notes / decisions** (§12). The implemented syntax is recorded normatively in §14.
 
 ---
 
@@ -274,7 +276,9 @@ and the command line from that block.
 
 ## 8. Implementation phases
 
-### Phase 1 — Config, variables, prompt parsing (pure Lua)
+Status legend: ✅ implemented and covered by tests · ◐ partly implemented · ☐ not implemented.
+
+### Phase 1 — Config, variables, prompt parsing (pure Lua) ✅
 
 Build `config.lua`, `vars.lua`, `prompt.lua`; keep `compat/njson.lua` optional.
 
@@ -285,7 +289,7 @@ Acceptance:
 - `(Y/n)?`, `(Y/n/a)?`, `( y / n ) ?` and a trailing partial line are detected.
 - Unit tests pass under `lua5.3`.
 
-### Phase 2 — Dynamic form UI and command preview
+### Phase 2 — Dynamic form UI and command preview ✅
 
 Build `ui.lua`, `fields.lua`, `main.lua`.
 
@@ -302,7 +306,7 @@ Acceptance:
 - The preview matches the expected `auswahl.sh $kk` expansion.
 - No Lua callback or widget errors under Xvfb.
 
-### Phase 3 — Script process binding and embedded log
+### Phase 3 — Script process binding and embedded log ✅
 
 Add `commander/script_process.c/.h`:
 
@@ -333,7 +337,7 @@ Acceptance:
 - Fake script prints arguments, sleeps, and exits; output appears line-by-line.
 - Exit code is correct; no zombie process; UI stays responsive.
 
-### Phase 4 — Confirmation dialogs
+### Phase 4 — Confirmation dialogs ✅
 
 Wire `script.lua` events into `prompt.lua` and `dialog.lua`.
 
@@ -350,7 +354,7 @@ Acceptance:
 - The launcher opens a dialog, writes the chosen letter, and the log shows the expected answer.
 - Test both `y` and `n`.
 
-### Phase 5 — SQL lookup (mandatory)
+### Phase 5 — SQL lookup (mandatory) ✅
 
 Add `commander/db_mysql.c/.h` and register `db_query(opts, sql)`.
 
@@ -379,7 +383,7 @@ Acceptance:
 - The preview updates.
 - With a missing group or unreachable DB, the field shows a clear error and does not crash.
 
-### Phase 6 — NICE TO HAVE: script-embedded descriptions
+### Phase 6 — NICE TO HAVE: script-embedded descriptions ✅
 
 Build `apps/admpanel/scriptmeta.lua` and the script-mode command builder.
 
@@ -391,7 +395,7 @@ Acceptance:
 - Hidden mandatory argument with default works; hidden mandatory without default is rejected.
 - Unknown keys produce a warning, not a crash.
 
-### Phase 7 — Follow-up: item lists, polish, docs
+### Phase 7 — Follow-up: item lists, polish, docs ◐
 
 - Detect `item list:` + numbered lines + question; show a choice dialog.
 - Use `WDialog` `inputKind=4` for small lists; add a `WListView`-based dialog for larger lists if needed.
@@ -474,9 +478,350 @@ Add further thoughts below:
 
 ---
 
-## 13. Remaining open questions
+## 13. Open questions — resolved by the implementation
 
-- Should the script-embedded block use exactly the syntax in §7, or should it be YAML/TOML embedded in the comment block?
-- Should script mode support positional arguments, or only option flags?
-- Should `widget-type: dropdown` use a static `values` list in the block, and what is the exact key name?
-- Should the app keep a small recent-config list, or always start from `ADMPANEL_CONFIG`?
+- Script block syntax: the line-oriented `key: value` grammar from §7 is implemented; no YAML/TOML. See §14.4.
+- Script mode: only option flags (`-s` / `--long`) are supported; positional arguments are not. See §14.5.
+- `widget-type: dropdown` with static values is **not** available in the script block. Static lists use a Lua config field with `type = 'option'` and `values = { ... }`. See §14.2 and §14.4.
+- Config selection is always explicit via `ADMPANEL_CONFIG` / `ADMPANEL_SCRIPT` (or the `run.sh` argument); there is no recent-config list. See §14.1.
+
+---
+
+## 14. Fixed syntax (as implemented)
+
+This chapter is normative for the current code. It describes what `apps/admpanel/`
+and the `commander_runner` bindings actually accept. Where it differs from the
+earlier planning text, this chapter wins.
+
+### 14.1 Entry points and environment
+
+```text
+apps/admpanel/run.sh <config.lua|script.sh>
+```
+
+- A `.sh` target is exported as `ADMPANEL_SCRIPT`; anything else as
+  `ADMPANEL_CONFIG`. Both are resolved to absolute paths.
+- `apps/admpanel/main.lua` prefers `ADMPANEL_SCRIPT`, then `ADMPANEL_CONFIG`,
+  and otherwise falls back to `../apps/admpanel/examples/freigabe.lua`.
+- `ADMPANEL_LUA_PATH` overrides the module path (default
+  `../apps/admpanel/?.lua`).
+- `run_lui.sh` changes into `commander/` before starting the runner. A relative
+  `cwd` and relative script paths are therefore resolved against `commander/`,
+  not against the config directory. Set `cwd` explicitly to change this.
+- There is no legacy `.json` importer: `apps/admpanel/compat/` is empty and
+  `config.load()` rejects `.json` with a “convert to Lua” error.
+
+### 14.2 Lua config
+
+A config is a Lua module returning a table.
+
+Top-level keys:
+
+| Key | Type | Default | Meaning |
+|---|---|---|---|
+| `title` | string | `"Launcher"` | Window/header title. |
+| `script` | string | **required** | Command template (`command_mode = "template"`) or script path (`"args"`). |
+| `fields` | array | `{}` | Field definitions, see below. |
+| `shell` | boolean | `false` | `true` runs the expanded command through `/bin/sh -c` instead of `execvp`. |
+| `command_mode` | `"template"` \| `"args"` | `"template"` | `"args"` builds the command from field flags (used by script mode). |
+| `cwd` | string | `nil` | Child working directory. `nil` inherits the runner's `commander/` directory. |
+| `init` | string | `nil` | Accepted and normalized but **not executed yet**. |
+| `sql` | table | `{}` | Connection options and shared SQL field defaults. |
+| `sql_group` | string | `"adminpanel"` | Legacy alias for `sql.group`. |
+| `sql_default` | table | `nil` | Legacy alias for `sql.default`. |
+
+`sql` keys:
+
+| Key | Meaning |
+|---|---|
+| `group` | `~/.my.cnf` group passed via `MYSQL_READ_DEFAULT_GROUP`; default `"adminpanel"`. |
+| `host`, `port`, `user`, `password`, `database`, `socket` | Per-connection overrides. |
+| `connect_timeout` | Connect timeout in seconds; default `5`. |
+| `read_timeout` | Optional read timeout in seconds. |
+| `default` | Shared SQL defaults for fields (`query`, `display`, `key`, connection overrides). Not passed to `db_query`. |
+
+Field keys:
+
+| Key | Applies to | Meaning |
+|---|---|---|
+| `type` | all | Optional; defaults to `input`. See type aliases below. |
+| `variable` | all | **Required** identifier matching `^[%a_][%w_]*$`. |
+| `title` | all | Label text. Aliases: `widget_label`, `widget-label`. Default: the variable name. |
+| `widget_type` | all | Aliases: `widget-type`. Normalized, but the rendered widget is chosen by `type`. `none`/`hidden` hides the field. |
+| `mandatory` / `optional` | all | `mandatory = true` or `optional = false`. |
+| `default` | all | Type-specific default; see below. |
+| `values` / `option` | `option` | Table, or a comma-separated string. Must be non-empty. |
+| `on`, `off`, `switch`, `flag` | `switch` | `on` is required (or `flag`). `switch = "on,off"` is accepted. `flag` overrides `on`. `off` defaults to `""`. |
+| `sql` | `sql` | Table with `query`, `display`, `key` and optional connection overrides. |
+| `extra_vars` | `sql` | Legacy aliases: `sql_query_str`, `sql_disp_field`, `sql_key_field`, `sql_return_string`, `sql_host`, `sql_port`, `sql_user`, `sql_pwd`, `sql_db`, `sql_socket`, `sql_group`, `sql_connect_timeout`. |
+| `arg`, `short`, `long`, `flag` | `args` mode | Option flags. `scriptmeta` fills these; a Lua config may set them directly. |
+
+Type aliases (normalized):
+
+| Normalized | Accepted spellings |
+|---|---|
+| `input` | `input`, `string`, `text` |
+| `option` | `option`, `enum`, `dropdown` |
+| `switch` | `switch`, `checkbox`, `bool`, `boolean` |
+| `sql` | `sql`, `kuerzel`, `query`, `sql-query` |
+
+Widget-type aliases (normalized):
+
+| Normalized | Accepted spellings |
+|---|---|
+| `text` | `text`, `entry`, `input` |
+| `checkbox` | `checkbox`, `switch` |
+| `dropdown` | `dropdown`, `combo`, `combo-box` |
+| `sql-query` | `sql-query`, `lookup`, `lookup/dropdown` |
+| `none` | `none`, `hidden` |
+
+Validation rules:
+
+- Unknown `type` → config error.
+- `option` requires a non-empty `values` list; `default` must be one of the
+  values (it defaults to the first value).
+- `switch` requires `on` or `flag`.
+- `sql` requires `query`, `display` and `key` (after applying `sql.default`,
+  `extra_vars` and flat aliases).
+- A hidden field (`widget_type = "none"` / `"hidden"`) is forced to
+  `mandatory = true` and requires a non-empty `default`.
+- Missing mandatory values block execution; the preview shows
+  `(missing: name, ...)` and the status line reports them.
+
+SQL resolution precedence for each key:
+`field.sql` → top-level `sql.default` → `field.extra_vars` → flat `field.sql_*`.
+Connection options use the same precedence on top of the top-level `sql` table.
+
+### 14.3 Variables and command building (template mode)
+
+Supported expansions:
+
+| Syntax | Meaning |
+|---|---|
+| `$name` | Value of `name`. |
+| `${name}` | Same, with explicit delimiters. |
+| `$name[N]` | Element `N` of a 0-based array (Lua index `N + 1`). |
+| `$$` | Literal `$`. |
+
+- Unknown variables expand to the empty string and are reported as missing.
+  Missing variables in `script` also block execution.
+- Values are POSIX-shell-quoted when the command is built.
+- Default execution (`shell = false`): the expanded command is tokenized
+  (single quotes, double quotes, backslash escapes) and passed to `execvp`.
+- `shell = true`: the expanded command string is passed to `/bin/sh -c`.
+- Empty quoted arguments (`''`) are currently dropped by the tokenizer; avoid
+  empty literal arguments in command templates.
+
+### 14.4 Script-embedded description block
+
+Extraction:
+
+- Starts at a trimmed line matching `#<launcher-begin>` (also `# <launcher-begin>`).
+- Ends at a trimmed line matching `#<launcher-end>`; the end must follow the start.
+- Inside the block, leading whitespace, one `#` and one optional following space
+  are stripped.
+
+Top-level directives:
+
+```text
+title: <text>
+version: <text>
+args:
+```
+
+Unknown top-level lines are ignored.
+
+An argument starts with a line ending in `(`:
+
+```text
+-c --customer $custid (
+    type: string mandatory
+    default: ""
+    widget-type: sql-query
+    widget-label: Customer
+    sql_query_str: "select custid,dbservid from cust"
+    sql_disp_field: "$custid ($dbservid)"
+    sql_return_string: "$custid"
+)
+```
+
+Argument line tokens:
+
+- `--long` → `long`; `-s` → `short`; `$name` → `variable`.
+- If no `$variable` is given, it is derived from `--long` or `-s` (leading
+  dashes removed, `-` replaced by `_`).
+- `arg` and `flag` are set to `long` or `short`.
+- The line must end with `(`.
+
+Argument body keys:
+
+| Key | Meaning |
+|---|---|
+| `type` | `string` or `switch`, optionally followed by `mandatory` or `optional`. Default: `string optional`. |
+| `widget-type` / `widget_type` | `text`, `checkbox`, `dropdown`, `sql-query`, `none`/`hidden`. |
+| `default` | Default value; surrounding single/double quotes are removed and `\n`, `\t`, `\r`, `\"`, `\'`, `\\` are unescaped. |
+| `widget-label` / `widget_label` | Label text. |
+| `sql_query_str` | SQL query. |
+| `sql_disp_field` | Display template. |
+| `sql_return_string` / `sql_key_field` | Key template. |
+| `sql_host`, `sql_port`, `sql_user`, `sql_pwd`, `sql_db`, `sql_group` | Connection overrides. |
+| anything else | Stored in `field.extra`; a warning is not emitted and parsing continues. |
+
+Normalization:
+
+- `type: string` → `input`.
+- `type: switch` → `on = flag`, `off = ""`, default `""`; a `widget-type: text`
+  switch becomes `checkbox`.
+- `widget-type: sql-query` → `type = sql`.
+- `widget-type: none`/`hidden` requires a non-empty default.
+- `title` defaults to the variable name.
+- The parsed table is then run through the normal Lua config normalizer, so all
+  aliases and validation rules from §14.2 apply.
+
+Limitations:
+
+- Only option flags are supported; positional arguments are not.
+- Static `values` lists and a real `dropdown` widget are not available in the
+  block. Use a Lua config for those.
+- `widget-type` is normalized but the rendered widget is selected by `type`;
+  its practical effects are deriving `type` for `sql-query`/`switch` and
+  marking hidden fields.
+
+### 14.5 Command building in script/args mode
+
+`scriptmeta.build_command(cfg, values)` builds:
+
+1. The shell-quoted `script` path.
+2. For each field in declaration order:
+   - `flag = long or short or flag`.
+   - `switch`: append `flag` only when the value equals `on`, `true`,
+     `"true"` or `"1"`.
+   - all other types: use the value, falling back to `default`; append
+     `flag` + value only when the result is non-empty.
+3. Hidden fields are included silently with their default.
+
+Example result:
+
+```text
+/tmp/demo.sh --customer jens --logfile /tmp/log --verbose
+```
+
+Missing mandatory values block execution before the process is started.
+
+### 14.6 Script runner and prompt protocol
+
+Lua API (registered by `commander_runner`):
+
+```lua
+script_start(argv_or_command, opts) -> job_id | nil, err
+script_write(job_id, text)          -> true | nil, err
+script_stop(job_id)                 -> true
+script_is_running(job_id)           -> boolean
+```
+
+`opts`:
+
+| Key | Default | Meaning |
+|---|---|---|
+| `on_event` | **required** | Name of the Lua global receiving events. |
+| `cwd` | inherited | Child working directory. |
+| `term` | `"dumb"` | Value of `TERM` in the child. |
+| `cols` | `120` | Pty width (`TIOCSWINSZ`). |
+| `rows` | `40` | Pty height. |
+
+- A table argument is passed to `execvp`; a string is run as `/bin/sh -c`.
+- The pty is non-blocking and read via `XtAppAddInput`.
+- stdout and stderr are merged through the pty.
+- ANSI CSI sequences are **not** stripped (deviation from §8/Phase 3).
+- Children are reaped with `waitpid`; `exit` carries `code` and `signal`.
+
+Events delivered to `on_event`:
+
+| `kind` | Payload | When |
+|---|---|---|
+| `line` | `text` | A complete line was read (CRLF handled). |
+| `partial` | `text` | Buffered output ends with `?` (ignoring trailing whitespace); used for prompts without a newline. |
+| `exit` | `code`, `signal` | Child exited or was signalled. |
+| `error` | `text` | Read error. |
+
+Confirmation parsing (`prompt.parse_confirmation`):
+
+- Matches a trailing `( ... )` or `[ ... ]` group, optionally followed by `?`.
+- A `?` must appear somewhere in the text, so `Delete? (y/N)` also matches.
+- Option letters are `y`, `n`, `a`, `c`, `o`; the first uppercase letter is the
+  default, otherwise the first option.
+- The question is the text before the group.
+
+Examples:
+
+```text
+Continue (Y/n)?     -> options {y,n}, default y
+Continue (Y/n/a)?   -> options {y,n,a}, default y
+( y / n ) ?         -> options {y,n}, default y
+Delete? (y/N)       -> options {y,n}, default n
+```
+
+Dialog mapping (`prompt.dialog_plan`):
+
+- Default option → `WDialog` OK (result `1`).
+- Next option → Cancel (result `0`).
+- Next option → Aux (result `2`).
+- Further options are ignored.
+- The chosen letter is written back as `letter .. "\n"`; Return follows the
+  script's uppercase default.
+- If a prompt arrives while a dialog is open, it is queued.
+
+Item lists:
+
+- `prompt.parse_item_list` recognizes `item list:` followed by numbered
+  `1.`/`1)` lines and the next non-empty question line.
+- Parsing is tested, but it is **not wired to a dialog** yet (Phase 7 follow-up).
+
+### 14.7 SQL lookup
+
+C binding:
+
+```lua
+db_query(opts, sql) -> { columns = { name, ... }, rows = { { col = value, ... }, ... } }
+                   | nil, err
+```
+
+- `opts`: `group`, `host`, `port`, `user`, `password`, `database`, `socket`,
+  `connect_timeout`, `read_timeout`.
+- `group` defaults to `"adminpanel"` and is applied with
+  `MYSQL_READ_DEFAULT_GROUP`.
+- Charset is `utf8mb4`; connect timeout defaults to 5 seconds.
+- Explicit `host`/`database`/`user`/`password` override individual
+  `~/.my.cnf` keys.
+- Passwords are never logged.
+
+`apps/admpanel/sql.lua`:
+
+- Expands `sql.query` with the current global values (no shell quoting).
+  Missing variables produce an error.
+- For each row, merges the row over the global scope and expands `display` and
+  `key` (no shell quoting). An empty `display` falls back to `key`.
+- Builds the combo items and a display→`{key, display, row}` map.
+- The widget's `selectedKey` is written into the field's `variable`; free text
+  is passed through as the key if it matches no item.
+- SQL fields are queried after the UI is realized via `xtapptimeout(0, ...)`.
+  The first row is selected automatically.
+- Queries are synchronous and block the UI; there is no refresh button yet.
+- Query errors are shown in the status line and the field placeholder; old
+  items are kept.
+
+### 14.8 Known deviations from the earlier plan
+
+- Item-list selection is parsed but not wired to a dialog.
+- No SQL refresh button.
+- `init`/`initscript` is normalized but not executed.
+- No legacy `.json` importer (`compat/njson.lua` is absent).
+- No ANSI CSI stripping in the script log.
+- Default child `cwd` is the runner's `commander/` directory, not the config
+  directory.
+- SQL is synchronous.
+- The command preview is a single-line `WLineEdit`.
+- Confirmation dialogs support at most three buttons; further options are
+  ignored.
+- Positional arguments are not supported in script mode.
+- The `execvp` tokenizer drops empty quoted arguments (`''`).

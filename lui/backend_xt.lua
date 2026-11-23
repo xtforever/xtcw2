@@ -68,8 +68,17 @@ function M.process_property(clean_k, v, widget_class)
     elseif clean_k == 'orientation' then
         clean_k = 'vertical'
         v = (v == 'vertical') and '1' or '0'
-    elseif clean_k == 'fraction' or clean_k == 'frac' then
-        clean_k = 'frac'
+    elseif clean_k == 'fraction' then
+        -- Wsplitter uses a 0..1000 per-mille resource.  LUI callers usually
+        -- write a 0..1 ratio (e.g. :fraction 0.3), so scale that form up.
+        clean_k = 'fraction'
+        local n = tonumber(v)
+        if n then
+            if n > 0 and n <= 1 then n = n * 1000 end
+            v = math.floor(n + 0.5)
+        end
+    elseif clean_k == 'frac' then
+        -- Sliders use their own absolute frac resource; leave it unscaled.
         v = tonumber(v)
     elseif clean_k == 'pos' then
         v = tonumber(v)

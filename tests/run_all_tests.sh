@@ -65,6 +65,12 @@ echo "9c3. test_cookbook_widgets (WAppWindow + menu integration)"
 echo "9c4. test_docs_consistency (registry vs. widget sources)"
 "$ROOT/tests/test_docs_consistency.sh"
 
+echo "9c4a. test_widget_docs (wbuild resource/method documentation)"
+"$ROOT/tests/test_widget_docs.sh"
+
+echo "9c4b. test_widget_help (searchable widget reference browser)"
+"$ROOT/tests/test_widget_help.sh"
+
 echo "9c4b. test_theme_roles (surface roles in every shipped theme)"
 "$ROOT/tests/test_theme_roles.sh"
 
@@ -132,6 +138,9 @@ xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wstatusbar"
 
 echo "19g. test_wcombobox (headless Xvfb)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wcombobox"
+
+echo "19g2. test_wlineedit_focus (mouse click takes keyboard focus)"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wlineedit_focus"
 
 echo "19h. test_wcomboedit (editable combo + filtered dropdown)"
 xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_wcomboedit"
@@ -249,5 +258,25 @@ echo "29b. AdmPanel launcher headless tests"
 "$ROOT/tests/test_launcher_described.sh"
 "$ROOT/tests/test_launcher_required.sh"
 "$ROOT/tests/test_launcher_dropdown_guard.sh"
+
+echo "29c. mp3player (C-FFT, chassis, widgets, player, smoke)"
+if command -v lua5.3 >/dev/null 2>&1; then
+    XTCW_ROOT="$ROOT" lua5.3 "$ROOT/tests/test_mp3_fft.lua"
+    XTCW_ROOT="$ROOT" lua5.3 "$ROOT/tests/test_mp3_id3.lua"
+    XTCW_ROOT="$ROOT" lua5.3 "$ROOT/tests/test_mp3_m3u.lua"
+    XTCW_ROOT="$ROOT" lua5.3 "$ROOT/tests/test_mp3_library.lua"
+    XTCW_ROOT="$ROOT" lua5.3 "$ROOT/tests/test_playlist_library.lua"
+    XTCW_ROOT="$ROOT" lua5.3 "$ROOT/tests/test_mp3_analysis.lua"
+    bash "$ROOT/tests/test_mp3engine.sh"
+    bash "$ROOT/tests/test_mp3engine_module.sh"
+    bash "$ROOT/tests/test_library_ui.sh"
+else
+    echo "mp3player pure-Lua tests SKIPPED (no lua5.3)"
+fi
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_mp3_chassis"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_mp3_xftlabel"
+xvfb-run --auto-servernum --server-num=99 "$ROOT/tests/test_mp3_widgets"
+"$ROOT/tests/test_mp3_player_wrapper.sh"
+"$ROOT/tests/test_mp3player.sh"
 
 echo "All tests PASSED."

@@ -17,8 +17,8 @@ libnanosvg.a: nanosvg_impl.o
 
 install: libnanosvg.a
 	mkdir -p $(incdir) $(libdir)
-	cp *.h $(incdir)/
-	cp libnanosvg.a $(libdir)/
+	cp -p *.h $(incdir)/
+	cp -p libnanosvg.a $(libdir)/
 
 clean:
 	rm -f *.o *.a nanosvg_impl.c

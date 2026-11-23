@@ -205,3 +205,9 @@ experimental/todomgr/a.out
 experimental/wbuild-examples/FWF/src/UserGraf/Hershey_Fonts/fcompile
 experimental/wbuild-examples/FWF/src/UserGraf/Hershey_Fonts/hcompile
 experimental/widget_test/wlabel_demo
+
+# mp3player C module build artifact
+apps/mp3player/c/*.so
+
+# mp3player standalone DSP test binary
+apps/mp3player/c/mp3engine_test

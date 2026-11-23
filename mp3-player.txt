@@ -1,0 +1,7 @@
+
+    Transport: Play/Pause, Stop, Seek-Slider mit Time-Display, Prev/Next Track, Prev/Next Album
+    Anzeige: großes VFD-Display (klassischer blau-grüner Fluoreszenz-Look) für Album + Titel + Zeit
+    Aussteuerung: echte Peak-/VU-Meter (links/rechts) in Orange → Gelb → Rot
+    EQ: 7-Band grafischer Equalizer mit kleinen Tick-Marks und 0 dB-Linie
+    Extra: kleiner Spectrum-Analyzer (optional zuschaltbar) und Volume-Regler
+    Look: dunkles Gehäuse, leicht gebürstetes Metall, orange/rote Akzente, keine abgerundeten „modernen“ Buttons

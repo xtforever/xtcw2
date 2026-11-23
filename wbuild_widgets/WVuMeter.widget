@@ -1,0 +1,350 @@
+@class WVuMeter (Wheel)
+@ Segmented VU meter with dB scale and peak hold.
+
+@PUBLIC
+@ current level in 0.1 dB (-600..60)
+@var int level = -600
+@ peak level in 0.1 dB
+@var int peak = -600
+@ label (LEFT / RIGHT)
+@var String label = <String> ""
+@ number of segments
+@var int segments = 24
+@ bottom of the scale in dB
+@var int minDb = -20
+@ top of the scale in dB
+@var int maxDb = 6
+@ use a ParentRelative window background so the parent panel shows through
+@var Boolean transparent = False
+@ segment colours
+@var <Pixel> Pixel lowColor = <String> "#39d353"
+@var <Pixel> Pixel midColor = <String> "#e3d34a"
+@var <Pixel> Pixel highColor = <String> "#ff4b3e"
+@var <Pixel> Pixel panelColor = <String> "#141210"
+@var <Pixel> Pixel scaleColor = <String> "#d8b06a"
+
+@PRIVATE
+@var String label_mem
+@var Pixmap pixmap
+@var cairo_surface_t *surface
+@var XftDraw *draw
+@var GC gc_copy
+@var GC gc_bg
+@var XftColor col[2]
+@var int pref_w
+@var int pref_h
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@proc initialize
+{
+    XTFUNC();
+    $label = $label_mem = XtNewString($label ? $label : "");
+    if ($transparent)
+        XtVaSetValues($, XtNbackgroundPixmap, ParentRelative, NULL);
+    $pixmap = 0;
+    $surface = NULL;
+    $draw = NULL;
+    $pref_w = 420;
+    $pref_h = 84;
+
+    XtVaSetValues($, XtNbackground, $panelColor, XtNborderWidth, 0, NULL);
+
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.graphics_exposures = False;
+    $gc_copy = XtGetGC($, GCGraphicsExposures, &values);
+
+    memset(&values, 0, sizeof values);
+    values.foreground = $background_pixel;
+    $gc_bg = XtGetGC($, GCForeground, &values);
+
+    col_set($);
+}
+
+@proc realize
+{
+    XTFUNC();
+    XtCreateWindow($, (unsigned int) InputOutput,
+                   (Visual *) CopyFromParent, *mask, attributes);
+    if ($transparent)
+        XSetWindowBackgroundPixmap(XtDisplay($), XtWindow($), ParentRelative);
+}
+
+@proc resize
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if (XtIsRealized($)) redraw($);
+}
+
+@proc expose
+{
+    XTFUNC();
+    redraw($);
+}
+
+@proc set_values
+{
+    Boolean do_redraw = False;
+    if (!str_eq($label, $old$label)) do_redraw = True;
+    String copy = XtNewString($label ? $label : "");
+    XtFree($old$label_mem);
+    $label = $label_mem = copy;
+    if ($level != $old$level || $peak != $old$peak ||
+        $segments != $old$segments || $minDb != $old$minDb ||
+        $maxDb != $old$maxDb || $transparent != $old$transparent ||
+        $lowColor != $old$lowColor || $midColor != $old$midColor ||
+        $highColor != $old$highColor || $panelColor != $old$panelColor ||
+        $scaleColor != $old$scaleColor) {
+        col_set($);
+        do_redraw = True;
+    }
+    if (do_redraw && XtIsRealized($)) redraw($);
+    return False;
+}
+
+@proc destroy
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if ($label_mem) XtFree($label_mem);
+    if ($gc_copy) XtReleaseGC($, $gc_copy);
+    if ($gc_bg) XtReleaseGC($, $gc_bg);
+    Display *dpy = XtDisplay($);
+    Visual *v = DefaultVisual(dpy, DefaultScreen(dpy));
+    XftColorFree(dpy, v, None, $col + 0);
+    XftColorFree(dpy, v, None, $col + 1);
+}
+
+@proc query_geometry
+{
+    int w = (request->request_mode & CWWidth) ? (int)request->width : 0;
+    int h = (request->request_mode & CWHeight) ? (int)request->height : 0;
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)($pref_w > w ? $pref_w : w);
+    reply->height = (Dimension)($pref_h > h ? $pref_h : h);
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@UTILITIES
+
+@proc col_set($)
+{
+    Display *dpy = XtDisplay($);
+    Visual *v = DefaultVisual(dpy, DefaultScreen(dpy));
+    XftColorFree(dpy, v, None, $col + 0);
+    XftColorFree(dpy, v, None, $col + 1);
+    xft_color_alloc($, $scaleColor, $col + 0);
+    xft_color_alloc($, $scaleColor, $col + 1);
+}
+
+@proc int str_eq(const char *a, const char *b)
+{
+    if (a == b) return 1;
+    if (!a || !b) return 0;
+    return strcmp(a, b) == 0;
+}
+
+@proc pixel_rgb($, Pixel px, double *r, double *g, double *b)
+{
+    XftColor c;
+    memset(&c, 0, sizeof c);
+    pixel_to_xftcolor($, px, &c);
+    *r = (double)c.color.red / 65535.0;
+    *g = (double)c.color.green / 65535.0;
+    *b = (double)c.color.blue / 65535.0;
+}
+
+@proc destroy_pixmap($)
+{
+    if ($surface) { cairo_surface_destroy($surface); $surface = NULL; }
+    if ($draw) { XftDrawDestroy($draw); $draw = NULL; }
+    if ($pixmap) {
+        XtVaSetValues($, XtNbackgroundPixmap, None, NULL);
+        if (XtIsRealized($))
+            XSetWindowBackgroundPixmap(XtDisplay($), XtWindow($), None);
+        XFreePixmap(XtDisplay($), $pixmap);
+        $pixmap = 0;
+    }
+}
+
+@proc alloc_pixmap($)
+{
+    if (!XtIsRealized($)) return;
+    if ($width < 1 || $height < 1) return;
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, scr));
+    if (!$pixmap) return;
+    $surface = cairo_xlib_surface_create(dpy, $pixmap,
+                        DefaultVisual(dpy, scr), $width, $height);
+    $draw = XftDrawCreate(dpy, $pixmap, DefaultVisual(dpy, scr), None);
+
+    XtVaSetValues($, XtNbackgroundPixmap, $pixmap, NULL);
+    XSetWindowBackgroundPixmap(dpy, XtWindow($), $pixmap);
+}
+
+@proc void draw_meter_with($, cairo_t *cr)
+{
+    int w = $width, h = $height;
+    int left = 8, right = 8, top = 24, bottom = 8;
+    int bw = w - left - right;
+    int bh = h - top - bottom;
+    if (bw < 20 || bh < 8) return;
+
+    double r, g, b;
+    if (!$transparent) {
+        pixel_rgb($, $panelColor, &r, &g, &b);
+        cairo_set_source_rgb(cr, r, g, b);
+        cairo_paint(cr);
+    }
+
+    int n = $segments > 0 ? $segments : 1;
+    double gap = 2.0;
+    double sw = (bw - gap * (n - 1)) / n;
+    if (sw < 1) sw = 1;
+
+    double lr, lg, lb, mr, mg, mb, hr, hg, hb;
+    pixel_rgb($, $lowColor, &lr, &lg, &lb);
+    pixel_rgb($, $midColor, &mr, &mg, &mb);
+    pixel_rgb($, $highColor, &hr, &hg, &hb);
+
+    int active = (int)(((double)($level / 10.0 - $minDb) /
+                        (double)($maxDb - $minDb)) * n + 0.5);
+    if (active < 0) active = 0;
+    if (active > n) active = n;
+
+    for (int i = 0; i < n; i++) {
+        double x = left + i * (sw + gap);
+        double frac = (double)i / (double)(n - 1 ? n - 1 : 1);
+        if (i < active) {
+            if (frac < 0.55) cairo_set_source_rgb(cr, lr, lg, lb);
+            else if (frac < 0.82) cairo_set_source_rgb(cr, mr, mg, mb);
+            else cairo_set_source_rgb(cr, hr, hg, hb);
+        } else {
+            /* Keep the green/yellow/red scale visible even at low levels;
+             * active segments are drawn at full brightness above. */
+            if (frac < 0.55) cairo_set_source_rgba(cr, lr, lg, lb, 0.22);
+            else if (frac < 0.82) cairo_set_source_rgba(cr, mr, mg, mb, 0.22);
+            else cairo_set_source_rgba(cr, hr, hg, hb, 0.22);
+        }
+        cairo_rectangle(cr, x, top, sw, bh);
+        cairo_fill(cr);
+    }
+
+    /* peak marker */
+    int p = (int)(((double)($peak / 10.0 - $minDb) /
+                   (double)($maxDb - $minDb)) * bw + 0.5);
+    if (p >= 0 && p < bw) {
+        cairo_set_source_rgba(cr, 1.0, 0.95, 0.75, 0.9);
+        cairo_rectangle(cr, left + p, top - 2, 2, bh + 4);
+        cairo_fill(cr);
+    }
+}
+
+@proc draw_meter($)
+{
+    if (!$surface) return;
+    cairo_t *cr = cairo_create($surface);
+    cairo_rectangle(cr, 0, 0, $width, $height);
+    cairo_clip(cr);
+    draw_meter_with($, cr);
+    cairo_destroy(cr);
+    cairo_surface_flush($surface);
+}
+
+@proc draw_text($)
+{
+    if (!$draw) return;
+    XftFont *f = $xftFont ? $xftFont : NULL;
+    if (!f) return;
+    XftDrawStringUtf8($draw, $col + 0, f, 8, 16,
+                      (FcChar8*)$label, (int)strlen($label));
+
+    char buf[16];
+    for (int db = $minDb; db <= $maxDb; db += 3) {
+        double fr = (double)(db - $minDb) / (double)($maxDb - $minDb);
+        int x = 110 + (int)(fr * ((int)$width - 118));
+        snprintf(buf, sizeof buf, "%+d", db);
+        int tw, th;
+        xft_calc_string_size($, f, buf, &tw, &th);
+        XftDrawStringUtf8($draw, $col + 1, f, x - tw / 2, 16,
+                          (FcChar8*)buf, (int)strlen(buf));
+    }
+}
+
+@proc redraw($)
+{
+    if (!XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    int w = $width, h = $height;
+
+    if (!$pixmap) alloc_pixmap($);
+    if (!$pixmap) return;
+
+    if ($transparent) {
+        /* Seed the backing pixmap with the panel texture behind this
+         * widget.  This avoids XClearWindow's visible flash on every
+         * level update while keeping the panel design visible. */
+        Widget parent_w = XtParent($);
+        Window parent = parent_w ? XtWindow(parent_w) : 0;
+        Pixmap parent_bg = None;
+        if (parent_w)
+            XtVaGetValues(parent_w, XtNbackgroundPixmap, &parent_bg, NULL);
+
+        /* Prefer the module panel's background pixmap: copying from the
+         * parent *window* can include the previous VU child frame and leave
+         * coloured ghost pixels around the bar after several exposes. */
+        if (parent_bg && parent_bg != None)
+            XCopyArea(dpy, parent_bg, $pixmap, $gc_copy,
+                      $x, $y, w, h, 0, 0);
+        else if (parent)
+            XCopyArea(dpy, parent, $pixmap, $gc_copy,
+                      $x, $y, w, h, 0, 0);
+        if ($surface) cairo_surface_mark_dirty($surface);
+    } else {
+        XFillRectangle(dpy, $pixmap, $gc_bg, 0, 0, w, h);
+    }
+
+    draw_meter($);
+    draw_text($);
+    if ($surface) cairo_surface_mark_dirty($surface);
+    XCopyArea(dpy, $pixmap, win, $gc_copy, 0, 0, w, h, 0, 0);
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <stdlib.h>
+@incl <string.h>
+@incl <math.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/StringDefs.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "conststr.h"

@@ -10,6 +10,9 @@
 @var Boolean dragging
 @var int dragStartPos
 @var int dragStartFraction
+@var Cursor h_resize_cursor
+@var Cursor v_resize_cursor
+@var int cursor_state
 
 @METHODS
 
@@ -18,8 +21,23 @@
     $dragging = FALSE;
     $dragStartPos = 0;
     $dragStartFraction = 0;
+    $h_resize_cursor = XCreateFontCursor(XtDisplay($), XC_sb_h_double_arrow);
+    $v_resize_cursor = XCreateFontCursor(XtDisplay($), XC_sb_v_double_arrow);
+    $cursor_state = 0;
     if ($width == 0) $width = 100;
     if ($height == 0) $height = 100;
+}
+
+@proc destroy
+{
+    if ($h_resize_cursor) {
+        XFreeCursor(XtDisplay($), $h_resize_cursor);
+        $h_resize_cursor = None;
+    }
+    if ($v_resize_cursor) {
+        XFreeCursor(XtDisplay($), $v_resize_cursor);
+        $v_resize_cursor = None;
+    }
 }
 
 @proc resize
@@ -38,9 +56,11 @@
 }
 
 @TRANSLATIONS
-@trans <Btn1Down>:   start_drag()
-@trans <Btn1Motion>: do_drag()
-@trans <Btn1Up>:     end_drag()
+@trans <Btn1Down>:     start_drag()
+@trans <Btn1Motion>:   do_drag()
+@trans <Btn1Up>:       end_drag()
+@trans <MotionNotify>: motion()
+@trans <LeaveWindow>:  leave()
 
 @ACTIONS
 
@@ -48,22 +68,11 @@
 {
     int x = event->xbutton.x;
     int y = event->xbutton.y;
-    int div_pos;
 
-    if ($vertical) {
-        div_pos = $width * $fraction / 1000;
-        if (x >= div_pos - $dividerWidth && x <= div_pos + $dividerWidth) {
-            $dragging = TRUE;
-            $dragStartPos = x;
-            $dragStartFraction = $fraction;
-        }
-    } else {
-        div_pos = $height * $fraction / 1000;
-        if (y >= div_pos - $dividerWidth && y <= div_pos + $dividerWidth) {
-            $dragging = TRUE;
-            $dragStartPos = y;
-            $dragStartFraction = $fraction;
-        }
+    if (on_divider($, x, y)) {
+        $dragging = TRUE;
+        $dragStartPos = $vertical ? x : y;
+        $dragStartFraction = $fraction;
     }
 }
 
@@ -87,9 +96,61 @@
 @proc end_drag
 {
     $dragging = FALSE;
+    update_cursor($, event->xbutton.x, event->xbutton.y);
+}
+
+@proc motion
+{
+    if ($dragging) return;
+    update_cursor($, event->xmotion.x, event->xmotion.y);
+}
+
+@proc leave
+{
+    if (! $dragging) set_cursor($, 0);
 }
 
 @UTILITIES
+
+@proc int divider_position($)
+{
+    if ($vertical)
+        return ($width - $dividerWidth) * $fraction / 1000;
+    return ($height - $dividerWidth) * $fraction / 1000;
+}
+
+@proc int on_divider($, int x, int y)
+{
+    int pos = divider_position($);
+    int p = $vertical ? x : y;
+    int center = pos + $dividerWidth / 2;
+    int d = p - center;
+
+    if (d < 0) d = -d;
+    return d <= $dividerWidth;
+}
+
+@proc update_cursor($, int x, int y)
+{
+    set_cursor($, on_divider($, x, y));
+}
+
+@proc set_cursor($, int on)
+{
+    int want = on ? ($vertical ? 1 : 2) : 0;
+    Cursor cursor;
+
+    if (! XtIsRealized($)) return;
+    if (want == $cursor_state) return;
+    $cursor_state = want;
+
+    if (want) {
+        cursor = (want == 1) ? $h_resize_cursor : $v_resize_cursor;
+        if (cursor) XDefineCursor(XtDisplay($), XtWindow($), cursor);
+    } else {
+        XUndefineCursor(XtDisplay($), XtWindow($));
+    }
+}
 
 @proc do_layout($)
 {
@@ -120,17 +181,17 @@
 
     int div_w = $dividerWidth;
     if ($vertical) {
-        int w1 = ($width - div_w) * $fraction / 1000;
+        int w1 = divider_position($);
         int w2 = $width - div_w - w1;
-        
+
         XtConfigureWidget(child1, 0, 0, w1, $height, child1->core.border_width);
         if (child2) {
             XtConfigureWidget(child2, w1 + div_w, 0, w2, $height, child2->core.border_width);
         }
     } else {
-        int h1 = ($height - div_w) * $fraction / 1000;
+        int h1 = divider_position($);
         int h2 = $height - div_w - h1;
-        
+
         XtConfigureWidget(child1, 0, 0, $width, h1, child1->core.border_width);
         if (child2) {
             XtConfigureWidget(child2, 0, h1 + div_w, $width, h2, child2->core.border_width);
@@ -145,18 +206,16 @@
     Display *dpy = XtDisplay($);
     Window win = XtWindow($);
     GC gc = DefaultGC(dpy, DefaultScreen(dpy));
-    int div_pos;
+    int div_pos = divider_position($);
 
     /* Clear the divider area or draw a handle */
-    if ($vertical) {
-        div_pos = ($width - $dividerWidth) * $fraction / 1000;
+    if ($vertical)
         XFillRectangle(dpy, win, gc, div_pos, 0, $dividerWidth, $height);
-    } else {
-        div_pos = ($height - $dividerWidth) * $fraction / 1000;
+    else
         XFillRectangle(dpy, win, gc, 0, div_pos, $width, $dividerWidth);
-    }
 }
 
 @IMPORTS
 @incl "mls.h"
 @incl "xutil.h"
+@incl <X11/cursorfont.h>

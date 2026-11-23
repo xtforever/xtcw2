@@ -57,6 +57,7 @@ cd commander
 | `demo_markdown.lua` | Wmarkdown — read-only Markdown help viewer (headings, justified paragraphs, lists, quotes, code, bold/italic/links) |
 | `demo_nibelungen.lua` | Wmarkdown — paged Nibelungenlied viewer for `nb.txt` (preserved verse lines, EB Garamond, Previous/Next) |
 | `demo_listview.lua` | WListView — themed multi-column list with header, scrollbars, icons, alternate rows and keyboard navigation |
+| `demo_widget_help.lua` | Widget reference — searchable HDF-backed list; clickable superclass/resource links, Tab/Shift+Tab + Enter link navigation, Back/Forward/Home history, rich text in Wmarkdown |
 | `demo_filechooser.lua` | File chooser — WfileSelector/WfileChooser over WListView, imports a picked text file into Wbravo |
 | `demo_login.lua` | Login dialog — password fields, toggles, feedback |
 | `demo_wbutton.lua` | Wbutton variants — macros, sizes, alignment, callbacks |

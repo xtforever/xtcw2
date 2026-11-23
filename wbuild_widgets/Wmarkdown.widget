@@ -23,6 +23,7 @@
         if (copy_h > 4000) copy_h = 4000;
         XCopyArea(XtDisplay($), $pixmap, XtWindow($), $gc[0],
                   0, 0, copy_w, copy_h, 0, 0);
+        draw_link_focus($);
     }
 }
 
@@ -33,6 +34,11 @@
 @ Markdown source text (viewer subset: headings, paragraphs, lists, quotes,
 @ fenced code, rules, bold/italic/code spans and links).
 @var String text = <String> ""
+@ called with the link target when a link is activated (mouse, Enter)
+@var <Callback> XtCallbackList linkActivated = NULL
+@ target of the last activated link; Lua callbacks read this (the generic
+@ LUA callback bridge does not forward Xt call_data)
+@var String lastLink = <String> ""
 @ base font face
 @var String fontFace = "Sans"
 @ base font size in points
@@ -107,6 +113,14 @@
 @var Atom text_atom
 @var Atom timestamp_atom
 @var Time sel_time
+@ Clickable link spans in UTF-8 byte coordinates, plus keyboard focus.
+@var int *link_start
+@var int *link_end
+@var char **link_targets
+@var int nlinks
+@var int focus_link
+@var char *lastLink_mem
+@var GC link_gc
 
 @METHODS
 
@@ -153,6 +167,14 @@
     $text_atom = XInternAtom(XtDisplay($), "TEXT", False);
     $timestamp_atom = XInternAtom(XtDisplay($), "TIMESTAMP", False);
     $sel_time = CurrentTime;
+    $link_start = NULL;
+    $link_end = NULL;
+    $link_targets = NULL;
+    $nlinks = 0;
+    $focus_link = -1;
+    $lastLink_mem = XtNewString("");
+    $lastLink = $lastLink_mem;
+    $link_gc = XtGetGC($, 0, 0);
 
     if ($fontSize < 1) $fontSize = 13;
     if ($useThemeFont)
@@ -197,6 +219,10 @@
     }
     free($flat);
     free($sel_buf);
+    free_links($);
+    XtFree($lastLink_mem);
+    $lastLink_mem = NULL;
+    if ($link_gc) { XtReleaseGC($, $link_gc); $link_gc = 0; }
     XtFree($text_mem);
 }
 
@@ -409,6 +435,9 @@
 @trans <Key>Next: page_down()
 @trans <Key>Home: scroll_home()
 @trans <Key>End: scroll_end()
+@trans <Key>Tab: focus_next_link()
+@trans <Shift>Tab: focus_prev_link()
+@trans <Key>Return: activate_focused_link()
 
 @ACTIONS
 @ Read-only viewer commands.  scroll_up/down move one line, page_* one
@@ -432,7 +461,14 @@
 @proc select_start
 {
     int byte = byte_at_event($, event);
+    int li;
     if (byte < 0) return;
+    li = link_at_byte($, byte);
+    if (li >= 0) {
+        focus_link_to($, li);
+        activate_link($, li);
+        return;
+    }
     $sel_anchor = byte;
     $sel_caret = byte;
     XtDisownSelection($, XA_PRIMARY, CurrentTime);
@@ -559,6 +595,26 @@
     }
 }
 
+
+@proc focus_next_link
+{
+    if ($nlinks <= 0) return;
+    focus_link_to($, $focus_link < 0 ? 0 : ($focus_link + 1) % $nlinks);
+}
+
+@proc focus_prev_link
+{
+    if ($nlinks <= 0) return;
+    focus_link_to($, $focus_link < 0 ? $nlinks - 1
+                                    : ($focus_link + $nlinks - 1) % $nlinks);
+}
+
+@proc activate_focused_link
+{
+    if ($focus_link >= 0)
+        activate_link($, $focus_link);
+}
+
 @proc set_text
 {
     if (num_params && *num_params >= 1 && params[0]) {
@@ -567,6 +623,115 @@
 }
 
 @UTILITIES
+
+@proc void free_links($)
+{
+    int i;
+    if ($link_targets) {
+        for (i = 0; i < $nlinks; i++)
+            free($link_targets[i]);
+        free($link_targets);
+        $link_targets = NULL;
+    }
+    free($link_start); $link_start = NULL;
+    free($link_end);   $link_end = NULL;
+    $nlinks = 0;
+    $focus_link = -1;
+}
+
+@proc int link_at_byte($, int byte)
+{
+    int i;
+    if (byte < 0) return -1;
+    for (i = 0; i < $nlinks; i++)
+        if (byte >= $link_start[i] && byte < $link_end[i])
+            return i;
+    return -1;
+}
+
+@proc void activate_link($, int idx)
+{
+    if (idx < 0 || idx >= $nlinks || !$link_targets[idx])
+        return;
+    XtFree($lastLink_mem);
+    $lastLink_mem = XtNewString($link_targets[idx]);
+    $lastLink = $lastLink_mem;
+    XtCallCallbackList($, $linkActivated, (XtPointer)$link_targets[idx]);
+}
+
+@proc int link_line($, int start, int end)
+{
+    int i;
+    RetexLine l;
+    if (!$para_ptr) return -1;
+    for (i = 0; i < $lines_total; i++) {
+        if (!retex_paragraph_get_line((RetexParagraph*)$para_ptr, i, &l))
+            break;
+        if (end > l.start_byte && start < l.end_byte)
+            return i;
+    }
+    return -1;
+}
+
+@proc void focus_link_to($, int idx)
+{
+    int line, visible;
+    if (idx < 0 || idx >= $nlinks) return;
+    $focus_link = idx;
+    line = link_line($, $link_start[idx], $link_end[idx]);
+    if (line >= 0) {
+        visible = visible_lines($);
+        if (visible < 1) visible = 1;
+        if (line < $scrollLine || line >= $scrollLine + visible) {
+            $scrollLine = line - visible / 2;
+            clamp_scroll($);
+        }
+    }
+    $dirty = 1;
+    if (XtIsRealized($)) redraw_markdown($);
+}
+
+@proc void draw_link_focus($)
+{
+    int i;
+    RetexLine l;
+    double x1, y1, h1, x2, y2, h2, scroll;
+    Display *dpy;
+
+    if ($focus_link < 0 || $focus_link >= $nlinks || !$para_ptr)
+        return;
+    if (!XtIsRealized($) || !$link_gc)
+        return;
+
+    dpy = XtDisplay($);
+    scroll = scroll_offset_pt($);
+    XSetForeground(dpy, $link_gc, $pixel[COLOR_FG_SEL]);
+    for (i = 0; i < $lines_total; i++) {
+        int s, e, px1, px2, py;
+        if (!retex_paragraph_get_line((RetexParagraph*)$para_ptr, i, &l))
+            break;
+        if (l.end_byte <= $link_start[$focus_link] ||
+            l.start_byte >= $link_end[$focus_link])
+            continue;
+        s = $link_start[$focus_link] > l.start_byte
+                ? $link_start[$focus_link] : l.start_byte;
+        e = $link_end[$focus_link] < l.end_byte
+                ? $link_end[$focus_link] : l.end_byte;
+        if (!retex_paragraph_get_caret_pos((RetexParagraph*)$para_ptr, s,
+                                           &x1, &y1, &h1))
+            continue;
+        if (!retex_paragraph_get_caret_pos((RetexParagraph*)$para_ptr, e,
+                                           &x2, &y2, &h2))
+            x2 = x1;
+        px1 = (int)(converters_pt2px($, x1) + 0.5) + $leftGap;
+        px2 = (int)(converters_pt2px($, x2) + 0.5) + $leftGap;
+        py = (int)(converters_pt2px($, y1 - scroll) + 0.5) + $topGap
+             + (int)(converters_pt2px($, h1) + 0.5) - 1;
+        if (px2 <= px1) px2 = px1 + 2;
+        XDrawLine(dpy, XtWindow($), $link_gc, px1, py, px2, py);
+        XDrawLine(dpy, XtWindow($), $link_gc, px1, py + 1, px2, py + 1);
+    }
+}
 
 @proc void copy_face($, char **res, char *buf, int cap, const char *fallback)
 {
@@ -609,6 +774,7 @@
     free($flat);
     $flat = NULL;
     $flat_len = 0;
+    free_links($);
     $sel_anchor = $sel_caret = -1;
     $sel_len = 0;
 
@@ -624,11 +790,16 @@
     $doc = markdown_parse($text ? $text : "", &st);
 
     if ($doc) {
+        int *boff = NULL;
+        int nlinks = 0;
+        const MarkdownLink *links;
         atoms = markdown_atoms((MarkdownDoc*)$doc, &natoms);
         $flat = (char*)malloc((size_t)natoms * 4 + 1);
+        boff = (int*)malloc((size_t)(natoms + 1) * sizeof(int));
         if ($flat) {
             int i;
             char tmp[4];
+            if (boff) boff[0] = 0;
             for (i = 0; i < natoms; i++) {
                 uint32_t cp = (atoms[i].kind == RATOM_CHAR)
                                   ? atoms[i].cp : 0xFFFC;
@@ -637,9 +808,35 @@
                     memcpy($flat + $flat_len, tmp, (size_t)k);
                     $flat_len += k;
                 }
+                if (boff) boff[i + 1] = $flat_len;
             }
             $flat[$flat_len] = 0;
         }
+        links = markdown_links((MarkdownDoc*)$doc, &nlinks);
+        if (boff && links && nlinks > 0) {
+            int i;
+            $link_start = (int*)malloc((size_t)nlinks * sizeof(int));
+            $link_end = (int*)malloc((size_t)nlinks * sizeof(int));
+            $link_targets = (char**)calloc((size_t)nlinks, sizeof(char*));
+            if ($link_start && $link_end && $link_targets) {
+                for (i = 0; i < nlinks; i++) {
+                    int s = links[i].start, e = links[i].end;
+                    if (s < 0) s = 0;
+                    if (e > natoms) e = natoms;
+                    if (e < s) e = s;
+                    $link_start[i] = boff[s];
+                    $link_end[i] = boff[e];
+                    $link_targets[i] = links[i].target
+                                           ? strdup(links[i].target) : NULL;
+                }
+                $nlinks = nlinks;
+            } else {
+                free($link_start); $link_start = NULL;
+                free($link_end);   $link_end = NULL;
+                free($link_targets); $link_targets = NULL;
+            }
+        }
+        free(boff);
     }
     $dirty = 1;
     $layout_dirty = 1;

@@ -21,13 +21,25 @@ struct MarkdownDoc {
     RetexParaFormat *fmts;
     int nfmts;
     int fcap;
+    MarkdownLink *links;
+    int nlinks;
+    int lcap;
 };
+
+typedef struct {
+    int start;
+    int end;
+    char *target;
+} BlockLink;
 
 typedef struct {
     RAtom *a;
     int n;
     int cap;
     RetexParaFormat fmt;
+    BlockLink *links;
+    int nlinks;
+    int lcap;
 } Block;
 
 enum {
@@ -94,8 +106,29 @@ static int block_put_object(Block *b, uint32_t type, RLook look)
     return 1;
 }
 
+static int block_add_link(Block *b, int start, int end, char *target)
+{
+    if (!grow((void **)&b->links, &b->lcap, b->nlinks + 1,
+              sizeof(BlockLink)))
+        return 0;
+    b->links[b->nlinks].start = start;
+    b->links[b->nlinks].end = end;
+    b->links[b->nlinks].target = target;
+    b->nlinks++;
+    return 1;
+}
+
+static void block_clear_links(Block *b)
+{
+    int i;
+    for (i = 0; i < b->nlinks; i++)
+        free(b->links[i].target);
+    b->nlinks = 0;
+}
+
 static void block_reset(Block *b)
 {
+    block_clear_links(b);
     b->n = 0;
 }
 
@@ -109,9 +142,24 @@ static void doc_close_block(MarkdownDoc *d, Block *b, RLook sep_look)
         doc_put(d, '\n', sep_look);
         doc_put(d, '\n', sep_look);
     }
-    if (grow((void **)&d->atoms, &d->acap, d->natoms + b->n, sizeof(RAtom))) {
-        memcpy(d->atoms + d->natoms, b->a, (size_t)b->n * sizeof(RAtom));
-        d->natoms += b->n;
+    {
+        int base = d->natoms;
+        int k;
+        if (grow((void **)&d->atoms, &d->acap, d->natoms + b->n,
+                 sizeof(RAtom))) {
+            memcpy(d->atoms + d->natoms, b->a, (size_t)b->n * sizeof(RAtom));
+            d->natoms += b->n;
+            for (k = 0; k < b->nlinks; k++) {
+                if (!grow((void **)&d->links, &d->lcap, d->nlinks + 1,
+                          sizeof(MarkdownLink)))
+                    break;
+                d->links[d->nlinks].start = base + b->links[k].start;
+                d->links[d->nlinks].end = base + b->links[k].end;
+                d->links[d->nlinks].target = b->links[k].target;
+                b->links[k].target = NULL;
+                d->nlinks++;
+            }
+        }
     }
     if (grow((void **)&d->fmts, &d->fcap, d->nfmts + 1,
              sizeof(RetexParaFormat))) {
@@ -241,10 +289,17 @@ static void inline_put(Block *b, const uint32_t *c, int s, int e,
                 while (url < e && c[url] != ')')
                     url++;
                 if (url < e) {
+                    int start = b->n;
                     inline_put(b, c, lb + 1, close, base, mono_face,
                                mono_size, mono_features,
                                extra_style | (bold ? 1 : 0) | (italic ? 2 : 0),
                                depth + 1);
+                    if (ch == '[' && b->n > start) {
+                        char *target = utf32_to_utf8_alloc(c + close + 2,
+                                                           url - close - 2);
+                        if (target)
+                            block_add_link(b, start, b->n, target);
+                    }
                     i = url + 1;
                     continue;
                 }
@@ -635,6 +690,7 @@ next_line:
 
     doc_close_block(d, &cur, base);
     free(cur.a);
+    free(cur.links);
     free(cps);
 
     if (d->natoms == 0) {
@@ -646,8 +702,12 @@ next_line:
 
 void markdown_free(MarkdownDoc *doc)
 {
+    int i;
     if (!doc)
         return;
+    for (i = 0; i < doc->nlinks; i++)
+        free((void *)doc->links[i].target);
+    free(doc->links);
     free(doc->atoms);
     free(doc->fmts);
     free(doc);
@@ -665,4 +725,11 @@ const RetexParaFormat *markdown_formats(const MarkdownDoc *doc, int *n)
     if (n)
         *n = doc ? doc->nfmts : 0;
     return doc ? doc->fmts : NULL;
+}
+
+const MarkdownLink *markdown_links(const MarkdownDoc *doc, int *n)
+{
+    if (n)
+        *n = doc ? doc->nlinks : 0;
+    return doc ? doc->links : NULL;
 }

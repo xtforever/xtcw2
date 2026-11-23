@@ -14,6 +14,7 @@
 --   T1_MENU_AUTOTRACE=<n>     select that trace level
 --   T1_MENU_LATE_SELECT=<n>   move down n rows, write the description, exit
 --   T1_MENU_DESC_OUT=<path>   write the resolved description body
+--   T1_MENU_LAYOUT_OUT=<path> write the splitter fraction (layout check)
 
 local gui = require('gui_xt')
 local lui = require('lui')
@@ -134,29 +135,29 @@ local ui = [[
     (label :id "hdr"
            :label "Select a demo, choose a trace level, then Run (Return activates)."
            :gridx 0 :gridy 0 :gridWidth 2 :weightx 1 :weighty 0 :fill 3)
-    (listview :id "lv"
-       :gridx 0 :gridy 1 :weightx 1 :weighty 1 :fill 3
-       :columnCount 2
-       :columnTitles "Demo\tDescription"
-       :columnWidths "150,0"
-       :columnAligns "0,0"
-       :columnKinds "0,0"
-       :showHeader 1
-       :gridLines 1
-       :alternateRows 1
-       :visibleRows 10
-       :on-row-activated "LUA(on_select)"
-       :on-activate "LUA(on_activate)")
-    (listview :id "trace_lv"
-       :gridx 1 :gridy 1 :weightx 1 :weighty 1 :fill 3
-       :columnCount 1
-       :columnTitles "Trace level"
-       :columnWidths "0"
-       :showHeader 1
-       :gridLines 0
-       :visibleRows 4
-       :on-row-activated "LUA(on_trace)"
-       :on-activate "LUA(on_trace)")
+    (splitter :id "pane_split" :orientation "vertical" :fraction 0.72
+       :gridx 0 :gridy 1 :gridWidth 2 :weightx 1 :weighty 5 :fill 3
+      (listview :id "lv"
+         :columnCount 2
+         :columnTitles "Demo\tDescription"
+         :columnWidths "150,0"
+         :columnAligns "0,0"
+         :columnKinds "0,0"
+         :showHeader 1
+         :gridLines 1
+         :alternateRows 1
+         :visibleRows 10
+         :on-row-activated "LUA(on_select)"
+         :on-activate "LUA(on_activate)")
+      (listview :id "trace_lv"
+         :columnCount 1
+         :columnTitles "Trace level"
+         :columnWidths "0"
+         :showHeader 1
+         :gridLines 0
+         :visibleRows 4
+         :on-row-activated "LUA(on_trace)"
+         :on-activate "LUA(on_trace)"))
     (retex :id "desc"
        :gridx 0 :gridy 2 :gridWidth 2 :weightx 1 :weighty 1 :fill 3
        :alignment 0 :fontSize 13 :autoHeight FALSE
@@ -198,6 +199,15 @@ if initial and initial ~= '' then
 end
 gui.set('lv', 'selected', initial_i)
 select_demo(initial_i)
+
+local layout_out = os.getenv('T1_MENU_LAYOUT_OUT')
+if layout_out and layout_out ~= '' then
+    local f = io.open(layout_out, 'wb')
+    if f then
+        f:write(tostring(gui.get('pane_split', 'fraction') or '') .. '\n')
+        f:close()
+    end
+end
 
 local late = tonumber(os.getenv('T1_MENU_LATE_SELECT') or '')
 if late then

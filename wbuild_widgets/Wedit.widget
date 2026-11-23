@@ -31,14 +31,21 @@
 
 @PUBLIC
 
+@ font specification for the editor text (family-size, Xft syntax)
 @var String fontName = <String> "Source Code Pro-22"
+@ text colour
 @var Pixel foreground = XtDefaultForeground
+@ caret colour
 @var Pixel cursorColor = XtDefaultForeground
+@ width of the focus border in pixels
 @var int lineWidth = 1
+@ corner rounding of the focus border, in percent of the line width
 @var int cornerRoundPercent = 20
+@ called with the triggering event on Return (activate)
 @var <Callback> XtCallbackList callback  = NULL
 @ text changed by typing, deleting or pasting (not by programmatic set_values)
 @var <Callback> XtCallbackList changed = NULL
+@ initial text; defaults to the widget name when not set
 @var String label = NULL
 @ placeholder hint shown by WLineEdit when the text is empty
 @var String placeholder = <String> ""
@@ -1142,6 +1149,7 @@
 
 @proc set_cursor
 {
+    wedit_focus_self($);
     int p = pos_from_x($, event->xbutton.x);
     $crsr_pos = p;
     $selecting = True;

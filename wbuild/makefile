@@ -35,7 +35,7 @@ YFLAGS  = -d
 YACC    = bison
 LEX     = flex
 
-OBJS=declarefunc.o  generatedoc.o parse.tab.o scan.lex.o util.o generatec.o generateh.o printbody.o  symbol.o wbuild.o
+OBJS=declarefunc.o  generatedoc.o generatedoc_hdf.o parse.tab.o scan.lex.o util.o generatec.o generateh.o printbody.o  symbol.o wbuild.o
 CPPFLAGS+=-DPKGDATADIR=\"$(PKGDATADIR)\" -DYYDEBUG -I. -D_GNU_SOURCE
 
 # Default to debug
@@ -63,8 +63,8 @@ wbuild: $(OBJS)
 install: wbuild
 	-${MKDIR} -p ${PKGDATADIR}
 	-${MKDIR} -p ${bindir}
-	-${CP} *.w *.tex ${PKGDATADIR}
-	-${CP} wbuild wb.sh ${bindir}
+	-${CP} -p *.w *.tex ${PKGDATADIR}
+	-${CP} -p wbuild wb.sh ${bindir}
 
 clean:
 	${RM} wbuild $(OBJS) parse.c parse.tab.c parse.tab.h scan.c *~

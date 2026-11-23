@@ -26,8 +26,8 @@ $(LIB): $(OBJS)
 
 install: $(LIB)
 	mkdir -p $(incdir)/xtcw $(libdir)
-	cp *.h $(incdir)/xtcw/
-	cp $(LIB) $(libdir)/
+	cp -p *.h $(incdir)/xtcw/
+	cp -p $(LIB) $(libdir)/
 
 %.tab.c %.tab.h: %.y
 	bison -d $<

@@ -25,7 +25,7 @@ OUTPUT=../build
 wb_install=../wbuild
 WBUILD=../wbuild/wbuild
 WBPREFIX=xtcw
-WFLAGS= -d $(OUTPUT)/doc -c $(OUTPUT)/src -i $(OUTPUT)/include/$(WBPREFIX) --include-prefix=$(WBPREFIX) $(wb_install)/tex.w $(wb_install)/nroff.w
+WFLAGS= -d $(OUTPUT)/doc -c $(OUTPUT)/src -i $(OUTPUT)/include/$(WBPREFIX) --include-prefix=$(WBPREFIX) --hdf-dir=$(OUTPUT)/doc/hdf $(wb_install)/tex.w $(wb_install)/nroff.w
 
 XORGLIB=-lXaw -lX11 -lXt -lXpm -lXext -lXmu -lXft -lfontconfig -lXrender -lm
 LOADLIBES += $(XORGLIB)

@@ -617,12 +617,23 @@ that directly follows a `@` doc comment is swallowed by that comment (see
   `resize`, `expose`, `destroy`) for entry tracing. It comes from `utils/xutil.h`
   (import with `@incl "xutil.h"`) and expands to
   `fprintf(stderr, "%s: %s\n", XtName(self), __func__)`.
-- Document `@PUBLIC` resources and `@UTILITIES` helpers with a preceding `@`
-  comment line. EqFader documents most of its resources and helpers this way; it
-  makes the generated resource list and helper section self-explanatory.
+- Document `@PUBLIC` resources, `@METHODS` overrides, `@ACTIONS` and
+  `@UTILITIES` helpers with a preceding `@` comment line. The reference widgets
+  `Frame.widget` and `Board.widget` show the intended density: every resource
+  gets a short explanation, and non-obvious methods/actions explain their
+  contract and side effects. wbuild turns these comments into
+  `build/doc/<Widget>.tex` and `build/doc/<Widget>.3`.
+- **Only the first line of a comment paragraph starts with `@`.** Continuation
+  lines are plain prose. Repeating `@` on every line makes wbuild emit one
+  `\Section` per line instead of a single paragraph (see `know_bugs.md`).
 - Keep the `@class` doc comment to a single line — two or more consecutive
   `@`-prefixed lines start a second doc block and are a parse error (see
   `know_bugs.md`).
+- Documentation is a side effect of the normal widget build: `make widgets`
+  writes `build/doc/<Widget>.{tex,3}` and `build/doc/hdf/<Widget>.hdf` (§35).
+  `tests/test_widget_docs.sh` regenerates a small set into a temporary
+  directory and asserts that resource and method documentation appears in the
+  text backends and in HDF.
 
 ## 22. Header Self-Containment & External Types
 
@@ -983,3 +994,64 @@ For serialized snapshots (`save_state` / `load_state`):
   in the header; otherwise use `void *` and allocate at runtime.
 - Overrides omit the parameter list (§19); only the first/owning definition keeps
   `($)`.
+
+## 35. HDF Documentation Output (help browser)
+
+`make widgets` writes structured documentation to `build/doc/hdf/<Widget>.hdf`
+in addition to the `.tex`/`.3` backends. This is the **Human Data Forms**
+language (`~/git/hdf`): nested lists, `seq` arrays, raw strings and `rem`
+comments. It is unrelated to the flat theme format in `themes.hdf`.
+
+The root is an object with `kind widget`; every node is an object with a
+`kind` field (HDF has no tagged-object syntax):
+
+```lisp
+(
+  kind widget
+  schema_version 1
+  anchor widget/EqFader
+  class EqFader
+  superclass Wheel
+  superclass_chain (seq (class Wheel anchor widget/Wheel) ...)
+  description [[...]]
+  resources (seq
+    (kind resource
+      anchor resource/EqFader/XtNlabel
+      name XtNlabel
+      type [[String]]
+      default ""
+      description [[frequency label shown below the fader]]
+      owner EqFader
+      owner_link widget/EqFader
+      inherited false
+      constraint false))
+  methods (seq (kind method anchor method/EqFader/realize ...))
+)
+```
+
+Anchor conventions:
+
+| Node | Anchor |
+|------|--------|
+| Widget | `widget/<Class>` |
+| Resource | `resource/<Owner>/<XtNname>` |
+| Method | `method/<Class>/<name>` |
+| Action | `action/<Class>/<name>` |
+| Utility | `utility/<Class>/<name>` |
+
+- `description_links` records inline `|symbol|` spans as byte offsets
+  (`start`, exclusive `end`, `label`, `target`, `kind`). The help browser
+  rewrites them to Markdown links; unresolved symbols stay plain text.
+- Inherited resources are emitted with `owner`/`owner_link` and
+  `inherited true`; the browser can show the full superclass chain.
+- The HDF backend is additive: `.tex` and `.3` stay unchanged. `wbuild` only
+  rewrites an HDF file when the `.widget` source is newer, so delete the
+  directory (or `touch` the widget) when testing emitter changes.
+- HDF raw strings that end with `]` need at least one `=` in the delimiter
+  (`[=[...]=]`); otherwise `]]]` is ambiguous. `hdf_raw()` handles this.
+
+`tools/hdf.lua` is the small core-HDF reader used by `tools/widget_help.lua`.
+`Wmarkdown` records `[label](target)` spans and exposes them through the
+`linkActivated` callback plus the `lastLink` resource (the generic LUA callback
+bridge does not forward Xt `call_data`). `Tab`/`Shift+Tab` cycle links,
+`Return` activates the focused link, and the focused link is underlined.

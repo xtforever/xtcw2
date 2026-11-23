@@ -30,6 +30,7 @@ DEMOS=(
   "bravo|Wbravo|piece-table editor: retex, undo/redo, clipboard"
   "rich_bravo|Wbravo rich|piece-table editor: styles, paragraph menu, text I/O, snapshots"
   "listview|WListView|themed multi-column list with scrollbar and icons"
+  "widget_help|Widget Reference|searchable widget resources and methods (Wmarkdown)"
   "filechooser|File Chooser|WListView-based file chooser + Wbravo text import"
   "login|Login|password fields, toggles, feedback"
   "wbutton|Wbutton|button variants: macros, sizes, alignment, callbacks"

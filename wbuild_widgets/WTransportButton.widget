@@ -1,0 +1,444 @@
+@class WTransportButton (Wheel)
+@ Flat transport button with a Cairo-drawn icon and a small caption.
+
+@PUBLIC
+@ icon name: play, pause, stop, prev, next, prev_album, next_album
+@var String icon = <String> "play"
+@ caption below the icon
+@var String label = <String> ""
+@ icon box size in pixels
+@var int iconSize = 20
+@ rounded corner radius in pixels
+@var int cornerRadius = 8
+@var <Pixel> Pixel panelColor = <String> "#24272a"
+@var <Pixel> Pixel hoverColor = <String> "#34383c"
+@var <Pixel> Pixel pressColor = <String> "#ff8c1a"
+@var <Pixel> Pixel iconColor = <String> "#d8d8d8"
+@var <Pixel> Pixel labelColor = <String> "#b8b8b8"
+
+@PRIVATE
+@var String icon_mem
+@var String label_mem
+@var Pixmap pixmap
+@var cairo_surface_t *surface
+@var GC gc_copy
+@var Boolean hover
+@var Boolean pressed
+@var int pref_w
+@var int pref_h
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@proc initialize
+{
+    XTFUNC();
+    $icon = $icon_mem = XtNewString($icon ? $icon : "play");
+    $label = $label_mem = XtNewString($label ? $label : "");
+    $pixmap = 0;
+    $surface = NULL;
+    $hover = False;
+    $pressed = False;
+    $pref_w = 110;
+    $pref_h = 56;
+
+    XtVaSetValues($, XtNbackground, $panelColor, XtNborderWidth, 0, NULL);
+
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.graphics_exposures = False;
+    $gc_copy = XtGetGC($, GCGraphicsExposures, &values);
+}
+
+@proc realize
+{
+    XTFUNC();
+    XtCreateWindow($, (unsigned int) InputOutput,
+                   (Visual *) CopyFromParent, *mask, attributes);
+    reshape_widget($);
+}
+
+@proc resize
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if (XtIsRealized($)) {
+        reshape_widget($);
+        redraw($);
+    }
+}
+
+@proc expose
+{
+    XTFUNC();
+    redraw($);
+}
+
+@proc set_values
+{
+    Boolean do_redraw = False;
+    if (!str_eq($icon, $old$icon)) {
+        String copy = XtNewString($icon ? $icon : "play");
+        XtFree($old$icon_mem);
+        $icon = $icon_mem = copy;
+        do_redraw = True;
+    } else {
+        String copy = XtNewString($icon ? $icon : "play");
+        XtFree($old$icon_mem);
+        $icon = $icon_mem = copy;
+    }
+    if (!str_eq($label, $old$label)) {
+        String copy = XtNewString($label ? $label : "");
+        XtFree($old$label_mem);
+        $label = $label_mem = copy;
+        do_redraw = True;
+    } else {
+        String copy = XtNewString($label ? $label : "");
+        XtFree($old$label_mem);
+        $label = $label_mem = copy;
+    }
+    if ($iconSize != $old$iconSize || $cornerRadius != $old$cornerRadius ||
+        $panelColor != $old$panelColor ||
+        $hoverColor != $old$hoverColor || $pressColor != $old$pressColor ||
+        $iconColor != $old$iconColor || $labelColor != $old$labelColor)
+        do_redraw = True;
+    if (do_redraw && XtIsRealized($)) {
+        if ($cornerRadius != $old$cornerRadius) reshape_widget($);
+        redraw($);
+    }
+    return False;
+}
+
+@proc destroy
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if ($icon_mem) XtFree($icon_mem);
+    if ($label_mem) XtFree($label_mem);
+    if ($gc_copy) XtReleaseGC($, $gc_copy);
+}
+
+@proc query_geometry
+{
+    int w = (request->request_mode & CWWidth) ? (int)request->width : 0;
+    int h = (request->request_mode & CWHeight) ? (int)request->height : 0;
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)($pref_w > w ? $pref_w : w);
+    reply->height = (Dimension)($pref_h > h ? $pref_h : h);
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@TRANSLATIONS
+@trans <EnterWindow>: enter()
+@trans <LeaveWindow>: leave()
+@trans <Btn1Down>: press()
+@trans <Btn1Up>: release()
+
+@ACTIONS
+
+@proc enter
+{
+    if ($hover) return;
+    $hover = True;
+    if (XtIsRealized($)) redraw($);
+}
+
+@proc leave
+{
+    if (!$hover) return;
+    $hover = False;
+    $pressed = False;
+    if (XtIsRealized($)) redraw($);
+}
+
+@proc press
+{
+    $pressed = True;
+    if (XtIsRealized($)) redraw($);
+}
+
+@proc release
+{
+    if (!$pressed) return;
+    $pressed = False;
+    if (XtIsRealized($)) redraw($);
+    XtCallCallbackList($, $callback, event);
+}
+
+@UTILITIES
+
+@proc void rounded_rect(cairo_t *cr, double x, double y, double w, double h, double r)
+{
+    if (r > w / 2.0) r = w / 2.0;
+    if (r > h / 2.0) r = h / 2.0;
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x + w - r, y + r, r, -M_PI / 2.0, 0);
+    cairo_arc(cr, x + w - r, y + h - r, r, 0, M_PI / 2.0);
+    cairo_arc(cr, x + r, y + h - r, r, M_PI / 2.0, M_PI);
+    cairo_arc(cr, x + r, y + r, r, M_PI, 3.0 * M_PI / 2.0);
+    cairo_close_path(cr);
+}
+
+@proc void reshape_widget($)
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    int w = (int)$width;
+    int h = (int)$height;
+    int r = $cornerRadius;
+
+    if (!win || w < 2 || h < 2) return;
+    if (r <= 0) {
+        XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, None, ShapeSet);
+        return;
+    }
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+
+    Pixmap mask = XCreatePixmap(dpy, win, w, h, 1);
+    if (!mask) return;
+    GC gc = XCreateGC(dpy, mask, 0, NULL);
+    if (!gc) { XFreePixmap(dpy, mask); return; }
+
+    XSetForeground(dpy, gc, 0);
+    XFillRectangle(dpy, mask, gc, 0, 0, w, h);
+    XSetForeground(dpy, gc, 1);
+    XFillRectangle(dpy, mask, gc, r, 0, w - 2 * r, h);
+    if (h - 2 * r > 0)
+        XFillRectangle(dpy, mask, gc, 0, r, w, h - 2 * r);
+    XFillArc(dpy, mask, gc, 0, 0, 2 * r, 2 * r, 90 * 64, 90 * 64);
+    XFillArc(dpy, mask, gc, w - 2 * r, 0, 2 * r, 2 * r, 0, 90 * 64);
+    XFillArc(dpy, mask, gc, w - 2 * r, h - 2 * r, 2 * r, 2 * r, 270 * 64, 90 * 64);
+    XFillArc(dpy, mask, gc, 0, h - 2 * r, 2 * r, 2 * r, 180 * 64, 90 * 64);
+
+    XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, mask, ShapeSet);
+    XFreeGC(dpy, gc);
+    XFreePixmap(dpy, mask);
+}
+
+@proc int str_eq(const char *a, const char *b)
+{
+    if (a == b) return 1;
+    if (!a || !b) return 0;
+    return strcmp(a, b) == 0;
+}
+
+@proc pixel_rgb($, Pixel px, double *r, double *g, double *b)
+{
+    XftColor c;
+    memset(&c, 0, sizeof c);
+    pixel_to_xftcolor($, px, &c);
+    *r = (double)c.color.red / 65535.0;
+    *g = (double)c.color.green / 65535.0;
+    *b = (double)c.color.blue / 65535.0;
+}
+
+@proc destroy_pixmap($)
+{
+    if ($surface) { cairo_surface_destroy($surface); $surface = NULL; }
+    if ($pixmap) {
+        XtVaSetValues($, XtNbackgroundPixmap, None, NULL);
+        if (XtIsRealized($))
+            XSetWindowBackgroundPixmap(XtDisplay($), XtWindow($), None);
+        XFreePixmap(XtDisplay($), $pixmap);
+        $pixmap = 0;
+    }
+}
+
+@proc alloc_pixmap($)
+{
+    if (!XtIsRealized($)) return;
+    if ($width < 1 || $height < 1) return;
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, scr));
+    if (!$pixmap) return;
+    $surface = cairo_xlib_surface_create(dpy, $pixmap,
+                        DefaultVisual(dpy, scr), $width, $height);
+    XtVaSetValues($, XtNbackgroundPixmap, $pixmap, NULL);
+    XSetWindowBackgroundPixmap(dpy, XtWindow($), $pixmap);
+}
+
+@proc void tri(cairo_t *cr, double x, double y, double w, double h, int dir)
+{
+    cairo_move_to(cr, dir > 0 ? x : x + w, y);
+    cairo_line_to(cr, dir > 0 ? x + w : x, y + h / 2.0);
+    cairo_line_to(cr, dir > 0 ? x : x + w, y + h);
+    cairo_close_path(cr);
+    cairo_fill(cr);
+}
+
+@proc void icon_play(cairo_t *cr, double x, double y, double s)
+{
+    tri(cr, x + s * 0.12, y + s * 0.08, s * 0.78, s * 0.84, 1);
+}
+
+@proc void icon_pause(cairo_t *cr, double x, double y, double s)
+{
+    cairo_rectangle(cr, x + s * 0.18, y + s * 0.10, s * 0.24, s * 0.80);
+    cairo_rectangle(cr, x + s * 0.58, y + s * 0.10, s * 0.24, s * 0.80);
+    cairo_fill(cr);
+}
+
+@proc void icon_stop(cairo_t *cr, double x, double y, double s)
+{
+    cairo_rectangle(cr, x + s * 0.18, y + s * 0.18, s * 0.64, s * 0.64);
+    cairo_fill(cr);
+}
+
+@proc void icon_prev(cairo_t *cr, double x, double y, double s)
+{
+    cairo_rectangle(cr, x + s * 0.10, y + s * 0.12, s * 0.14, s * 0.76);
+    cairo_fill(cr);
+    tri(cr, x + s * 0.28, y + s * 0.12, s * 0.58, s * 0.76, -1);
+}
+
+@proc void icon_next(cairo_t *cr, double x, double y, double s)
+{
+    tri(cr, x + s * 0.14, y + s * 0.12, s * 0.58, s * 0.76, 1);
+    cairo_rectangle(cr, x + s * 0.76, y + s * 0.12, s * 0.14, s * 0.76);
+    cairo_fill(cr);
+}
+
+@proc void icon_prev_album(cairo_t *cr, double x, double y, double s)
+{
+    tri(cr, x + s * 0.08, y + s * 0.14, s * 0.36, s * 0.72, -1);
+    tri(cr, x + s * 0.46, y + s * 0.14, s * 0.36, s * 0.72, -1);
+}
+
+@proc void icon_next_album(cairo_t *cr, double x, double y, double s)
+{
+    tri(cr, x + s * 0.18, y + s * 0.14, s * 0.36, s * 0.72, 1);
+    tri(cr, x + s * 0.56, y + s * 0.14, s * 0.36, s * 0.72, 1);
+}
+
+@proc draw_icon($, cairo_t *cr, double cx, double cy, double s)
+{
+    cairo_new_path(cr);
+    if (str_eq($icon, "pause")) icon_pause(cr, cx - s / 2, cy - s / 2, s);
+    else if (str_eq($icon, "stop")) icon_stop(cr, cx - s / 2, cy - s / 2, s);
+    else if (str_eq($icon, "prev")) icon_prev(cr, cx - s / 2, cy - s / 2, s);
+    else if (str_eq($icon, "next")) icon_next(cr, cx - s / 2, cy - s / 2, s);
+    else if (str_eq($icon, "prev_album")) icon_prev_album(cr, cx - s / 2, cy - s / 2, s);
+    else if (str_eq($icon, "next_album")) icon_next_album(cr, cx - s / 2, cy - s / 2, s);
+    else icon_play(cr, cx - s / 2, cy - s / 2, s);
+}
+
+@proc draw_button($)
+{
+    if (!$surface) return;
+    int w = $width, h = $height;
+    cairo_t *cr = cairo_create($surface);
+    cairo_rectangle(cr, 0, 0, w, h);
+    cairo_clip(cr);
+
+    double rr = (double)$cornerRadius;
+    rounded_rect(cr, 0.5, 0.5, w - 1, h - 1, rr);
+    cairo_clip(cr);
+
+    double r, g, b;
+    Pixel bg = $pressed ? $pressColor : ($hover ? $hoverColor : $panelColor);
+    pixel_rgb($, bg, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+    cairo_paint(cr);
+
+    cairo_reset_clip(cr);
+    cairo_set_line_width(cr, 1.0);
+    rounded_rect(cr, 0.5, 0.5, w - 1, h - 1, rr);
+    cairo_set_source_rgba(cr, 1, 1, 1, 0.12);
+    cairo_stroke(cr);
+    rounded_rect(cr, 1.5, 1.5, w - 3, h - 3, rr - 1);
+    cairo_set_source_rgba(cr, 0, 0, 0, 0.55);
+    cairo_stroke(cr);
+
+    pixel_rgb($, $pressed ? $panelColor : $iconColor, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+    double s = (double)$iconSize;
+    draw_icon($, cr, w / 2.0, 12.0 + s / 2.0, s);
+
+    cairo_select_font_face(cr, "DejaVu Sans",
+        CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_set_font_size(cr, 9.0);
+
+    char line1[64] = "";
+    char line2[64] = "";
+    const char *text = $label ? $label : "";
+    const char *split = strchr(text, ' ');
+    if (!split) split = strchr(text, '/');
+    if (split) {
+        size_t n = (size_t)(split - text);
+        if (n >= sizeof line1) n = sizeof line1 - 1;
+        memcpy(line1, text, n);
+        line1[n] = 0;
+        snprintf(line2, sizeof line2, "%s", split + 1);
+    } else {
+        snprintf(line1, sizeof line1, "%s", text);
+    }
+
+    pixel_rgb($, $pressed ? $panelColor : $labelColor, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+
+    cairo_text_extents_t te;
+    double ty;
+    if (line2[0]) {
+        cairo_text_extents(cr, line1, &te);
+        cairo_move_to(cr, (w - te.width) / 2.0 - te.x_bearing, h - 24.0);
+        cairo_show_text(cr, line1);
+        cairo_text_extents(cr, line2, &te);
+        cairo_move_to(cr, (w - te.width) / 2.0 - te.x_bearing, h - 10.0);
+        cairo_show_text(cr, line2);
+    } else {
+        cairo_text_extents(cr, line1, &te);
+        ty = h - 11.0;
+        cairo_move_to(cr, (w - te.width) / 2.0 - te.x_bearing, ty);
+        cairo_show_text(cr, line1);
+    }
+
+    cairo_destroy(cr);
+    cairo_surface_flush($surface);
+}
+
+@proc redraw($)
+{
+    if (!XtIsRealized($)) return;
+    if (!$pixmap) alloc_pixmap($);
+    if (!$pixmap) return;
+    draw_button($);
+    if ($surface) cairo_surface_mark_dirty($surface);
+    XCopyArea(XtDisplay($), $pixmap, XtWindow($), $gc_copy,
+              0, 0, $width, $height, 0, 0);
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <string.h>
+@incl <math.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/StringDefs.h>
+@incl <X11/extensions/shape.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "conststr.h"

@@ -1,0 +1,431 @@
+@class WVfdDisplay (Wheel)
+@ VFD-style display: album/track text plus 7-segment elapsed/remaining time.
+
+@PUBLIC
+@var String album = <String> ""
+@var String title = <String> ""
+@var String artist = <String> ""
+@var String elapsed = <String> "00:00"
+@var String remaining = <String> "00:00"
+@var String playState = <String> "IDLE"
+@var int fontSize = 24
+@var <Pixel> Pixel vfdColor = <String> "#8ff7ff"
+@var <Pixel> Pixel vfdDim = <String> "#2c6f78"
+@var <Pixel> Pixel vfdBg = <String> "#061012"
+@var <Pixel> Pixel vfdGlow = <String> "#1a8f9f"
+
+@PRIVATE
+@var String album_mem
+@var String title_mem
+@var String artist_mem
+@var String elapsed_mem
+@var String remaining_mem
+@var String playState_mem
+@var Pixmap pixmap
+@var cairo_surface_t *surface
+@var GC gc_copy
+@var int pref_w
+@var int pref_h
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@proc initialize
+{
+    XTFUNC();
+    $album = $album_mem = XtNewString($album ? $album : "");
+    $title = $title_mem = XtNewString($title ? $title : "");
+    $artist = $artist_mem = XtNewString($artist ? $artist : "");
+    $elapsed = $elapsed_mem = XtNewString($elapsed ? $elapsed : "00:00");
+    $remaining = $remaining_mem = XtNewString($remaining ? $remaining : "00:00");
+    $playState = $playState_mem = XtNewString($playState ? $playState : "IDLE");
+    $pixmap = 0;
+    $surface = NULL;
+    $pref_w = 900;
+    $pref_h = 180;
+
+    XtVaSetValues($, XtNbackground, $vfdBg, XtNborderWidth, 0, NULL);
+
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.graphics_exposures = False;
+    $gc_copy = XtGetGC($, GCGraphicsExposures, &values);
+}
+
+@proc realize
+{
+    XTFUNC();
+    XtCreateWindow($, (unsigned int) InputOutput,
+                   (Visual *) CopyFromParent, *mask, attributes);
+}
+
+@proc resize
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if (XtIsRealized($)) redraw($);
+}
+
+@proc expose
+{
+    XTFUNC();
+    redraw($);
+}
+
+@proc set_values
+{
+    Boolean do_redraw = False;
+
+    /* The Lua bridge passes fresh string pointers even for identical text.
+     * Compare contents, but always copy the new pointer before the old
+     * widget's memory is freed. */
+    if (!str_eq($album, $old$album)) do_redraw = True;
+    String a = XtNewString($album ? $album : "");
+    XtFree($old$album_mem); $album = $album_mem = a;
+
+    if (!str_eq($title, $old$title)) do_redraw = True;
+    String t = XtNewString($title ? $title : "");
+    XtFree($old$title_mem); $title = $title_mem = t;
+
+    if (!str_eq($artist, $old$artist)) do_redraw = True;
+    String ar = XtNewString($artist ? $artist : "");
+    XtFree($old$artist_mem); $artist = $artist_mem = ar;
+
+    if (!str_eq($elapsed, $old$elapsed)) do_redraw = True;
+    String el = XtNewString($elapsed ? $elapsed : "");
+    XtFree($old$elapsed_mem); $elapsed = $elapsed_mem = el;
+
+    if (!str_eq($remaining, $old$remaining)) do_redraw = True;
+    String rem = XtNewString($remaining ? $remaining : "");
+    XtFree($old$remaining_mem); $remaining = $remaining_mem = rem;
+
+    if (!str_eq($playState, $old$playState)) do_redraw = True;
+    String ps = XtNewString($playState ? $playState : "");
+    XtFree($old$playState_mem); $playState = $playState_mem = ps;
+
+    if ($fontSize != $old$fontSize ||
+        $vfdColor != $old$vfdColor || $vfdDim != $old$vfdDim ||
+        $vfdBg != $old$vfdBg || $vfdGlow != $old$vfdGlow)
+        do_redraw = True;
+    if (do_redraw && XtIsRealized($)) redraw($);
+    return False;
+}
+
+@proc destroy
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if ($album_mem) XtFree($album_mem);
+    if ($title_mem) XtFree($title_mem);
+    if ($artist_mem) XtFree($artist_mem);
+    if ($elapsed_mem) XtFree($elapsed_mem);
+    if ($remaining_mem) XtFree($remaining_mem);
+    if ($playState_mem) XtFree($playState_mem);
+    if ($gc_copy) XtReleaseGC($, $gc_copy);
+}
+
+@proc query_geometry
+{
+    int w = (request->request_mode & CWWidth) ? (int)request->width : 0;
+    int h = (request->request_mode & CWHeight) ? (int)request->height : 0;
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)($pref_w > w ? $pref_w : w);
+    reply->height = (Dimension)($pref_h > h ? $pref_h : h);
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@UTILITIES
+
+@proc int str_eq(const char *a, const char *b)
+{
+    if (a == b) return 1;
+    if (!a || !b) return 0;
+    return strcmp(a, b) == 0;
+}
+
+@proc pixel_rgb($, Pixel px, double *r, double *g, double *b)
+{
+    XftColor c;
+    memset(&c, 0, sizeof c);
+    pixel_to_xftcolor($, px, &c);
+    *r = (double)c.color.red / 65535.0;
+    *g = (double)c.color.green / 65535.0;
+    *b = (double)c.color.blue / 65535.0;
+}
+
+@proc destroy_pixmap($)
+{
+    if ($surface) { cairo_surface_destroy($surface); $surface = NULL; }
+    if ($pixmap) {
+        XtVaSetValues($, XtNbackgroundPixmap, None, NULL);
+        if (XtIsRealized($))
+            XSetWindowBackgroundPixmap(XtDisplay($), XtWindow($), None);
+        XFreePixmap(XtDisplay($), $pixmap);
+        $pixmap = 0;
+    }
+}
+
+@proc alloc_pixmap($)
+{
+    if (!XtIsRealized($)) return;
+    if ($width < 1 || $height < 1) return;
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, scr));
+    if (!$pixmap) return;
+    $surface = cairo_xlib_surface_create(dpy, $pixmap,
+                        DefaultVisual(dpy, scr), $width, $height);
+
+    /* Use the last rendered frame as the window background so Xt's
+     * clear-before-expose does not flash the chassis through. */
+    XtVaSetValues($, XtNbackgroundPixmap, $pixmap, NULL);
+    XSetWindowBackgroundPixmap(dpy, XtWindow($), $pixmap);
+}
+
+@ 7-segment helpers ------------------------------------------------------
+
+@proc void seg_h(cairo_t *cr, double x, double y, double w, double t)
+{
+    cairo_rectangle(cr, x + t, y, w - 2 * t, t);
+    cairo_fill(cr);
+}
+
+@proc void seg_v(cairo_t *cr, double x, double y, double h, double t)
+{
+    cairo_rectangle(cr, x, y + t, t, h - 2 * t);
+    cairo_fill(cr);
+}
+
+@proc void draw_digit(cairo_t *cr, char ch, double x, double y,
+                      double w, double h, double t)
+{
+    int mask = 0;
+    switch (ch) {
+    case '0': mask = 0x3f; break;
+    case '1': mask = 0x06; break;
+    case '2': mask = 0x5b; break;
+    case '3': mask = 0x4f; break;
+    case '4': mask = 0x66; break;
+    case '5': mask = 0x6d; break;
+    case '6': mask = 0x7d; break;
+    case '7': mask = 0x07; break;
+    case '8': mask = 0x7f; break;
+    case '9': mask = 0x6f; break;
+    default: return;
+    }
+    double mid = y + h / 2.0;
+    if (mask & 0x01) seg_h(cr, x, y, w, t);                    /* a */
+    if (mask & 0x02) seg_v(cr, x + w - t, y, h / 2.0, t);      /* b */
+    if (mask & 0x04) seg_v(cr, x + w - t, mid, h / 2.0, t);    /* c */
+    if (mask & 0x08) seg_h(cr, x, y + h - t, w, t);            /* d */
+    if (mask & 0x10) seg_v(cr, x, mid, h / 2.0, t);            /* e */
+    if (mask & 0x20) seg_v(cr, x, y, h / 2.0, t);              /* f */
+    if (mask & 0x40) seg_h(cr, x, mid - t / 2.0, w, t);        /* g */
+}
+
+@proc void draw_colon(cairo_t *cr, double x, double y,
+                      double w, double h, double t)
+{
+    cairo_rectangle(cr, x + w / 2.0 - t, y + h * 0.30, t * 2, t * 2);
+    cairo_fill(cr);
+    cairo_rectangle(cr, x + w / 2.0 - t, y + h * 0.62, t * 2, t * 2);
+    cairo_fill(cr);
+}
+
+@proc void draw_time(cairo_t *cr, const char *s, double x, double y,
+                     double h, double *out_w)
+{
+    double t = h / 8.0;
+    double dw = h * 0.46;
+    double gap = h * 0.10;
+    double cx = x;
+    if (*s == '-') {
+        cairo_rectangle(cr, cx, y + h / 2.0 - t / 2.0, dw, t);
+        cairo_fill(cr);
+        cx += dw + gap;
+        s++;
+    }
+    for (; *s; s++) {
+        if (*s == ':') {
+            draw_colon(cr, cx, y, dw * 0.55, h, t);
+            cx += dw * 0.55 + gap;
+        } else {
+            draw_digit(cr, *s, cx, y, dw, h, t);
+            cx += dw + gap;
+        }
+    }
+    if (out_w) *out_w = cx - x;
+}
+
+@ draw panel -------------------------------------------------------------
+
+@proc void vfd_text(cairo_t *cr, const char *text, double x, double y,
+                    double size, int bold)
+{
+    cairo_select_font_face(cr, "DejaVu Sans Mono",
+        CAIRO_FONT_SLANT_NORMAL,
+        bold ? CAIRO_FONT_WEIGHT_BOLD : CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_set_font_size(cr, size);
+    cairo_move_to(cr, x, y);
+    cairo_show_text(cr, text);
+}
+
+@proc void vfd_text_fit(cairo_t *cr, const char *text, double x, double y,
+                        double size, int bold, double max_w)
+{
+    cairo_select_font_face(cr, "DejaVu Sans Mono",
+        CAIRO_FONT_SLANT_NORMAL,
+        bold ? CAIRO_FONT_WEIGHT_BOLD : CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_set_font_size(cr, size);
+
+    cairo_text_extents_t te;
+    cairo_text_extents(cr, text, &te);
+    if (te.x_advance <= max_w) {
+        cairo_move_to(cr, x, y);
+        cairo_show_text(cr, text);
+        return;
+    }
+
+    char buf[256];
+    buf[0] = 0;
+    size_t len = strlen(text);
+    if (len >= sizeof buf) len = sizeof buf - 2;
+    while (len > 0) {
+        /* Do not cut in the middle of a UTF-8 sequence. */
+        while (len > 0 && ((unsigned char)text[len] & 0xC0) == 0x80)
+            len--;
+        snprintf(buf, sizeof buf, "%.*s…", (int)len, text);
+        cairo_text_extents(cr, buf, &te);
+        if (te.x_advance <= max_w) break;
+        len--;
+    }
+    cairo_move_to(cr, x, y);
+    cairo_show_text(cr, buf);
+}
+
+@proc draw_vfd($)
+{
+    if (!$surface) return;
+    int w = $width, h = $height;
+    cairo_t *cr = cairo_create($surface);
+    cairo_rectangle(cr, 0, 0, w, h);
+    cairo_clip(cr);
+
+    double br, bg, bb, fr, fg, fb, dr, dg, db;
+    pixel_rgb($, $vfdBg, &br, &bg, &bb);
+    pixel_rgb($, $vfdColor, &fr, &fg, &fb);
+    pixel_rgb($, $vfdDim, &dr, &dg, &db);
+
+    cairo_pattern_t *pat = cairo_pattern_create_linear(0, 0, 0, h);
+    cairo_pattern_add_color_stop_rgb(pat, 0.0, br * 0.7, bg * 0.7, bb * 0.7);
+    cairo_pattern_add_color_stop_rgb(pat, 0.5, br, bg, bb);
+    cairo_pattern_add_color_stop_rgb(pat, 1.0, br * 0.5, bg * 0.5, bb * 0.5);
+    cairo_set_source(cr, pat);
+    cairo_paint(cr);
+    cairo_pattern_destroy(pat);
+
+    /* bezel */
+    cairo_set_line_width(cr, 2.0);
+    cairo_set_source_rgba(cr, 0, 0, 0, 0.7);
+    cairo_rectangle(cr, 1, 1, w - 2, h - 2);
+    cairo_stroke(cr);
+    cairo_set_source_rgba(cr, 1, 1, 1, 0.10);
+    cairo_rectangle(cr, 4, 4, w - 8, h - 8);
+    cairo_stroke(cr);
+
+    int split = (int)(w * 0.63);
+    cairo_set_source_rgba(cr, dr, dg, db, 0.35);
+    cairo_set_line_width(cr, 1.0);
+    cairo_move_to(cr, split + 0.5, 16);
+    cairo_line_to(cr, split + 0.5, h - 16);
+    cairo_stroke(cr);
+
+    /* left text: glow + bright pass */
+    cairo_set_source_rgba(cr, fr, fg, fb, 0.18);
+    vfd_text(cr, "ALBUM:", 24, 40, 15, 0);
+    vfd_text_fit(cr, $album, 24, 82, $fontSize + 8, 1, split - 40);
+    vfd_text(cr, "TRACK:", 24, 116, 15, 0);
+    vfd_text_fit(cr, $title, 24, 158, $fontSize + 4, 1, split - 40);
+
+    cairo_set_source_rgba(cr, fr, fg, fb, 1.0);
+    vfd_text(cr, "ALBUM:", 24, 40, 15, 0);
+    vfd_text_fit(cr, $album, 24, 82, $fontSize + 8, 1, split - 40);
+    vfd_text(cr, "TRACK:", 24, 116, 15, 0);
+    vfd_text_fit(cr, $title, 24, 158, $fontSize + 4, 1, split - 40);
+
+    /* right time: 7-segment */
+    double tw = 0;
+    double time_h = 44;
+    double tx = split + 34;
+    cairo_set_source_rgba(cr, fr, fg, fb, 0.20);
+    draw_time(cr, $elapsed, tx + 1, 20, time_h, &tw);
+    cairo_set_source_rgba(cr, fr, fg, fb, 1.0);
+    draw_time(cr, $elapsed, tx, 19, time_h, &tw);
+
+    cairo_set_source_rgba(cr, fr, fg, fb, 0.7);
+    vfd_text(cr, "ELAPSED", tx, 88, 13, 0);
+
+    cairo_set_source_rgba(cr, dr, dg, db, 0.8);
+    cairo_set_line_width(cr, 1.0);
+    cairo_move_to(cr, tx, 98);
+    cairo_line_to(cr, tx + 150, 98);
+    cairo_stroke(cr);
+
+    cairo_set_source_rgba(cr, fr, fg, fb, 0.20);
+    draw_time(cr, $remaining, tx + 1, 110, time_h, &tw);
+    cairo_set_source_rgba(cr, fr, fg, fb, 1.0);
+    draw_time(cr, $remaining, tx, 109, time_h, &tw);
+
+    cairo_set_source_rgba(cr, fr, fg, fb, 0.7);
+    vfd_text(cr, "REMAINING", tx, 172, 13, 0);
+
+    cairo_set_source_rgba(cr, fr, fg, fb, 0.5);
+    vfd_text(cr, $playState, w - 110, 24, 12, 0);
+
+    cairo_destroy(cr);
+    cairo_surface_flush($surface);
+}
+
+@proc redraw($)
+{
+    if (!XtIsRealized($)) return;
+    if (!$pixmap) alloc_pixmap($);
+    if (!$pixmap) return;
+    draw_vfd($);
+    if ($surface) cairo_surface_mark_dirty($surface);
+    XCopyArea(XtDisplay($), $pixmap, XtWindow($), $gc_copy,
+              0, 0, $width, $height, 0, 0);
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <string.h>
+@incl <math.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/StringDefs.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "conststr.h"

@@ -72,6 +72,7 @@ if [ "$GUI_OK" -eq 1 ]; then
         T1_MENU_INPUT="$TMP/menu.tsv" \
         T1_MENU_RESULT="$TMP/result.tsv" \
         T1_MENU_DESC_OUT="$TMP/desc.txt" \
+        T1_MENU_LAYOUT_OUT="$TMP/layout.txt" \
         T1_ROOT="$ROOT" \
         T1_MENU_AUTOSELECT=theme \
         T1_MENU_AUTOTRACE=5 \
@@ -95,9 +96,16 @@ if [ "$GUI_OK" -eq 1 ]; then
     else
         bad "menu loads and resolves the .retex description"
     fi
+
+    if [ "$(cat "$TMP/layout.txt" 2>/dev/null)" = "720" ]; then
+        ok "menu uses a splitter with the configured fraction"
+    else
+        bad "menu uses a splitter with the configured fraction"
+    fi
 else
     bad "menu writes a result file (commander_runner unavailable)"
     bad "menu loads and resolves the .retex description (commander_runner unavailable)"
+    bad "menu uses a splitter with the configured fraction (commander_runner unavailable)"
 fi
 
 # 4b. Selecting a row must update the description (not just the initial row).

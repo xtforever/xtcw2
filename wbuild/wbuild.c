@@ -135,6 +135,8 @@ char *build_guard(char *prefix, char *filename, char *ending)
 	return tmp;
 }
 
+static char *hdf_dir = NULL;
+
 void process_file(Class c, char *include_dir, char *c_dir, char *doc_dir,
 	char *prefix, int lines, int force)
 {
@@ -202,6 +204,17 @@ void process_file(Class c, char *include_dir, char *c_dir, char *doc_dir,
 		free(filename);
 	}
 
+	if (hdf_dir) {
+		filename = build_filename(hdf_dir, name, ".hdf");
+		get_filetime(filename, &desttime);
+		if (force || (desttime < c->filetime)) {
+			f = xfopen(filename, "w");
+			generate_hdf_doc(f, c);
+			fclose(f);
+		}
+		free(filename);
+	}
+
 }
 
 struct option const longopts[] = {
@@ -214,6 +227,7 @@ struct option const longopts[] = {
 	{"c-dir",		required_argument,	0,	'c'},
 	{"doc-dir",		required_argument,	0,	'd'},
 	{"documentation-dir",	required_argument,	0,	'd'},
+	{"hdf-dir",		required_argument,	0,	259},
 	{"force",		no_argument,		0,	258},
 	{"no-init-file",	no_argument,		0,	257},
 	{0,			0,			0,	0}
@@ -309,6 +323,7 @@ int main(int argc, char *argv[])
 			case 'i': include_dir = optarg; break;
 			case 'c': c_dir = optarg; break;
 			case 'd': doc_dir = optarg; break;
+			case 259: hdf_dir = optarg; break;
 			case 257: init_file = 0; break;
 			case 258: force = 1; break;
 			case '?': help = 1; break;
@@ -323,6 +338,8 @@ int main(int argc, char *argv[])
         _mkdir( include_dir );
         _mkdir( c_dir );
         _mkdir( doc_dir );
+        if (hdf_dir)
+                _mkdir( hdf_dir );
 
 	if (init_file) {
 		yyin = fopen(PKGDATADIR "/init.w", "r");

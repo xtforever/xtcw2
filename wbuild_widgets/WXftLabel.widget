@@ -1,0 +1,188 @@
+@class WXftLabel (Core)
+@ Minimal Xft label (no retex) with a parent-relative transparent window.
+
+@PUBLIC
+@ text to display
+@var String label = <String> ""
+@ Xft font specification
+@var <XftFont> XftFont* xftFont = <String> "Sans-16"
+@ text colour
+@var <Pixel> Pixel fg_norm = <String> "#8ff7ff"
+@ 0=left, 1=center, 2=right
+@var int align = 0
+@ horizontal padding in pixels
+@var int padX = 0
+@ vertical padding in pixels
+@var int padY = 0
+
+@PRIVATE
+@var String label_mem
+@var XftDraw *draw
+@var XftColor col
+@var Boolean col_ok
+@var int pref_w
+@var int pref_h
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@proc initialize
+{
+    XTFUNC();
+    $label = $label_mem = XtNewString($label ? $label : "");
+    $draw = NULL;
+    $col_ok = False;
+    $pref_w = 1;
+    $pref_h = 1;
+
+    XtVaSetValues($, XtNborderWidth, 0, NULL);
+    XtVaSetValues($, XtNbackgroundPixmap, ParentRelative, NULL);
+
+    col_set($);
+    measure($);
+}
+
+@proc realize
+{
+    XTFUNC();
+    XtCreateWindow($, (unsigned int) InputOutput,
+                   (Visual *) CopyFromParent, *mask, attributes);
+
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    if (win) {
+        XSetWindowBackgroundPixmap(dpy, win, ParentRelative);
+        $draw = XftDrawCreate(dpy, win,
+                    DefaultVisualOfScreen(XtScreen($)),
+                    DefaultColormapOfScreen(XtScreen($)));
+    }
+}
+
+@proc expose
+{
+    XTFUNC();
+    if (!XtIsRealized($)) return;
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    if (!win) return;
+
+    /* ParentRelative + XClearWindow lets the chassis background show through. */
+    XClearWindow(dpy, win);
+    if (!$draw) {
+        $draw = XftDrawCreate(dpy, win,
+                    DefaultVisualOfScreen(XtScreen($)),
+                    DefaultColormapOfScreen(XtScreen($)));
+    }
+    if (!$draw || !$col_ok) return;
+
+    int w, h;
+    xft_calc_string_size($, $xftFont, $label, &w, &h);
+    int x = $padX;
+    if ($align == 1) x = ((int)$width - w) / 2;
+    else if ($align == 2) x = (int)$width - w - $padX;
+    if (x < 0) x = 0;
+    int baseline = (int)$height - $padY - $xftFont->descent;
+    if (baseline < $xftFont->ascent) baseline = $xftFont->ascent;
+
+    XftDrawStringUtf8($draw, &$col, $xftFont, x, baseline,
+                      (FcChar8*)$label, (int)strlen($label));
+}
+
+@proc set_values
+{
+    Boolean redraw = False;
+
+    if ($label != $old$label) {
+        XtFree($old$label_mem);
+        if ($label == 0) $label = "";
+        $label = $label_mem = XtNewString($label);
+        measure($);
+        redraw = True;
+    }
+    if ($xftFont != $old$xftFont) {
+        measure($);
+        redraw = True;
+    }
+    if ($fg_norm != $old$fg_norm) {
+        col_set($);
+        redraw = True;
+    }
+    if ($align != $old$align || $padX != $old$padX || $padY != $old$padY)
+        redraw = True;
+
+    return redraw;
+}
+
+@proc destroy
+{
+    XTFUNC();
+    if ($draw) { XftDrawDestroy($draw); $draw = NULL; }
+    if ($col_ok) {
+        XftColorFree(XtDisplay($), DefaultVisualOfScreen(XtScreen($)),
+                     DefaultColormapOfScreen(XtScreen($)), &$col);
+        $col_ok = False;
+    }
+    if ($label_mem) XtFree($label_mem);
+}
+
+@proc query_geometry
+{
+    int rw = (request->request_mode & CWWidth) ? (int)request->width : 0;
+    int rh = (request->request_mode & CWHeight) ? (int)request->height : 0;
+
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)($pref_w > rw ? $pref_w : rw);
+    reply->height = (Dimension)($pref_h > rh ? $pref_h : rh);
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@UTILITIES
+
+@proc col_set($)
+{
+    if ($col_ok) {
+        XftColorFree(XtDisplay($), DefaultVisualOfScreen(XtScreen($)),
+                     DefaultColormapOfScreen(XtScreen($)), &$col);
+        $col_ok = False;
+    }
+    $col_ok = xft_color_alloc($, $fg_norm, &$col);
+}
+
+@proc measure($)
+{
+    int w = 1, h = 1;
+    if ($xftFont) {
+        xft_calc_string_size($, $xftFont, $label ? $label : "", &w, &h);
+        $pref_h = $xftFont->ascent + $xftFont->descent + 2 * $padY;
+    }
+    $pref_w = w + 2 * $padX;
+    if ($pref_w < 1) $pref_w = 1;
+    if ($pref_h < 1) $pref_h = 1;
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <string.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters.h"
+@incl "converters-xft.h"
+@incl "xutil.h"
+@incl "mls.h"

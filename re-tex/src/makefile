@@ -20,8 +20,8 @@ $(LIB): $(OBJS)
 
 install: $(LIB)
 	mkdir -p $(incdir) $(libdir)
-	cp *.h $(incdir)/
-	cp $(LIB) $(libdir)/
+	cp -p *.h $(incdir)/
+	cp -p $(LIB) $(libdir)/
 
 -include $(DEPS)
 

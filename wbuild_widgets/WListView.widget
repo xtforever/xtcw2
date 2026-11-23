@@ -119,6 +119,8 @@
 @var void *font
 @ The font face is a String resource borrowed from Xt; keep an owned copy.
 @var char *fontFace_mem
+@ columnTitles is borrowed from Xt/Lua; keep an owned copy for rebuild_columns.
+@var char *columnTitles_mem
 @var void *draw
 @var Pixmap pixmap
 @ sizes of the current backing pixmap
@@ -408,6 +410,8 @@
   update_selected_id($);
   $fontFace_mem = strdup($fontFace ? $fontFace : "Sans");
   $fontFace = $fontFace_mem;
+  $columnTitles_mem = strdup($columnTitles ? $columnTitles : "");
+  $columnTitles = $columnTitles_mem;
   $last_click_time = 0;
   $last_click_row = -1;
   $resizing = 0;
@@ -454,6 +458,7 @@
   $cache_w = 0; $cache_h = 0;
   if ($font) { XftFontClose($dpy, (XftFont*)$font); $font = NULL; }
   free($fontFace_mem); $fontFace_mem = NULL;
+  free($columnTitles_mem); $columnTitles_mem = NULL;
   free_xcol($);
   if ($gc) { XtReleaseGC($, $gc); $gc = 0; }
   if ($icon_gc) { XtReleaseGC($, $icon_gc); $icon_gc = 0; }
@@ -541,6 +546,12 @@
   }
 
   if ($tooltip != $old$tooltip) wtooltip_set($, $tooltip);
+
+  if ($columnTitles != $old$columnTitles) {
+    free($columnTitles_mem);
+    $columnTitles_mem = strdup($columnTitles ? $columnTitles : "");
+    $columnTitles = $columnTitles_mem;
+  }
 
   if ($fontFace != $old$fontFace || $fontSize != $old$fontSize ||
       $rowHeight != $old$rowHeight || $headerHeight != $old$headerHeight) {

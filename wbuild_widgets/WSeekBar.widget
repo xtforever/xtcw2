@@ -1,0 +1,416 @@
+@class WSeekBar (Wheel)
+@ Seek/progress bar with drag, click-to-seek and elapsed/remaining labels.
+
+@PUBLIC
+@ current position in milliseconds
+@var int positionMs = 0
+@ track duration in milliseconds
+@var int durationMs = 0
+@ true while the user drags the thumb
+@var Boolean dragging = False
+@ show MM:SS labels below the track
+@var Boolean showTimes = True
+@ rounded corner radius in pixels
+@var int cornerRadius = 8
+@ draw the outer highlight/shadow border
+@var Boolean showBorder = True
+@var <Pixel> Pixel trackColor = <String> "#202326"
+@var <Pixel> Pixel fillColor = <String> "#ff8c1a"
+@var <Pixel> Pixel thumbColor = <String> "#ff9a2e"
+@var <Pixel> Pixel textColor = <String> "#d8d8d8"
+@var <Pixel> Pixel panelColor = <String> "#141210"
+
+@PRIVATE
+@var Pixmap pixmap
+@var cairo_surface_t *surface
+@var XftDraw *draw
+@var GC gc_copy
+@var XftColor col[2]
+@var int drag_ms
+@var int pref_w
+@var int pref_h
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@proc initialize
+{
+    XTFUNC();
+    $pixmap = 0;
+    $surface = NULL;
+    $draw = NULL;
+    $drag_ms = 0;
+    $pref_w = 420;
+    $pref_h = 52;
+
+    XtVaSetValues($, XtNbackground, $panelColor, XtNborderWidth, 0, NULL);
+
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.graphics_exposures = False;
+    $gc_copy = XtGetGC($, GCGraphicsExposures, &values);
+
+    col_set($);
+}
+
+@proc realize
+{
+    XTFUNC();
+    XtCreateWindow($, (unsigned int) InputOutput,
+                   (Visual *) CopyFromParent, *mask, attributes);
+    reshape_widget($);
+}
+
+@proc resize
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if (XtIsRealized($)) {
+        reshape_widget($);
+        redraw($);
+    }
+}
+
+@proc expose
+{
+    XTFUNC();
+    redraw($);
+}
+
+@proc set_values
+{
+    Boolean do_redraw = False;
+    if ($positionMs != $old$positionMs || $durationMs != $old$durationMs ||
+        $dragging != $old$dragging || $showTimes != $old$showTimes ||
+        $cornerRadius != $old$cornerRadius || $showBorder != $old$showBorder) {
+        if ($positionMs < 0) $positionMs = 0;
+        if ($durationMs < 0) $durationMs = 0;
+        if ($positionMs > $durationMs && $durationMs > 0)
+            $positionMs = $durationMs;
+        do_redraw = True;
+    }
+    if ($trackColor != $old$trackColor || $fillColor != $old$fillColor ||
+        $thumbColor != $old$thumbColor || $textColor != $old$textColor ||
+        $panelColor != $old$panelColor) {
+        col_set($);
+        do_redraw = True;
+    }
+    if (do_redraw && XtIsRealized($)) {
+        if ($cornerRadius != $old$cornerRadius) reshape_widget($);
+        redraw($);
+    }
+    return False;
+}
+
+@proc destroy
+{
+    XTFUNC();
+    destroy_pixmap($);
+    if ($gc_copy) XtReleaseGC($, $gc_copy);
+    Display *dpy = XtDisplay($);
+    Visual *v = DefaultVisual(dpy, DefaultScreen(dpy));
+    XftColorFree(dpy, v, None, $col + 0);
+    XftColorFree(dpy, v, None, $col + 1);
+}
+
+@proc query_geometry
+{
+    int w = (request->request_mode & CWWidth) ? (int)request->width : 0;
+    int h = (request->request_mode & CWHeight) ? (int)request->height : 0;
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)($pref_w > w ? $pref_w : w);
+    reply->height = (Dimension)($pref_h > h ? $pref_h : h);
+    return XtGeometryAlmost;
+}
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@TRANSLATIONS
+@trans <Btn1Down>: seek_press()
+@trans <Btn1Motion>: seek_drag()
+@trans <Btn1Up>: seek_release()
+
+@ACTIONS
+
+@proc seek_press
+{
+    if (!event) return;
+    $dragging = True;
+    $drag_ms = x_to_ms($, event->xbutton.x);
+    XGrabPointer(XtDisplay($), XtWindow($), False,
+                 ButtonReleaseMask | PointerMotionMask,
+                 GrabModeAsync, GrabModeAsync, None, None, CurrentTime);
+    redraw($);
+}
+
+@proc seek_drag
+{
+    if (!event || !$dragging) return;
+    $drag_ms = x_to_ms($, event->xbutton.x);
+    redraw($);
+}
+
+@proc seek_release
+{
+    if (!$dragging) return;
+    $dragging = False;
+    $positionMs = $drag_ms;
+    XUngrabPointer(XtDisplay($), CurrentTime);
+    redraw($);
+    XtCallCallbackList($, $callback, (XtPointer)(intptr_t)$positionMs);
+}
+
+@UTILITIES
+
+@proc void rounded_rect(cairo_t *cr, double x, double y, double w, double h, double r)
+{
+    if (r > w / 2.0) r = w / 2.0;
+    if (r > h / 2.0) r = h / 2.0;
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x + w - r, y + r, r, -M_PI / 2.0, 0);
+    cairo_arc(cr, x + w - r, y + h - r, r, 0, M_PI / 2.0);
+    cairo_arc(cr, x + r, y + h - r, r, M_PI / 2.0, M_PI);
+    cairo_arc(cr, x + r, y + r, r, M_PI, 3.0 * M_PI / 2.0);
+    cairo_close_path(cr);
+}
+
+@proc void reshape_widget($)
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    int w = (int)$width;
+    int h = (int)$height;
+    int r = $cornerRadius;
+
+    if (!win || w < 2 || h < 2) return;
+    if (r <= 0) {
+        XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, None, ShapeSet);
+        return;
+    }
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+
+    Pixmap mask = XCreatePixmap(dpy, win, w, h, 1);
+    if (!mask) return;
+    GC gc = XCreateGC(dpy, mask, 0, NULL);
+    if (!gc) { XFreePixmap(dpy, mask); return; }
+
+    XSetForeground(dpy, gc, 0);
+    XFillRectangle(dpy, mask, gc, 0, 0, w, h);
+    XSetForeground(dpy, gc, 1);
+    XFillRectangle(dpy, mask, gc, r, 0, w - 2 * r, h);
+    if (h - 2 * r > 0)
+        XFillRectangle(dpy, mask, gc, 0, r, w, h - 2 * r);
+    XFillArc(dpy, mask, gc, 0, 0, 2 * r, 2 * r, 90 * 64, 90 * 64);
+    XFillArc(dpy, mask, gc, w - 2 * r, 0, 2 * r, 2 * r, 0, 90 * 64);
+    XFillArc(dpy, mask, gc, w - 2 * r, h - 2 * r, 2 * r, 2 * r, 270 * 64, 90 * 64);
+    XFillArc(dpy, mask, gc, 0, h - 2 * r, 2 * r, 2 * r, 180 * 64, 90 * 64);
+
+    XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, mask, ShapeSet);
+    XFreeGC(dpy, gc);
+    XFreePixmap(dpy, mask);
+}
+
+@proc col_set($)
+{
+    Display *dpy = XtDisplay($);
+    Visual *v = DefaultVisual(dpy, DefaultScreen(dpy));
+    XftColorFree(dpy, v, None, $col + 0);
+    XftColorFree(dpy, v, None, $col + 1);
+    xft_color_alloc($, $textColor, $col + 0);
+    xft_color_alloc($, $fillColor, $col + 1);
+}
+
+@proc pixel_rgb($, Pixel px, double *r, double *g, double *b)
+{
+    XftColor c;
+    memset(&c, 0, sizeof c);
+    pixel_to_xftcolor($, px, &c);
+    *r = (double)c.color.red / 65535.0;
+    *g = (double)c.color.green / 65535.0;
+    *b = (double)c.color.blue / 65535.0;
+}
+
+@proc destroy_pixmap($)
+{
+    if ($surface) { cairo_surface_destroy($surface); $surface = NULL; }
+    if ($draw) { XftDrawDestroy($draw); $draw = NULL; }
+    if ($pixmap) {
+        XtVaSetValues($, XtNbackgroundPixmap, None, NULL);
+        if (XtIsRealized($))
+            XSetWindowBackgroundPixmap(XtDisplay($), XtWindow($), None);
+        XFreePixmap(XtDisplay($), $pixmap);
+        $pixmap = 0;
+    }
+}
+
+@proc alloc_pixmap($)
+{
+    if (!XtIsRealized($)) return;
+    if ($width < 1 || $height < 1) return;
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, scr));
+    if (!$pixmap) return;
+    $surface = cairo_xlib_surface_create(dpy, $pixmap,
+                        DefaultVisual(dpy, scr), $width, $height);
+    $draw = XftDrawCreate(dpy, $pixmap, DefaultVisual(dpy, scr), None);
+
+    XtVaSetValues($, XtNbackgroundPixmap, $pixmap, NULL);
+    XSetWindowBackgroundPixmap(dpy, XtWindow($), $pixmap);
+}
+
+@proc int track_left($) { return 10; }
+@proc int track_right($) { return (int)$width - 10; }
+
+@proc int x_to_ms($, int x)
+{
+    int left = track_left($);
+    int right = track_right($);
+    if (right <= left) return 0;
+    if (x < left) x = left;
+    if (x > right) x = right;
+    if ($durationMs <= 0) return 0;
+    return (int)((double)(x - left) / (double)(right - left) * $durationMs);
+}
+
+@proc void fmt_time(int ms, char *buf, int n)
+{
+    int s = ms / 1000;
+    if (s < 0) s = 0;
+    snprintf(buf, n, "%02d:%02d", s / 60, s % 60);
+}
+
+@proc draw_bar($)
+{
+    if (!$surface) return;
+    int w = $width, h = $height;
+    int left = track_left($);
+    int right = track_right($);
+    int y = 8;
+    int th = 12;
+    int tw = right - left;
+    if (tw < 4) return;
+
+    cairo_t *cr = cairo_create($surface);
+    double rr = (double)$cornerRadius;
+
+    /* Clear the whole backing pixmap first.  The window is shaped to the
+     * rounded rect, but a one-pixel mask/edge difference must not expose an
+     * uninitialised white pixmap corner. */
+    double r, g, b;
+    pixel_rgb($, $panelColor, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+    cairo_paint(cr);
+
+    rounded_rect(cr, 0.5, 0.5, w - 1, h - 1, rr);
+    cairo_clip(cr);
+
+    /* rounded track */
+    pixel_rgb($, $trackColor, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+    rounded_rect(cr, left, y, tw, th, th / 2.0);
+    cairo_fill(cr);
+
+    int ms = $dragging ? $drag_ms : $positionMs;
+    double frac = $durationMs > 0 ? (double)ms / (double)$durationMs : 0.0;
+    if (frac < 0) frac = 0;
+    if (frac > 1) frac = 1;
+    double fx = left + frac * tw;
+
+    if (fx > left) {
+        pixel_rgb($, $fillColor, &r, &g, &b);
+        cairo_set_source_rgb(cr, r, g, b);
+        double fw = fx - left;
+        rounded_rect(cr, left, y, fw, th, fw < th ? fw / 2.0 : th / 2.0);
+        cairo_fill(cr);
+    }
+
+    pixel_rgb($, $thumbColor, &r, &g, &b);
+    cairo_set_source_rgb(cr, r, g, b);
+    cairo_arc(cr, fx, y + th / 2.0, 8.0, 0, 2 * M_PI);
+    cairo_fill(cr);
+    cairo_set_source_rgba(cr, 0, 0, 0, 0.35);
+    cairo_set_line_width(cr, 1.0);
+    cairo_arc(cr, fx, y + th / 2.0, 8.0, 0, 2 * M_PI);
+    cairo_stroke(cr);
+
+    if ($showBorder) {
+        cairo_reset_clip(cr);
+        cairo_set_line_width(cr, 1.0);
+        rounded_rect(cr, 0.5, 0.5, w - 1, h - 1, rr);
+        cairo_set_source_rgba(cr, 1, 1, 1, 0.10);
+        cairo_stroke(cr);
+        rounded_rect(cr, 1.5, 1.5, w - 3, h - 3, rr - 1);
+        cairo_set_source_rgba(cr, 0, 0, 0, 0.45);
+        cairo_stroke(cr);
+    }
+
+    cairo_destroy(cr);
+    cairo_surface_flush($surface);
+}
+
+@proc draw_text($)
+{
+    if (!$draw || !$showTimes) return;
+    XftFont *f = $xftFont ? $xftFont : NULL;
+    if (!f) return;
+    char buf[32];
+    int tw, th;
+    int ms = $dragging ? $drag_ms : $positionMs;
+    int y = (int)$height - 6;
+
+    fmt_time(ms, buf, sizeof buf);
+    XftDrawStringUtf8($draw, $col + 0, f, 10, y,
+                      (FcChar8*)buf, (int)strlen(buf));
+
+    fmt_time($durationMs, buf, sizeof buf);
+    xft_calc_string_size($, f, buf, &tw, &th);
+    XftDrawStringUtf8($draw, $col + 0, f, (int)$width - tw - 10, y,
+                      (FcChar8*)buf, (int)strlen(buf));
+}
+
+@proc redraw($)
+{
+    if (!XtIsRealized($)) return;
+    if (!$pixmap) alloc_pixmap($);
+    if (!$pixmap) return;
+    draw_bar($);
+    draw_text($);
+    if ($surface) cairo_surface_mark_dirty($surface);
+    XCopyArea(XtDisplay($), $pixmap, XtWindow($), $gc_copy,
+              0, 0, $width, $height, 0, 0);
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <string.h>
+@incl <math.h>
+@incl <stdint.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/StringDefs.h>
+@incl <X11/extensions/shape.h>
+@incl "converters-xft.h"
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "conststr.h"

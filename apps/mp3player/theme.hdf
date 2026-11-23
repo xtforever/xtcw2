@@ -1,0 +1,94 @@
+; mp3player theme: dark chassis, orange accent, VFD-friendly text.
+(theme default (
+    bg_norm 0x1b1d1f
+    bg_sel  0xff8c1a
+    bg_hi   0x3a3d40
+    fg_norm 0xd8d8d8
+    fg_sel  0x111111
+    fg_hi   0xffffff
+    switch_off 0x3a3d40
+    switch_on  0xff8c1a
+    switch_knob_off 0x9a9d9f
+    switch_knob_on  0xffffff
+    gridbox_bg 0x1b1d1f
+    gridbox_border 0x0e0f10
+    font_tiny     "DejaVu Sans-9"
+    font_small    "DejaVu Sans-10"
+    font_normal   "DejaVu Sans-12"
+    font_large    "DejaVu Sans-18"
+    font_heading2 "DejaVu Sans-16"
+    font_heading1 "DejaVu Sans-22"
+    borderwidth 0
+    bordercolor 0x0e0f10
+    button_bg      0x2a2d30
+    button_fg      0xd8d8d8
+    button_border  0x4a4d50
+    input_bg       0x151719
+    input_fg       0xd8d8d8
+    input_border   0x4a4d50
+    accent         0xff8c1a
+    accent_fg      0x111111
+    list_bg        0x151719
+    list_fg        0xd8d8d8
+    list_sel_bg    0xff8c1a
+    list_sel_fg    0x111111
+    list_header_bg 0x24272a
+    scrollbar_thumb 0x5a5d60
+    list_header_fg 0xd8d8d8
+    list_line      0x3a3d40
+    list_alt_bg    0x1d1f22
+    font_ui        "DejaVu Sans-12"
+    window_margin  0
+    control_height 32
+    control_padding 8
+    control_border 1
+    control_gap    8
+    group_gap      10
+    action_gap     8
+    list_row_height "16.5pt"
+    list_header_height "18pt"
+    list_cell_pad_x "6pt"
+    list_cell_pad_y "3pt"
+    icon_size      "12pt"
+    bar_size       "10.5pt"
+    menu_bg          0x24272a
+    menu_fg          0xd8d8d8
+    menu_sel         0xff8c1a
+    menu_border      0x0e0f10
+    toolbar_bg       0x24272a
+    toolbar_fg       0xd8d8d8
+    toolbar_border   0x0e0f10
+    status_bg        0x24272a
+    status_fg        0xd8d8d8
+    status_border    0x0e0f10
+    tooltip_bg       0x24272a
+    tooltip_fg       0xd8d8d8
+    tooltip_border   0x0e0f10
+    table_bg         0x151719
+    table_fg         0xd8d8d8
+    table_sel_bg     0xff8c1a
+    table_sel_fg     0x111111
+    table_header_bg  0x24272a
+    table_header_fg  0xd8d8d8
+    table_alt_bg     0x1d1f22
+    table_line       0x3a3d40
+    tree_bg          0x151719
+    tree_fg          0xd8d8d8
+    tree_sel_bg      0xff8c1a
+    tree_line        0x3a3d40
+    progress_bg      0x151719
+    progress_fill    0xff8c1a
+    progress_border  0x4a4d50
+    progress_fg      0xd8d8d8
+    dialog_bg        0x1b1d1f
+    dialog_border    0x4a4d50
+    menu_height      24
+    toolbar_height   24
+    status_height    24
+    dialog_padding   12
+    table_row_height "16.5pt"
+    table_header_height "18pt"
+    tree_indent      16
+    tree_row_height  "16.5pt"
+    progress_height  18
+))

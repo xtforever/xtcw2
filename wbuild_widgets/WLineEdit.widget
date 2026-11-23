@@ -65,6 +65,8 @@
 
 @ACTIONS
 
+@ Clear the field and notify both the |changed| and |callback| lists.
+
 @proc clear
 {
     XtVaSetValues($, XtNlabel, "", NULL);
@@ -72,8 +74,13 @@
     XtCallCallbackList($, $callback, event);
 }
 
+@ Btn1Down: take keyboard focus, place the cursor or hit the clear button.
+
 @proc lineedit_click
 {
+    /* Take keyboard focus before the clear-button shortcut returns, so a
+     * click anywhere in the field moves focus away from a previous widget. */
+    XtCallActionProc($, "focus", event, params, num_params ? *num_params : 0);
     int x = event->xbutton.x;
     if ($showClear && m_len($str_m) > 1 && x >= (int)$width - $clearWidth) {
         clear($, event, NULL, NULL);

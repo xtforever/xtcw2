@@ -216,6 +216,7 @@ void generate_private_header(FILE *f, Class c, char *prefix, char *guard);
 void symbol_init(void);
 void generatec(FILE *f, Class c, char *prefix, int lines);
 void generate_doc(FILE *f, Doctype dt, Class c);
+void generate_hdf_doc(FILE *f, Class c);
 void add_class(Class c);
 void add_doctype(Doctype d);
 void copy_taglist(taglist *dest, taglist *src);

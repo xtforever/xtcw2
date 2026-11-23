@@ -14,6 +14,16 @@
 @var int maxValue = 1200
 @ spacing between dB ticks in centibel
 @var int tickStep = 300
+@ show dB labels (True) or raw integer values (False)
+@var Boolean showDb = True
+@ draw small tick marks next to the groove
+@var Boolean showTicks = True
+@ hide the labels/ticks at minValue and maxValue
+@var Boolean hideEndLabels = False
+@ draw the frequency label above the fader instead of below
+@var Boolean labelOnTop = False
+@ use a ParentRelative window background so the parent panel shows through
+@var Boolean transparent = False
 @var <Pixel> Pixel trackColor = <String> "#2a2a2a"
 @var <Pixel> Pixel fillLow = <String> "#2ecc71"
 @var <Pixel> Pixel fillMid = <String> "#f1c40f"
@@ -42,6 +52,9 @@
 
 @METHODS
 
+@ Install the string and type converters used by the inherited Wheel
+resources before any instance is created.
+
 @proc class_initialize
 {
     converters_init();
@@ -49,10 +62,15 @@
     conststr_init();
 }
 
+@ Copy the frequency label, initialise the backing cache, create the GCs and
+clamp |value| to the configured dB range.
+
 @proc initialize
 {
     XTFUNC();
     $label = $label_mem = XtNewString($label ? $label : "");
+    if ($transparent)
+        XtVaSetValues($, XtNbackgroundPixmap, ParentRelative, NULL);
     $pixmap = 0;
     $surface = NULL;
     $draw = NULL;
@@ -77,12 +95,19 @@
     if ($value > $maxValue) $value = $maxValue;
 }
 
+@ Create the window; with |transparent| set, use a ParentRelative background
+so the surrounding panel shows through.
+
 @proc realize
 {
     XTFUNC();
     XtCreateWindow($, (unsigned int) InputOutput,
                       (Visual *) CopyFromParent, *mask, attributes);
+    if ($transparent)
+        XSetWindowBackgroundPixmap(XtDisplay($), XtWindow($), ParentRelative);
 }
+
+@ Drop the size-dependent backing cache and redraw at the new size.
 
 @proc resize
 {
@@ -91,11 +116,17 @@
     if (XtIsRealized($)) redraw($);
 }
 
+@ Redraw the fader from the backing cache.
+
 @proc expose
 {
     XTFUNC();
     redraw($);
 }
+
+@ Apply resource changes: copy the label, keep |value| inside the dB range,
+re-resolve the Xft colours and request a redraw when anything visible
+changed.
 
 @proc set_values
 {
@@ -115,7 +146,11 @@
     }
 
     if ($value != $old$value || $minValue != $old$minValue ||
-        $maxValue != $old$maxValue || $tickStep != $old$tickStep) {
+        $maxValue != $old$maxValue || $tickStep != $old$tickStep ||
+        $showDb != $old$showDb || $showTicks != $old$showTicks ||
+        $hideEndLabels != $old$hideEndLabels ||
+        $labelOnTop != $old$labelOnTop ||
+        $transparent != $old$transparent) {
         if ($minValue == $maxValue) {
             $minValue = $old$minValue;
             $maxValue = $old$maxValue;
@@ -134,6 +169,9 @@
     return do_redraw;
 }
 
+@ Release the pointer grab, the backing cache, the owned label and all GCs
+and Xft colours.
+
 @proc destroy
 {
     XTFUNC();
@@ -149,10 +187,15 @@
         XftColorFree(dpy, v, None, $col + i);
 }
 
+@ The fader can take the keyboard focus so the arrow/Home/End bindings work.
+
 @proc accept_focus
 {
     return True;
 }
+
+@ Report the preferred fader size, growing it if the parent asks for more
+space.
 
 @proc query_geometry
 {
@@ -167,6 +210,8 @@
     return XtGeometryAlmost;
 }
 
+@ Accept the geometry negotiated by |query_geometry|.
+
 @proc set_values_almost
 {
     request->width = reply->width;
@@ -174,9 +219,9 @@
     request->request_mode = CWWidth | CWHeight;
 }
 
-@ override the Wheel theme hook: our backing GC caches the background pixel,
-@ and our tick/label colours are EqFader resources (not Wheel ones), so derive
-@ them from the theme foreground to stay readable on dark themes.
+@ Override the Wheel theme hook: our backing GC caches the background pixel,
+and our tick/label colours are EqFader resources (not Wheel ones), so derive
+them from the theme foreground to stay readable on dark themes.
 @proc void colors_changed
 {
     #colors_changed($);
@@ -218,6 +263,9 @@
 
 @ACTIONS
 
+@ Btn1Down: grab the pointer, take keyboard focus and jump the fader to the
+clicked position.
+
 @proc fader_press
 {
     if (!event) return;
@@ -234,12 +282,16 @@
     set_value($, y_to_value($, event->xbutton.y));
 }
 
+@ Btn1Motion: follow the pointer while the fader is being dragged.
+
 @proc fader_drag
 {
     if (!event) return;
     if (!$dragging) return;
     set_value($, y_to_value($, event->xbutton.y));
 }
+
+@ Btn1Up: end the drag and release the pointer grab.
 
 @proc fader_release
 {
@@ -248,30 +300,42 @@
     XUngrabPointer(XtDisplay($), CurrentTime);
 }
 
+@ Mouse wheel up: raise the gain by |tickStep|.
+
 @proc fader_scroll_up
 {
     set_value($, $value + $tickStep);
 }
+
+@ Mouse wheel down: lower the gain by |tickStep|.
 
 @proc fader_scroll_down
 {
     set_value($, $value - $tickStep);
 }
 
+@ Key Up: raise the gain by |tickStep|.
+
 @proc fader_key_up
 {
     set_value($, $value + $tickStep);
 }
+
+@ Key Down: lower the gain by |tickStep|.
 
 @proc fader_key_down
 {
     set_value($, $value - $tickStep);
 }
 
+@ Key Home: jump to the maximum gain.
+
 @proc fader_key_home
 {
     set_value($, $maxValue);
 }
+
+@ Key End: jump to the minimum gain.
 
 @proc fader_key_end
 {
@@ -289,13 +353,23 @@
     return h + 4;
 }
 
+@ y of the top of the track, below the optional top label.
+
 @proc int fader_track_top($)
 {
+    if ($labelOnTop) return fader_label_h($) + 14;
     return 14;
 }
 
+@ y of the bottom of the track, above the optional bottom label.
+
 @proc int fader_track_bottom($)
 {
+    if ($labelOnTop) {
+        int b = (int)$height - 8;
+        if (b < fader_track_top($) + 1) b = fader_track_top($) + 1;
+        return b;
+    }
     int b = (int)$height - fader_label_h($) - 6;
     if (b < fader_track_top($) + 1) b = fader_track_top($) + 1;
     return b;
@@ -319,6 +393,8 @@
     if (y > bot) y = bot;
     return y;
 }
+
+@ inverse of |value_to_y|: map a y pixel back to a centibel value.
 
 @proc int y_to_value($, int y)
 {
@@ -581,20 +657,27 @@
         int y = value_to_y($, v);
         int is_zero = (v == 0);
 
+        if ($hideEndLabels && (v == $minValue || v == $maxValue))
+            continue;
+
         XftColor *tc = ($col + 0);
 
         /* tick marks bracket the groove; the right one sits next to the label */
-        if (is_zero) {
-            XftDrawRect($draw, tc, gx - 4, y, gw + 12, 1);
-        } else {
-            XftDrawRect($draw, tc, gx - 4, y, 4, 1);
-            XftDrawRect($draw, tc, tx, y, 6, 1);
+        if ($showTicks) {
+            if (is_zero) {
+                XftDrawRect($draw, tc, gx - 4, y, gw + 12, 1);
+            } else {
+                XftDrawRect($draw, tc, gx - 4, y, 4, 1);
+                XftDrawRect($draw, tc, tx, y, 6, 1);
+            }
         }
 
         if (((i - n0) % label_every) != 0) continue;
 
         char buf[24];
-        if (is_zero) {
+        if (!$showDb) {
+            snprintf(buf, sizeof buf, "%d", v);
+        } else if (is_zero) {
             snprintf(buf, sizeof buf, "0");
         } else {
             double db = v / 100.0;
@@ -626,22 +709,56 @@
     int x = ((int)$width - w) / 2;
     if (x < 2) x = 2;
 
-    int y = fader_track_bottom($) + 2;
+    int y = $labelOnTop ? 2 : (fader_track_bottom($) + 2);
     if (y + h > (int)$height) y = (int)$height - h;
 
     XftDrawStringUtf8($draw, $col + 1, $xftFont, x, y + $xftFont->ascent,
                       (FcChar8*)$label, (int)strlen($label));
 }
 
+@ Render the complete fader into the backing pixmap and blit it to the
+window.
+
 @proc redraw($)
 {
     if (!XtIsRealized($)) return;
-    if (!$pixmap) alloc_pixmap($);
-    if (!$pixmap) return;
 
     Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
     int w = $width;
     int h = $height;
+
+    if ($transparent) {
+        /* Draw directly onto the window.  ParentRelative clears to the
+         * module panel texture, so untouched pixels show the panel. */
+        XClearWindow(dpy, win);
+        cairo_surface_t *surf = cairo_xlib_surface_create(dpy, win,
+                        DefaultVisual(dpy, DefaultScreen(dpy)), w, h);
+        cairo_t *cr = cairo_create(surf);
+        cairo_rectangle(cr, 0, 0, w, h);
+        cairo_clip(cr);
+        draw_track($, cr);
+        draw_fill($, cr);
+        draw_thumb($, cr);
+        cairo_destroy(cr);
+        cairo_surface_flush(surf);
+        cairo_surface_destroy(surf);
+
+        XftDraw *wd = XftDrawCreate(dpy, win,
+                        DefaultVisual(dpy, DefaultScreen(dpy)), None);
+        if (wd) {
+            XftDraw *saved = $draw;
+            $draw = wd;
+            draw_ticks($);
+            draw_label($);
+            $draw = saved;
+            XftDrawDestroy(wd);
+        }
+        return;
+    }
+
+    if (!$pixmap) alloc_pixmap($);
+    if (!$pixmap) return;
 
     /* opaque background first (avoids source-over ghosting on the pixmap) */
     XFillRectangle(dpy, $pixmap, $gc_bg, 0, 0, w, h);
@@ -665,7 +782,7 @@
 
     if ($surface) cairo_surface_mark_dirty($surface);
 
-    XCopyArea(dpy, $pixmap, XtWindow($), $gc_copy, 0, 0, w, h, 0, 0);
+    XCopyArea(dpy, $pixmap, win, $gc_copy, 0, 0, w, h, 0, 0);
 }
 
 @IMPORTS
@@ -676,6 +793,7 @@
 @incl <cairo/cairo.h>
 @incl <cairo/cairo-xlib.h>
 @incl <X11/Xft/Xft.h>
+@incl <X11/StringDefs.h>
 @incl "converters-xft.h"
 @incl "converters.h"
 @incl "xutil.h"

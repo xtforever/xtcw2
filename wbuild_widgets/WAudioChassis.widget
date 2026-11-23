@@ -1,0 +1,400 @@
+@class WAudioChassis (Board)
+@ Fixed-size audio chassis: pre-rendered metal background and pixel-positioned children.
+
+@PUBLIC
+@ window title applied to the enclosing shell
+@var String title = <String> "XTCW MP3 Player"
+@ fixed chassis width in pixels
+@var int chassisWidth = 1160
+@ fixed chassis height in pixels
+@var int chassisHeight = 770
+@ optional background image (PNG); empty uses the procedural metal look
+@var String backgroundImage = <String> ""
+@ base metal colour
+@var <Pixel> Pixel metalColor = <String> "#3a3d40"
+@ metal highlight
+@var <Pixel> Pixel metalHi = <String> "#5a5e62"
+@ metal shadow
+@var <Pixel> Pixel metalLo = <String> "#1c1e20"
+@ screw colour
+@var <Pixel> Pixel screwColor = <String> "#8a8d90"
+
+@PRIVATE
+@var String title_mem
+@var String backgroundImage_mem
+@var Pixmap bg_pixmap
+@var cairo_surface_t *bg_surface
+@var GC gc_copy
+@var Boolean bg_ready
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+
+@ Install the string and type converters used by the inherited Board
+resources before any instance is created.
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@ Realize the chassis at its fixed size: copy the owned string resources,
+create the blit GC and the window, then tell the window manager that the
+window must not be resized. LUI-supplied :width/:height are overridden by
+|chassisWidth| and |chassisHeight|.
+
+@proc realize
+{
+    XTFUNC();
+
+    /* The app passes :width/:height from LUI; keep chassisWidth/Height as
+     * the authoritative fixed size. */
+    if ($chassisWidth > 0) $width = (Dimension)$chassisWidth;
+    if ($chassisHeight > 0) $height = (Dimension)$chassisHeight;
+
+    if ($title && *$title && !$title_mem)
+        $title = $title_mem = XtNewString($title);
+
+    if ($backgroundImage && *$backgroundImage && !$backgroundImage_mem)
+        $backgroundImage = $backgroundImage_mem = XtNewString($backgroundImage);
+
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.graphics_exposures = False;
+    $gc_copy = XtGetGC($, GCGraphicsExposures, &values);
+
+    XtCreateWindow($, (unsigned int) InputOutput,
+                   (Visual *) CopyFromParent, *mask, attributes);
+
+    set_shell_hints($);
+}
+
+@ Drop the cached background and rebuild it at the new window size. The
+inherited Board resize is intentionally not called: children keep the
+positions from their own Core geometry.
+
+@proc resize
+{
+    XTFUNC();
+    /* Intentionally do not call Board's resize: children are positioned by
+     * their own Core geometry and must not be replaced by preferred sizes. */
+    destroy_bg($);
+    if (XtIsRealized($)) redraw_bg($);
+}
+
+@ Blit the pre-rendered metal background into the exposed region. The
+background pixmap is created lazily on the first expose.
+
+@proc expose
+{
+    XTFUNC();
+    if (!XtIsRealized($)) return;
+    if (!$bg_pixmap) redraw_bg($);
+    if (!$bg_pixmap) return;
+
+    Display *dpy = XtDisplay($);
+    XCopyArea(dpy, $bg_pixmap, XtWindow($), $gc_copy,
+              0, 0, $width, $height, 0, 0);
+}
+
+@ Apply resource changes. Size changes are rejected after realize because
+the chassis is fixed; title and background-image strings are copied and
+owned here, and a new background is rendered when a colour or image
+resource changed.
+
+@proc set_values
+{
+    Boolean redraw = False;
+
+    /* Reject post-realize size changes: the chassis is fixed. */
+    if ($old$width == (Dimension)$chassisWidth &&
+        $width != (Dimension)$chassisWidth) {
+        $width = (Dimension)$chassisWidth;
+        redraw = True;
+    }
+    if ($old$height == (Dimension)$chassisHeight &&
+        $height != (Dimension)$chassisHeight) {
+        $height = (Dimension)$chassisHeight;
+        redraw = True;
+    }
+
+    if ($title != $old$title) {
+        XtFree($old$title_mem);
+        if ($title == 0) $title = "";
+        $title = $title_mem = XtNewString($title);
+        Widget shell = $;
+        while (shell && !XtIsSubclass(shell, shellWidgetClass))
+            shell = XtParent(shell);
+        if (shell) XtVaSetValues(shell, XtNtitle, $title, NULL);
+    }
+
+    if ($backgroundImage != $old$backgroundImage) {
+        XtFree($old$backgroundImage_mem);
+        if ($backgroundImage == 0) $backgroundImage = "";
+        $backgroundImage = $backgroundImage_mem = XtNewString($backgroundImage);
+        redraw = True;
+    }
+
+    if ($metalColor != $old$metalColor ||
+        $metalHi != $old$metalHi ||
+        $metalLo != $old$metalLo ||
+        $screwColor != $old$screwColor) {
+        redraw = True;
+    }
+
+    if (redraw) {
+        destroy_bg($);
+        if (XtIsRealized($)) redraw_bg($);
+    }
+    return redraw;
+}
+
+@ Free the background cache, the owned string copies and the blit GC.
+
+@proc destroy
+{
+    XTFUNC();
+    destroy_bg($);
+    if ($title_mem) XtFree($title_mem);
+    if ($backgroundImage_mem) XtFree($backgroundImage_mem);
+    if ($gc_copy) XtReleaseGC($, $gc_copy);
+}
+
+@ Report the fixed chassis size as the preferred geometry.
+
+@proc query_geometry
+{
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)$chassisWidth;
+    reply->height = (Dimension)$chassisHeight;
+    return XtGeometryAlmost;
+}
+
+@ Force every geometry request back to the fixed chassis size.
+
+@proc set_values_almost
+{
+    request->width = (Dimension)$chassisWidth;
+    request->height = (Dimension)$chassisHeight;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@UTILITIES
+
+@ Pixel -> normalized RGB
+@proc pixel_rgb($, Pixel px, double *r, double *g, double *b)
+{
+    XftColor c;
+    memset(&c, 0, sizeof c);
+    pixel_to_xftcolor($, px, &c);
+    *r = (double)c.color.red   / 65535.0;
+    *g = (double)c.color.green / 65535.0;
+    *b = (double)c.color.blue  / 65535.0;
+}
+
+@ free background pixmap and cairo surface
+@proc destroy_bg($)
+{
+    if ($bg_surface) { cairo_surface_destroy($bg_surface); $bg_surface = NULL; }
+    if ($bg_pixmap) {
+        /* Detach it from the window before freeing: children may use
+         * ParentRelative backgrounds derived from this pixmap. */
+        XtVaSetValues($, XtNbackgroundPixmap, None, NULL);
+        if (XtIsRealized($))
+            XSetWindowBackgroundPixmap(XtDisplay($), XtWindow($), None);
+        XFreePixmap(XtDisplay($), $bg_pixmap);
+        $bg_pixmap = 0;
+    }
+    $bg_ready = False;
+}
+
+@ draw a screw head
+@proc draw_screw($, cairo_t *cr, double cx, double cy, double radius)
+{
+    double r, g, b;
+    pixel_rgb($, $screwColor, &r, &g, &b);
+
+    cairo_pattern_t *pat = cairo_pattern_create_radial(
+        cx - radius * 0.35, cy - radius * 0.35, radius * 0.1,
+        cx, cy, radius);
+    cairo_pattern_add_color_stop_rgb(pat, 0.0,
+        r * 1.35 > 1 ? 1 : r * 1.35,
+        g * 1.35 > 1 ? 1 : g * 1.35,
+        b * 1.35 > 1 ? 1 : b * 1.35);
+    cairo_pattern_add_color_stop_rgb(pat, 0.7, r * 0.65, g * 0.65, b * 0.65);
+    cairo_pattern_add_color_stop_rgb(pat, 1.0, r * 0.25, g * 0.25, b * 0.25);
+    cairo_set_source(cr, pat);
+    cairo_arc(cr, cx, cy, radius, 0, 2 * M_PI);
+    cairo_fill(cr);
+    cairo_pattern_destroy(pat);
+
+    cairo_set_source_rgba(cr, 0, 0, 0, 0.55);
+    cairo_set_line_width(cr, 1.5);
+    cairo_move_to(cr, cx - radius * 0.55, cy);
+    cairo_line_to(cr, cx + radius * 0.55, cy);
+    cairo_stroke(cr);
+
+    cairo_set_source_rgba(cr, 1, 1, 1, 0.18);
+    cairo_set_line_width(cr, 1.0);
+    cairo_arc(cr, cx, cy, radius - 1.5, M_PI, 1.5 * M_PI);
+    cairo_stroke(cr);
+}
+
+@ build the procedural metal background
+@proc draw_bg($)
+{
+    int w = (int)$width;
+    int h = (int)$height;
+    if (w < 1 || h < 1) return;
+
+    double lr, lg, lb, hr, hg, hb;
+    pixel_rgb($, $metalLo, &lr, &lg, &lb);
+    pixel_rgb($, $metalHi, &hr, &hg, &hb);
+
+    cairo_t *cr = cairo_create($bg_surface);
+    cairo_rectangle(cr, 0, 0, w, h);
+    cairo_clip(cr);
+
+    /* base gradient */
+    cairo_pattern_t *pat = cairo_pattern_create_linear(0, 0, 0, h);
+    cairo_pattern_add_color_stop_rgb(pat, 0.0,
+        lr + (hr - lr) * 0.55, lg + (hg - lg) * 0.55, lb + (hb - lb) * 0.55);
+    cairo_pattern_add_color_stop_rgb(pat, 0.45, hr, hg, hb);
+    cairo_pattern_add_color_stop_rgb(pat, 0.55,
+        lr + (hr - lr) * 0.75, lg + (hg - lg) * 0.75, lb + (hb - lb) * 0.75);
+    cairo_pattern_add_color_stop_rgb(pat, 1.0, lr * 0.8, lg * 0.8, lb * 0.8);
+    cairo_set_source(cr, pat);
+    cairo_paint(cr);
+    cairo_pattern_destroy(pat);
+
+    /* brushed horizontal lines */
+    cairo_set_line_width(cr, 1.0);
+    int y;
+    for (y = 0; y < h; y += 2) {
+        double a = 0.025 + 0.030 * fabs(sin((double)y * 0.17));
+        cairo_set_source_rgba(cr, 1, 1, 1, a);
+        cairo_move_to(cr, 0, y + 0.5);
+        cairo_line_to(cr, w, y + 0.5);
+        cairo_stroke(cr);
+        cairo_set_source_rgba(cr, 0, 0, 0, a * 0.9);
+        cairo_move_to(cr, 0, y + 1.5);
+        cairo_line_to(cr, w, y + 1.5);
+        cairo_stroke(cr);
+    }
+
+    /* vignette */
+    cairo_pattern_t *vig = cairo_pattern_create_radial(
+        w * 0.5, h * 0.45, (w < h ? w : h) * 0.15,
+        w * 0.5, h * 0.45, (w > h ? w : h) * 0.78);
+    cairo_pattern_add_color_stop_rgba(vig, 0.0, 0, 0, 0, 0.0);
+    cairo_pattern_add_color_stop_rgba(vig, 1.0, 0, 0, 0, 0.42);
+    cairo_set_source(cr, vig);
+    cairo_paint(cr);
+    cairo_pattern_destroy(vig);
+
+    /* outer bevel */
+    cairo_set_line_width(cr, 2.0);
+    cairo_set_source_rgba(cr, 1, 1, 1, 0.20);
+    cairo_rectangle(cr, 1.5, 1.5, w - 3, h - 3);
+    cairo_stroke(cr);
+    cairo_set_source_rgba(cr, 0, 0, 0, 0.55);
+    cairo_rectangle(cr, 4.5, 4.5, w - 9, h - 9);
+    cairo_stroke(cr);
+
+    /* screws */
+    double sr = 9.0;
+    double m = 22.0;
+    draw_screw($, cr, m, m, sr);
+    draw_screw($, cr, w - m, m, sr);
+    draw_screw($, cr, m, h - m, sr);
+    draw_screw($, cr, w - m, h - m, sr);
+
+    cairo_destroy(cr);
+    cairo_surface_flush($bg_surface);
+    $bg_ready = True;
+}
+
+@ allocate the background pixmap/surface and render it
+@proc redraw_bg($)
+{
+    if (!XtIsRealized($)) return;
+    if ($width < 1 || $height < 1) return;
+
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+
+    destroy_bg($);
+    $bg_pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                               DefaultDepth(dpy, scr));
+    if (!$bg_pixmap) return;
+
+    /* Publish the rendered metal as the parent background pixmap.  Children
+     * with backgroundPixmap=ParentRelative (e.g. WXftLabel) then show the
+     * chassis texture instead of an opaque grey/white rectangle. */
+    XtVaSetValues($, XtNbackgroundPixmap, $bg_pixmap, NULL);
+    XSetWindowBackgroundPixmap(dpy, XtWindow($), $bg_pixmap);
+
+    $bg_surface = cairo_xlib_surface_create(dpy, $bg_pixmap,
+                        DefaultVisual(dpy, scr), $width, $height);
+    if (!$bg_surface) return;
+
+    if ($backgroundImage && *$backgroundImage) {
+        cairo_surface_t *img =
+            cairo_image_surface_create_from_png($backgroundImage);
+        if (cairo_surface_status(img) == CAIRO_STATUS_SUCCESS) {
+            cairo_t *cr = cairo_create($bg_surface);
+            double iw = cairo_image_surface_get_width(img);
+            double ih = cairo_image_surface_get_height(img);
+            if (iw > 0 && ih > 0) {
+                cairo_scale(cr, (double)$width / iw, (double)$height / ih);
+                cairo_set_source_surface(cr, img, 0, 0);
+                cairo_paint(cr);
+            }
+            cairo_destroy(cr);
+            cairo_surface_destroy(img);
+            $bg_ready = True;
+        } else {
+            cairo_surface_destroy(img);
+        }
+    }
+
+    if (!$bg_ready) draw_bg($);
+}
+
+@ set WM size hints so the window manager cannot resize the chassis
+@proc set_shell_hints($)
+{
+    Widget shell = $;
+    while (shell && !XtIsSubclass(shell, shellWidgetClass))
+        shell = XtParent(shell);
+    if (!shell) return;
+
+    XtVaSetValues(shell,
+        XtNtitle,     $title ? $title : "XTCW MP3 Player",
+        XtNminWidth,  (Dimension)$chassisWidth,
+        XtNmaxWidth,  (Dimension)$chassisWidth,
+        XtNminHeight, (Dimension)$chassisHeight,
+        XtNmaxHeight, (Dimension)$chassisHeight,
+        XtNwidth,     (Dimension)$chassisWidth,
+        XtNheight,    (Dimension)$chassisHeight,
+        NULL);
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <string.h>
+@incl <math.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib.h>
+@incl <X11/Shell.h>
+@incl <X11/StringDefs.h>
+@incl <X11/Xft/Xft.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"

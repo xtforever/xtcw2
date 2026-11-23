@@ -1,0 +1,346 @@
+@class WModulePanel (Board)
+@ Rounded, dark module panel with bevel and corner screws; hosts arbitrary children.
+
+@PUBLIC
+@ panel fill colour
+@var <Pixel> Pixel panelColor = <String> "#141210"
+@ upper gradient colour
+@var <Pixel> Pixel panelHi = <String> "#24272a"
+@ lower gradient colour
+@var <Pixel> Pixel panelLo = <String> "#0c0d0e"
+@ border colour
+@var <Pixel> Pixel borderColor = <String> "#4a4d50"
+@ screw head colour
+@var <Pixel> Pixel screwColor = <String> "#8a8d90"
+@ corner radius in pixels
+@var int cornerRadius = 10
+@ draw four corner screws
+@var Boolean showScrews = True
+
+@PRIVATE
+@var Pixmap pixmap
+@var cairo_surface_t *surface
+@var GC gc_copy
+@var Boolean bg_ready
+
+@CLASSVARS
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_motion = True
+@var visible_interest = False
+
+@METHODS
+
+@ Install the string and type converters used by the inherited Board
+resources before any instance is created.
+
+@proc class_initialize
+{
+    converters_init();
+    m_init();
+    conststr_init();
+}
+
+@ Initialise the backing cache, make the panel background match |panelColor|
+and create the GC used to blit the rendered panel.
+
+@proc initialize
+{
+    XTFUNC();
+    $pixmap = 0;
+    $surface = NULL;
+    $bg_ready = False;
+    XtVaSetValues($, XtNbackground, $panelColor, XtNborderWidth, 0, NULL);
+
+    XGCValues values;
+    memset(&values, 0, sizeof values);
+    values.graphics_exposures = False;
+    $gc_copy = XtGetGC($, GCGraphicsExposures, &values);
+}
+
+@ Create the window and apply the rounded shape mask so the corners are
+transparent.
+
+@proc realize
+{
+    XTFUNC();
+    XtCreateWindow($, (unsigned int) InputOutput,
+                   (Visual *) CopyFromParent, *mask, attributes);
+    reshape_widget($);
+}
+
+@ Rebuild the cached panel at the new size and refresh its shape mask.
+
+@proc resize
+{
+    XTFUNC();
+    destroy_bg($);
+    if (XtIsRealized($)) {
+        reshape_widget($);
+        redraw($);
+    }
+}
+
+@ Blit the cached panel into the exposed region, rendering it first if the
+cache is still empty.
+
+@proc expose
+{
+    XTFUNC();
+    if (!$pixmap) redraw($);
+    if (!$pixmap) return;
+    XCopyArea(XtDisplay($), $pixmap, XtWindow($), $gc_copy,
+              0, 0, $width, $height, 0, 0);
+}
+
+@ Re-render the panel when a colour, the corner radius or the screw
+visibility changed; returns True to request a redraw.
+
+@proc set_values
+{
+    if ($panelColor != $old$panelColor || $panelHi != $old$panelHi ||
+        $panelLo != $old$panelLo || $borderColor != $old$borderColor ||
+        $screwColor != $old$screwColor || $cornerRadius != $old$cornerRadius ||
+        $showScrews != $old$showScrews) {
+        destroy_bg($);
+        if (XtIsRealized($)) {
+            reshape_widget($);
+            redraw($);
+        }
+        return True;
+    }
+    return False;
+}
+
+@ Free the panel cache and the blit GC.
+
+@proc destroy
+{
+    XTFUNC();
+    destroy_bg($);
+    if ($gc_copy) XtReleaseGC($, $gc_copy);
+}
+
+@ Accept the requested size when it is usable and fall back to a 720x300
+default for the initial, zero-sized request.
+
+@proc query_geometry
+{
+    int w = (request->request_mode & CWWidth) ? (int)request->width : 0;
+    int h = (request->request_mode & CWHeight) ? (int)request->height : 0;
+    reply->request_mode = CWWidth | CWHeight;
+    reply->width = (Dimension)(w > 20 ? w : 720);
+    reply->height = (Dimension)(h > 20 ? h : 300);
+    return XtGeometryAlmost;
+}
+
+@ Pass the geometry that |query_geometry| negotiated back to the parent.
+
+@proc set_values_almost
+{
+    request->width = reply->width;
+    request->height = reply->height;
+    request->request_mode = CWWidth | CWHeight;
+}
+
+@UTILITIES
+
+@ Convert an X pixel into normalized (0..1) RGB components for Cairo.
+
+@proc pixel_rgb($, Pixel px, double *r, double *g, double *b)
+{
+    XftColor c;
+    memset(&c, 0, sizeof c);
+    pixel_to_xftcolor($, px, &c);
+    *r = (double)c.color.red / 65535.0;
+    *g = (double)c.color.green / 65535.0;
+    *b = (double)c.color.blue / 65535.0;
+}
+
+@ Add a rounded-rectangle sub-path with radius |r|, clamped so it cannot
+exceed half of the width or height.
+
+@proc void rounded_rect(cairo_t *cr, double x, double y, double w, double h, double r)
+{
+    if (r > w / 2.0) r = w / 2.0;
+    if (r > h / 2.0) r = h / 2.0;
+    cairo_new_sub_path(cr);
+    cairo_arc(cr, x + w - r, y + r, r, -M_PI / 2.0, 0);
+    cairo_arc(cr, x + w - r, y + h - r, r, 0, M_PI / 2.0);
+    cairo_arc(cr, x + r, y + h - r, r, M_PI / 2.0, M_PI);
+    cairo_arc(cr, x + r, y + r, r, M_PI, 3.0 * M_PI / 2.0);
+    cairo_close_path(cr);
+}
+
+@ Draw a small radial-shaded screw head with a slot at (|cx|, |cy|).
+
+@proc void screw(cairo_t *cr, double cx, double cy, double r)
+{
+    cairo_pattern_t *p = cairo_pattern_create_radial(
+        cx - r * 0.35, cy - r * 0.35, r * 0.1, cx, cy, r);
+    cairo_pattern_add_color_stop_rgb(p, 0.0, 0.62, 0.64, 0.66);
+    cairo_pattern_add_color_stop_rgb(p, 0.7, 0.38, 0.40, 0.42);
+    cairo_pattern_add_color_stop_rgb(p, 1.0, 0.16, 0.17, 0.18);
+    cairo_set_source(cr, p);
+    cairo_arc(cr, cx, cy, r, 0, 2 * M_PI);
+    cairo_fill(cr);
+    cairo_pattern_destroy(p);
+
+    cairo_set_source_rgba(cr, 0, 0, 0, 0.65);
+    cairo_set_line_width(cr, 1.4);
+    cairo_move_to(cr, cx - r * 0.55, cy);
+    cairo_line_to(cr, cx + r * 0.55, cy);
+    cairo_stroke(cr);
+}
+
+@ shape the window to the rounded rectangle so corners are transparent
+@proc reshape_widget($)
+{
+    Display *dpy = XtDisplay($);
+    Window win = XtWindow($);
+    int w = (int)$width;
+    int h = (int)$height;
+    int r = $cornerRadius;
+
+    if (!win || w < 2 || h < 2) return;
+
+    if (r <= 0) {
+        XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, None, ShapeSet);
+        return;
+    }
+    if (r > w / 2) r = w / 2;
+    if (r > h / 2) r = h / 2;
+
+    Pixmap mask = XCreatePixmap(dpy, win, w, h, 1);
+    if (!mask) return;
+    GC gc = XCreateGC(dpy, mask, 0, NULL);
+    if (!gc) { XFreePixmap(dpy, mask); return; }
+
+    XSetForeground(dpy, gc, 0);
+    XFillRectangle(dpy, mask, gc, 0, 0, w, h);
+    XSetForeground(dpy, gc, 1);
+
+    XFillRectangle(dpy, mask, gc, r, 0, w - 2 * r, h);
+    if (h - 2 * r > 0)
+        XFillRectangle(dpy, mask, gc, 0, r, w, h - 2 * r);
+    XFillArc(dpy, mask, gc, 0, 0, 2 * r, 2 * r, 90 * 64, 90 * 64);
+    XFillArc(dpy, mask, gc, w - 2 * r, 0, 2 * r, 2 * r, 0, 90 * 64);
+    XFillArc(dpy, mask, gc, w - 2 * r, h - 2 * r, 2 * r, 2 * r, 270 * 64, 90 * 64);
+    XFillArc(dpy, mask, gc, 0, h - 2 * r, 2 * r, 2 * r, 180 * 64, 90 * 64);
+
+    XShapeCombineMask(dpy, win, ShapeBounding, 0, 0, mask, ShapeSet);
+    XFreeGC(dpy, gc);
+    XFreePixmap(dpy, mask);
+}
+
+@ Free the cached pixmap and cairo surface and reset the background so the
+next expose rebuilds them.
+
+@proc destroy_bg($)
+{
+    if ($surface) { cairo_surface_destroy($surface); $surface = NULL; }
+    if ($pixmap) {
+        XtVaSetValues($, XtNbackgroundPixmap, None, NULL);
+        if (XtIsRealized($))
+            XSetWindowBackgroundPixmap(XtDisplay($), XtWindow($), None);
+        XFreePixmap(XtDisplay($), $pixmap);
+        $pixmap = 0;
+    }
+    $bg_ready = False;
+}
+
+@ Paint the gradient panel, its bevel and the optional corner screws into
+the cached cairo surface.
+
+@proc draw_bg($)
+{
+    int w = $width, h = $height;
+    if (w < 2 || h < 2) return;
+
+    double pr, pg, pb, hr, hg, hb, lr, lg, lb;
+    pixel_rgb($, $panelColor, &pr, &pg, &pb);
+    pixel_rgb($, $panelHi, &hr, &hg, &hb);
+    pixel_rgb($, $panelLo, &lr, &lg, &lb);
+
+    cairo_t *cr = cairo_create($surface);
+    cairo_rectangle(cr, 0, 0, w, h);
+    cairo_clip(cr);
+
+    /* Clear the whole pixmap before drawing the rounded panel.  The shape
+     * mask and the Cairo path can differ by a fraction of a pixel; without
+     * this fill those edge pixels show up as black corner artefacts. */
+    cairo_set_source_rgb(cr, lr, lg, lb);
+    cairo_paint(cr);
+
+    rounded_rect(cr, 0, 0, w, h, (double)$cornerRadius);
+    cairo_pattern_t *pat = cairo_pattern_create_linear(0, 0, 0, h);
+    cairo_pattern_add_color_stop_rgb(pat, 0.0, hr, hg, hb);
+    cairo_pattern_add_color_stop_rgb(pat, 0.25, pr, pg, pb);
+    cairo_pattern_add_color_stop_rgb(pat, 0.75, pr * 0.8, pg * 0.8, pb * 0.8);
+    cairo_pattern_add_color_stop_rgb(pat, 1.0, lr, lg, lb);
+    cairo_set_source(cr, pat);
+    cairo_fill_preserve(cr);
+    cairo_pattern_destroy(pat);
+
+    double br, bg, bb;
+    pixel_rgb($, $borderColor, &br, &bg, &bb);
+    cairo_set_line_width(cr, 2.0);
+    cairo_set_source_rgb(cr, br, bg, bb);
+    cairo_stroke(cr);
+
+    rounded_rect(cr, 4, 4, w - 8, h - 8, (double)$cornerRadius - 2);
+    cairo_set_line_width(cr, 1.0);
+    cairo_set_source_rgba(cr, 1, 1, 1, 0.12);
+    cairo_stroke(cr);
+
+    if ($showScrews) {
+        double sr = 7.0;
+        double m = 14.0;
+        screw(cr, m, m, sr);
+        screw(cr, w - m, m, sr);
+        screw(cr, m, h - m, sr);
+        screw(cr, w - m, h - m, sr);
+    }
+
+    cairo_destroy(cr);
+    cairo_surface_flush($surface);
+    $bg_ready = True;
+}
+
+@ (Re)create the size-dependent backing pixmap and surface, render the panel
+and copy it to the window.
+
+@proc redraw($)
+{
+    if (!XtIsRealized($)) return;
+    if ($width < 1 || $height < 1) return;
+    Display *dpy = XtDisplay($);
+    int scr = DefaultScreen(dpy);
+
+    destroy_bg($);
+    $pixmap = XCreatePixmap(dpy, XtWindow($), $width, $height,
+                            DefaultDepth(dpy, scr));
+    if (!$pixmap) return;
+    $surface = cairo_xlib_surface_create(dpy, $pixmap,
+                        DefaultVisual(dpy, scr), $width, $height);
+    if (!$surface) return;
+    draw_bg($);
+
+    XtVaSetValues($, XtNbackgroundPixmap, $pixmap, NULL);
+    XSetWindowBackgroundPixmap(dpy, XtWindow($), $pixmap);
+    XCopyArea(dpy, $pixmap, XtWindow($), $gc_copy,
+              0, 0, $width, $height, 0, 0);
+}
+
+@IMPORTS
+@incl <stdio.h>
+@incl <string.h>
+@incl <math.h>
+@incl <cairo/cairo.h>
+@incl <cairo/cairo-xlib.h>
+@incl <X11/Xft/Xft.h>
+@incl <X11/StringDefs.h>
+@incl <X11/extensions/shape.h>
+@incl "converters.h"
+@incl "xutil.h"
+@incl "mls.h"
+@incl "conststr.h"

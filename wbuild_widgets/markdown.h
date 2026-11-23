@@ -28,6 +28,14 @@
 
 typedef struct MarkdownDoc MarkdownDoc;
 
+/* A clickable [label](target) span in the flattened atom array.
+ * start/end are atom indices (end exclusive); target is the link URL. */
+typedef struct {
+    int start;
+    int end;
+    const char *target;
+} MarkdownLink;
+
 typedef struct {
     const char *font_face;   /* base face, e.g. "Sans" */
     double font_size;        /* base size in points */
@@ -48,5 +56,9 @@ void markdown_free(MarkdownDoc *doc);
 /* Borrowed views into the parsed document.  *n is set to the count. */
 const RAtom *markdown_atoms(const MarkdownDoc *doc, int *n);
 const RetexParaFormat *markdown_formats(const MarkdownDoc *doc, int *n);
+
+/* Borrowed link spans in atom-index coordinates.  The array is owned by
+ * the document and freed by markdown_free(). */
+const MarkdownLink *markdown_links(const MarkdownDoc *doc, int *n);
 
 #endif /* XTCW_MARKDOWN_H */
