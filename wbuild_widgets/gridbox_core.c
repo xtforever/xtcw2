@@ -91,7 +91,9 @@
 #include <X11/StringDefs.h>
 #include <X11/Xmu/Converters.h>
 #include <X11/Xmu/CharSet.h>
-#include "GridboxP.h"
+#include <xtcw/GridboxP.h>
+#include "gridbox_core.h"
+typedef GridboxConstraintRec *GridboxConstraints;
 #include "mls.h"
 #include "theme.h"
 
@@ -99,13 +101,13 @@
 #define	DEFAULT_MARGIN	-1
 
 #define Offset(field) XtOffsetOf(GridboxRec, gridbox.field)
-static XtResource resources[] = {
+static XtResource gridboxResources[] = {
     {XtNdefaultDistance, XtCThickness, XtRInt, sizeof(int),
 	Offset(defaultDistance), XtRImmediate, (XtPointer)4},
 };
 #undef Offset
 
-#define Offset(field) XtOffsetOf(GridboxConstraintsRec, gridbox.field)
+#define Offset(field) XtOffsetOf(GridboxConstraintRec, gridbox.field)
 static XtResource gridboxConstraintResources[] = {
     {XtNgridx, XtCPosition, XtRPosition, sizeof(Position),
 	Offset(gridx), XtRImmediate, (XtPointer)0},
@@ -193,64 +195,6 @@ static	Boolean	_CvtStringToFillType() ;
 #define	min(a,b)	((a)<(b)?(a):(b))
 #define	max(a,b)	((a)>(b)?(a):(b))
 #endif
-
-GridboxClassRec	gridboxClassRec = {
-  { /* core_class fields */
-    /* superclass         */    (WidgetClass) &constraintClassRec,
-    /* class_name         */    "Gridbox",
-    /* widget_size        */    sizeof(GridboxRec),
-    /* class_initialize   */    GridboxClassInit,
-    /* class_part_init    */    NULL,
-    /* class_inited       */    FALSE,
-    /* initialize         */    GridboxInit,
-    /* initialize_hook    */    NULL,
-    /* realize            */    XtInheritRealize,
-    /* actions            */    NULL,
-    /* num_actions        */    0,
-    /* resources          */    resources,
-    /* num_resources      */    XtNumber(resources),
-    /* xrm_class          */    NULLQUARK,
-    /* compress_motion    */    TRUE,
-    /* compress_exposure  */    TRUE,
-    /* compress_enterleave*/    TRUE,
-    /* visible_interest   */    FALSE,
-    /* destroy            */    GridboxDestroy,
-    /* resize             */    GridboxResize,
-    /* expose             */    GridboxExpose,
-    /* set_values         */    GridboxSetValues,
-    /* set_values_hook    */    NULL,
-    /* set_values_almost  */    XtInheritSetValuesAlmost,
-    /* get_values_hook    */    NULL,
-    /* accept_focus       */    NULL,
-    /* version            */    XtVersion,
-    /* callback_private   */    NULL,
-    /* tm_table           */    NULL,
-    /* query_geometry     */	GridboxQueryGeometry,
-    /* display_accelerator*/	XtInheritDisplayAccelerator,
-    /* extension          */	NULL
-  },
-  { /* composite_class fields */
-    /* geometry_manager   */   GridboxGeometryManager,
-    /* change_managed     */   GridboxChangeManaged,
-    /* insert_child       */   XtInheritInsertChild,
-    /* delete_child       */   XtInheritDeleteChild,
-    /* extension          */   NULL
-  },
-  { /* constraint_class fields */
-    /* subresourses       */   gridboxConstraintResources,
-    /* subresource_count  */   XtNumber(gridboxConstraintResources),
-    /* constraint_size    */   sizeof(GridboxConstraintsRec),
-    /* initialize         */   GridboxConstraintInit,
-    /* destroy            */   NULL,
-    /* set_values         */   GridboxConstraintSetValues,
-    /* extension          */   NULL
-  },
-  { /* gridbox_class fields */
-    /* extension	*/   NULL
-  }
-};
-
-WidgetClass gridboxWidgetClass = (WidgetClass)&gridboxClassRec;
 
 /****************************************************************
  *
@@ -615,7 +559,7 @@ GridboxGeometryManager(w, request, reply)
 
 #ifdef	COMMENT
     if( changeGeometry(gb, new_width, new_height, queryOnly, &myreply)
-    		== XtGeometryAlmost && !queryOnly )
+		== XtGeometryAlmost && !queryOnly )
       (void) changeGeometry(gb, myreply.width, myreply.height, False, &myreply);
 #endif	/* COMMENT */
 
@@ -1335,7 +1279,7 @@ _CvtStringToFillType(dpy, args, num_args, fromVal, toVal, data)
     XtPointer	*data ;
 {
     String	str = (String)fromVal->addr ;
-    static int	fillType;
+    static FillType	fillType;
 
     if( XmuCompareISOLatin1(str, "none") == 0  ||
         XmuCompareISOLatin1(str, "fillnone") == 0 )
@@ -1360,15 +1304,109 @@ _CvtStringToFillType(dpy, args, num_args, fromVal, toVal, data)
       return False ;
     }
 
-    toVal->size = sizeof(fillType) ;
     if( toVal->addr )
     {
       if( toVal->size < sizeof(fillType) )
 	return False ;
-      else
-	*((int *)toVal->addr) = fillType ;
+      *((FillType *)toVal->addr) = fillType ;
     }
     else
+    {
+      toVal->size = sizeof(fillType) ;
       toVal->addr = (XPointer) &fillType;
+    }
     return True ;
+}
+
+
+/****************************************************************
+ *
+ * Thin adapter API used by the wbuild Gridbox.widget wrapper.
+ *
+ ****************************************************************/
+
+void
+gridbox_core_class_initialize(void)
+{
+    GridboxClassInit();
+}
+
+void
+gridbox_core_resources(XtResourceList *res, Cardinal *n)
+{
+    *res = gridboxResources;
+    *n = XtNumber(gridboxResources);
+}
+
+void
+gridbox_core_constraint_resources(XtResourceList *res, Cardinal *n)
+{
+    *res = gridboxConstraintResources;
+    *n = XtNumber(gridboxConstraintResources);
+}
+
+void
+gridbox_core_initialize(Widget request, Widget neww, ArgList args,
+                        Cardinal *num_args)
+{
+    GridboxInit(request, neww, args, num_args);
+}
+
+void
+gridbox_core_destroy(Widget w)
+{
+    GridboxDestroy(w);
+}
+
+void
+gridbox_core_expose(Widget w, XEvent *event, Region region)
+{
+    GridboxExpose(w, event, region);
+}
+
+void
+gridbox_core_resize(Widget w)
+{
+    GridboxResize(w);
+}
+
+Boolean
+gridbox_core_set_values(Widget current, Widget request, Widget neww,
+                        ArgList args, Cardinal *num_args)
+{
+    return GridboxSetValues(current, request, neww, args, num_args);
+}
+
+XtGeometryResult
+gridbox_core_query_geometry(Widget w, XtWidgetGeometry *request,
+                            XtWidgetGeometry *reply)
+{
+    return GridboxQueryGeometry(w, request, reply);
+}
+
+void
+gridbox_core_change_managed(Widget w)
+{
+    GridboxChangeManaged(w);
+}
+
+XtGeometryResult
+gridbox_core_geometry_manager(Widget w, XtWidgetGeometry *request,
+                              XtWidgetGeometry *reply)
+{
+    return GridboxGeometryManager(w, request, reply);
+}
+
+void
+gridbox_core_constraint_initialize(Widget request, Widget neww, ArgList args,
+                                   Cardinal *num_args)
+{
+    GridboxConstraintInit(request, neww, args, num_args);
+}
+
+Boolean
+gridbox_core_constraint_set_values(Widget current, Widget request, Widget neww,
+                                   ArgList args, Cardinal *num_args)
+{
+    return GridboxConstraintSetValues(current, request, neww, args, num_args);
 }

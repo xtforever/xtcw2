@@ -87,7 +87,7 @@ int main(int argc, char **argv)
                                    XtNgridy, 0,
                                    XtNweightx, 0,
                                    XtNweighty, 0,
-                                   XtNfill, "none",
+                                   XtVaTypedArg, XtNfill, XtRString, "none", sizeof("none"),
                                    "itemHeight", 20,
                                    "indent", 16,
                                    "autoHeight", False,

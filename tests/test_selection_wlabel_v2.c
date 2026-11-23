@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
     label_wid = XtVaCreateManagedWidget("label", wlabelWidgetClass, box,
                                            XtNlabel, test_text,
                                            "gridy", 0,
-                                           "fill", "Both",
+                                           XtVaTypedArg, "fill", XtRString, "Both", sizeof("Both"),
                                            "weightx", 1,
                                            "weighty", 1,
                                            "leftGap", 10, "rightGap", 10, "topGap", 10, "bottomGap", 10,
@@ -91,12 +91,13 @@ int main(int argc, char **argv) {
     info_wid = XtVaCreateManagedWidget("info", wlabelWidgetClass, box,
                                           XtNlabel, "Selection: none",
                                           "gridy", 1,
-                                          "fill", "Width",
+                                          XtVaTypedArg, "fill", XtRString, "Width", sizeof("Width"),
                                           "bg_norm", "gray90",
                                           NULL);
 
     Widget btn_box = XtVaCreateManagedWidget("btn_box", gridboxWidgetClass, box, 
-                                            "gridy", 2, "fill", "Width", NULL);
+                                            "gridy", 2,
+                                            XtVaTypedArg, "fill", XtRString, "Width", sizeof("Width"), NULL);
 
     Widget paste_btn = XtVaCreateManagedWidget("paste", wbuttonWidgetClass, btn_box,
                                              XtNlabel, "Paste Selection",

@@ -424,19 +424,26 @@ inline static void constraint_resources(FILE *f, tagpair *tag, Class c,
 	Section s;
 
 	if (c->constraints != NULL) {
-		fputs(topen(t_constraints), f);
+		/* A documentation backend may not define every tag.  Guard the
+		 * open/close strings so a missing tag degrades to plain text
+		 * instead of a NULL fputs(). */
+		if (topen(t_constraints))
+			fputs(topen(t_constraints), f);
 		constraint_resources_table(f, tag, c);
 		for (s = c->constraints; s; s = s->next) {
-			fputs(topen(t_section), f);
+			if (topen(t_section))
+				fputs(topen(t_section), f);
 			if (s->decl) {
-				fputs(topen(t_constraint), f);
+				if (topen(t_constraint))
+					fputs(topen(t_constraint), f);
 				if (s->decl->namesym) {
 					putcode(s->decl->namesym, f, tag);
 				} else {
 					fputs("XtN", f);
 					putcode(s->decl->name, f, tag);
 				}
-				fputs(tclose(t_constraint), f);
+				if (tclose(t_constraint))
+					fputs(tclose(t_constraint), f);
 			}
 			print_text_par(f, tag, s->text, c->filename, c->lineno);
 			if (!shortdoc && s->decl) {
@@ -467,9 +474,11 @@ inline static void constraint_resources(FILE *f, tagpair *tag, Class c,
 				putcode(s->decl->value, f, tag);
 				/* (void) fputs(tclose(t_code), f); */
 			}
-			fputs(tclose(t_section), f);
+			if (tclose(t_section))
+				fputs(tclose(t_section), f);
 		}
-		fputs(tclose(t_constraints), f);
+		if (tclose(t_constraints))
+			fputs(tclose(t_constraints), f);
 	}
 }
 

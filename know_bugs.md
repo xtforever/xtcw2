@@ -1308,14 +1308,14 @@ cells; when it was *smaller*, the `excess < 0` branch shrank **all** rows/
 columns proportionally, ignoring `weighty`/`weightx`. A tall preferred height
 from the weighted list therefore squeezed the fixed (`weighty 0`) label too.
 
-**Fix:** added `shrinkCells()` in `plainc_widgets/Gridbox.c`. On a shortfall it
+**Fix:** added `shrinkCells()` in `wbuild_widgets/gridbox_core.c`. On a shortfall it
 first shrinks weighted cells, proportional to weight and down to
 `defaultDistance*2+1`; the old proportional-all behaviour remains as a second
 pass when weighted cells cannot absorb the deficit (e.g. no weighted children,
 or an unweighted-only grid that a parent refuses to grow). Applied to both the
 column and row paths.
 
-**File:** `plainc_widgets/Gridbox.c`
+**File:** `wbuild_widgets/gridbox_core.c`
 
 ## Borrowed String resources: use-after-free after Lua GC
 
@@ -3434,3 +3434,580 @@ asserts the selection lands in that line's byte range.
 
 **Files:** `wbuild_widgets/Wmarkdown.widget`, `wbuild_widgets/Wbravo.widget`,
 `tests/test_wmarkdown.c`
+
+## WLineEdit did not take keyboard focus on mouse click
+
+**Symptom:** in the AdmPanel `freigabe` form, clicking the `Domain` input
+while the `sandbox` option combo had keyboard focus left the focus on the
+combo. Typing/arrow keys still acted on the combo instead of the input.
+
+**Cause:** `WComboBox.notify` explicitly calls `focus_self()` on `Btn1Down`,
+but `WLineEdit.lineedit_click` only called `set_cursor()`. `Wedit.set_cursor`
+moved the text cursor but never called `XtSetKeyboardFocus`, so clicking a
+line edit never changed Xt's keyboard focus. The clear-button shortcut in
+`lineedit_click` also returned before any focus change.
+
+**Fix:** `Wedit.set_cursor` now calls `wedit_focus_self()`, and
+`WLineEdit.lineedit_click` takes focus before the clear-button early return.
+Added `tests/test_wlineedit_focus.c`, which focuses a combo and then clicks a
+line edit and asserts `XtGetKeyboardFocusWidget()` moved.
+
+**Files:** `wbuild_widgets/Wedit.widget`, `wbuild_widgets/WLineEdit.widget`,
+`tests/test_wlineedit_focus.c`, `tests/Makefile`
+
+## AdmPanel tokenizer drops empty quoted arguments
+
+**Symptom:** a launcher command template such as `cmd '' value` starts the
+child as `cmd value`; the explicit empty argument is lost. This matters for
+scripts that distinguish a missing argument from an empty one.
+
+**Cause:** `vars.tokenize` accumulates characters in `cur` and only appends an
+argv entry in `push()` when `#cur > 0`. A quoted empty string (`''` or `""`)
+therefore produces no entry.
+
+**Status:** open. Fix by tracking whether the current token was started (for
+example a `started` boolean) and pushing it even when its text is empty. Add a
+regression case to `tests/test_launcher_vars.lua`.
+
+**Files:** `apps/admpanel/vars.lua`, `tests/test_launcher_vars.lua`
+
+## LUI `(window …)` wraps the first child in a Gridbox
+
+**Symptom:** a fixed-size `WAudioChassis` placed inside
+`(window :width 1160 :height 770 (WAudioChassis …))` was resized to
+`1152×762` by the implicit Gridbox, so the chassis background and its
+pixel-positioned children no longer matched the design.
+
+**Cause:** `lui/backend_xt.lua` converts the first `topLevelShellWidgetClass`
+node under the root shell into a `Gridbox`. The actual root shell is the
+commander shell; a `(window …)` node therefore adds a layout container
+between the shell and the chassis.
+
+**Fix:** use the chassis itself as the top-level LUI node:
+`(WAudioChassis :width 1160 :height 770 :chassisWidth 1160 …)`. The chassis
+is then the only managed child of the real root shell. It sets the shell
+title and WM min/max hints itself.
+
+**Files:** `apps/mp3player/main.lua`, `wbuild_widgets/WAudioChassis.widget`
+
+## WAudioChassis: Board children need Core geometry, not `location`
+
+**Symptom:** arbitrary children such as `Wlabel` do not have Board's
+`location`/`abs_x` resources; only Board subclasses do.
+
+**Cause:** `location` belongs to `BoardPart` on the Board widget itself. A
+plain child is positioned through its Core `x/y/width/height` resources.
+
+**Fix:** use `:x`, `:y`, `:width`, `:height` for arbitrary children of
+`WAudioChassis`; `location` remains available for nested Board widgets.
+`tests/test_mp3_chassis.c` verifies 50 `Wlabel` children at exact pixel
+positions.
+
+**Files:** `wbuild_widgets/WAudioChassis.widget`, `tests/test_mp3_chassis.c`
+
+## C Lua module: `lua_settop(L, -2)` after building a result table pops it
+
+**Symptom:** `mp3fft.process_pcm_data` returned a number instead of the result
+table; Lua reported "attempt to index a number value".
+
+**Cause:** after creating the result/levels/rms/peak tables, the helper called
+`lua_settop(L, -2)`. With one value left on the stack, index `-2` resolves to
+0 and pops the result.
+
+**Fix:** leave the result table on the stack and return 1 directly.
+
+**Files:** `apps/mp3player/c/mp3fft.c`, `tests/test_mp3_fft.lua`
+
+## ParentRelative child stayed white over a Cairo-drawn chassis
+
+**Symptom:** a `WXftLabel` with `backgroundPixmap = ParentRelative` rendered
+a white rectangle over the `WAudioChassis` metal background instead of
+showing the texture through.
+
+**Cause:** `ParentRelative` uses the *parent's background pixmap*. The
+chassis drew its metal into a private pixmap and only blitted it in
+`expose`, but never installed it as the chassis's `backgroundPixmap`, so the
+child fell back to the default background.
+
+**Fix:** after rendering the chassis background, set
+`XtVaSetValues(chassis, XtNbackgroundPixmap, bg_pixmap, NULL)` and
+`XSetWindowBackgroundPixmap(...)`. `destroy_bg` detaches the pixmap again
+before freeing it. `WXftLabel` now shows the chassis texture through a
+`ParentRelative` window.
+
+**Files:** `wbuild_widgets/WAudioChassis.widget`,
+`wbuild_widgets/WXftLabel.widget`,
+`tests/test_mp3_xftlabel.c`
+
+## WSeekBar time labels ghosted on every position update
+
+**Symptom:** the `WSeekBar` in the running mp3player showed doubled/overlapping
+time digits (e.g. `00:0` + a ghost `0`) after the 100 ms UI tick updated the
+position.
+
+**Cause:** `redraw()` drew the track/fill and text into the backing pixmap but
+never cleared the whole pixmap first. Each update painted the new text over the
+old one, leaving the previous digits behind.
+
+**Fix:** fill the backing pixmap with `panelColor` before drawing the track.
+The standalone `WSeekBar` screenshot was clean because it only redrew once.
+
+**Files:** `wbuild_widgets/WSeekBar.widget`, `apps/mp3player/main.lua`
+
+## WVfdDisplay: `state` resource collides with Wheel's integer state
+
+**Symptom:** `@var String state` in the new VFD widget compiled with
+pointer/int warnings and would have corrupted `Wheel`'s internal
+`state` field (selection state).
+
+**Cause:** `Wheel` already has an integer member named `state`; a subclass
+resource with the same name shadows/collides with it.
+
+**Fix:** rename the VFD resource to `playState` (`XtNplayState`). The app
+sets `gui.set("vfd", "playState", ...)`.
+
+**Files:** `wbuild_widgets/WVfdDisplay.widget`, `apps/mp3player/main.lua`
+
+## WVfdDisplay redrew on every UI tick / endless expose
+
+**Symptom:** with the mouse inside a transport button, the VFD appeared to
+expose continuously. The 100 ms `status_update` called `gui.set("vfd", ...)`
+for album/title/time on every tick.
+
+**Cause:** `WVfdDisplay.set_values` compared string **pointers**. The Lua
+bridge passes a fresh pointer for identical text, so the comparison always
+looked changed and `set_values` returned True, making Xt redisplay the VFD.
+The button's Enter/Leave highlight made the effect more visible.
+
+**Fix:** compare string contents with `strcmp` and only redraw when the text
+really changed. The app also caches the last VFD values in `last_vfd` and
+skips redundant `gui.set` calls. A mouse-over button test now produces a
+single VFD expose instead of a continuous stream.
+
+**Files:** `wbuild_widgets/WVfdDisplay.widget`, `apps/mp3player/main.lua`
+
+## Spectrum exposed continuously while paused
+
+**Symptom:** after pausing, the app logged `spec:expose` continuously.
+
+**Cause:** `WSpectrum.set_values` compared the `levels` string by pointer.
+The app sent the same spectrum string every 100 ms while paused; each new Lua
+string pointer looked different, so `set_values` returned True and Xt kept
+redisplaying the widget.
+
+**Fix:** compare `levels`/`label` contents with `strcmp`, copy the new pointer
+safely, and cache the last spectrum string in `main.lua`. The widget also
+redraws its backing pixmap directly from `set_values` and returns False, so
+Xt does not clear/expose the window on every update.
+
+**Files:** `wbuild_widgets/WSpectrum.widget`, `apps/mp3player/main.lua`
+
+## VFD flashed on each time update
+
+**Symptom:** during playback the VFD looked like it was cleared and then
+redrawn once per second.
+
+**Cause:** `WVfdDisplay.set_values` returned True, so Xt cleared the widget
+window (default background) before calling `expose`, causing a visible flash.
+The widget also used pointer comparison for strings.
+
+**Fix:** compare string contents, copy new strings safely, and redraw the
+backing pixmap directly from `set_values` while returning False. The rendered
+pixmap is also installed as the window background, so a real expose clears to
+the previous frame instead of the chassis/default colour.
+
+**Files:** `wbuild_widgets/WVfdDisplay.widget`, `apps/mp3player/main.lua`
+
+## VU meter / SeekBar flickered on every level update
+
+**Symptom:** the VU meters visibly flickered during playback; the same
+pattern was possible on the SeekBar.
+
+**Cause:** `WVuMeter.set_values` and `WSeekBar.set_values` returned True when
+their integer resources changed (level/peak at 10 Hz, position at 10 Hz).
+Xt then cleared the widget window before calling `expose`, producing a flash.
+`WVuMeter` also compared its label string by pointer.
+
+**Fix:** both widgets now redraw their backing pixmap directly from
+`set_values` and return False, so Xt does not clear/expose on each update.
+They also install the rendered pixmap as `backgroundPixmap`, compare labels
+with `strcmp`, and detach the pixmap before freeing it on resize/destroy.
+`main.lua` already caches VU/seek values, so unchanged values do not trigger
+a redraw at all.
+
+**Files:** `wbuild_widgets/WVuMeter.widget`,
+`wbuild_widgets/WSeekBar.widget`, `apps/mp3player/main.lua`
+
+## WModulePanel showed black triangles in its rounded corners
+
+**Symptom:** the rounded EQ module panel had black triangular artefacts in
+the four corners. The window itself was still rectangular.
+
+**Cause:** `WModulePanel` drew a rounded rectangle into its background
+pixmap, but did not shape the X window. Pixels outside the rounded path
+remained unpainted/black.
+
+**Fix:** build a 1-bit rounded-rectangle mask and install it with
+`XShapeCombineMask(dpy, win, ShapeBounding, ...)` in `realize`, `resize` and
+when `cornerRadius` changes. The window corners are now transparent; no
+black triangles.
+
+**Files:** `wbuild_widgets/WModulePanel.widget`
+
+## Transparent WVuMeter flickered after switching to ParentRelative
+
+**Symptom:** after the VU meters became transparent, they flickered during
+playback because every redraw cleared the window to the parent background
+before painting the new level.
+
+**Cause:** the transparent redraw path used `XClearWindow` and then drew
+directly on the window. At 10 updates/second the clear/paint sequence was
+visible as a flash.
+
+**Fix:** keep a backing pixmap, seed it with the parent panel's pixels via
+`XCopyArea(parent, pixmap, ...)`, draw the meter into it, then blit the
+pixmap to the VU window. The panel texture stays visible, but there is no
+clear-before-paint flash. `set_values` still returns False, so Xt does not
+trigger additional exposes.
+
+**Files:** `wbuild_widgets/WVuMeter.widget`
+
+## Play stayed in LOADING when the mpg123 output module failed
+
+**Symptom:** pressing play left the VFD at `LOADING`, no time advanced, VU
+and spectrum stayed empty. Direct `mpg123 -o pulse` failed with
+`out123 error 3: failure loading driver module`; `alsa` failed to open the
+device. The app never fell back.
+
+**Cause:** `player.lua` started `mpg123 -R -o <output>` once and ignored
+output-module failures. Non-`@` error lines were discarded, and an early
+process exit left the state at `loading`.
+
+**Fix:** `player.lua` now builds an output list from
+`player.output` + `player.fallback_outputs` + `dummy`. It captures error
+lines, watches for an early exit, and uses a 1.5 s startup timeout. On
+failure it stops the old process, starts the next output, re-applies volume
+and EQ, and reloads the current track. Default order: `pulse`, `alsa`,
+`dummy`.
+
+**Files:** `apps/mp3player/player.lua`, `apps/mp3player/config.lua`
+
+## Transparent VU left ghost pixels after several exposes
+
+**Symptom:** after multiple expose events, coloured ghost pixels remained
+around the VU bar.
+
+**Cause:** the transparent VU seeded its backing pixmap with
+`XCopyArea(parent_window, ...)`. On X11 the parent window copy can include the
+previous content of the VU child window, so old coloured segments were copied
+back into the new frame.
+
+**Fix:** read the parent's `XtNbackgroundPixmap` and copy from that pixmap
+instead of the parent window. The panel background is then used as the clean
+base; the VU child's previous frame cannot leak into it. Fallback remains the
+parent window if no background pixmap is set.
+
+**Files:** `wbuild_widgets/WVuMeter.widget`
+
+## mp3engine `--null` decoded far faster than real time
+
+**Symptom:** the DSP engine with `sink="null"` jumped to the end of a
+94-second track in well under a second, so pause/seek tests were meaningless.
+
+**Cause:** `pa_simple_write` normally paces playback; with no Pulse sink the
+worker loop decoded as fast as possible.
+
+**Fix:** when no Pulse stream exists, the engine sleeps for
+`frames / sample_rate` seconds after each block. Null output now behaves like
+real time, while `pa_simple_write` still provides the pacing for real sinks.
+
+**Files:** `apps/mp3player/c/mp3engine.c`
+
+## VFD album text overflowed into the time area ("Sa…")
+
+**Symptom:** long album text ran across the VFD separator; its tail appeared
+next to `ELAPSED` as `Sa…`. In some runs the VFD then stopped drawing the
+remaining text/time because Cairo had entered an error state.
+
+**Cause:** `WVfdDisplay` drew album/title without a width limit. The new
+ellipsis helper truncated the already-shortened UTF-8 string at a byte
+boundary, producing invalid UTF-8 for `cairo_show_text`.
+
+**Fix:** `vfd_text_fit` now truncates on UTF-8 character boundaries and the
+app no longer pre-shortens VFD album/title strings. The elapsed/remaining
+labels were also moved down slightly to keep clear of the 7-segment digits.
+
+**Files:** `wbuild_widgets/WVfdDisplay.widget`, `apps/mp3player/main.lua`
+
+## LUI `:fraction` never reached Wsplitter
+
+**Symptom:** a `(splitter ... :fraction 0.3)` always opened with the panes at
+50/50. Dragging still worked, but the configured initial split was ignored.
+
+**Cause:** `backend_xt.process_property()` translated both `fraction` and
+`frac` to the resource name `frac`. That name exists on the sliders, while
+`Wsplitter` exposes `fraction` (0..1000). Xt silently dropped the unknown
+argument, so the splitter kept its default 500. The 0..1 ratio used by LUI
+callers also needed scaling to the widget's per-mille range.
+
+**Fix:** keep the resource names separate. `fraction` is now passed as
+`fraction` and a value in (0, 1] is multiplied by 1000 (rounded); `frac`
+remains the unscaled slider resource. `tools/t1_menu.lua` uses the splitter
+for its demo list / trace-level panes and `tests/test_t1_menu.sh` asserts the
+configured 720 per-mille value.
+
+**Files:** `lui/backend_xt.lua`, `tools/t1_menu.lua`,
+`tests/test_t1_menu.sh`
+
+## wbuild: each `@` line in a doc comment becomes its own section
+
+**Symptom:** a multi-line doc comment above a `@proc`/`@var` renders as several
+tiny `\Section` blocks in the generated `.tex` (and as separate paragraphs in
+the `.3` man page), e.g. the three-line `colors_changed` comment in
+`EqFader.widget` was split into three sections.
+
+**Cause:** wbuild starts a new documentation block at every line that begins
+with `@`. Only the *first* line of a paragraph may carry the `@`; continuation
+lines are plain prose.
+
+**Fix:** prefix only the first line with `@`, and write the remaining lines
+without a leading `@`:
+
+```
+@ Override the Wheel theme hook: our backing GC caches the background pixel,
+and our tick/label colours are EqFader resources (not Wheel ones), so derive
+them from the theme foreground to stay readable on dark themes.
+@proc void colors_changed
+```
+
+This applies to resource (`@var`), method (`@proc`), action and utility
+comments. Do **not** repeat the `@` on continuation lines.
+
+**Files:** `wbuild_widgets/EqFader.widget` (fixed); latent in several other
+widgets (e.g. `Wbravo.widget`, `WToggleSwitch.widget`, `Wmarkdown.widget`).
+
+## wbuild docs are generated as a side effect of the header build
+
+`make widgets` (and a direct `wb.sh <Widget>.widget ... -d build/doc ...` run)
+writes both `<Widget>.tex` and `<Widget>.3` into `build/doc`. wbuild only
+rewrites them when the `.widget` source is newer than the output, so `touch`
+the widget (or change it) before checking a documentation change.
+`tests/test_widget_docs.sh` regenerates a small set into a temporary directory
+to verify the resource/method documentation end to end.
+
+## WListView: borrowed `columnTitles` caused heap-use-after-free
+
+**Symptom:** opening a LUI screen with a `WListView` could abort with an ASan
+`heap-use-after-free` in `s_split()` from `rebuild_columns()` during realize.
+The widget reference browser (`tools/widget_help.lua`) triggered it as soon as
+it set `:columnTitles` from Lua.
+
+**Cause:** `columnTitles` is a `String` resource. Xt borrows the pointer, and
+`WListView` kept using it in `rebuild_columns()`/`relayout()` after the Lua
+string had been garbage-collected. `fontFace` already had an owned `_mem`
+copy; `columnTitles` did not.
+
+**Fix:** keep an owned `char *columnTitles_mem` in `@PRIVATE`, copy
+`columnTitles` in `initialize`, re-copy it in `set_values` when the resource
+changes, and free it in `destroy`. This is the same borrowed-String pattern as
+`fontFace` (see CONVENTIONS §27).
+
+**Files:** `wbuild_widgets/WListView.widget`, `tools/widget_help.lua`
+(regression trigger)
+
+## wbuild HDF: raw string ending in `]` is ambiguous with `]]`
+
+**Symptom:** `hdfpy`/the Lua HDF reader stopped at an extra `]` for
+`WspinBox.hdf` (`description [[set the value from params[0]]]`). The reader
+closed the raw string one byte early.
+
+**Cause:** the emitter used `[[...]]` when the content did not contain `]]`,
+but a content string that ends with `]` produces `...]]]` together with the
+closing delimiter. The first `]]` is then the content's `]` plus the first
+closing `]`, leaving one `]` behind.
+
+**Fix:** when the content ends with `]`, force at least one `=` in the raw
+string delimiter (`[=[...]=]`), so the close marker starts at the real closing
+bracket. `hdf_raw()` in `wbuild/generatedoc_hdf.c` does this.
+
+**Files:** `wbuild/generatedoc_hdf.c`, `tools/hdf.lua`,
+`build/doc/hdf/WspinBox.hdf` (regenerated)
+
+## HDF has no tagged objects — use `kind` fields
+
+**Symptom:** a schema like `(resource name XtNfoo ...)` is not an HDF object;
+the Lua reader treated `resource` as a key and failed on the odd element count.
+
+**Cause:** in core HDF a bare list is an object made of alternating key/value
+pairs. Only `seq` is a structural tag. There is no `(tag ...)` object form.
+
+**Fix:** emit explicit `kind` fields and keep every object list even:
+
+```lisp
+(resources (seq
+  (kind resource
+    name XtNfoo
+    ...)))
+```
+
+The same applies to methods, actions, translations, exports, classvars,
+utilities and the root (`kind widget`, `kind index`).
+
+**Files:** `wbuild/generatedoc_hdf.c`, `tools/hdf.lua`,
+`tools/widget_help.lua`
+
+## wbuild runs once per widget — a single `index.hdf` is incomplete
+
+**Symptom:** `build/doc/hdf/index.hdf` contained only the last widget
+(`WXftLabel`).
+
+**Cause:** `wb.sh` invokes `wbuild` once per `.widget`. `classes` therefore
+contains only the class being generated, so generating an index from the
+`classes` list in `main()` sees just that one class and overwrites the index
+on every run.
+
+**Fix:** do not generate the index inside a per-widget `wbuild` run. The
+widget reference browser scans `build/doc/hdf/*.hdf` instead. If a single
+index is needed later, generate it after all widgets have been processed
+(e.g. from `register-widgets.sh` or a dedicated post-processing step).
+
+**Files:** `wbuild/wbuild.c`, `tools/widget_help.lua`
+
+## Wmarkdown links: Lua callback bridge does not forward Xt call_data
+
+**Symptom:** a `LUA(on_link)` callback on Wmarkdown's `linkActivated` could
+not see the clicked anchor; the generic bridge calls `on_link()` with no
+arguments.
+
+**Cause:** `commander/commander_runner.c`'s `LUA_callback()` uses the
+registered client_data string and ignores `call_data`. Wmarkdown passes the
+target as `call_data` (correct for C callbacks), but Lua never receives it.
+
+**Fix:** Wmarkdown also stores the target in the `lastLink` String resource
+before invoking the callback. The Lua browser reads
+`gui.get("viewer", "lastLink")`. C callbacks still get the target as
+`call_data`.
+
+**Files:** `wbuild_widgets/Wmarkdown.widget`, `tools/widget_help.lua`
+
+## Help browser: U+2192 (→) is not rendered by the UI font
+
+**Symptom:** the EqFader translations line showed
+`<Btn1Down>  fader_press` — the right arrow was missing.
+
+**Cause:** the help browser used the Unicode arrow U+2192 in the Markdown it
+feeds to Wmarkdown. The active UI font/renderer path does not provide a glyph
+for it, so it rendered as nothing.
+
+**Fix:** use the ASCII sequence `->` in generated help text
+(`tools/widget_help.lua`). The self-test now asserts that the translation line
+contains ` -> ` and no U+2192.
+
+**Files:** `tools/widget_help.lua`
+
+## Wsplitter: grab band did not match the drawn divider
+
+**Symptom:** the splitter line was hard to grab; the pointer could be on the
+visible divider without starting a drag (or start dragging just next to it).
+
+**Cause:** `start_drag` computed the divider position as
+`width * fraction / 1000`, while `do_layout` and `draw_divider` use
+`(width - dividerWidth) * fraction / 1000`. The hit band was therefore offset
+from the visible line by up to `dividerWidth`.
+
+**Fix:** a single `divider_position()` helper now feeds draw, layout/hit
+testing and the resize-cursor check. The widget also shows the same
+`XC_sb_h_double_arrow` / `XC_sb_v_double_arrow` resize cursor as WListView's
+resizable column headers while the pointer is over the divider.
+
+**Files:** `wbuild_widgets/Wsplitter.widget`
+
+## `make all` rebuilt everything on every run (stale-copy timestamps)
+
+**Symptom:** starting `t1.sh` (which calls `start.sh` → `make all`) printed
+hundreds of `wb.sh`/`cc` commands and rebuilt the whole toolkit even when
+nothing had changed.
+
+**Cause:** several install steps copied files with plain `cp`, refreshing the
+destination mtime on every run. The worst offenders were:
+- `wbuild`/`wbuild_widgets` install refreshed `build/bin/wbuild`, so every
+  widget header looked older than the generator.
+- `cp build/include/xtcw/*.h build/source/` refreshed headers that the
+  generated `.d` files reference by their relative `build/source` names, so
+  every widget object was rebuilt.
+- `wbuild_widgets/Gridbox.widget` is `@nocode`; its header is installed by
+  `plainc_widgets`, so make kept invoking wbuild for a target wbuild never
+  writes.
+
+**Fix:** use `cp -p` for install/copy steps so mtimes are preserved, exclude
+`@nocode` widgets from `WIDGET_H`, and align unchanged generated headers with
+the generator mtime once. Repeated `make all` now takes ~0.3 s with no
+compiles, links or wbuild invocations.
+
+**Files:** `makefile`, `wbuild/makefile`, `wbuild_widgets/makefile`,
+`plainc_widgets/makefile`, `utils/makefile`, `utils/utf8/makefile`,
+`utils/utf32/makefile`, `wcl/makefile`, `re-tex/src/makefile`,
+`LuaRunner/nanosvg/src/makefile`
+
+## wbuild: `@CONSTRAINTS` documentation generation segfault
+
+**Symptom:** a `.widget` using `@CONSTRAINTS` made `wbuild` exit with
+`SIGSEGV` (139) when documentation generation was enabled (`-d ... tex.w
+nroff.w`), which is the normal `make widgets` path. C/header generation alone
+worked.
+
+**Cause:** `wbuild/tex.w` defined the plural tag with a typo:
+`@t contraints` instead of `@t constraints`. `t_constraints` therefore stayed
+NULL for the TeX backend, and `constraint_resources()` in `generatedoc.c`
+called `fputs(topen(t_constraints), f)` unconditionally. The crash was at
+`generatedoc.c:427`; `nroff.w` already had the correct tag name.
+
+**Fix:** corrected the tag name in `wbuild/tex.w` and added defensive NULL
+guards around the `t_constraints`, `t_constraint` and `t_section` open/close
+strings in `generatedoc.c`, so a backend that omits a tag degrades to plain
+text instead of crashing.
+
+**Files:** `wbuild/tex.w`, `wbuild/generatedoc.c`
+
+Note: `@CONSTRAINTS` C generation also derives resource classes/types from the
+field name and C type (e.g. `XtCGridx`/`XtRInt` instead of
+`XtCPosition`/`XtRGravity`). For a faithful port of an existing widget, keep
+using `@private-constraints` plus an explicit `XtResource` table.
+
+## Gridbox string `fill` arguments were never converted
+
+**Symptom:** `XtVaCreateManagedWidget(..., XtNfill, "both", ...)` stored a
+truncated string pointer in the `FillType` constraint field instead of
+`FillBoth`; string fill modes appeared to be broken.
+
+**Cause:** Xt does not convert raw `Arg` values from strings automatically.
+Only `XtVaTypedArg` asks Xt to run the registered type converter. The
+`_CvtStringToFillType` converter was registered correctly but was never called
+for the raw `XtNfill, "..."` arguments. The converter also overwrote
+`toVal->size` before checking it, making the size guard dead code.
+
+**Fix:** use `XtVaTypedArg` for string fill values in the active tests
+(`test_gridbox`, `test_selection_wlabel_v2`, `test_wtreeview`) and in the ported
+Gridbox test. Corrected the converter's `toVal->size` handling in
+`wbuild_widgets/gridbox_core.c` and the ported `gridbox_core.c`.
+
+**Files:** `wbuild_widgets/gridbox_core.c`,
+`experimental/port-gridbox/gridbox_core.c`, `tests/test_gridbox.c`,
+`tests/test_selection_wlabel_v2.c`, `tests/test_wtreeview.c`
+
+## Gridbox wbuild port: geometry_manager got the parent instead of the child
+
+**Symptom:** after replacing the plain-C Gridbox with the wbuild wrapper,
+`test_wdialog` segfaulted in `GridboxGeometryManager` at
+`gc->gridbox.prefWidth` with `gc == NULL`.
+
+**Cause:** in wbuild, `$` inside `geometry_manager` is `XtParent(child)`. The
+wrapper passed `$` to `gridbox_core_geometry_manager()`, but the core function
+expects the child requesting geometry (`w->core.constraints`). It therefore
+read the parent's constraint record, which was NULL.
+
+**Fix:** the wrapper now calls
+`gridbox_core_geometry_manager(child, request, reply)`.
+
+**Files:** `wbuild_widgets/Gridbox.widget`,
+`experimental/port-gridbox/Gridbox.widget`

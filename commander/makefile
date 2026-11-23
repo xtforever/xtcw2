@@ -27,7 +27,7 @@ else
 CFLAGS += -O3
 endif
 
-LOADLIBES=$(libdir)/libxtcw.a $(libdir)/libwcl.a $(libdir)/libutils.a $(libdir)/libretex.a $(libdir)/libplainc.a $(libdir)/libutf32.a $(libdir)/libutf8.a -lm
+LOADLIBES=$(libdir)/libxtcw.a $(libdir)/libwcl.a $(libdir)/libutils.a $(libdir)/libretex.a $(libdir)/libutf32.a $(libdir)/libutf8.a -lm
 
 # Prefer a system-wide lua5.3 development package. If pkg-config cannot find
 # one, fall back to the local prefix created by extracting liblua5.3-dev into
@@ -52,7 +52,7 @@ ${T}: ${D}
 	swig -lua -o $@ $<
 
 # Depend on the toolkit archives so a rebuilt widget library forces a relink.
-COMMANDER_LIBS=$(libdir)/libxtcw.a $(libdir)/libwcl.a $(libdir)/libutils.a $(libdir)/libretex.a $(libdir)/libplainc.a $(libdir)/libutf32.a $(libdir)/libutf8.a
+COMMANDER_LIBS=$(libdir)/libxtcw.a $(libdir)/libwcl.a $(libdir)/libutils.a $(libdir)/libretex.a $(libdir)/libutf32.a $(libdir)/libutf8.a
 
 commander_runner: commander_runner.o task_manager.o lua_task_bindings.o lua_bridge.o xt_bridge.o lifecycle.o file_ops.o script_process.o db_mysql.o ../LuaRunner/luaxt.o ../LuaRunner/luaxt_wrap.o $(COMMANDER_LIBS)
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(LOADLIBES) $(LUA_LIBS) $(MYSQL_LIBS) $(XORGLIB) -lpthread

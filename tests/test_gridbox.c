@@ -1,3 +1,4 @@
+#include <string.h>
 #include <X11/Intrinsic.h>
 #include <X11/StringDefs.h>
 #include <X11/Shell.h>
@@ -17,7 +18,8 @@ static Widget make_cell(Widget parent, char *name, char *label,
         XtNgridx, gx, XtNgridy, gy,
         XtNgridWidth, gw, XtNgridHeight, gh,
         XtNweightx, wx, XtNweighty, wy,
-        XtNfill, fill, XtNlabel, label, NULL);
+        XtVaTypedArg, XtNfill, XtRString, fill, strlen(fill) + 1,
+        XtNlabel, label, NULL);
 }
 
 int main(int argc, char **argv) {

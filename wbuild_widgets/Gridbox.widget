@@ -1,22 +1,116 @@
-@class Gridbox (Constraint) @nodoc @nocode @file="xtcw/Gridbox"
-# @nopubinclude
+@class Gridbox (Constraint)
 
-@public
+@CLASSVARS
+@ Keep the historical 8-byte GridboxClassPart layout.  The plain-C widget has
+@ an unused XtPointer extension slot here; wbuild treats a classvar named
+@ "extension" as inherited from Core, so use a distinct name with the same size.
+@var XtPointer gb_extension = NULL
+@var compress_motion = True
+@var compress_exposure = XtExposeCompressMultiple
+@var compress_enterleave = True
+@var visible_interest = False
+
+@PUBLIC
+@ default margin around children and gap between cells
 @var int defaultDistance = 4
 
-@private
-@var    int		nx
-@var    int		ny
-@var    Dimension	maxgw
-@var    Dimension	maxgh
-@var    Dimension	*max_wids
-@var    Dimension	*max_hgts
-@var    Dimension	*wids
-@var    Dimension       *hgts
-@var    int		*max_weightx
-@var    int		*max_weighty
-@var    Dimension	total_wid
-@var    Dimension	total_hgt
-@var    int		total_weightx
-@var    int		total_weighty
-@var    Boolean	needs_layout
+@PRIVATE
+@var int nx
+@var int ny
+@var Dimension maxgw
+@var Dimension maxgh
+@var Dimension *max_wids
+@var Dimension *max_hgts
+@var Dimension *wids
+@var Dimension *hgts
+@var int *max_weightx
+@var int *max_weighty
+@var Dimension total_wid
+@var Dimension total_hgt
+@var int total_weightx
+@var int total_weighty
+@var Boolean needs_layout
+
+@private-constraints
+@var Position gridx
+@var Position gridy
+@var Dimension gridWidth
+@var Dimension gridHeight
+@var FillType fill
+@var int gravity
+@var int weightx
+@var int weighty
+@var int margin
+@var Dimension prefWidth
+@var Dimension prefHeight
+@var Boolean queried
+
+@METHODS
+
+@proc class_initialize
+{
+    XtResourceList res;
+    Cardinal n;
+    CoreWidgetClass core = (CoreWidgetClass)gridboxWidgetClass;
+    ConstraintWidgetClass cwc = (ConstraintWidgetClass)gridboxWidgetClass;
+
+    gridbox_core_class_initialize();
+
+    gridbox_core_resources(&res, &n);
+    core->core_class.resources = res;
+    core->core_class.num_resources = n;
+
+    gridbox_core_constraint_resources(&res, &n);
+    cwc->constraint_class.resources = res;
+    cwc->constraint_class.num_resources = n;
+    cwc->constraint_class.initialize = gridbox_core_constraint_initialize;
+    cwc->constraint_class.set_values = gridbox_core_constraint_set_values;
+}
+
+@proc initialize
+{
+    gridbox_core_initialize(request, $, args, num_args);
+}
+
+@proc destroy
+{
+    gridbox_core_destroy($);
+}
+
+@proc expose
+{
+    gridbox_core_expose($, event, region);
+}
+
+@proc resize
+{
+    gridbox_core_resize($);
+}
+
+@proc Boolean set_values
+{
+    return gridbox_core_set_values(old, request, $, args, num_args);
+}
+
+@proc query_geometry
+{
+    return gridbox_core_query_geometry($, request, reply);
+}
+
+@proc change_managed
+{
+    gridbox_core_change_managed($);
+}
+
+@proc geometry_manager
+{
+    /* wbuild's $ is XtParent(child); the core function expects the child. */
+    return gridbox_core_geometry_manager(child, request, reply);
+}
+
+@EXPORTS
+@ preserve the public constraint-resource and FillType API
+@incl "gridbox_compat.h"
+
+@IMPORTS
+@incl "gridbox_core.h"

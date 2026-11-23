@@ -19,15 +19,15 @@ wb_install=$(PKGDATADIR)
 WBUILD=$(bindir)/wbuild
 WBWRAP=$(bindir)/wb.sh
 WBPREFIX=xtcw
-WFLAGS= -d $(docdir) -c $(srcdir) -i $(incdir)/$(WBPREFIX) --include-prefix=$(WBPREFIX) $(PKGDATADIR)/tex.w $(PKGDATADIR)/nroff.w
+WFLAGS= -d $(docdir) -c $(srcdir) -i $(incdir)/$(WBPREFIX) --include-prefix=$(WBPREFIX) --hdf-dir=$(docdir)/hdf $(PKGDATADIR)/tex.w $(PKGDATADIR)/nroff.w
 
 BINC=$(incdir)/$(WBPREFIX)
 BSRC=$(srcdir)
 BDOC=$(docdir)
 LUI_REGISTRY ?= ../lui/registry_generated.lua
 
-ALL_WIDGETS:=${notdir $(wildcard *.widget)}
-WIDGET_H:=${ALL_WIDGETS:%.widget=$(BINC)/%.h}
+ALL_WIDGETS := $(notdir $(wildcard *.widget))
+WIDGET_H := $(ALL_WIDGETS:%.widget=$(BINC)/%.h)
 
 ALL: all-widgets $(BINC)/register_wb.h
 
@@ -38,11 +38,21 @@ $(BINC)/%.h: %.widget $(WBUILD)
 $(BINC)/register_wb.h: $(WIDGET_H)
 	./register-widgets.sh $(BINC) $(BSRC) $(LUI_REGISTRY)
 
+# wbuild skips writing outputs that are newer than their .widget source, but
+# make still sees those outputs as older than the generator binary and would
+# invoke wbuild for every widget on every run.  Align the skipped outputs with
+# the generator mtime once; a real generator change then rebuilds dependents
+# once instead of on every `make all`.
 all-widgets: $(WIDGET_H)
+	@for h in $(WIDGET_H); do \
+		if [ "$$h" -ot "$(WBUILD)" ]; then touch -r "$(WBUILD)" "$$h"; fi; \
+	done
 
-install: $(WIDGET_H) $(BINC)/register_wb.h
+install: all-widgets $(BINC)/register_wb.h
 	mkdir -p $(BINC)
-	cp *.h $(BINC)/
+	cp -p *.h $(BINC)/
+
+.PHONY: all-widgets install clean
 
 clean:
 	-$(RM) $(WIDGET_H)

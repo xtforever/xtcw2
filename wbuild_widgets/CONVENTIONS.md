@@ -918,7 +918,7 @@ For serialized snapshots (`save_state` / `load_state`):
 - Give fixed chrome (`header`, `footer`, toolbar) `weighty`/`weightx` **0** and
   the expandable body **1**. Growth is distributed to weighted cells.
 - When the box is smaller than its preferred size, `Gridbox.layout()` now
-  shrinks weighted cells first (`shrinkCells()` in `plainc_widgets/Gridbox.c`);
+  shrinks weighted cells first (`shrinkCells()` in `wbuild_widgets/gridbox_core.c`);
   fixed cells keep their preferred size. Only if weighted cells cannot absorb
   the shortfall does it shrink everything.
 - A widget with a large `query_geometry` preferred size is still shrinkable by
